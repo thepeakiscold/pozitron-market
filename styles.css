@@ -399,13 +399,13 @@ img {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 220px;
+  width: 230px;
   background: #ffffff;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.14), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   padding: 8px;
-  z-index: 200;
+  z-index: 1000;
 }
 
 .user-info-header {

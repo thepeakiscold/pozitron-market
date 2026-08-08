@@ -312,18 +312,10 @@ class PozitronApp {
     const closeChkModal = document.getElementById('close-checkout-modal');
     if (closeChkModal) closeChkModal.addEventListener('click', () => this.closeCheckoutModal());
 
-    // User Auth Button & Tabs
+    // User Auth Button
     const authBtn = document.getElementById('auth-btn');
     if (authBtn) {
-      authBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (this.user) {
-          const drop = document.getElementById('user-dropdown-menu');
-          if (drop) drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
-        } else {
-          this.openAuthModal();
-        }
-      });
+      authBtn.addEventListener('click', (e) => this.handleAuthBtnClick(e));
     }
 
     // Close user dropdown on click outside
@@ -1402,10 +1394,19 @@ class PozitronApp {
 
   handleAuthBtnClick(e) {
     if (e && e.stopPropagation) e.stopPropagation();
+
+    // Prevent duplicate rapid triggers (e.g. inline onclick + addEventListener collision)
+    const now = Date.now();
+    if (this._lastAuthClick && (now - this._lastAuthClick < 250)) {
+      return;
+    }
+    this._lastAuthClick = now;
+
     if (this.user) {
       const drop = document.getElementById('user-dropdown-menu');
       if (drop) {
-        drop.style.display = (drop.style.display === 'none' || !drop.style.display) ? 'block' : 'none';
+        const isHidden = !drop.style.display || drop.style.display === 'none';
+        drop.style.display = isHidden ? 'block' : 'none';
       }
     } else {
       this.openAuthModal();
