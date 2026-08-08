@@ -1,0 +1,132 @@
+[
+  {
+    "id": "motors",
+    "slug": "brushless-motors",
+    "name_en": "Brushless Motors",
+    "name_tr": "Fırçasız Motorlar",
+    "icon": "⚡",
+    "description_en": "High-efficiency brushless motors for freestyle, racing, cinewhoop, and long-range drones.",
+    "description_tr": "Freestyle, yarış, cinewhoop ve uzun menzil dronlar için yüksek verimli fırçasız motorlar.",
+    "item_count": 55
+  },
+  {
+    "id": "propellers",
+    "slug": "propellers",
+    "name_en": "Propellers",
+    "name_tr": "Pervaneler & Bıçaklar",
+    "icon": "🌀",
+    "description_en": "Durable polycarbonate tri-blade, bi-blade, and cinewhoop ducted propellers.",
+    "description_tr": "Dayanıklı polikarbonat 3 palli, 2 palli ve kanallı cinewhoop pervaneleri.",
+    "item_count": 50
+  },
+  {
+    "id": "esc",
+    "slug": "electronic-speed-controllers",
+    "name_en": "Electronic Speed Controllers (ESC)",
+    "name_tr": "Elektronik Hız Kontrolcüleri (ESC)",
+    "icon": "🚀",
+    "description_en": "High-current 4-in-1 and single ESCs with BLHeli_32, BLHeli_S, and AM32 firmware.",
+    "description_tr": "BLHeli_32, BLHeli_S ve AM32 yazılımlı yüksek akım 4'ü 1 arada ve tekli ESC'ler.",
+    "item_count": 45
+  },
+  {
+    "id": "batteries_chargers",
+    "slug": "lipo-batteries-chargers",
+    "name_en": "LiPo Batteries & Smart Chargers",
+    "name_tr": "LiPo Bataryalar ve Akıllı Şarj Cihazları",
+    "icon": "⚡",
+    "description_en": "High-discharge 4S/6S LiPo & Li-ion battery packs and multi-channel smart chargers.",
+    "description_tr": "Yüksek deşarjlı 4S/6S LiPo & Li-ion bataryalar ve çok kanallı akıllı şarj cihazları.",
+    "item_count": 45
+  },
+  {
+    "id": "flight_controllers",
+    "slug": "flight-controllers",
+    "name_en": "Flight Controllers (FC)",
+    "name_tr": "Uçuş Kontrol Kartları (FC)",
+    "icon": "🧠",
+    "description_en": "F405, F722, and H743 flight controllers supporting Betaflight, INAV, and ArduPilot.",
+    "description_tr": "Betaflight, INAV ve ArduPilot destekli F405, F722 ve H743 uçuş kontrol kartları.",
+    "item_count": 40
+  },
+  {
+    "id": "transmitters_receivers",
+    "slug": "transmitters-receivers",
+    "name_en": "Radio Transmitters & Receivers",
+    "name_tr": "Kumanda ve Alıcı Sistemleri",
+    "icon": "🎮",
+    "description_en": "ExpressLRS 2.4GHz/915MHz and TBS Crossfire radios, micro receivers, and modules.",
+    "description_tr": "ExpressLRS 2.4GHz/915MHz ve TBS Crossfire kumandalar, mikro alıcılar ve modüller.",
+    "item_count": 40
+  },
+  {
+    "id": "converters",
+    "slug": "power-converters-bec",
+    "name_en": "Power & Voltage Converters (BEC/PDB)",
+    "name_tr": "Güç ve Voltaj Dönüştürücüler (BEC/PDB)",
+    "icon": "🔋",
+    "description_en": "Step-down/step-up BEC voltage regulators, power distribution boards, and LC filters.",
+    "description_tr": "Voltaj düşürücü/yükseltici BEC regülatörleri, güç dağıtım kartları ve LC filtreleri.",
+    "item_count": 35
+  },
+  {
+    "id": "cameras",
+    "slug": "fpv-cameras-digital-units",
+    "name_en": "FPV Cameras & Digital Systems",
+    "name_tr": "FPV Kameralar ve Dijital Sistemler",
+    "icon": "📷",
+    "description_en": "Analog FPV cameras, DJI O3/O4 Air Units, Walksnail Avatar HD, and HDZero systems.",
+    "description_tr": "Analog FPV kameralar, DJI O3/O4 Air Unit, Walksnail Avatar HD ve HDZero dijital sistemler.",
+    "item_count": 35
+  },
+  {
+    "id": "frames",
+    "slug": "drone-frames-carbon-fiber",
+    "name_en": "Drone Frames & Carbon Fiber",
+    "name_tr": "Drone Gövdeleri ve Karbon Fiber",
+    "icon": "🛸",
+    "description_en": "Premium 3K carbon fiber freestyle, racing, cinewhoop, and long-range drone frames.",
+    "description_tr": "Birinci sınıf 3K karbon fiber freestyle, yarış, cinewhoop ve uzun menzil drone gövdeleri.",
+    "item_count": 35
+  },
+  {
+    "id": "tools_accessories",
+    "slug": "tools-hardware-accessories",
+    "name_en": "Tools, Hardware & Accessories",
+    "name_tr": "Montaj Aletleri, Hırdavat ve Aksesuar",
+    "icon": "🛠️",
+    "description_en": "Portable soldering irons, titanium hex tools, smoke stoppers, silicone wire, and TPU parts.",
+    "description_tr": "Taşınabilir havya istasyonları, titanyum alyan takımları, smoke stopper ve TPU parçalar.",
+    "item_count": 35
+  },
+  {
+    "id": "vtx",
+    "slug": "video-transmitters",
+    "name_en": "Video Transmitters (VTX)",
+    "name_tr": "Video Vericiler (VTX)",
+    "icon": "📡",
+    "description_en": "High-power 5.8GHz and 1.2GHz video transmitters up to 2500mW with smart audio.",
+    "description_tr": "SmartAudio destekli 2500mW'a kadar yüksek güçlü 5.8GHz ve 1.2GHz video vericileri.",
+    "item_count": 30
+  },
+  {
+    "id": "antennas",
+    "slug": "fpv-antennas",
+    "name_en": "FPV Antennas & RF Modules",
+    "name_tr": "FPV Antenleri ve RF Modülleri",
+    "icon": "📶",
+    "description_en": "RHCP/LHCP omnidirectional antennas, directional patch antennas, and dual-band arrays.",
+    "description_tr": "RHCP/LHCP çok yönlü antenler, yönlü yama antenleri ve çift bantlı dizi antenler.",
+    "item_count": 30
+  },
+  {
+    "id": "gps_telemetry",
+    "slug": "gps-telemetry-sensors",
+    "name_en": "GPS, Compass & Telemetry",
+    "name_tr": "GPS, Pusula ve Telemetri",
+    "icon": "📍",
+    "description_en": "High-precision u-blox M10/M8 GPS modules with integrated compass and optical flow.",
+    "description_tr": "Entegre pusulalı ve optik akışlı yüksek hassasiyetli u-blox M10/M8 GPS modülleri.",
+    "item_count": 25
+  }
+]
