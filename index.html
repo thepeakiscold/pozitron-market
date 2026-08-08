@@ -674,6 +674,70 @@
     </div>
   </div>
 
+  <!-- Google / Gmail OAuth Account Picker Modal -->
+  <div class="modal-backdrop" id="google-modal-backdrop" style="display:none;">
+    <div class="modal-card modal-google-auth" role="dialog" aria-modal="true" style="max-width:440px; background:#ffffff; border-radius:16px; padding:28px 24px; box-shadow:0 20px 40px rgba(0,0,0,0.12); border:1px solid var(--border-subtle);">
+      <button type="button" class="modal-close-btn" id="close-google-modal">&times;</button>
+      
+      <div style="text-align:center; margin-bottom:20px;">
+        <svg width="40" height="40" viewBox="0 0 24 24" style="margin-bottom:10px;">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <h3 style="font-size:1.25rem; font-weight:700; color:#1f2937; margin:0 0 6px 0;">Google ile Oturum Açın</h3>
+        <p style="font-size:0.85rem; color:#6b7280; margin:0;">Pozitron Market uygulamasına devam etmek için hesabınızı seçin.</p>
+      </div>
+
+      <!-- Quick Accounts List -->
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+        <button type="button" class="google-account-btn" data-email="furkaniusprimes@gmail.com" data-name="Eyüp Furkan PEKÖZ" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#f9fafb; cursor:pointer; text-align:left; transition:all 0.2s;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem;">E</div>
+          <div style="flex:1;">
+            <div style="font-size:0.88rem; font-weight:600; color:#111827;">Eyüp Furkan PEKÖZ</div>
+            <div style="font-size:0.78rem; color:#6b7280;">furkaniusprimes@gmail.com</div>
+          </div>
+          <span style="font-size:0.75rem; background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:6px; font-weight:600;">Aktif</span>
+        </button>
+
+        <button type="button" class="google-account-btn" data-email="pilot.pozitron@gmail.com" data-name="Pozitron Pilot" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#f9fafb; cursor:pointer; text-align:left; transition:all 0.2s;">
+          <div style="width:36px; height:36px; border-radius:50%; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem;">P</div>
+          <div style="flex:1;">
+            <div style="font-size:0.88rem; font-weight:600; color:#111827;">Pozitron FPV Pilot</div>
+            <div style="font-size:0.78rem; color:#6b7280;">pilot.pozitron@gmail.com</div>
+          </div>
+          <span style="font-size:0.75rem; background:#f3f4f6; color:#4b5563; padding:2px 8px; border-radius:6px;">Demo</span>
+        </button>
+      </div>
+
+      <!-- Custom Gmail Input Form -->
+      <div style="border-top:1px solid #e5e7eb; padding-top:14px;">
+        <label for="custom-gmail-input" style="font-size:0.82rem; font-weight:600; color:#374151; display:block; margin-bottom:6px;">Farklı bir Gmail ile Bağlan:</label>
+        <div style="display:flex; gap:8px;">
+          <input type="email" id="custom-gmail-input" class="form-input" placeholder="ornek@gmail.com" style="flex:1; font-size:0.88rem; padding:8px 12px;">
+          <button type="button" id="btn-custom-gmail-submit" class="btn-primary" style="padding:8px 16px; font-size:0.85rem; white-space:nowrap;">Bağlan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Orders Modal -->
+  <div class="modal-backdrop" id="orders-modal-backdrop" style="display:none;">
+    <div class="modal-card" role="dialog" aria-modal="true" style="max-width:560px;">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" style="font-size:1.25rem;">📦 Sipariş Geçmişim</h2>
+          <p class="modal-subtitle">Pozitron Market üzerinden verdiğiniz tüm siparişler ve kargo takipleri.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="close-orders-modal">&times;</button>
+      </div>
+      <div class="modal-body" id="orders-modal-body" style="padding:16px 0; max-height:400px; overflow-y:auto;">
+        <!-- Injected via app.js -->
+      </div>
+    </div>
+  </div>
+
   <!-- 3D Secure Checkout & Payment Modal -->
   <div class="modal-backdrop" id="checkout-modal-backdrop" style="display:none;">
     <div class="modal-card modal-checkout" role="dialog" aria-modal="true">
