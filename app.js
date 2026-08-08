@@ -41,6 +41,9 @@ class PozitronApp {
   }
 
   async init() {
+    // 0. Initialize User Database
+    this.initUserDatabase();
+
     // 1. Initialize i18n
     window.i18n.updateDom();
 
@@ -1246,11 +1249,76 @@ class PozitronApp {
   }
 
   // ==========================================
-  // AUTHENTICATION & USER MANAGEMENT
+  // ACCOUNTS DATABASE & AUTHENTICATION
   // ==========================================
+  initUserDatabase() {
+    const DB_KEY = 'pozitron_users_db';
+    let users = [];
+    try {
+      users = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+    } catch (e) {
+      users = [];
+    }
+
+    if (!Array.isArray(users) || users.length === 0) {
+      const defaultAccounts = [
+        {
+          id: "usr_pilot_01",
+          email: "pilot@drone.com",
+          password: "password123",
+          full_name: "Pozitron Test Pilot",
+          avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+          provider: "manual",
+          role: "pilot",
+          created_at: new Date().toISOString()
+        },
+        {
+          id: "usr_ahmet_02",
+          email: "ahmet@pozitron.market",
+          password: "password123",
+          full_name: "Ahmet Yılmaz",
+          avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+          provider: "manual",
+          role: "customer",
+          created_at: new Date().toISOString()
+        },
+        {
+          id: "usr_furkan_03",
+          email: "furkaniusprimes@gmail.com",
+          password: "password123",
+          full_name: "Eyüp Furkan PEKÖZ",
+          avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+          provider: "gmail",
+          role: "admin",
+          created_at: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem(DB_KEY, JSON.stringify(defaultAccounts));
+    }
+  }
+
+  getAllUsersFromDb() {
+    this.initUserDatabase();
+    try {
+      return JSON.parse(localStorage.getItem('pozitron_users_db') || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  isValidEmail(email) {
+    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return re.test(String(email).trim().toLowerCase());
+  }
+
   openAuthModal() {
     const backdrop = document.getElementById('auth-modal-backdrop');
     if (backdrop) backdrop.style.display = 'flex';
+    // Clear any previous error messages
+    const loginErr = document.getElementById('login-error-msg');
+    const regErr = document.getElementById('reg-error-msg');
+    if (loginErr) loginErr.style.display = 'none';
+    if (regErr) regErr.style.display = 'none';
   }
 
   closeAuthModal() {
@@ -1336,13 +1404,25 @@ class PozitronApp {
     const target = e.currentTarget;
     const email = target.getAttribute('data-email') || 'pilot.pozitron@gmail.com';
     const fullName = target.getAttribute('data-name') || 'Pozitron Pilot';
-    this.loginWithUser({
-      id: "usr_google_" + Math.random().toString(36).substr(2, 8),
-      email: email,
-      full_name: fullName,
-      avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
-      provider: "google"
-    });
+    
+    // Register/update user in Database
+    const usersDb = this.getAllUsersFromDb();
+    let existing = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!existing) {
+      existing = {
+        id: "usr_google_" + Date.now().toString(36),
+        email: email,
+        password: "google_oauth_verified",
+        full_name: fullName,
+        avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+        provider: "google",
+        created_at: new Date().toISOString()
+      };
+      usersDb.push(existing);
+      localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
+    }
+
+    this.loginWithUser(existing);
     this.closeGoogleModal();
     this.showToast(`Hoş geldiniz, ${fullName}! (Google)`, 'success');
   }
@@ -1351,22 +1431,31 @@ class PozitronApp {
     const input = document.getElementById('custom-gmail-input');
     const email = input ? input.value.trim() : '';
 
-    if (!email || !email.includes('@')) {
-      this.showToast('Lütfen geçerli bir Gmail adresi giriniz.', 'error');
+    if (!email || !this.isValidEmail(email)) {
+      this.showToast('Lütfen geçerli bir Gmail formatı giriniz (örn: isim@gmail.com).', 'error');
       return;
     }
 
     const username = email.split('@')[0];
     const formattedName = username.charAt(0).toUpperCase() + username.slice(1);
 
-    this.loginWithUser({
-      id: "usr_gmail_" + Math.random().toString(36).substr(2, 8),
-      email: email,
-      full_name: formattedName,
-      avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
-      provider: "gmail"
-    });
+    const usersDb = this.getAllUsersFromDb();
+    let existing = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!existing) {
+      existing = {
+        id: "usr_gmail_" + Date.now().toString(36),
+        email: email,
+        password: "gmail_direct_verified",
+        full_name: formattedName,
+        avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+        provider: "gmail",
+        created_at: new Date().toISOString()
+      };
+      usersDb.push(existing);
+      localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
+    }
 
+    this.loginWithUser(existing);
     if (input) input.value = '';
     this.closeGoogleModal();
     this.showToast(`Hoş geldiniz, ${formattedName}! (Gmail)`, 'success');
@@ -1375,14 +1464,6 @@ class PozitronApp {
   loginWithUser(userObj) {
     this.user = userObj;
     localStorage.setItem('pozitron_user', JSON.stringify(this.user));
-    
-    // Also save in all registered users
-    const storedUsers = JSON.parse(localStorage.getItem('pozitron_all_users') || '[]');
-    if (!storedUsers.some(u => u.email.toLowerCase() === userObj.email.toLowerCase())) {
-      storedUsers.push(userObj);
-      localStorage.setItem('pozitron_all_users', JSON.stringify(storedUsers));
-    }
-
     this.updateUserUI();
   }
 
@@ -1396,39 +1477,48 @@ class PozitronApp {
 
     if (!email || !password) {
       if (err) {
-        err.textContent = 'Lütfen e-posta ve şifrenizi giriniz.';
+        err.textContent = 'Lütfen e-posta adresinizi ve şifrenizi giriniz.';
         err.style.display = 'block';
       }
       return;
     }
 
-    if (password.length < 6) {
+    if (!this.isValidEmail(email)) {
       if (err) {
-        err.textContent = 'Şifreniz en az 6 karakter olmalıdır.';
+        err.textContent = 'Lütfen geçerli bir e-posta adresi formatı giriniz (örn: pilot@drone.com).';
         err.style.display = 'block';
       }
       return;
     }
 
+    // 1. Check Accounts Database for matching email
+    const usersDb = this.getAllUsersFromDb();
+    const matchedUser = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (!matchedUser) {
+      if (err) {
+        err.textContent = `❌ "${email}" adresiyle kayıtlı bir hesap bulunamadı! Lütfen 'Kayıt Ol' sekmesinden hesap oluşturun.`;
+        err.style.display = 'block';
+      }
+      return;
+    }
+
+    // 2. Strictly check password
+    if (matchedUser.password !== password) {
+      if (err) {
+        err.textContent = '❌ Hatalı şifre girdiniz! Lütfen şifrenizi kontrol edip tekrar deneyiniz.';
+        err.style.display = 'block';
+      }
+      return;
+    }
+
+    // Success
     if (err) err.style.display = 'none';
-
-    // Check stored users
-    const storedUsers = JSON.parse(localStorage.getItem('pozitron_all_users') || '[]');
-    const match = storedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-    const userObj = match || {
-      id: "usr_" + Math.random().toString(36).substr(2, 8),
-      email: email,
-      full_name: email.split('@')[0].toUpperCase(),
-      avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
-      provider: "manual"
-    };
-
-    this.loginWithUser(userObj);
+    this.loginWithUser(matchedUser);
     this.closeAuthModal();
     if (emailEl) emailEl.value = '';
     if (passEl) passEl.value = '';
-    this.showToast(`Hoş geldiniz, ${userObj.full_name}!`, 'success');
+    this.showToast(`Giriş başarılı! Hoş geldiniz, ${matchedUser.full_name}`, 'success');
   }
 
   async handleManualRegister(e) {
@@ -1443,7 +1533,23 @@ class PozitronApp {
 
     if (!full_name || !email || !password) {
       if (err) {
-        err.textContent = 'Lütfen tüm alanları eksiksiz doldurunuz.';
+        err.textContent = 'Lütfen tüm alanları (Ad Soyad, E-Posta, Şifre) eksiksiz doldurunuz.';
+        err.style.display = 'block';
+      }
+      return;
+    }
+
+    if (full_name.length < 2) {
+      if (err) {
+        err.textContent = 'Ad Soyad en az 2 karakter olmalıdır.';
+        err.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!this.isValidEmail(email)) {
+      if (err) {
+        err.textContent = 'Lütfen geçerli bir e-posta formatı giriniz (örn: pilot@drone.com).';
         err.style.display = 'block';
       }
       return;
@@ -1451,7 +1557,19 @@ class PozitronApp {
 
     if (password.length < 6) {
       if (err) {
-        err.textContent = 'Şifre en az 6 karakter olmalıdır.';
+        err.textContent = 'Güvenliğiniz için şifre en az 6 karakter olmalıdır.';
+        err.style.display = 'block';
+      }
+      return;
+    }
+
+    // Check if email is already registered in Database
+    const usersDb = this.getAllUsersFromDb();
+    const existingUser = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (existingUser) {
+      if (err) {
+        err.textContent = `❌ "${email}" adresi ile kayıtlı bir hesap zaten var! Lütfen 'Giriş Yap' sekmesinden giriş yapınız.`;
         err.style.display = 'block';
       }
       return;
@@ -1460,14 +1578,20 @@ class PozitronApp {
     if (err) err.style.display = 'none';
 
     const newUser = {
-      id: "usr_" + Math.random().toString(36).substr(2, 8),
+      id: "usr_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
       email: email,
       password: password,
       full_name: full_name,
       avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
-      provider: "manual"
+      provider: "manual",
+      created_at: new Date().toISOString()
     };
 
+    // Save to database
+    usersDb.push(newUser);
+    localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
+
+    // Log in
     this.loginWithUser(newUser);
     this.closeAuthModal();
     if (nameEl) nameEl.value = '';

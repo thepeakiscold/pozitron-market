@@ -1822,10 +1822,16 @@ img {
 }
 
 .form-error-msg {
-  color: var(--status-danger);
-  font-size: 0.82rem;
-  margin-bottom: 12px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 14px;
   display: none;
+  line-height: 1.4;
 }
 
 .btn-block {
