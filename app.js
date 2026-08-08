@@ -1400,10 +1400,61 @@ class PozitronApp {
     }
   }
 
+  handleAuthBtnClick(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (this.user) {
+      const drop = document.getElementById('user-dropdown-menu');
+      if (drop) {
+        drop.style.display = (drop.style.display === 'none' || !drop.style.display) ? 'block' : 'none';
+      }
+    } else {
+      this.openAuthModal();
+    }
+  }
+
+  handleTabSwitch(tabName) {
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const loginErr = document.getElementById('login-error-msg');
+    const regErr = document.getElementById('reg-error-msg');
+
+    if (loginErr) loginErr.style.display = 'none';
+    if (regErr) regErr.style.display = 'none';
+
+    if (tabName === 'login') {
+      if (tabLogin) tabLogin.classList.add('active');
+      if (tabRegister) tabRegister.classList.remove('active');
+      if (loginForm) loginForm.style.display = 'block';
+      if (registerForm) registerForm.style.display = 'none';
+    } else {
+      if (tabRegister) tabRegister.classList.add('active');
+      if (tabLogin) tabLogin.classList.remove('active');
+      if (loginForm) loginForm.style.display = 'none';
+      if (registerForm) registerForm.style.display = 'block';
+    }
+  }
+
   handleSelectGoogleAccount(e) {
-    const target = e.currentTarget;
-    const email = target.getAttribute('data-email') || 'pilot.pozitron@gmail.com';
-    const fullName = target.getAttribute('data-name') || 'Pozitron Pilot';
+    let email = '';
+    let fullName = '';
+
+    if (e && e.currentTarget && typeof e.currentTarget.getAttribute === 'function') {
+      email = e.currentTarget.getAttribute('data-email');
+      fullName = e.currentTarget.getAttribute('data-name');
+    }
+    if (!email && e && e.target) {
+      const btn = e.target.closest ? e.target.closest('.google-account-btn') : null;
+      if (btn) {
+        email = btn.getAttribute('data-email');
+        fullName = btn.getAttribute('data-name');
+      }
+    }
+    if (!email) {
+      email = 'furkaniusprimes@gmail.com';
+      fullName = 'Eyüp Furkan PEKÖZ';
+    }
     
     // Register/update user in Database
     const usersDb = this.getAllUsersFromDb();
@@ -1429,9 +1480,9 @@ class PozitronApp {
 
   handleCustomGmailSubmit() {
     const input = document.getElementById('custom-gmail-input');
-    const email = input ? input.value.trim() : '';
+    const email = input ? input.value.trim().toLowerCase() : '';
 
-    if (!email || !this.isValidEmail(email)) {
+    if (!email || !this.isValidEmail(email) || !email.includes('@')) {
       this.showToast('Lütfen geçerli bir Gmail formatı giriniz (örn: isim@gmail.com).', 'error');
       return;
     }
@@ -1440,7 +1491,7 @@ class PozitronApp {
     const formattedName = username.charAt(0).toUpperCase() + username.slice(1);
 
     const usersDb = this.getAllUsersFromDb();
-    let existing = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+    let existing = usersDb.find(u => u.email.toLowerCase() === email);
     if (!existing) {
       existing = {
         id: "usr_gmail_" + Date.now().toString(36),
@@ -1468,10 +1519,10 @@ class PozitronApp {
   }
 
   async handleManualLogin(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     const emailEl = document.getElementById('login-email');
     const passEl = document.getElementById('login-password');
-    const email = emailEl ? emailEl.value.trim() : '';
+    const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
     const password = passEl ? passEl.value : '';
     const err = document.getElementById('login-error-msg');
 
@@ -1485,7 +1536,7 @@ class PozitronApp {
 
     if (!this.isValidEmail(email)) {
       if (err) {
-        err.textContent = 'Lütfen geçerli bir e-posta adresi formatı giriniz (örn: pilot@drone.com).';
+        err.textContent = 'Lütfen geçerli bir e-posta formatı giriniz (örn: pilot@drone.com).';
         err.style.display = 'block';
       }
       return;
@@ -1493,7 +1544,7 @@ class PozitronApp {
 
     // 1. Check Accounts Database for matching email
     const usersDb = this.getAllUsersFromDb();
-    const matchedUser = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const matchedUser = usersDb.find(u => u.email.toLowerCase() === email);
 
     if (!matchedUser) {
       if (err) {
@@ -1522,12 +1573,12 @@ class PozitronApp {
   }
 
   async handleManualRegister(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     const nameEl = document.getElementById('reg-name');
     const emailEl = document.getElementById('reg-email');
     const passEl = document.getElementById('reg-password');
     const full_name = nameEl ? nameEl.value.trim() : '';
-    const email = emailEl ? emailEl.value.trim() : '';
+    const email = emailEl ? emailEl.value.trim().toLowerCase() : '';
     const password = passEl ? passEl.value : '';
     const err = document.getElementById('reg-error-msg');
 
@@ -1565,7 +1616,7 @@ class PozitronApp {
 
     // Check if email is already registered in Database
     const usersDb = this.getAllUsersFromDb();
-    const existingUser = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const existingUser = usersDb.find(u => u.email.toLowerCase() === email);
 
     if (existingUser) {
       if (err) {
@@ -1607,6 +1658,7 @@ class PozitronApp {
     if (drop) drop.style.display = 'none';
     this.updateUserUI();
     this.showToast('Başarıyla çıkış yapıldı.', 'success');
+    this.openAuthModal();
   }
 
   // ==========================================
