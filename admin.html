@@ -46,9 +46,20 @@
   </div>
 
   <script>
+    // Sayfa açıldığında daha önce kaydedilmiş URL varsa kutuya yaz
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedUrl = localStorage.getItem('pozitron_webhook_url');
+      if (savedUrl) {
+        document.getElementById('webhook-url').value = savedUrl;
+      }
+    });
+
     document.getElementById('btn-load').addEventListener('click', () => {
       const url = document.getElementById('webhook-url').value.trim();
       if (!url) return alert('Lütfen Google Apps Script URL adresini girin!');
+
+      // ÖNEMLİ: Ana sitenin bu URL'ye siparişleri gönderebilmesi için URL'yi tarayıcıya kaydet
+      localStorage.setItem('pozitron_webhook_url', url);
 
       const tbody = document.querySelector('#orders-table tbody');
       tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Yükleniyor... Lütfen bekleyin.</td></tr>';
