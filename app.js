@@ -1574,6 +1574,21 @@ class PozitronApp {
     usersDb.push(newUser);
     localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
 
+    // Send user to Google Sheets (Kullanıcılar sayfası)
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'user',
+        full_name: full_name,
+        email: email,
+        provider: 'manual',
+        registered_at: new Date().toISOString()
+      })
+    }).catch(err => console.log('User webhook error:', err));
+
     // Log in
     this.loginWithUser(newUser);
     this.closeAuthModal();
@@ -2080,6 +2095,22 @@ window.handleCredentialResponse = function(response) {
     };
     usersDb.push(existing);
     localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
+
+    // Send new Google user to Google Sheets (Kullanıcılar sayfası)
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'user',
+        full_name: existing.full_name,
+        email: existing.email,
+        provider: 'google',
+        avatar_url: existing.avatar_url,
+        registered_at: existing.created_at
+      })
+    }).catch(err => console.log('User webhook error:', err));
   } else {
     // Update avatar if they already exist but have a new photo
     existing.avatar_url = payload.picture || existing.avatar_url;
