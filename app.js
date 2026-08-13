@@ -1639,29 +1639,30 @@ class PozitronApp {
     if (err) err.style.display = 'none';
 
     // WhatsApp Message Generation
-    let waMessage = `📦 *YENİ SİPARİŞ (POZITRON MARKET)* 📦\n\n`;
-    waMessage += `👤 *Müşteri:* ${name}\n`;
-    waMessage += `📞 *Telefon:* ${phone}\n`;
-    if (email) waMessage += `✉️ *E-Posta:* ${email}\n`;
-    waMessage += `🏠 *Adres:* ${address} - ${city}\n\n`;
+    let waMessage = `*** YENİ SİPARİŞ (POZITRON MARKET) ***\n\n`;
+    waMessage += `Müşteri: ${name}\n`;
+    waMessage += `Telefon: ${phone}\n`;
+    if (email) waMessage += `E-Posta: ${email}\n`;
+    waMessage += `Adres: ${address} - ${city}\n\n`;
     
-    waMessage += `🛍️ *Sepet İçeriği:*\n`;
+    waMessage += `--- Sepet İçeriği ---\n`;
     let totalTRY = 0;
     this.cart.forEach((item, index) => {
-      waMessage += `${index + 1}. ${item.title} (${item.quantity} Adet) - ${item.price_try * item.quantity} ₺\n`;
+      const prodName = this.lang === 'en' ? (item.name_en || item.title || 'Ürün') : (item.name_tr || item.title || 'Ürün');
+      waMessage += `${index + 1}. ${prodName} (${item.quantity} Adet) - ${item.price_try * item.quantity} ₺\n`;
       totalTRY += item.price_try * item.quantity;
     });
 
     if (this.appliedCoupon) {
-      waMessage += `\n🎟️ *Kupon:* ${this.appliedCoupon.code} (%${this.appliedCoupon.discount_percentage} İndirim)\n`;
+      waMessage += `\nKupon: ${this.appliedCoupon.code} (%${this.appliedCoupon.discount_percentage} İndirim)\n`;
       const discount = (totalTRY * this.appliedCoupon.discount_percentage) / 100;
       totalTRY -= discount;
     }
 
-    waMessage += `\n💳 *Ödenecek Toplam Tutar:* *${totalTRY.toFixed(2)} ₺*\n\n`;
+    waMessage += `\n*** Ödenecek Toplam Tutar: ${totalTRY.toFixed(2)} ₺ ***\n\n`;
     waMessage += `Lütfen aşağıdaki IBAN numarasına Havale/EFT işlemini tamamlayıp, dekontu bu mesajla birlikte iletiniz:\n\n`;
-    waMessage += `🏦 *Banka IBAN:* TR52 0006 7010 0000 0023 9483 65\n`;
-    waMessage += `👤 *Alıcı:* Eyüp Furkan PEKÖZ`;
+    waMessage += `Banka IBAN: TR52 0006 7010 0000 0023 9483 65\n`;
+    waMessage += `Alıcı: Eyüp Furkan PEKÖZ`;
 
     // Encode message and open WhatsApp
     const encodedMessage = encodeURIComponent(waMessage);
