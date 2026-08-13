@@ -1659,11 +1659,13 @@ class PozitronApp {
     }
 
     waMessage += `\n💳 *Ödenecek Toplam Tutar:* *${totalTRY.toFixed(2)} ₺*\n\n`;
-    waMessage += `Lütfen ödemeyi Havale/EFT ile gerçekleştirmek için IBAN bilgilerini iletir misiniz?`;
+    waMessage += `Lütfen aşağıdaki IBAN numarasına Havale/EFT işlemini tamamlayıp, dekontu bu mesajla birlikte iletiniz:\n\n`;
+    waMessage += `🏦 *Banka IBAN:* TR52 0006 7010 0000 0023 9483 65\n`;
+    waMessage += `👤 *Alıcı:* Eyüp Furkan PEKÖZ`;
 
     // Encode message and open WhatsApp
     const encodedMessage = encodeURIComponent(waMessage);
-    const waNumber = "905000000000"; // IMPORTANT: User must set their own WhatsApp number here
+    const waNumber = "905442451118"; // User's WhatsApp number
     const waUrl = `https://wa.me/${waNumber}?text=${encodedMessage}`;
     
     window.open(waUrl, '_blank');
