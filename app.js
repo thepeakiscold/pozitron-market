@@ -400,8 +400,27 @@ class PozitronApp {
       });
     }
 
-
-    // WA Confirm Modal
+    // Brand Logo Reset Filters
+    const brandLogo = document.getElementById('brand-logo-link');
+    if (brandLogo) {
+      brandLogo.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Reset state
+        this.filters = { q: '', category: '', brand: '', min_price: '', max_price: '', in_stock: '', bestseller: '', voltage: '', page: 1, limit: 12 };
+        // Reset UI
+        if (document.getElementById('search-input')) document.getElementById('search-input').value = '';
+        if (document.getElementById('min-price-input')) document.getElementById('min-price-input').value = '';
+        if (document.getElementById('max-price-input')) document.getElementById('max-price-input').value = '';
+        if (document.getElementById('filter-in-stock')) document.getElementById('filter-in-stock').checked = false;
+        if (document.getElementById('filter-bestseller')) document.getElementById('filter-bestseller').checked = false;
+        document.querySelectorAll('#voltage-filter-list .v-pill').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('#category-list-container li').forEach(li => li.classList.remove('active'));
+        document.querySelectorAll('#brand-list-container li').forEach(li => li.classList.remove('active'));
+        
+        this.fetchProducts();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }    // WA Confirm Modal
     const btnWaCancel = document.getElementById('btn-wa-cancel');
     if (btnWaCancel) btnWaCancel.addEventListener('click', () => this.handleWaCancel());
 
