@@ -1735,6 +1735,9 @@ img {
   position: relative;
   box-shadow: var(--shadow-lg);
   animation: modalPop 0.2s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @keyframes modalPop {
@@ -2156,7 +2159,7 @@ img {
 
 .builder-slots-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -2194,6 +2197,7 @@ img {
   border-radius: var(--radius-md);
   padding: 20px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 24px;
 }
@@ -2287,8 +2291,5 @@ img {
   }
   .header-search-wrap {
     display: none;
-  }
-  .builder-slots-grid {
-    grid-template-columns: 1fr 1fr;
   }
 }
