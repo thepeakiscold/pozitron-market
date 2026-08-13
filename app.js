@@ -1720,15 +1720,14 @@ class PozitronApp {
       localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
 
       // 1. Send Order to Google Sheets Pipeline (Webhook)
-      const WEBHOOK_URL = localStorage.getItem('pozitron_webhook_url') || "";
-      if (WEBHOOK_URL) {
-        fetch(WEBHOOK_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.pendingWaOrder)
-        }).catch(err => console.log('Webhook error:', err));
-      }
+      const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
+      
+      fetch(WEBHOOK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.pendingWaOrder)
+      }).catch(err => console.log('Webhook error:', err));
 
       this.renderOrderReceipt(this.pendingWaOrder);
       this.pendingWaOrder = null;
