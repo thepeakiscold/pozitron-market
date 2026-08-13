@@ -12,6 +12,16 @@ class PozitronApp {
     this.categories = [];
     this.brands = [];
     
+    this.escapeHTML = (str) => {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
     // Query Filters State
     this.filters = {
       q: '',
@@ -390,11 +400,6 @@ class PozitronApp {
       });
     }
 
-    // 1-Click Test Card Autofill
-    const btnAutofillCard = document.getElementById('btn-autofill-card');
-    if (btnAutofillCard) {
-      btnAutofillCard.addEventListener('click', () => this.autofillTestCard());
-    }
 
     // WA Confirm Modal
     const btnWaCancel = document.getElementById('btn-wa-cancel');
@@ -1338,7 +1343,7 @@ class PozitronApp {
           <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.6;">
             <div><strong>Kargo Takip:</strong> ${ord.tracking_number}</div>
             <div><strong>Tarih:</strong> ${new Date(ord.created_at || Date.now()).toLocaleDateString('tr-TR')}</div>
-            <div><strong>Teslimat:</strong> ${ord.shipping_address || 'İstanbul / Turkey'}</div>
+            <div><strong>Teslimat:</strong> ${this.escapeHTML(ord.shipping_address || 'İstanbul / Turkey')}</div>
             <div><strong>Toplam:</strong> <span style="color:var(--brand-primary); font-weight:700;">${this.formatPrice(ord.total_usd, ord.total_try)}</span></div>
           </div>
         </div>
@@ -1604,28 +1609,6 @@ class PozitronApp {
     document.getElementById('checkout-modal-backdrop').style.display = 'none';
   }
 
-  autofillTestCard() {
-    document.getElementById('chk-name').value = "Pilot Test Kullanıcı";
-    document.getElementById('chk-email').value = "pilot.test@pozitronmarket.com";
-    document.getElementById('chk-phone').value = "+90 555 987 6543";
-    document.getElementById('chk-address').value = "ODTÜ Teknokent Bilişim Vadisi No: 18";
-    document.getElementById('chk-city').value = "Ankara";
-    document.getElementById('chk-country').value = "Turkey";
-
-    document.getElementById('card-holder-input').value = "PILOT TEST KULLANICI";
-    document.getElementById('card-number-input').value = "4532 0123 4567 8910";
-    document.getElementById('card-expiry-input').value = "12/28";
-    document.getElementById('card-cvv-input').value = "543";
-
-    // Update virtual card
-    document.getElementById('preview-card-holder').textContent = "PILOT TEST KULLANICI";
-    document.getElementById('preview-card-number').textContent = "4532 0123 4567 8910";
-    document.getElementById('preview-card-expiry').textContent = "12/28";
-    document.getElementById('preview-card-brand').textContent = "VISA";
-
-    this.showToast("Test kartı bilgileri dolduruldu! ⚡", 'success');
-  }
-
   handleCheckoutSubmit() {
     const name = document.getElementById('chk-name').value.trim();
     const email = document.getElementById('chk-email').value.trim();
@@ -1680,9 +1663,15 @@ class PozitronApp {
     
     // Store temporarily to use on confirm
     const orderNum = 'PZTR-WA-' + Math.floor(10000 + Math.random() * 90000);
+    const orderItemsStr = this.cart.map(i => `${i.quantity}x ${i.name_tr || i.title || 'Ürün'}`).join(', ');
+    
     this.pendingWaOrder = {
       order_number: orderNum,
+      name: name,
+      email: email,
+      phone: phone,
       total_try: totalTRY.toFixed(2),
+      items: orderItemsStr,
       created_at: new Date().toISOString(),
       shipping_address: `${address} - ${city}`,
       tracking_number: 'WA-Bekliyor',
@@ -1710,6 +1699,17 @@ class PozitronApp {
       const prevOrders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
       prevOrders.unshift(this.pendingWaOrder);
       localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
+
+      // 1. Send Order to Google Sheets Pipeline (Webhook)
+      const WEBHOOK_URL = localStorage.getItem('pozitron_webhook_url') || "";
+      if (WEBHOOK_URL) {
+        fetch(WEBHOOK_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.pendingWaOrder)
+        }).catch(err => console.log('Webhook error:', err));
+      }
 
       this.renderOrderReceipt(this.pendingWaOrder);
       this.pendingWaOrder = null;
@@ -1746,8 +1746,8 @@ class PozitronApp {
         <strong>${order.card_brand} (•••• ${order.card_last4})</strong>
       </div>
       <div class="receipt-row">
-        <span>Teslimat Adresi:</span>
-        <span>${order.shipping_address}</span>
+        <span>Kargo Adresi</span>
+        <span>${this.escapeHTML(order.shipping_address)}</span>
       </div>
       <div class="receipt-row" style="padding-top:8px; border-top:1px solid var(--border-subtle);">
         <span>Toplam Tutar:</span>

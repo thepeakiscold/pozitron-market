@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Sipariş Pipeline - Pozitron Market</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #0f172a; }
+    h1 { margin-bottom: 20px; }
+    .card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input.url-input { width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 4px; }
+    button { padding: 10px 16px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #1d4ed8; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f1f5f9; font-weight: 600; }
+    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; background: #fef08a; color: #854d0e; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>📦 Sipariş CRM Pipeline</h1>
+    <p>Google Apps Script Web App URL'nizi aşağıya yapıştırarak tabloyu anlık olarak çekebilirsiniz.</p>
+    <input type="text" id="webhook-url" class="url-input" placeholder="https://script.google.com/macros/s/..../exec">
+    <button id="btn-load">Siparişleri Yükle (Yenile)</button>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table id="orders-table">
+      <thead>
+        <tr>
+          <th>Tarih</th>
+          <th>Sipariş No</th>
+          <th>Müşteri</th>
+          <th>Telefon</th>
+          <th>Tutar</th>
+          <th>Durum</th>
+          <th>Adres</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data will be loaded here -->
+        <tr><td colspan="7" style="text-align:center; color:#64748b;">Henüz sipariş yüklenmedi veya tablo boş.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    document.getElementById('btn-load').addEventListener('click', () => {
+      const url = document.getElementById('webhook-url').value.trim();
+      if (!url) return alert('Lütfen Google Apps Script URL adresini girin!');
+
+      const tbody = document.querySelector('#orders-table tbody');
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Yükleniyor... Lütfen bekleyin.</td></tr>';
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Kayıtlı sipariş bulunamadı.</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = data.reverse().map(row => `
+            <tr>
+              <td>${row['Tarih'] || '-'}</td>
+              <td><strong>${row['Sipariş No'] || '-'}</strong></td>
+              <td>${row['Müşteri Adı'] || '-'}</td>
+              <td>${row['Telefon'] || '-'}</td>
+              <td><strong>${row['Tutar (TRY)'] || '0'} ₺</strong></td>
+              <td><span class="status-badge">${row['Durum'] || '-'}</span></td>
+              <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${row['Adres']}">${row['Adres'] || '-'}</td>
+            </tr>
+          `).join('');
+        })
+        .catch(err => {
+          console.error(err);
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Hata oluştu: ${err.message}</td></tr>`;
+        });
+    });
+  </script>
+</body>
+</html>
