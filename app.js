@@ -396,6 +396,13 @@ class PozitronApp {
       btnAutofillCard.addEventListener('click', () => this.autofillTestCard());
     }
 
+    // WA Confirm Modal
+    const btnWaCancel = document.getElementById('btn-wa-cancel');
+    if (btnWaCancel) btnWaCancel.addEventListener('click', () => this.handleWaCancel());
+
+    const btnWaConfirm = document.getElementById('btn-wa-confirm');
+    if (btnWaConfirm) btnWaConfirm.addEventListener('click', () => this.handleWaConfirm());
+
     // Credit Card Live Formatting
     const cardNumInput = document.getElementById('card-number-input');
     if (cardNumInput) {
@@ -1671,16 +1678,9 @@ class PozitronApp {
     
     window.open(waUrl, '_blank');
     
-    // Show success modal locally
-    this.closeCheckoutModal();
-    this.cart = [];
-    localStorage.removeItem('pozitron_cart');
-    this.appliedCoupon = null;
-    this.updateCartUI();
-    
-    // Create a mock order to show in the success modal
+    // Store temporarily to use on confirm
     const orderNum = 'PZTR-WA-' + Math.floor(10000 + Math.random() * 90000);
-    const order = {
+    this.pendingWaOrder = {
       order_number: orderNum,
       total_try: totalTRY.toFixed(2),
       created_at: new Date().toISOString(),
@@ -1689,12 +1689,37 @@ class PozitronApp {
       transaction_id: 'WhatsApp Siparişi',
       card_brand: 'Havale / EFT'
     };
-    
-    const prevOrders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
-    prevOrders.unshift(order);
-    localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
 
-    this.renderOrderReceipt(order);
+    // Close checkout and show WA confirm modal
+    this.closeCheckoutModal();
+    const waModal = document.getElementById('wa-confirm-modal-backdrop');
+    if (waModal) waModal.style.display = 'flex';
+  }
+
+  handleWaCancel() {
+    this.pendingWaOrder = null;
+    const waModal = document.getElementById('wa-confirm-modal-backdrop');
+    if (waModal) waModal.style.display = 'none';
+  }
+
+  handleWaConfirm() {
+    const waModal = document.getElementById('wa-confirm-modal-backdrop');
+    if (waModal) waModal.style.display = 'none';
+
+    if (this.pendingWaOrder) {
+      const prevOrders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
+      prevOrders.unshift(this.pendingWaOrder);
+      localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
+
+      this.renderOrderReceipt(this.pendingWaOrder);
+      this.pendingWaOrder = null;
+    }
+
+    this.cart = [];
+    localStorage.removeItem('pozitron_cart');
+    this.appliedCoupon = null;
+    this.updateCartUI();
+    
     const successModal = document.getElementById('success-modal-backdrop');
     if (successModal) successModal.style.display = 'flex';
   }

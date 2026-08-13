@@ -795,13 +795,28 @@
   </div>
 
 
+  <!-- WhatsApp Confirmation Modal -->
+  <div class="modal-backdrop" id="wa-confirm-modal-backdrop" style="display:none;">
+    <div class="modal-card modal-otp" role="dialog" aria-modal="true">
+      <div class="otp-header">
+        <div class="otp-shield-icon" style="background:#dcfce7; color:#16a34a;">💬</div>
+        <h2 class="otp-title">WhatsApp'a Yönlendirildiniz</h2>
+        <p class="otp-desc">Sipariş detaylarınız WhatsApp üzerinden hazırlanıp gönderilmeye hazır. Lütfen mesajı gönderdikten sonra siparişinizi onaylayın.</p>
+      </div>
+      <div class="otp-actions" style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn-outline" id="btn-wa-cancel" style="flex:1;">İptal</button>
+        <button type="button" class="btn-primary" id="btn-wa-confirm" style="flex:1; background:#16a34a; border-color:#16a34a;">Evet, Gönderdim</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Order Success Invoice Receipt Modal -->
   <div class="modal-backdrop" id="success-modal-backdrop" style="display:none;">
     <div class="modal-card modal-success" role="dialog" aria-modal="true">
       <div class="success-header">
         <div class="success-check-icon">✓</div>
         <h2 class="success-title" data-i18n="order_success_title">Siparişiniz Başarıyla Alındı!</h2>
-        <p class="success-desc" data-i18n="order_success_desc">Ödemeniz 3D Secure ile güvenle tamamlandı. Orijinal drone parçalarınız kargo için hazırlanıyor.</p>
+        <p class="success-desc">Siparişiniz sistemimize kaydedildi. WhatsApp üzerinden ödeme dekontunuzu ilettiğinizde kargo işlemleriniz başlatılacaktır.</p>
       </div>
       <div class="order-receipt-card" id="order-receipt-card">
         <!-- Populated with order invoice info -->
