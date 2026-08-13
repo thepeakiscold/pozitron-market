@@ -1172,7 +1172,7 @@ class PozitronApp {
       if (isFreeShipping) {
         progressText.innerHTML = window.i18n.t('free_shipping_earned');
       } else {
-        const remaining = this.formatPrice((freeShippingTargetTRY - subtotalTRY) / 35.5, freeShippingTargetTRY - subtotalTRY);
+        const remaining = this.formatPrice((freeShippingTargetTRY - subtotalTRY) / 47.0, freeShippingTargetTRY - subtotalTRY);
         progressText.innerHTML = `${remaining} daha ekleyin, <strong>Ücretsiz Kargo</strong> kazanın!`;
       }
     }

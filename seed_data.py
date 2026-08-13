@@ -484,15 +484,17 @@ def seed_database():
             # Pricing with minor realistic variations
             price_variance = round(random.uniform(0.90, 1.15), 2)
             price_usd = round(base_usd * price_variance, 2)
-            price_try = round(price_usd * 35.5, 2)
-
-            discount_pct = random.choice([0, 0, 0, 5, 10, 15, 20, 25]) if random.random() > 0.4 else 0
-            if discount_pct > 0:
-                original_price_usd = round(price_usd * (1 + discount_pct / 100), 2)
-                original_price_try = round(original_price_usd * 35.5, 2)
+            price_try = round(price_usd * 47.0, 2)
+            original_price_usd = None
+            original_price_try = None
+            if random.random() > 0.7:  # 30% chance of being on sale
+                original_price_usd = round(price_usd * random.uniform(1.1, 1.5), 2)
+                original_price_try = round(original_price_usd * 47.0, 2)
             else:
                 original_price_usd = None
                 original_price_try = None
+
+            discount_pct = round(((original_price_usd - price_usd) / original_price_usd) * 100) if original_price_usd else 0
 
             rating = round(random.uniform(4.4, 5.0), 1)
             review_count = random.randint(5, 180)
