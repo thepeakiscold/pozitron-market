@@ -40,7 +40,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Minimalist CSS Design System -->
-  <link rel="stylesheet" href="./styles.css?v=20260813_wizard_fix_v14">
+  <link rel="stylesheet" href="./styles.css?v=20260813_auth_v15">
+
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <!-- JSON-LD Structured Data for Google Rich Snippets & Sitelinks SearchBox -->
   <script type="application/ld+json">
@@ -617,16 +620,23 @@
       </div>
 
       <!-- 1-Click Google Sign-In -->
-      <div class="google-auth-section">
-        <button type="button" class="btn-google-login" id="google-login-btn" onclick="window.app && window.app.openGoogleModal()">
-          <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
-            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-          </svg>
-          <span data-i18n="auth_google_btn">Google / Gmail ile Hızlı Giriş Yap</span>
-        </button>
+      <div class="google-auth-section" style="display:flex; flex-direction:column; align-items:center;">
+        <!-- The Google GIS API will render the button inside this div -->
+        <div id="g_id_onload"
+             data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
 
         <div class="auth-divider">
           <span data-i18n="or_manual">veya E-Posta ile</span>
@@ -677,54 +687,6 @@
         <button type="submit" class="btn-primary btn-block" data-i18n="btn_reg_submit">Hesap Oluştur</button>
       </form>
 
-    </div>
-  </div>
-
-  <!-- Google / Gmail OAuth Account Picker Modal -->
-  <div class="modal-backdrop" id="google-modal-backdrop" style="display:none;">
-    <div class="modal-card modal-google-auth" role="dialog" aria-modal="true" style="max-width:440px; background:#ffffff; border-radius:16px; padding:28px 24px; box-shadow:0 20px 40px rgba(0,0,0,0.12); border:1px solid var(--border-subtle);">
-      <button type="button" class="modal-close-btn" id="close-google-modal" onclick="window.app && window.app.closeGoogleModal()">&times;</button>
-      
-      <div style="text-align:center; margin-bottom:20px;">
-        <svg width="40" height="40" viewBox="0 0 24 24" style="margin-bottom:10px;">
-          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24z"/>
-          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
-        </svg>
-        <h3 style="font-size:1.25rem; font-weight:700; color:#1f2937; margin:0 0 6px 0;">Google ile Oturum Açın</h3>
-        <p style="font-size:0.85rem; color:#6b7280; margin:0;">Pozitron Market uygulamasına devam etmek için hesabınızı seçin.</p>
-      </div>
-
-      <!-- Quick Accounts List -->
-      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
-        <button type="button" class="google-account-btn" data-email="furkaniusprimes@gmail.com" data-name="Eyüp Furkan PEKÖZ" onclick="window.app && window.app.handleSelectGoogleAccount(event)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#f9fafb; cursor:pointer; text-align:left; transition:all 0.2s;">
-          <div style="width:36px; height:36px; border-radius:50%; background:#2563eb; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem;">E</div>
-          <div style="flex:1;">
-            <div style="font-size:0.88rem; font-weight:600; color:#111827;">Eyüp Furkan PEKÖZ</div>
-            <div style="font-size:0.78rem; color:#6b7280;">furkaniusprimes@gmail.com</div>
-          </div>
-          <span style="font-size:0.75rem; background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:6px; font-weight:600;">Aktif</span>
-        </button>
-
-        <button type="button" class="google-account-btn" data-email="pilot.pozitron@gmail.com" data-name="Pozitron Pilot" onclick="window.app && window.app.handleSelectGoogleAccount(event)" style="display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid #e5e7eb; border-radius:10px; background:#f9fafb; cursor:pointer; text-align:left; transition:all 0.2s;">
-          <div style="width:36px; height:36px; border-radius:50%; background:#059669; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.95rem;">P</div>
-          <div style="flex:1;">
-            <div style="font-size:0.88rem; font-weight:600; color:#111827;">Pozitron FPV Pilot</div>
-            <div style="font-size:0.78rem; color:#6b7280;">pilot.pozitron@gmail.com</div>
-          </div>
-          <span style="font-size:0.75rem; background:#f3f4f6; color:#4b5563; padding:2px 8px; border-radius:6px;">Demo</span>
-        </button>
-      </div>
-
-      <!-- Custom Gmail Input Form -->
-      <div style="border-top:1px solid #e5e7eb; padding-top:14px;">
-        <label for="custom-gmail-input" style="font-size:0.82rem; font-weight:600; color:#374151; display:block; margin-bottom:6px;">Farklı bir Gmail ile Bağlan:</label>
-        <div style="display:flex; gap:8px;">
-          <input type="email" id="custom-gmail-input" class="form-input" placeholder="ornek@gmail.com" style="flex:1; font-size:0.88rem; padding:8px 12px;">
-          <button type="button" id="btn-custom-gmail-submit" class="btn-primary" onclick="window.app && window.app.handleCustomGmailSubmit()" style="padding:8px 16px; font-size:0.85rem; white-space:nowrap;">Bağlan</button>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -802,44 +764,14 @@
                 ⚡ 1-Tıkla Test Kartını Doldur
               </button>
             </div>
-
-            <!-- Virtual Credit Card Preview -->
-            <div class="credit-card-preview" id="credit-card-preview">
-              <div class="card-chip"></div>
-              <div class="card-brand-logo" id="preview-card-brand">VISA</div>
-              <div class="card-number-display" id="preview-card-number">•••• •••• •••• ••••</div>
-              <div class="card-bottom-row">
-                <div>
-                  <div class="card-holder-label">CARD HOLDER</div>
-                  <div class="card-holder-name" id="preview-card-holder">PILOT AD SOYAD</div>
-                </div>
-                <div>
-                  <div class="card-holder-label">EXPIRES</div>
-                  <div class="card-holder-name" id="preview-card-expiry">12/28</div>
-                </div>
+            
+            <!-- WhatsApp Info Notice -->
+            <div style="background:#dcfce7; border:1px solid #22c55e; border-radius:10px; padding:16px; margin-bottom:20px;">
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                <h4 style="margin:0; font-size:1.05rem; color:#14532d; font-weight:700;">WhatsApp ile Sipariş</h4>
               </div>
-            </div>
-
-            <!-- Card Inputs -->
-            <div class="card-inputs-wrap">
-              <div class="form-group">
-                <label for="card-holder-input" data-i18n="card_holder_label">Kart Üzerindeki İsim</label>
-                <input type="text" id="card-holder-input" class="form-input" placeholder="AHMET YILMAZ" required uppercase>
-              </div>
-              <div class="form-group">
-                <label for="card-number-input" data-i18n="card_number_label">Kart Numarası</label>
-                <input type="text" id="card-number-input" class="form-input" placeholder="4242 4242 4242 4242" maxlength="19" required>
-              </div>
-              <div class="form-row">
-                <div class="form-group col-half">
-                  <label for="card-expiry-input" data-i18n="card_expiry_label">Son Kullanma (AA/YY)</label>
-                  <input type="text" id="card-expiry-input" class="form-input" placeholder="12/28" maxlength="5" required>
-                </div>
-                <div class="form-group col-half">
-                  <label for="card-cvv-input" data-i18n="card_cvv_label">CVV Güvenlik Kodu</label>
-                  <input type="text" id="card-cvv-input" class="form-input" placeholder="123" maxlength="4" required>
-                </div>
-              </div>
+              <p style="margin:0; font-size:0.85rem; color:#166534;">Sipariş bilgileriniz otomatik olarak WhatsApp destek hattımıza iletilecektir. Ödemeyi Havale/EFT ile tamamlayabilirsiniz.</p>
             </div>
 
             <!-- Checkout Order Summary & Pay Submit -->
@@ -849,8 +781,9 @@
                 <strong id="checkout-total-val" class="checkout-total-text">0,00 ₺</strong>
               </div>
               <div class="form-error-msg" id="checkout-error-msg"></div>
-              <button type="button" class="btn-primary btn-block btn-pay-now" id="submit-order-btn">
-                <span data-i18n="pay_securely_btn">🔒 Tutarını Güvenle Öde</span>
+              <button type="button" class="btn-primary btn-block btn-pay-now" id="submit-order-btn" style="background:#25D366; color:#fff; border:none; display:flex; justify-content:center; align-items:center; gap:10px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                <span>WhatsApp Üzerinden Tamamla</span>
               </button>
             </div>
 
@@ -861,23 +794,6 @@
     </div>
   </div>
 
-  <!-- 3D Secure OTP Code Simulation Modal -->
-  <div class="modal-backdrop" id="otp-modal-backdrop" style="display:none;">
-    <div class="modal-card modal-otp" role="dialog" aria-modal="true">
-      <div class="otp-header">
-        <div class="otp-shield-icon">🛡️</div>
-        <h2 class="otp-title">BKM 3D Secure Doğrulama</h2>
-        <p class="otp-desc">Telefonunuza gönderilen 6 haneli güvenlik doğrulama kodunu giriniz. (Demo Kod: <strong>554433</strong>)</p>
-      </div>
-      <div class="otp-input-wrap">
-        <input type="text" id="otp-code-input" class="otp-input" placeholder="554433" maxlength="6" autofocus>
-      </div>
-      <div class="form-error-msg" id="otp-error-msg"></div>
-      <div class="otp-actions">
-        <button type="button" class="btn-primary btn-block" id="confirm-otp-btn">Onayla ve Ödemeyi Tamamla</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Order Success Invoice Receipt Modal -->
   <div class="modal-backdrop" id="success-modal-backdrop" style="display:none;">
@@ -900,8 +816,8 @@
   <div class="toast-container" id="toast-container" aria-live="assertive"></div>
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260813_wizard_fix_v14"></script>
-  <script src="./i18n.js?v=20260813_wizard_fix_v14"></script>
-  <script src="./app.js?v=20260813_wizard_fix_v14"></script>
+  <script src="./data/pozitron_data.js?v=20260813_auth_v15"></script>
+  <script src="./i18n.js?v=20260813_auth_v15"></script>
+  <script src="./app.js?v=20260813_auth_v15"></script>
 </body>
 </html>

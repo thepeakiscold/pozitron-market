@@ -349,22 +349,7 @@ class PozitronApp {
       });
     }
 
-    // Google Sign In Trigger
-    const googleLoginBtn = document.getElementById('google-login-btn');
-    if (googleLoginBtn) {
-      googleLoginBtn.addEventListener('click', () => this.openGoogleModal());
-    }
-
-    // Google Pre-set Account Buttons
-    document.querySelectorAll('.google-account-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => this.handleSelectGoogleAccount(e));
-    });
-
-    // Custom Gmail Submit
-    const btnCustomGmail = document.getElementById('btn-custom-gmail-submit');
-    if (btnCustomGmail) {
-      btnCustomGmail.addEventListener('click', () => this.handleCustomGmailSubmit());
-    }
+    // Google Auth handled by GIS (g_id_onload) and handleCredentialResponse
 
     // My Orders in Dropdown
     const myOrdersBtn = document.getElementById('my-orders-btn');
@@ -1318,16 +1303,6 @@ class PozitronApp {
     if (backdrop) backdrop.style.display = 'none';
   }
 
-  openGoogleModal() {
-    this.closeAuthModal();
-    const gModal = document.getElementById('google-modal-backdrop');
-    if (gModal) gModal.style.display = 'flex';
-  }
-
-  closeGoogleModal() {
-    const gModal = document.getElementById('google-modal-backdrop');
-    if (gModal) gModal.style.display = 'none';
-  }
 
   openOrdersModal() {
     const drop = document.getElementById('user-dropdown-menu');
@@ -1437,81 +1412,6 @@ class PozitronApp {
     }
   }
 
-  handleSelectGoogleAccount(e) {
-    let email = '';
-    let fullName = '';
-
-    if (e && e.currentTarget && typeof e.currentTarget.getAttribute === 'function') {
-      email = e.currentTarget.getAttribute('data-email');
-      fullName = e.currentTarget.getAttribute('data-name');
-    }
-    if (!email && e && e.target) {
-      const btn = e.target.closest ? e.target.closest('.google-account-btn') : null;
-      if (btn) {
-        email = btn.getAttribute('data-email');
-        fullName = btn.getAttribute('data-name');
-      }
-    }
-    if (!email) {
-      email = 'furkaniusprimes@gmail.com';
-      fullName = 'Eyüp Furkan PEKÖZ';
-    }
-    
-    // Register/update user in Database
-    const usersDb = this.getAllUsersFromDb();
-    let existing = usersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!existing) {
-      existing = {
-        id: "usr_google_" + Date.now().toString(36),
-        email: email,
-        password: "google_oauth_verified",
-        full_name: fullName,
-        avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
-        provider: "google",
-        created_at: new Date().toISOString()
-      };
-      usersDb.push(existing);
-      localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
-    }
-
-    this.loginWithUser(existing);
-    this.closeGoogleModal();
-    this.showToast(`Hoş geldiniz, ${fullName}! (Google)`, 'success');
-  }
-
-  handleCustomGmailSubmit() {
-    const input = document.getElementById('custom-gmail-input');
-    const email = input ? input.value.trim().toLowerCase() : '';
-
-    if (!email || !this.isValidEmail(email) || !email.includes('@')) {
-      this.showToast('Lütfen geçerli bir Gmail formatı giriniz (örn: isim@gmail.com).', 'error');
-      return;
-    }
-
-    const username = email.split('@')[0];
-    const formattedName = username.charAt(0).toUpperCase() + username.slice(1);
-
-    const usersDb = this.getAllUsersFromDb();
-    let existing = usersDb.find(u => u.email.toLowerCase() === email);
-    if (!existing) {
-      existing = {
-        id: "usr_gmail_" + Date.now().toString(36),
-        email: email,
-        password: "gmail_direct_verified",
-        full_name: formattedName,
-        avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
-        provider: "gmail",
-        created_at: new Date().toISOString()
-      };
-      usersDb.push(existing);
-      localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
-    }
-
-    this.loginWithUser(existing);
-    if (input) input.value = '';
-    this.closeGoogleModal();
-    this.showToast(`Hoş geldiniz, ${formattedName}! (Gmail)`, 'success');
-  }
 
   loginWithUser(userObj) {
     this.user = userObj;
@@ -1725,118 +1625,75 @@ class PozitronApp {
     const phone = document.getElementById('chk-phone').value.trim();
     const address = document.getElementById('chk-address').value.trim();
     const city = document.getElementById('chk-city').value.trim();
-    const country = document.getElementById('chk-country').value.trim();
-
-    const cardHolder = document.getElementById('card-holder-input').value.trim();
-    const cardNumber = document.getElementById('card-number-input').value.replace(/\s/g, '');
-    const cardExpiry = document.getElementById('card-expiry-input').value.trim();
-    const cardCvv = document.getElementById('card-cvv-input').value.trim();
 
     const err = document.getElementById('checkout-error-msg');
 
-    if (!name || !email || !phone || !address || !city) {
-      err.textContent = "Lütfen tüm teslimat bilgilerini eksiksiz doldurun.";
-      err.style.display = 'block';
+    if (!name || !phone || !address || !city) {
+      if (err) {
+        err.textContent = "Lütfen tüm teslimat bilgilerini eksiksiz doldurun.";
+        err.style.display = 'block';
+      }
       return;
     }
 
-    if (!cardNumber || cardNumber.length < 13 || !cardExpiry || !cardCvv) {
-      err.textContent = "Lütfen kredi kartı bilgilerini doğru formatta girin.";
-      err.style.display = 'block';
-      return;
+    if (err) err.style.display = 'none';
+
+    // WhatsApp Message Generation
+    let waMessage = `📦 *YENİ SİPARİŞ (POZITRON MARKET)* 📦\n\n`;
+    waMessage += `👤 *Müşteri:* ${name}\n`;
+    waMessage += `📞 *Telefon:* ${phone}\n`;
+    if (email) waMessage += `✉️ *E-Posta:* ${email}\n`;
+    waMessage += `🏠 *Adres:* ${address} - ${city}\n\n`;
+    
+    waMessage += `🛍️ *Sepet İçeriği:*\n`;
+    let totalTRY = 0;
+    this.cart.forEach((item, index) => {
+      waMessage += `${index + 1}. ${item.title} (${item.quantity} Adet) - ${item.price_try * item.quantity} ₺\n`;
+      totalTRY += item.price_try * item.quantity;
+    });
+
+    if (this.appliedCoupon) {
+      waMessage += `\n🎟️ *Kupon:* ${this.appliedCoupon.code} (%${this.appliedCoupon.discount_percentage} İndirim)\n`;
+      const discount = (totalTRY * this.appliedCoupon.discount_percentage) / 100;
+      totalTRY -= discount;
     }
 
-    err.style.display = 'none';
+    waMessage += `\n💳 *Ödenecek Toplam Tutar:* *${totalTRY.toFixed(2)} ₺*\n\n`;
+    waMessage += `Lütfen ödemeyi Havale/EFT ile gerçekleştirmek için IBAN bilgilerini iletir misiniz?`;
 
-    // Store payload and open OTP simulation modal
-    this.pendingOrderData = {
-      items: this.cart,
-      customer_name: name,
-      customer_email: email,
-      customer_phone: phone,
-      shipping_address: address,
-      city: city,
-      country: country,
-      currency: this.currency,
-      coupon_code: this.appliedCoupon ? this.appliedCoupon.code : '',
-      card_number: cardNumber,
-      card_holder: cardHolder,
-      card_expiry: cardExpiry,
-      card_cvv: cardCvv,
-      user_id: this.user ? this.user.id : null
-    };
-
-    // Open 3D Secure OTP Modal
+    // Encode message and open WhatsApp
+    const encodedMessage = encodeURIComponent(waMessage);
+    const waNumber = "905000000000"; // IMPORTANT: User must set their own WhatsApp number here
+    const waUrl = `https://wa.me/${waNumber}?text=${encodedMessage}`;
+    
+    window.open(waUrl, '_blank');
+    
+    // Show success modal locally
     this.closeCheckoutModal();
-    document.getElementById('otp-modal-backdrop').style.display = 'flex';
-  }
+    this.cart = [];
+    localStorage.removeItem('pozitron_cart');
+    this.appliedCoupon = null;
+    this.updateCartUI();
+    
+    // Create a mock order to show in the success modal
+    const orderNum = 'PZTR-WA-' + Math.floor(10000 + Math.random() * 90000);
+    const order = {
+      order_number: orderNum,
+      total_try: totalTRY.toFixed(2),
+      created_at: new Date().toISOString(),
+      shipping_address: `${address} - ${city}`,
+      tracking_number: 'WA-Bekliyor',
+      transaction_id: 'WhatsApp Siparişi',
+      card_brand: 'Havale / EFT'
+    };
+    
+    const prevOrders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
+    prevOrders.unshift(order);
+    localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
 
-  async handleOtpConfirm() {
-    const otpInput = document.getElementById('otp-code-input').value.trim();
-    const otpErr = document.getElementById('otp-error-msg');
-
-    if (otpInput !== '554433' && otpInput.length !== 6) {
-      otpErr.textContent = "Geçersiz SMS kodu. Lütfen 554433 kodunu girin.";
-      otpErr.style.display = 'block';
-      return;
-    }
-
-    otpErr.style.display = 'none';
-
-    let order = null;
-    try {
-      const res = await fetch(`${this.apiBase}/payment/process`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.pendingOrderData)
-      });
-      if (res.ok) order = await res.json();
-    } catch (e) {
-      // static fallback
-    }
-
-    if (!order || !order.success) {
-      const orderNum = 'PZTR-2026-' + Math.floor(10000 + Math.random() * 90000);
-      let subUSD = 0, subTRY = 0;
-      (this.pendingOrderData.items || []).forEach(i => {
-        subUSD += i.price_usd * i.quantity;
-        subTRY += i.price_try * i.quantity;
-      });
-      order = {
-        success: true,
-        order_number: orderNum,
-        tracking_number: 'TR-YURTICI-' + Math.floor(10000000 + Math.random() * 90000000),
-        transaction_id: 'TXN_' + Math.random().toString(36).substr(2, 10).toUpperCase(),
-        card_brand: 'Mastercard / Visa',
-        card_last4: this.pendingOrderData.card_number ? this.pendingOrderData.card_number.slice(-4) : '4242',
-        shipping_address: `${this.pendingOrderData.shipping_address}, ${this.pendingOrderData.city} / ${this.pendingOrderData.country}`,
-        total_usd: subUSD,
-        total_try: subTRY,
-        status: 'confirmed',
-        created_at: new Date().toISOString()
-      };
-      const prevOrders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
-      prevOrders.unshift(order);
-      localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
-    }
-
-    if (order && order.success) {
-      // Clear cart
-      this.cart = [];
-      this.appliedCoupon = null;
-      this.saveCart();
-      this.updateCartUI();
-
-      // Close OTP modal
-      document.getElementById('otp-modal-backdrop').style.display = 'none';
-
-      // Render Invoice Receipt Modal
-      this.renderOrderReceipt(order);
-      document.getElementById('success-modal-backdrop').style.display = 'flex';
-    } else {
-      otpErr.textContent = (order && order.error) || "Ödeme onaylanamadı.";
-      otpErr.style.display = 'block';
-    }
+    this.renderOrderReceipt(order);
+    const successModal = document.getElementById('success-modal-backdrop');
+    if (successModal) successModal.style.display = 'flex';
   }
 
   renderOrderReceipt(order) {
@@ -2141,3 +1998,50 @@ class PozitronApp {
 document.addEventListener('DOMContentLoaded', () => {
   window.app = new PozitronApp();
 });
+
+// Google Identity Services JWT Parser & Auth Handler
+function parseJwt(token) {
+  try {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch(e) {
+    return null;
+  }
+}
+
+window.handleCredentialResponse = function(response) {
+  if (!window.app) return;
+  const payload = parseJwt(response.credential);
+  if (!payload) return;
+  
+  // Find or Create user in local DB
+  const usersDb = window.app.getAllUsersFromDb();
+  let existing = usersDb.find(u => u.email.toLowerCase() === payload.email.toLowerCase());
+  
+  if (!existing) {
+    existing = {
+      id: "usr_google_" + Date.now().toString(36),
+      email: payload.email,
+      password: "google_oauth_verified",
+      full_name: payload.name || payload.email.split('@')[0],
+      avatar_url: payload.picture || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+      provider: "google",
+      created_at: new Date().toISOString()
+    };
+    usersDb.push(existing);
+    localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
+  } else {
+    // Update avatar if they already exist but have a new photo
+    existing.avatar_url = payload.picture || existing.avatar_url;
+    existing.full_name = payload.name || existing.full_name;
+    localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
+  }
+  
+  window.app.loginWithUser(existing);
+  window.app.closeAuthModal();
+  window.app.showToast(`Hoş geldiniz, ${existing.full_name}!`, 'success');
+};
