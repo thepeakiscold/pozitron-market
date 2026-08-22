@@ -1255,6 +1255,32 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"success": True, "deleted_id": prod_id})
             return
 
+        # Admin: Delete User
+        if path == '/api/admin/users/delete':
+            user_id = data.get('id')
+            email = (data.get('email') or '').lower().strip()
+
+            if not user_id and not email:
+                conn.close()
+                self.send_json(400, {"error": "User ID or Email is required"})
+                return
+
+            if email == 'admin' or email == 'admin@pozitronmarket.com' or user_id == 'usr_admin_master':
+                conn.close()
+                self.send_json(403, {"error": "Ana yönetici hesabı silinemez."})
+                return
+
+            if user_id:
+                cursor.execute("DELETE FROM users WHERE id = ?", (user_id,))
+            elif email:
+                cursor.execute("DELETE FROM users WHERE LOWER(email) = ?", (email,))
+
+            conn.commit()
+            conn.close()
+
+            self.send_json(200, {"success": True, "message": "Kullanıcı başarıyla silindi.", "deleted_id": user_id})
+            return
+
         # 12. Admin: Currency Sync across catalog
         if path == '/api/admin/currency-sync':
             rate = float(data.get('usd_rate', 47.0))

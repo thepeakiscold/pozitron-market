@@ -539,7 +539,7 @@
           <div class="admin-filters-group">
             <select class="admin-select" id="users-role-filter" onchange="filterAdminUsers()">
               <option value="all">Tüm Roller</option>
-              <option value="customer">Müşteri / Pilot</option>
+              <option value="customer">Müşteri</option>
               <option value="admin">Yönetici (Admin)</option>
             </select>
 
@@ -1983,16 +1983,21 @@
               ${isAdmin ? `
                 <span class="badge-stock" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">🛡️ YÖNETİCİ</span>
               ` : `
-                <span class="badge-stock badge-stock-in" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">🚀 PİLOT / MÜŞTERİ</span>
+                <span class="badge-stock badge-stock-in" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">Müşteri</span>
               `}
             </td>
             <td>
               <span style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">${dateFormatted}</span>
             </td>
             <td>
-              <div style="display:flex; gap:6px;">
+              <div style="display:flex; gap:6px; align-items:center;">
                 <a href="${mailLink}" class="admin-btn-action" title="E-Posta Gönder" style="text-decoration:none; padding:5px 8px;">✉️</a>
                 ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener" class="admin-btn-action" title="WhatsApp Mesajı" style="text-decoration:none; padding:5px 8px; color:#16a34a;">💬</a>` : ''}
+                ${!isAdmin ? `
+                  <button type="button" class="admin-btn-action" title="Kullanıcıyı Sil" style="color:#ef4444; border-color:#fecaca; background:#fef2f2; padding:5px 8px; cursor:pointer;" onclick="deleteAdminUser('${u.id}', '${u.email}')">
+                    🗑️
+                  </button>
+                ` : ''}
               </div>
             </td>
           </tr>
@@ -2059,6 +2064,54 @@
       a.click();
       document.body.removeChild(a);
       showToast('Kullanıcı listesi CSV olarak indirildi!', 'success');
+    }
+
+    async function deleteAdminUser(userId, userEmail) {
+      if (!confirm(`"${userEmail}" kullanıcısını silmek istediğinize emin misiniz?`)) {
+        return;
+      }
+
+      // 1. Try Backend API
+      try {
+        const res = await fetch('/api/admin/users/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: userId, email: userEmail })
+        });
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await res.json();
+          if (!res.ok) {
+            showToast(data.error || 'Kullanıcı silinemedi.', 'error');
+            return;
+          }
+        }
+      } catch(e) {}
+
+      // 2. Client-side update
+      _cachedUsers = _cachedUsers.filter(u => u.id !== userId && (u.email || '').toLowerCase() !== (userEmail || '').toLowerCase());
+
+      try {
+        let localUsers = JSON.parse(localStorage.getItem('pozitron_users_db') || '[]');
+        localUsers = localUsers.filter(u => u.id !== userId && (u.email || '').toLowerCase() !== (userEmail || '').toLowerCase());
+        localStorage.setItem('pozitron_users_db', JSON.stringify(localUsers));
+      } catch(e) {}
+
+      // Update Mini Stats & UI
+      const totalEl = document.getElementById('users-stat-total');
+      const googleEl = document.getElementById('users-stat-google');
+      const manualEl = document.getElementById('users-stat-manual');
+      const adminsEl = document.getElementById('users-stat-admins');
+      const kpiUsers = document.getElementById('kpi-total-users');
+
+      if (totalEl) totalEl.textContent = _cachedUsers.length;
+      if (googleEl) googleEl.textContent = _cachedUsers.filter(u => u.provider === 'google' || u.provider === 'gmail').length;
+      if (manualEl) manualEl.textContent = _cachedUsers.filter(u => u.provider !== 'google' && u.provider !== 'gmail').length;
+      if (adminsEl) adminsEl.textContent = _cachedUsers.filter(u => u.role === 'admin' || u.role === 'superadmin').length;
+      if (kpiUsers) kpiUsers.textContent = _cachedUsers.length;
+
+      renderAdminUsersTable(_cachedUsers);
+      showToast(`"${userEmail}" kullanıcısı başarıyla silindi.`, 'success');
     }
   </script>
 </body>
