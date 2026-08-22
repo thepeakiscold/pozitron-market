@@ -45,6 +45,14 @@ def export_static_data():
     cursor.execute("SELECT * FROM reviews ORDER BY created_at DESC")
     reviews = [dict(row) for row in cursor.fetchall()]
 
+    # 4. Users (Sanitized - no password hashes)
+    cursor.execute('''
+        SELECT id, email, full_name, avatar_url, provider, role, phone, address, city, country, created_at 
+        FROM users 
+        ORDER BY created_at DESC
+    ''')
+    users = [dict(row) for row in cursor.fetchall()]
+
     conn.close()
 
     # Save to data/products.json
@@ -55,12 +63,17 @@ def export_static_data():
     with open(os.path.join(OUTPUT_DIR, "categories.json"), "w", encoding="utf-8") as f:
         json.dump(categories, f, ensure_ascii=False, indent=2)
 
+    # Save to data/users.json
+    with open(os.path.join(OUTPUT_DIR, "users.json"), "w", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
     # Save full standalone bundle to data/pozitron_data.js
     full_data = {
         "categories": categories,
         "brands": brands,
         "products": products,
-        "reviews": reviews
+        "reviews": reviews,
+        "users": users
     }
 
     with open(os.path.join(OUTPUT_DIR, "pozitron_data.js"), "w", encoding="utf-8") as f:
@@ -68,7 +81,7 @@ def export_static_data():
         f.write(f"window.__POZITRON_DATA__ = {json.dumps(full_data, ensure_ascii=False)};\n")
         f.write(f"window.pozitronData = window.__POZITRON_DATA__;\n")
 
-    print(f"Exported {len(products)} products, {len(categories)} categories, and {len(brands)} brands to {OUTPUT_DIR}")
+    print(f"Exported {len(products)} products, {len(categories)} categories, {len(users)} users, and {len(brands)} brands to {OUTPUT_DIR}")
 
 if __name__ == "__main__":
     export_static_data()

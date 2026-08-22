@@ -376,6 +376,18 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
+        # Admin: Registered Users List
+        if path == '/api/admin/users':
+            cursor.execute('''
+                SELECT id, email, full_name, avatar_url, provider, role, phone, address, city, country, created_at 
+                FROM users 
+                ORDER BY created_at DESC
+            ''')
+            user_rows = [dict(r) for r in cursor.fetchall()]
+            conn.close()
+            self.send_json(200, {"users": user_rows, "total": len(user_rows)})
+            return
+
         # 1. Categories
         if path == '/api/categories':
             cursor.execute("SELECT * FROM categories ORDER BY item_count DESC")
