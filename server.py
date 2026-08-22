@@ -7,12 +7,66 @@ import urllib.parse
 import uuid
 import re
 import random
+import time
+import math
+import threading
 from datetime import datetime
 from database import get_db, hash_password
 from export_data import export_static_data
 
 PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Security Lockout Configuration: 3 failed attempts => 30-minute cooldown
+LOGIN_ATTEMPTS_LOCK = threading.Lock()
+LOGIN_ATTEMPTS = {}  # key: identifier -> {"count": int, "locked_until": float, "last_attempt": float}
+MAX_FAILED_ATTEMPTS = 3
+LOCKOUT_DURATION_SECONDS = 30 * 60  # 30 minutes
+
+def check_login_rate_limit(identifier: str):
+    """Returns (is_locked, remaining_seconds, remaining_minutes, attempts_left)"""
+    with LOGIN_ATTEMPTS_LOCK:
+        now = time.time()
+        record = LOGIN_ATTEMPTS.get(identifier)
+        if not record:
+            return False, 0, 0, MAX_FAILED_ATTEMPTS
+        
+        # Check if currently locked
+        if record.get('locked_until', 0) > now:
+            rem_sec = int(record['locked_until'] - now)
+            rem_min = max(1, int(math.ceil(rem_sec / 60)))
+            return True, rem_sec, rem_min, 0
+        
+        # If lock has expired, reset record
+        if record.get('locked_until', 0) > 0 and record['locked_until'] <= now:
+            del LOGIN_ATTEMPTS[identifier]
+            return False, 0, 0, MAX_FAILED_ATTEMPTS
+            
+        count = record.get('count', 0)
+        attempts_left = max(0, MAX_FAILED_ATTEMPTS - count)
+        return False, 0, 0, attempts_left
+
+def record_failed_login(identifier: str):
+    """Records a failure. Returns (is_now_locked, remaining_seconds, remaining_minutes, attempts_left)"""
+    with LOGIN_ATTEMPTS_LOCK:
+        now = time.time()
+        record = LOGIN_ATTEMPTS.get(identifier, {"count": 0, "locked_until": 0, "last_attempt": now})
+        record['count'] += 1
+        record['last_attempt'] = now
+        
+        if record['count'] >= MAX_FAILED_ATTEMPTS:
+            record['locked_until'] = now + LOCKOUT_DURATION_SECONDS
+            LOGIN_ATTEMPTS[identifier] = record
+            return True, LOCKOUT_DURATION_SECONDS, 30, 0
+        else:
+            LOGIN_ATTEMPTS[identifier] = record
+            attempts_left = MAX_FAILED_ATTEMPTS - record['count']
+            return False, 0, 0, attempts_left
+
+def clear_login_attempts(identifier: str):
+    with LOGIN_ATTEMPTS_LOCK:
+        if identifier in LOGIN_ATTEMPTS:
+            del LOGIN_ATTEMPTS[identifier]
 
 def luhn_validate(card_number: str) -> bool:
     digits = [int(c) for c in card_number if c.isdigit()]
@@ -564,30 +618,66 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
-        # 2. Manual User Login
+        # 2. Manual User Login with Brute-Force & Cooldown Protection (3 attempts -> 30 min cooldown)
         if path == '/api/auth/login':
             email = data.get('email', '').strip().lower()
             password = data.get('password', '')
+            client_ip = self.client_address[0] if self.client_address else "127.0.0.1"
 
             if not email or not password:
                 conn.close()
                 self.send_json(400, {"error": "Email and password are required."})
                 return
 
+            # Check if email or IP is currently locked
+            is_locked_email, rem_sec_e, rem_min_e, attempts_left_e = check_login_rate_limit(email)
+            is_locked_ip, rem_sec_ip, rem_min_ip, attempts_left_ip = check_login_rate_limit(client_ip)
+
+            if is_locked_email or is_locked_ip:
+                conn.close()
+                rem_min = max(rem_min_e, rem_min_ip)
+                rem_sec = max(rem_sec_e, rem_sec_ip)
+                self.send_json(429, {
+                    "error": f"🛡️ Güvenlik Koruması: Çok fazla başarısız deneme yapıldı! Hesabınız kilitlendi. Lütfen {rem_min} dakika sonra tekrar deneyiniz.",
+                    "locked": True,
+                    "remaining_seconds": rem_sec,
+                    "remaining_minutes": rem_min
+                })
+                return
+
             cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
-            if not user:
+
+            if not user or dict(user).get('password_hash') != hash_password(password):
                 conn.close()
-                self.send_json(401, {"error": "Invalid email or password."})
+                is_now_locked_e, rem_sec_e, rem_min_e, left_e = record_failed_login(email)
+                is_now_locked_ip, rem_sec_ip, rem_min_ip, left_ip = record_failed_login(client_ip)
+                
+                if is_now_locked_e or is_now_locked_ip:
+                    rem_min = max(rem_min_e, rem_min_ip)
+                    rem_sec = max(rem_sec_e, rem_sec_ip)
+                    self.send_json(429, {
+                        "error": "🛡️ 3 kez hatalı giriş yapıldı! Güvenlik nedeniyle hesabınız 30 dakika süreyle kilitlenmiştir.",
+                        "locked": True,
+                        "remaining_seconds": rem_sec,
+                        "remaining_minutes": rem_min
+                    })
+                else:
+                    attempts_left = min(left_e, left_ip)
+                    self.send_json(401, {
+                        "error": f"❌ Hatalı şifre veya e-posta! Kalan deneme hakkınız: {attempts_left}",
+                        "attempts_left": attempts_left,
+                        "locked": False
+                    })
                 return
+
+            # Successful login - Clear failed attempts
+            clear_login_attempts(email)
+            clear_login_attempts(client_ip)
 
             user_dict = dict(user)
-            if user_dict['password_hash'] != hash_password(password):
-                conn.close()
-                self.send_json(401, {"error": "Invalid email or password."})
-                return
-
-            del user_dict['password_hash']
+            if 'password_hash' in user_dict:
+                del user_dict['password_hash']
             conn.close()
 
             self.send_json(200, {

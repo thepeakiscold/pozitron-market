@@ -3,6 +3,7 @@ import threading
 import time
 import urllib.request
 import json
+import uuid
 from server import run_server, PORT
 from database import init_db
 
@@ -17,8 +18,11 @@ class TestPozitronAPI(unittest.TestCase):
 
     def get(self, path):
         req = urllib.request.Request(f"http://127.0.0.1:{PORT}{path}")
-        with urllib.request.urlopen(req) as response:
-            return response.getcode(), json.loads(response.read().decode('utf-8'))
+        try:
+            with urllib.request.urlopen(req) as response:
+                return response.getcode(), json.loads(response.read().decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read().decode('utf-8'))
 
     def post(self, path, payload):
         data = json.dumps(payload).encode('utf-8')
@@ -27,8 +31,11 @@ class TestPozitronAPI(unittest.TestCase):
             data=data,
             headers={'Content-Type': 'application/json'}
         )
-        with urllib.request.urlopen(req) as response:
-            return response.getcode(), json.loads(response.read().decode('utf-8'))
+        try:
+            with urllib.request.urlopen(req) as response:
+                return response.getcode(), json.loads(response.read().decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read().decode('utf-8'))
 
     def test_01_categories(self):
         status, data = self.get("/api/categories")
@@ -239,6 +246,36 @@ class TestPozitronAPI(unittest.TestCase):
         exp_status, exp_res = self.post("/api/admin/sync-export", {})
         self.assertEqual(exp_status, 200)
         self.assertTrue(exp_res["success"])
+
+    def test_14_login_rate_limiting_and_30min_lockout(self):
+        target_email = f"attacker_{uuid.uuid4().hex[:6]}@hacktest.com"
+        # Register the user
+        self.post("/api/auth/register", {
+            "email": target_email,
+            "password": "RealSecurePassword123!",
+            "full_name": "Target User"
+        })
+
+        # 1st failed attempt
+        st1, r1 = self.post("/api/auth/login", {"email": target_email, "password": "WrongPassword1"})
+        self.assertEqual(st1, 401)
+        self.assertEqual(r1.get("attempts_left"), 2)
+
+        # 2nd failed attempt
+        st2, r2 = self.post("/api/auth/login", {"email": target_email, "password": "WrongPassword2"})
+        self.assertEqual(st2, 401)
+        self.assertEqual(r2.get("attempts_left"), 1)
+
+        # 3rd failed attempt -> triggers 30-min lockout (HTTP 429)
+        st3, r3 = self.post("/api/auth/login", {"email": target_email, "password": "WrongPassword3"})
+        self.assertEqual(st3, 429)
+        self.assertTrue(r3.get("locked"))
+        self.assertEqual(r3.get("remaining_minutes"), 30)
+
+        # 4th attempt while locked (even with correct password) -> blocked with 429
+        st4, r4 = self.post("/api/auth/login", {"email": target_email, "password": "RealSecurePassword123!"})
+        self.assertEqual(st4, 429)
+        self.assertTrue(r4.get("locked"))
 
 if __name__ == '__main__':
     unittest.main()

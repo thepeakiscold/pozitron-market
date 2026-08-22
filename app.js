@@ -1493,6 +1493,66 @@ class PozitronApp {
     this.updateUserUI();
   }
 
+  getLoginSecurityRecord(email) {
+    const key = 'pozitron_security_lockout';
+    try {
+      const data = JSON.parse(localStorage.getItem(key) || '{}');
+      const record = data[email.toLowerCase()];
+      if (!record) return { locked: false, attempts: 0, attemptsLeft: 3 };
+
+      const now = Date.now();
+      if (record.lockedUntil && record.lockedUntil > now) {
+        const remainingSeconds = Math.ceil((record.lockedUntil - now) / 1000);
+        const remainingMinutes = Math.ceil(remainingSeconds / 60);
+        return { locked: true, remainingSeconds, remainingMinutes, attemptsLeft: 0 };
+      }
+
+      // If lockout expired, clear record
+      if (record.lockedUntil && record.lockedUntil <= now) {
+        delete data[email.toLowerCase()];
+        localStorage.setItem(key, JSON.stringify(data));
+        return { locked: false, attempts: 0, attemptsLeft: 3 };
+      }
+
+      const attemptsLeft = Math.max(0, 3 - (record.attempts || 0));
+      return { locked: false, attempts: record.attempts || 0, attemptsLeft };
+    } catch (e) {
+      return { locked: false, attempts: 0, attemptsLeft: 3 };
+    }
+  }
+
+  recordLoginFailure(email) {
+    const key = 'pozitron_security_lockout';
+    try {
+      const data = JSON.parse(localStorage.getItem(key) || '{}');
+      const em = email.toLowerCase();
+      const record = data[em] || { attempts: 0, lockedUntil: 0 };
+      record.attempts = (record.attempts || 0) + 1;
+
+      if (record.attempts >= 3) {
+        record.lockedUntil = Date.now() + 30 * 60 * 1000; // 30 minutes lockout
+        data[em] = record;
+        localStorage.setItem(key, JSON.stringify(data));
+        return { locked: true, remainingSeconds: 1800, remainingMinutes: 30, attemptsLeft: 0 };
+      } else {
+        data[em] = record;
+        localStorage.setItem(key, JSON.stringify(data));
+        return { locked: false, remainingSeconds: 0, remainingMinutes: 0, attemptsLeft: 3 - record.attempts };
+      }
+    } catch (e) {
+      return { locked: false, remainingSeconds: 0, remainingMinutes: 0, attemptsLeft: 2 };
+    }
+  }
+
+  clearLoginFailure(email) {
+    const key = 'pozitron_security_lockout';
+    try {
+      const data = JSON.parse(localStorage.getItem(key) || '{}');
+      delete data[email.toLowerCase()];
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) {}
+  }
+
   async handleManualLogin(e) {
     if (e && e.preventDefault) e.preventDefault();
     const emailEl = document.getElementById('login-email');
@@ -1517,28 +1577,68 @@ class PozitronApp {
       return;
     }
 
-    // 1. Check Accounts Database for matching email
+    // 0. Check Security Lockout (3 attempts -> 30 min cooldown)
+    const secStatus = this.getLoginSecurityRecord(email);
+    if (secStatus.locked) {
+      if (err) {
+        err.innerHTML = `🛡️ <strong>Güvenlik Koruması:</strong> 3 kez hatalı deneme yapıldığı için hesabınız kilitlendi.<br>Lütfen <strong>${secStatus.remainingMinutes} dakika</strong> sonra tekrar deneyiniz.`;
+        err.style.display = 'block';
+      }
+      return;
+    }
+
+    // Try backend API first
+    try {
+      const res = await fetch(`${this.apiBase}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (res.status === 429 || data.locked) {
+        if (err) {
+          err.innerHTML = `🛡️ <strong>Güvenlik Koruması:</strong> ${data.error || 'Hesabınız 30 dakika kilitlenmiştir.'}`;
+          err.style.display = 'block';
+        }
+        this.recordLoginFailure(email);
+        return;
+      }
+      if (res.ok && data.success && data.user) {
+        this.clearLoginFailure(email);
+        if (err) err.style.display = 'none';
+        this.loginWithUser(data.user);
+        this.closeAuthModal();
+        if (emailEl) emailEl.value = '';
+        if (passEl) passEl.value = '';
+        this.showToast(`Giriş başarılı! Hoş geldiniz, ${data.user.full_name}`, 'success');
+        return;
+      }
+    } catch (netErr) {
+      // Fallback to local DB
+    }
+
+    // Fallback: Local Accounts Database check
     const usersDb = this.getAllUsersFromDb();
     const matchedUser = usersDb.find(u => u.email.toLowerCase() === email);
 
-    if (!matchedUser) {
-      if (err) {
-        err.textContent = `❌ "${email}" adresiyle kayıtlı bir hesap bulunamadı! Lütfen 'Kayıt Ol' sekmesinden hesap oluşturun.`;
-        err.style.display = 'block';
+    if (!matchedUser || matchedUser.password !== password) {
+      const failRes = this.recordLoginFailure(email);
+      if (failRes.locked) {
+        if (err) {
+          err.innerHTML = `🛡️ <strong>3 kez hatalı giriş yapıldı!</strong><br>Hesap güvenliğiniz için <strong>30 dakika</strong> boyunca giriş engellenmiştir.`;
+          err.style.display = 'block';
+        }
+      } else {
+        if (err) {
+          err.innerHTML = `❌ Hatalı e-posta veya şifre!<br><strong>Kalan deneme hakkınız: ${failRes.attemptsLeft}</strong> (3 hatalı denemede 30 dk kilitlenir).`;
+          err.style.display = 'block';
+        }
       }
       return;
     }
 
-    // 2. Strictly check password
-    if (matchedUser.password !== password) {
-      if (err) {
-        err.textContent = '❌ Hatalı şifre girdiniz! Lütfen şifrenizi kontrol edip tekrar deneyiniz.';
-        err.style.display = 'block';
-      }
-      return;
-    }
-
-    // Success
+    // Success - Clear lockout
+    this.clearLoginFailure(email);
     if (err) err.style.display = 'none';
     this.loginWithUser(matchedUser);
     this.closeAuthModal();
