@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-  <script src="./data/pozitron_data.js?v=20260822_admin_v3"></script>
+  <link rel="stylesheet" href="styles.css?v=20260822_admin_crm_v6">
+  <script src="./data/pozitron_data.js?v=20260822_admin_crm_v6"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="admin-body">
@@ -142,6 +142,15 @@
           <span class="kpi-label">Toplam Envanter Değeri</span>
           <span class="kpi-val" id="kpi-valuation-usd" style="font-size:1.35rem;">--</span>
           <span class="kpi-sub" id="kpi-valuation-try">--</span>
+        </div>
+      </div>
+
+      <div class="admin-kpi-card" style="cursor:pointer;" onclick="switchAdminTab('tab-users')">
+        <div class="kpi-icon-wrap" style="background:#e0e7ff; color:#4f46e5;">👥</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Kayıtlı Kullanıcılar</span>
+          <span class="kpi-val" id="kpi-total-users" style="color:#4f46e5;">27</span>
+          <span class="kpi-sub">Görüntülemek için tıklayın</span>
         </div>
       </div>
     </section>
@@ -1126,6 +1135,14 @@
       document.getElementById('kpi-out-stock').textContent = stats.out_of_stock_count || 0;
       document.getElementById('kpi-valuation-usd').textContent = '$' + (stats.total_val_usd || 0).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
       document.getElementById('kpi-valuation-try').textContent = (stats.total_val_try || 0).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' ₺';
+
+      const usersKpi = document.getElementById('kpi-total-users');
+      if (usersKpi) {
+        let uCount = 27;
+        const dataBundle = window.pozitronData || window.__POZITRON_DATA__;
+        if (dataBundle && Array.isArray(dataBundle.users)) uCount = dataBundle.users.length;
+        usersKpi.textContent = uCount;
+      }
     }
 
     // -------------------------------------------------------------
