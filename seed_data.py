@@ -476,7 +476,7 @@ def seed_database():
             
             # Product Names
             name_en = f"{brand} {base_model_name} {version_suffix} ({selected_opt})"
-            name_tr = f"{brand} {base_model_name} {version_suffix} Drone Parçası ({selected_opt})"
+            name_tr = f"{brand} {base_model_name} {version_suffix} ({selected_opt})"
 
             slug = f"{brand.lower().replace(' ', '-').replace('(', '').replace(')', '')}-{base_model_name.lower().replace(' ', '-').replace('/', '-')}-{version_suffix.lower()}-{i+1}"
             sku = f"PZTR-{cat_id[:3].upper()}-{product_idx:04d}"

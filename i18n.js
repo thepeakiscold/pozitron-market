@@ -28,7 +28,7 @@ const i18nData = {
     trust_4_title: "Teknik Destek",
     trust_4_sub: "Uzman FPV Pilotları",
     
-    stat_active_items: "Aktif Drone Parçası",
+    stat_active_items: "Aktif Ürün",
     
     filter_title: "Filtreler",
     filter_reset: "Temizle",
