@@ -498,10 +498,30 @@ class PozitronApp {
   }
 
   formatPrice(priceUSD, priceTRY) {
-    if (this.currency === 'TRY') {
-      return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(priceTRY);
+    const rate = this.usdRate || 47.0;
+    let tryVal = priceTRY;
+    let usdVal = priceUSD;
+
+    // Handle single-argument calls (e.g. formatPrice(amountTRY))
+    if (tryVal === undefined || tryVal === null) {
+      if (typeof priceUSD === 'number' || (!isNaN(Number(priceUSD)) && priceUSD !== '')) {
+        tryVal = Number(priceUSD);
+        usdVal = tryVal / rate;
+      } else {
+        tryVal = 0;
+        usdVal = 0;
+      }
+    } else {
+      tryVal = Number(tryVal) || 0;
+      usdVal = (usdVal !== undefined && usdVal !== null && !isNaN(Number(usdVal))) 
+        ? Number(usdVal) 
+        : (tryVal / rate);
     }
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(priceUSD);
+
+    if (this.currency === 'TRY') {
+      return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(tryVal);
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usdVal);
   }
 
   formatImgUrl(url) {
@@ -2682,16 +2702,16 @@ class PozitronApp {
         <div class="build-summary-banner">
           <div class="build-summary-stat">
             <span class="stat-label">${lang === 'tr' ? 'Seçilen Bütçe' : 'Target Budget'}</span>
-            <span style="font-size:1.15rem; font-weight:700; color:#e2e8f0;">${this.formatPrice(b.targetBudget)}</span>
+            <span style="font-size:1.15rem; font-weight:700; color:#e2e8f0;">${this.formatPrice(b.targetBudget / (this.usdRate || 47.0), b.targetBudget)}</span>
           </div>
           <div class="build-summary-stat">
             <span class="stat-label">${lang === 'tr' ? 'Toplam Parça Tutarı' : 'Total Package Price'}</span>
-            <span class="stat-val">${this.formatPrice(b.totalPrice)}</span>
+            <span class="stat-val">${this.formatPrice(b.totalPrice / (this.usdRate || 47.0), b.totalPrice)}</span>
           </div>
           <div class="build-summary-stat">
             <span class="stat-label">${isUnderBudget ? (lang === 'tr' ? 'Kalan Bütçe' : 'Remaining Budget') : (lang === 'tr' ? 'Bütçe Farkı' : 'Difference')}</span>
             <span style="font-size:1.15rem; font-weight:800; color:${isUnderBudget ? '#4ade80' : '#fb923c'};">
-              ${isUnderBudget ? '+' : ''}${this.formatPrice(diff)}
+              ${isUnderBudget ? '+' : ''}${this.formatPrice(diff / (this.usdRate || 47.0), diff)}
             </span>
           </div>
         </div>
@@ -2712,21 +2732,27 @@ class PozitronApp {
         <div class="build-items-list">
           ${b.items.map(it => {
             const p = it.product;
-            const subtotal = p.price_try * it.qty;
-            const title = lang === 'tr' ? p.name_tr : p.name_en;
+            const unitTRY = Number(p.price_try) || (Number(p.price_usd) * (this.usdRate || 47.0)) || 0;
+            const subtotalTRY = unitTRY * it.qty;
+            const rawTitle = (lang === 'tr' ? p.name_tr : p.name_en) || p.title || '';
+            const brandStr = p.brand || '';
+            const displayTitle = (brandStr && rawTitle.toLowerCase().startsWith(brandStr.toLowerCase())) 
+              ? rawTitle 
+              : (brandStr ? `${brandStr} ${rawTitle}` : rawTitle);
+
             return `
               <div class="build-item-card" onclick="window.app.openProductModal('${p.id}')" title="${lang === 'tr' ? 'Ürünü İncele' : 'View Product'}">
-                <img src="${p.image_url}" alt="${p.brand}" class="build-item-img" onerror="this.src='https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=150&q=80'">
+                <img src="${p.image_url}" alt="${brandStr}" class="build-item-img" onerror="this.src='https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=150&q=80'">
                 <div class="build-item-info">
                   <div style="display:flex; align-items:center;">
                     <span class="build-item-cat">${it.role}</span>
                     ${it.qty > 1 ? `<span class="build-item-qty-tag">${it.qty} Adet</span>` : ''}
                   </div>
-                  <div class="build-item-title">${p.brand} ${title}</div>
+                  <div class="build-item-title">${displayTitle}</div>
                 </div>
                 <div class="build-item-price">
-                  ${this.formatPrice(subtotal)}
-                  ${it.qty > 1 ? `<div style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">(Birim: ${this.formatPrice(p.price_try)})</div>` : ''}
+                  ${this.formatPrice(subtotalTRY / (this.usdRate || 47.0), subtotalTRY)}
+                  ${it.qty > 1 ? `<div style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">(Birim: ${this.formatPrice(unitTRY / (this.usdRate || 47.0), unitTRY)})</div>` : ''}
                 </div>
               </div>
             `;
