@@ -220,8 +220,13 @@ img {
 }
 
 .brand-logo {
-  height: 42px;
+  height: 50px;
   width: auto;
+  transition: transform 0.2s ease;
+}
+
+.brand-logo:hover {
+  transform: scale(1.02);
 }
 
 /* Search Wrap */
@@ -1491,7 +1496,7 @@ img {
 }
 
 .footer-logo {
-  height: 36px;
+  height: 48px;
   width: auto;
   margin-bottom: 14px;
 }
@@ -2494,9 +2499,9 @@ img {
     order: 1;
   }
   .brand-logo {
-    height: 32px;
+    height: 40px;
     width: auto;
-    max-width: 155px;
+    max-width: 185px;
   }
   .header-actions {
     order: 2;
