@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <script src="data/pozitron_data.js"></script>
+  <script src="./data/pozitron_data.js?v=20260822_admin_v3"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="admin-body">
@@ -678,7 +678,7 @@
       }
     }
 
-    window.handleAdminGoogleLogin = function(response) {
+    window.handleAdminGoogleLogin = async function(response) {
       const payload = parseJwt(response.credential);
       if (!payload) return;
 
@@ -696,9 +696,9 @@
 
       if (checkAdminAuth()) {
         showToast(`Hoş geldiniz, ${adminUser.full_name}! Yönetim paneli açıldı.`, 'success');
-        loadCategoriesAndBrands();
-        loadAdminStats();
-        loadAdminProducts(1);
+        await loadCategoriesAndBrands();
+        await loadAdminStats();
+        await loadAdminProducts(1);
       }
     };
 
@@ -749,9 +749,9 @@
             localStorage.setItem('pozitron_user', JSON.stringify(data.user));
             checkAdminAuth();
             showToast(`Giriş başarılı! Hoş geldiniz, ${data.user.full_name}`, 'success');
-            loadCategoriesAndBrands();
-            loadAdminStats();
-            loadAdminProducts(1);
+            await loadCategoriesAndBrands();
+            await loadAdminStats();
+            await loadAdminProducts(1);
             return;
           }
         }
@@ -796,9 +796,9 @@
       localStorage.setItem('pozitron_user', JSON.stringify(matched));
       checkAdminAuth();
       showToast(`Giriş başarılı! Hoş geldiniz, ${matched.full_name}`, 'success');
-      loadCategoriesAndBrands();
-      loadAdminStats();
-      loadAdminProducts(1);
+      await loadCategoriesAndBrands();
+      await loadAdminStats();
+      await loadAdminProducts(1);
     }
 
     function handleAdminLogout() {
@@ -808,30 +808,88 @@
     }
 
     // -------------------------------------------------------------
-    // Hybrid Local Product Storage Manager
+    // Hybrid Local Product Storage Manager (Ultra Resilient)
     // -------------------------------------------------------------
-    function getLocalAdminProducts() {
+    let _adminMemoryProducts = null;
+
+    async function getLocalAdminProducts() {
+      if (_adminMemoryProducts && Array.isArray(_adminMemoryProducts) && _adminMemoryProducts.length > 0) {
+        return _adminMemoryProducts;
+      }
+
+      // 1. Check LocalStorage
       const cached = localStorage.getItem('pozitron_admin_products');
       if (cached && typeof cached === 'string' && cached.trim().startsWith('[')) {
         try {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            _adminMemoryProducts = parsed;
+            return parsed;
+          }
+        } catch(e) {}
+      }
+
+      // 2. Check window.pozitronData or window.__POZITRON_DATA__
+      const dataBundle = window.pozitronData || window.__POZITRON_DATA__;
+      if (dataBundle && Array.isArray(dataBundle.products) && dataBundle.products.length > 0) {
+        _adminMemoryProducts = dataBundle.products;
+        try { localStorage.setItem('pozitron_admin_products', JSON.stringify(dataBundle.products)); } catch(e) {}
+        return dataBundle.products;
+      }
+
+      // 3. Fetch data/products.json directly
+      try {
+        const r = await fetch('data/products.json');
+        if (r.ok) {
+          const prods = await r.json();
+          if (Array.isArray(prods) && prods.length > 0) {
+            _adminMemoryProducts = prods;
+            try { localStorage.setItem('pozitron_admin_products', JSON.stringify(prods)); } catch(e) {}
+            return prods;
+          }
+        }
+      } catch(e) {}
+
+      // 4. Fetch /api/admin/products?limit=500
+      try {
+        const r = await fetch('/api/admin/products?limit=500');
+        if (r.ok) {
+          const d = await r.json();
+          if (d && Array.isArray(d.products) && d.products.length > 0) {
+            _adminMemoryProducts = d.products;
+            try { localStorage.setItem('pozitron_admin_products', JSON.stringify(d.products)); } catch(e) {}
+            return d.products;
+          }
+        }
+      } catch(e) {}
+
+      return [];
+    }
+
+    function getLocalAdminProductsSync() {
+      if (_adminMemoryProducts && Array.isArray(_adminMemoryProducts) && _adminMemoryProducts.length > 0) {
+        return _adminMemoryProducts;
+      }
+      const cached = localStorage.getItem('pozitron_admin_products');
+      if (cached && typeof cached === 'string' && cached.trim().startsWith('[')) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            _adminMemoryProducts = parsed;
+            return parsed;
+          }
         } catch(e) {}
       }
       const dataBundle = window.pozitronData || window.__POZITRON_DATA__;
       if (dataBundle && Array.isArray(dataBundle.products) && dataBundle.products.length > 0) {
-        try {
-          const list = JSON.parse(JSON.stringify(dataBundle.products));
-          localStorage.setItem('pozitron_admin_products', JSON.stringify(list));
-          return list;
-        } catch(e) {
-          return dataBundle.products;
-        }
+        _adminMemoryProducts = dataBundle.products;
+        return dataBundle.products;
       }
       return [];
     }
 
     function saveLocalAdminProducts(prods) {
+      _adminMemoryProducts = prods;
       try {
         localStorage.setItem('pozitron_admin_products', JSON.stringify(prods));
       } catch(e) {}
@@ -943,7 +1001,7 @@
 
       if (!categoriesList || categoriesList.length === 0) {
         const bundle = window.pozitronData || window.__POZITRON_DATA__;
-        if (bundle && bundle.categories) {
+        if (bundle && bundle.categories && bundle.categories.length > 0) {
           categoriesList = bundle.categories;
         } else {
           try {
@@ -966,8 +1024,13 @@
       } catch (err) {}
 
       if (!brandsList || brandsList.length === 0) {
-        const prods = getLocalAdminProducts();
-        brandsList = Array.from(new Set(prods.map(p => p.brand).filter(Boolean))).sort();
+        const bundle = window.pozitronData || window.__POZITRON_DATA__;
+        if (bundle && bundle.brands && bundle.brands.length > 0) {
+          brandsList = bundle.brands;
+        } else {
+          const prods = await getLocalAdminProducts();
+          brandsList = Array.from(new Set(prods.map(p => p.brand).filter(Boolean))).sort();
+        }
       }
 
       // Populate dropdowns
@@ -1014,8 +1077,8 @@
         }
       } catch (err) {}
 
-      if (!stats) {
-        const prods = getLocalAdminProducts();
+      if (!stats || !stats.total_products) {
+        const prods = await getLocalAdminProducts();
         const total_prods = prods.length;
         const total_stock = prods.reduce((sum, p) => sum + (parseInt(p.stock) || 0), 0);
         const low_stock = prods.filter(p => (parseInt(p.stock) || 0) > 0 && (parseInt(p.stock) || 0) <= 5).length;
@@ -1068,9 +1131,10 @@
         if (stockStatus !== 'all') params.set('stock_status', stockStatus);
 
         const res = await fetch(`/api/admin/products?${params.toString()}`);
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
           const data = await res.json();
-          if (data && Array.isArray(data.products)) {
+          if (data && Array.isArray(data.products) && data.products.length > 0) {
             products = data.products;
             total = data.total;
             totalPages = data.total_pages || 1;
@@ -1080,7 +1144,7 @@
 
       // 2. Fallback to Local Product Database (GitHub Pages Mode)
       if (products.length === 0 && total === 0) {
-        let all = getLocalAdminProducts();
+        let all = await getLocalAdminProducts();
         
         if (q) {
           all = all.filter(p => 
@@ -1105,10 +1169,11 @@
         }
 
         // Sorting
-        if (sort === 'price_asc') all.sort((a,b) => (a.price_usd || 0) - (b.price_usd || 0));
-        else if (sort === 'price_desc') all.sort((a,b) => (b.price_usd || 0) - (a.price_usd || 0));
+        if (sort === 'price_usd_asc') all.sort((a,b) => (a.price_usd || 0) - (b.price_usd || 0));
+        else if (sort === 'price_usd_desc') all.sort((a,b) => (b.price_usd || 0) - (a.price_usd || 0));
         else if (sort === 'stock_asc') all.sort((a,b) => (a.stock || 0) - (b.stock || 0));
         else if (sort === 'stock_desc') all.sort((a,b) => (b.stock || 0) - (a.stock || 0));
+        else if (sort === 'discount_desc') all.sort((a,b) => (b.discount_pct || 0) - (a.discount_pct || 0));
         else if (sort === 'name_asc') all.sort((a,b) => (a.name_tr || a.name_en || '').localeCompare(b.name_tr || b.name_en || ''));
         else all.sort((a,b) => (a.id || '').localeCompare(b.id || ''));
 
@@ -1266,7 +1331,7 @@
       }
 
       // Update Local Database
-      const localProds = getLocalAdminProducts();
+      const localProds = await getLocalAdminProducts();
       const target = localProds.find(p => p.id === id);
       if (target) {
         target.stock = stock;
@@ -1346,7 +1411,7 @@
       const ids = Array.from(selectedProductIds);
 
       // Local update
-      const localProds = getLocalAdminProducts();
+      const localProds = await getLocalAdminProducts();
       localProds.forEach(p => {
         if (ids.includes(p.id)) {
           if (action === 'stock_increment') p.stock = Math.max(0, (p.stock || 0) + value);
@@ -1372,8 +1437,8 @@
       } catch (err) {}
 
       showToast(`${ids.length} ürün toplu olarak güncellendi!`, 'success');
-      loadAdminStats();
-      loadAdminProducts(currentPage);
+      await loadAdminStats();
+      await loadAdminProducts(currentPage);
       clearAllSelection();
     }
 
@@ -1382,7 +1447,7 @@
       if (!confirm(`${selectedProductIds.size} adet ürünü silmek istediğinize emin misiniz?`)) return;
 
       const ids = Array.from(selectedProductIds);
-      let localProds = getLocalAdminProducts();
+      let localProds = await getLocalAdminProducts();
       localProds = localProds.filter(p => !ids.includes(p.id));
       saveLocalAdminProducts(localProds);
 
@@ -1398,14 +1463,14 @@
 
       showToast(`${ids.length} ürün silindi.`, 'success');
       clearAllSelection();
-      loadAdminStats();
-      loadAdminProducts(currentPage);
+      await loadAdminStats();
+      await loadAdminProducts(currentPage);
     }
 
     async function deleteSingleProduct(id) {
       if (!confirm("Bu drone parçasını envanterden kalıcı olarak silmek istediğinize emin misiniz?")) return;
 
-      let localProds = getLocalAdminProducts();
+      let localProds = await getLocalAdminProducts();
       localProds = localProds.filter(p => p.id !== id);
       saveLocalAdminProducts(localProds);
 
@@ -1418,8 +1483,8 @@
       } catch (err) {}
 
       showToast('Ürün başarıyla silindi.', 'success');
-      loadAdminStats();
-      loadAdminProducts(currentPage);
+      await loadAdminStats();
+      await loadAdminProducts(currentPage);
     }
 
     // -------------------------------------------------------------
@@ -1432,7 +1497,7 @@
       currentUsdRate = rate;
       document.getElementById('header-usd-rate').textContent = rate.toFixed(2) + ' ₺';
 
-      const localProds = getLocalAdminProducts();
+      const localProds = await getLocalAdminProducts();
       let count = 0;
       localProds.forEach(p => {
         if (cat === 'all' || p.category_id === cat) {
@@ -1451,8 +1516,8 @@
       } catch (err) {}
 
       showToast(`${count} ürünün TRY fiyatı 1 USD = ${rate} ₺ kuruna göre güncellendi!`, 'success');
-      loadAdminStats();
-      loadAdminProducts(currentPage);
+      await loadAdminStats();
+      await loadAdminProducts(currentPage);
     }
 
     async function runBulkStockByFilter() {
@@ -1461,7 +1526,7 @@
       const action = document.getElementById('bulk-stock-action').value;
       const val = parseInt(document.getElementById('bulk-stock-val').value) || 0;
 
-      const localProds = getLocalAdminProducts();
+      const localProds = await getLocalAdminProducts();
       const matched = localProds.filter(p => (cat === 'all' || p.category_id === cat) && (brand === 'all' || p.brand === brand));
 
       if (matched.length === 0) {
@@ -1486,15 +1551,15 @@
       } catch(e) {}
 
       showToast(`${ids.length} ürüne toplu stok uygulandı!`, 'success');
-      loadAdminStats();
-      loadAdminProducts(currentPage);
+      await loadAdminStats();
+      await loadAdminProducts(currentPage);
     }
 
     async function runBulkDiscountByFilter() {
       const cat = document.getElementById('bulk-promo-cat').value;
       const disc = parseInt(document.getElementById('bulk-promo-val').value) || 0;
 
-      const localProds = getLocalAdminProducts();
+      const localProds = await getLocalAdminProducts();
       const matched = localProds.filter(p => cat === 'all' || p.category_id === cat);
       if (matched.length === 0) return showToast('Ürün bulunamadı.', 'error');
 
@@ -1511,8 +1576,8 @@
       } catch(e) {}
 
       showToast(`${ids.length} ürüne %${disc} indirim uygulandı!`, 'success');
-      loadAdminStats();
-      loadAdminProducts(currentPage);
+      await loadAdminStats();
+      await loadAdminProducts(currentPage);
     }
 
     // -------------------------------------------------------------
@@ -1541,7 +1606,7 @@
         description_tr: document.getElementById('new-desc-tr').value.trim()
       };
 
-      const localProds = getLocalAdminProducts();
+      const localProds = await getLocalAdminProducts();
       localProds.unshift(payload);
       saveLocalAdminProducts(localProds);
 
@@ -1555,8 +1620,8 @@
 
       showToast('Yeni ürün başarıyla envantere eklendi!', 'success');
       document.getElementById('add-product-form').reset();
-      loadAdminStats();
-      loadAdminProducts(1);
+      await loadAdminStats();
+      await loadAdminProducts(1);
       switchAdminTab('tab-inventory');
     }
 
@@ -1567,14 +1632,15 @@
       let p = null;
       try {
         const res = await fetch(`/api/products/${id}`);
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
           const data = await res.json();
           p = data.product;
         }
       } catch (err) {}
 
       if (!p) {
-        const localProds = getLocalAdminProducts();
+        const localProds = await getLocalAdminProducts();
         p = localProds.find(item => item.id === id);
       }
 
@@ -1622,7 +1688,7 @@
         image_url: document.getElementById('edit-image-url').value.trim()
       };
 
-      const localProds = getLocalAdminProducts();
+      const localProds = await getLocalAdminProducts();
       const target = localProds.find(p => p.id === id);
       if (target) {
         Object.assign(target, payload);
@@ -1639,8 +1705,8 @@
 
       showToast('Ürün detayları kaydedildi!', 'success');
       closeEditModal();
-      loadAdminStats();
-      loadAdminProducts(currentPage);
+      await loadAdminStats();
+      await loadAdminProducts(currentPage);
     }
 
     // -------------------------------------------------------------
