@@ -1,60 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 90" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 90" width="100%" height="100%">
   <defs>
-    <linearGradient id="pz_logo_cyan" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f2fe"/>
-      <stop offset="100%" stop-color="#0284c7"/>
+    <!-- Sophisticated Titanium & Gunmetal Gradients -->
+    <linearGradient id="pz_trans_titanium_light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#64748b"/>
     </linearGradient>
-    <linearGradient id="pz_logo_white" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#cbd5e1"/>
+    <linearGradient id="pz_trans_titanium_dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="pz_trans_ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
     </linearGradient>
   </defs>
 
-  <!-- Modern Dark Squircle Emblem Container -->
-  <g transform="translate(8, 8)">
-    <rect width="74" height="74" rx="18" fill="#080f1e"/>
+  <!-- Transparent Background Drone (+) Cross Emblem -->
+  <g transform="translate(42, 45) scale(0.25)">
+    <!-- Top Propeller Ring & Motor Hub -->
+    <circle cx="0" cy="-135" r="50" fill="none" stroke="url(#pz_trans_ring)" stroke-width="12"/>
+    <circle cx="0" cy="-135" r="14" fill="#0f172a"/>
+    <path d="M -24,-135 L 24,-135" stroke="#38bdf8" stroke-width="7" stroke-linecap="round"/>
 
-    <!-- Geometric Cross (+) Drone Body -->
-    <g transform="translate(37, 37) scale(0.20)">
-      <!-- Top Propeller Ring & Motor Hub -->
-      <circle cx="0" cy="-135" r="50" fill="none" stroke="url(#pz_logo_cyan)" stroke-width="14"/>
-      <circle cx="0" cy="-135" r="14" fill="url(#pz_logo_cyan)"/>
-      <path d="M -24,-135 L 24,-135" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <!-- Bottom Propeller Ring & Motor Hub -->
+    <circle cx="0" cy="135" r="50" fill="none" stroke="url(#pz_trans_ring)" stroke-width="12"/>
+    <circle cx="0" cy="135" r="14" fill="#0f172a"/>
+    <path d="M -24,135 L 24,135" stroke="#38bdf8" stroke-width="7" stroke-linecap="round"/>
 
-      <!-- Bottom Propeller Ring & Motor Hub -->
-      <circle cx="0" cy="135" r="50" fill="none" stroke="url(#pz_logo_cyan)" stroke-width="14"/>
-      <circle cx="0" cy="135" r="14" fill="url(#pz_logo_cyan)"/>
-      <path d="M -24,135 L 24,135" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <!-- Left Propeller Ring & Motor Hub -->
+    <circle cx="-135" cy="0" r="50" fill="none" stroke="url(#pz_trans_ring)" stroke-width="12"/>
+    <circle cx="-135" cy="0" r="14" fill="#0f172a"/>
+    <path d="M -135,-24 L -135,24" stroke="#38bdf8" stroke-width="7" stroke-linecap="round"/>
 
-      <!-- Left Propeller Ring & Motor Hub -->
-      <circle cx="-135" cy="0" r="50" fill="none" stroke="url(#pz_logo_cyan)" stroke-width="14"/>
-      <circle cx="-135" cy="0" r="14" fill="url(#pz_logo_cyan)"/>
-      <path d="M -135,-24 L -135,24" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <!-- Right Propeller Ring & Motor Hub -->
+    <circle cx="135" cy="0" r="50" fill="none" stroke="url(#pz_trans_ring)" stroke-width="12"/>
+    <circle cx="135" cy="0" r="14" fill="#0f172a"/>
+    <path d="M 135,-24 L 135,24" stroke="#38bdf8" stroke-width="7" stroke-linecap="round"/>
 
-      <!-- Right Propeller Ring & Motor Hub -->
-      <circle cx="135" cy="0" r="50" fill="none" stroke="url(#pz_logo_cyan)" stroke-width="14"/>
-      <circle cx="135" cy="0" r="14" fill="url(#pz_logo_cyan)"/>
-      <path d="M 135,-24 L 135,24" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <!-- Central Symmetrical Cross (+) Titanium Pylons -->
+    <!-- Top Pylon -->
+    <polygon points="0,-135 -34,-24 0,0" fill="url(#pz_trans_titanium_dark)"/>
+    <polygon points="0,-135 34,-24 0,0" fill="url(#pz_trans_titanium_light)"/>
 
-      <!-- Central Symmetrical Cross (+) Aerodynamic Arms -->
-      <polygon points="0,-135 -34,-24 0,0" fill="url(#pz_logo_cyan)"/>
-      <polygon points="0,-135 34,-24 0,0" fill="url(#pz_logo_white)"/>
+    <!-- Bottom Pylon -->
+    <polygon points="0,135 -34,24 0,0" fill="url(#pz_trans_titanium_dark)"/>
+    <polygon points="0,135 34,24 0,0" fill="url(#pz_trans_titanium_light)"/>
 
-      <polygon points="0,135 -34,24 0,0" fill="url(#pz_logo_cyan)"/>
-      <polygon points="0,135 34,24 0,0" fill="url(#pz_logo_white)"/>
+    <!-- Left Pylon -->
+    <polygon points="-135,0 -24,-34 0,0" fill="url(#pz_trans_titanium_light)"/>
+    <polygon points="-135,0 -24,34 0,0" fill="url(#pz_trans_titanium_dark)"/>
 
-      <polygon points="-135,0 -24,-34 0,0" fill="url(#pz_logo_white)"/>
-      <polygon points="-135,0 -24,34 0,0" fill="url(#pz_logo_cyan)"/>
+    <!-- Right Pylon -->
+    <polygon points="135,0 24,-34 0,0" fill="url(#pz_trans_titanium_light)"/>
+    <polygon points="135,0 24,34 0,0" fill="url(#pz_trans_titanium_dark)"/>
 
-      <polygon points="135,0 24,-34 0,0" fill="url(#pz_logo_white)"/>
-      <polygon points="135,0 24,34 0,0" fill="url(#pz_logo_cyan)"/>
-
-      <!-- Center Precision Joint -->
-      <circle cx="0" cy="0" r="10" fill="#080f1e"/>
-    </g>
+    <!-- Center Precision Joint -->
+    <circle cx="0" cy="0" r="10" fill="#0284c7"/>
   </g>
 
-  <!-- Clean Brand Typography -->
+  <!-- Clean Brand Typography (Transparent Background) -->
   <!-- POZITRON -->
   <text x="96" y="47" 
         font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, sans-serif" 
@@ -67,7 +72,7 @@
   <text x="262" y="47" 
         font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, sans-serif" 
         font-size="28" 
-        font-weight="600" 
+        font-weight="500" 
         letter-spacing="3" 
         fill="#0284c7">MARKET</text>
 

@@ -1,58 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <linearGradient id="pz_cyan_grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00f2fe"/>
-      <stop offset="100%" stop-color="#00c0f8"/>
+    <!-- Sophisticated Titanium & Gunmetal Gradients -->
+    <linearGradient id="pz_fav_light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="50%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#64748b"/>
     </linearGradient>
-    <linearGradient id="pz_white_grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#e2e8f0"/>
+    <linearGradient id="pz_fav_dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="pz_fav_ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
     </linearGradient>
   </defs>
 
-  <!-- Background Squircle Badge -->
-  <rect width="512" height="512" rx="112" fill="#080f1e"/>
-
-  <!-- Geometric Cross (+) Drone Body -->
+  <!-- 100% Transparent Background Drone (+) Cross Emblem -->
   <g transform="translate(256, 256)">
     <!-- Top Propeller Ring & Motor Hub -->
-    <circle cx="0" cy="-140" r="54" fill="none" stroke="url(#pz_cyan_grad)" stroke-width="14"/>
-    <circle cx="0" cy="-140" r="14" fill="url(#pz_cyan_grad)"/>
-    <path d="M -26,-140 L 26,-140" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="0" cy="-140" r="54" fill="none" stroke="url(#pz_fav_ring)" stroke-width="14"/>
+    <circle cx="0" cy="-140" r="14" fill="#0f172a"/>
+    <path d="M -26,-140 L 26,-140" stroke="#38bdf8" stroke-width="8" stroke-linecap="round"/>
 
     <!-- Bottom Propeller Ring & Motor Hub -->
-    <circle cx="0" cy="140" r="54" fill="none" stroke="url(#pz_cyan_grad)" stroke-width="14"/>
-    <circle cx="0" cy="140" r="14" fill="url(#pz_cyan_grad)"/>
-    <path d="M -26,140 L 26,140" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="0" cy="140" r="54" fill="none" stroke="url(#pz_fav_ring)" stroke-width="14"/>
+    <circle cx="0" cy="140" r="14" fill="#0f172a"/>
+    <path d="M -26,140 L 26,140" stroke="#38bdf8" stroke-width="8" stroke-linecap="round"/>
 
     <!-- Left Propeller Ring & Motor Hub -->
-    <circle cx="-140" cy="0" r="54" fill="none" stroke="url(#pz_cyan_grad)" stroke-width="14"/>
-    <circle cx="-140" cy="0" r="14" fill="url(#pz_cyan_grad)"/>
-    <path d="M -140,-26 L -140,26" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="-140" cy="0" r="54" fill="none" stroke="url(#pz_fav_ring)" stroke-width="14"/>
+    <circle cx="-140" cy="0" r="14" fill="#0f172a"/>
+    <path d="M -140,-26 L -140,26" stroke="#38bdf8" stroke-width="8" stroke-linecap="round"/>
 
     <!-- Right Propeller Ring & Motor Hub -->
-    <circle cx="140" cy="0" r="54" fill="none" stroke="url(#pz_cyan_grad)" stroke-width="14"/>
-    <circle cx="140" cy="0" r="14" fill="url(#pz_cyan_grad)"/>
-    <path d="M 140,-26 L 140,26" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="140" cy="0" r="54" fill="none" stroke="url(#pz_fav_ring)" stroke-width="14"/>
+    <circle cx="140" cy="0" r="14" fill="#0f172a"/>
+    <path d="M 140,-26 L 140,26" stroke="#38bdf8" stroke-width="8" stroke-linecap="round"/>
 
-    <!-- Central Symmetrical Cross (+) Aerodynamic Arms -->
+    <!-- Central Symmetrical Cross (+) Titanium Pylons -->
     <!-- Top Pylon -->
-    <polygon points="0,-140 -34,-24 0,0" fill="url(#pz_cyan_grad)"/>
-    <polygon points="0,-140 34,-24 0,0" fill="url(#pz_white_grad)"/>
+    <polygon points="0,-140 -34,-24 0,0" fill="url(#pz_fav_dark)"/>
+    <polygon points="0,-140 34,-24 0,0" fill="url(#pz_fav_light)"/>
 
     <!-- Bottom Pylon -->
-    <polygon points="0,140 -34,24 0,0" fill="url(#pz_cyan_grad)"/>
-    <polygon points="0,140 34,24 0,0" fill="url(#pz_white_grad)"/>
+    <polygon points="0,140 -34,24 0,0" fill="url(#pz_fav_dark)"/>
+    <polygon points="0,140 34,24 0,0" fill="url(#pz_fav_light)"/>
 
     <!-- Left Pylon -->
-    <polygon points="-140,0 -24,-34 0,0" fill="url(#pz_white_grad)"/>
-    <polygon points="-140,0 -24,34 0,0" fill="url(#pz_cyan_grad)"/>
+    <polygon points="-140,0 -24,-34 0,0" fill="url(#pz_fav_light)"/>
+    <polygon points="-140,0 -24,34 0,0" fill="url(#pz_fav_dark)"/>
 
     <!-- Right Pylon -->
-    <polygon points="140,0 24,-34 0,0" fill="url(#pz_white_grad)"/>
-    <polygon points="140,0 24,34 0,0" fill="url(#pz_cyan_grad)"/>
+    <polygon points="140,0 24,-34 0,0" fill="url(#pz_fav_light)"/>
+    <polygon points="140,0 24,34 0,0" fill="url(#pz_fav_dark)"/>
 
     <!-- Center Precision Joint -->
-    <circle cx="0" cy="0" r="10" fill="#080f1e"/>
+    <circle cx="0" cy="0" r="12" fill="#0284c7"/>
   </g>
 </svg>
