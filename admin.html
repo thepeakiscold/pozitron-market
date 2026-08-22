@@ -7,8 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260822_admin_crm_v6">
-  <script src="./data/pozitron_data.js?v=20260822_admin_crm_v6"></script>
+  <link rel="stylesheet" href="styles.css?v=20260822_admin_crm_v7">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
+  <script src="./data/pozitron_data.js?v=20260822_admin_crm_v7"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="admin-body">
@@ -87,10 +88,8 @@
     <header class="admin-header-bar">
       <div class="admin-header-inner">
         <div class="admin-logo-group">
-          <a href="/" style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:1.25rem; color:var(--text-primary); text-decoration:none;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-            </svg>
+          <a href="/" style="display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.25rem; color:var(--text-primary); text-decoration:none;">
+            <img src="./assets/favicon.svg" alt="Pozitron Logo" style="width:32px; height:32px; border-radius:8px;">
             <span>POZITRON<span style="color:#0284c7;">.ADMIN</span></span>
           </a>
           <span class="admin-badge">Stok & Fiyat Kontrol Merkezi</span>
@@ -99,7 +98,7 @@
         <div class="admin-header-actions">
           <!-- Admin Profile Badge -->
           <div id="admin-user-profile-badge" style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:4px 12px; border-radius:9999px; border:1px solid #e2e8f0;">
-            <img id="admin-user-avatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" alt="" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
+            <img id="admin-user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=Admin" alt="" style="width:24px; height:24px; border-radius:50%; object-fit:cover;">
             <span id="admin-user-name" style="font-size:0.82rem; font-weight:700; color:#0f172a;">Yönetici</span>
             <button type="button" onclick="handleAdminLogout()" style="background:none; border:none; color:#dc2626; font-size:0.75rem; font-weight:700; cursor:pointer; padding:2px 6px; margin-left:4px;" title="Yönetici Oturumunu Kapat">Çıkış</button>
           </div>

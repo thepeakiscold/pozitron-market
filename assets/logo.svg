@@ -1,53 +1,81 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 80" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 90" width="100%" height="100%">
   <defs>
-    <linearGradient id="pz_accent" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0284c7"/>
-      <stop offset="100%" stop-color="#0369a1"/>
+    <linearGradient id="pz_logo_cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="pz_logo_white" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
     </linearGradient>
   </defs>
 
-  <!-- Clean Minimalist Rotor Monogram Icon -->
-  <g transform="translate(10, 10)">
-    <!-- Sleek outer minimalist ring -->
-    <circle cx="30" cy="30" r="28" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.5" />
-    
-    <!-- 4 Minimalist Aerodynamic Rotor Blades -->
-    <path d="M 30,12 C 32,18 36,24 44,26 C 38,28 32,32 30,48 C 28,32 22,28 16,26 C 24,24 28,18 30,12 Z" 
-          fill="url(#pz_accent)" opacity="0.95"/>
+  <!-- Modern Dark Squircle Emblem Container -->
+  <g transform="translate(8, 8)">
+    <rect width="74" height="74" rx="18" fill="#080f1e"/>
 
-    <!-- Center Precision Core -->
-    <circle cx="30" cy="30" r="5" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" />
-    <circle cx="30" cy="30" r="2" fill="#0284c7" />
+    <!-- Geometric Cross (+) Drone Body -->
+    <g transform="translate(37, 37) scale(0.20)">
+      <!-- Top Propeller Ring & Motor Hub -->
+      <circle cx="0" cy="-135" r="50" fill="none" stroke="url(#pz_logo_cyan)" stroke-width="14"/>
+      <circle cx="0" cy="-135" r="14" fill="url(#pz_logo_cyan)"/>
+      <path d="M -24,-135 L 24,-135" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
 
-    <!-- 4 Quad Motor Points -->
-    <circle cx="18" cy="18" r="2" fill="#94a3b8"/>
-    <circle cx="42" cy="18" r="2" fill="#94a3b8"/>
-    <circle cx="18" cy="42" r="2" fill="#94a3b8"/>
-    <circle cx="42" cy="42" r="2" fill="#94a3b8"/>
+      <!-- Bottom Propeller Ring & Motor Hub -->
+      <circle cx="0" cy="135" r="50" fill="none" stroke="url(#pz_logo_cyan)" stroke-width="14"/>
+      <circle cx="0" cy="135" r="14" fill="url(#pz_logo_cyan)"/>
+      <path d="M -24,135 L 24,135" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+
+      <!-- Left Propeller Ring & Motor Hub -->
+      <circle cx="-135" cy="0" r="50" fill="none" stroke="url(#pz_logo_cyan)" stroke-width="14"/>
+      <circle cx="-135" cy="0" r="14" fill="url(#pz_logo_cyan)"/>
+      <path d="M -135,-24 L -135,24" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+
+      <!-- Right Propeller Ring & Motor Hub -->
+      <circle cx="135" cy="0" r="50" fill="none" stroke="url(#pz_logo_cyan)" stroke-width="14"/>
+      <circle cx="135" cy="0" r="14" fill="url(#pz_logo_cyan)"/>
+      <path d="M 135,-24 L 135,24" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+
+      <!-- Central Symmetrical Cross (+) Aerodynamic Arms -->
+      <polygon points="0,-135 -34,-24 0,0" fill="url(#pz_logo_cyan)"/>
+      <polygon points="0,-135 34,-24 0,0" fill="url(#pz_logo_white)"/>
+
+      <polygon points="0,135 -34,24 0,0" fill="url(#pz_logo_cyan)"/>
+      <polygon points="0,135 34,24 0,0" fill="url(#pz_logo_white)"/>
+
+      <polygon points="-135,0 -24,-34 0,0" fill="url(#pz_logo_white)"/>
+      <polygon points="-135,0 -24,34 0,0" fill="url(#pz_logo_cyan)"/>
+
+      <polygon points="135,0 24,-34 0,0" fill="url(#pz_logo_white)"/>
+      <polygon points="135,0 24,34 0,0" fill="url(#pz_logo_cyan)"/>
+
+      <!-- Center Precision Joint -->
+      <circle cx="0" cy="0" r="10" fill="#080f1e"/>
+    </g>
   </g>
 
-  <!-- Clean Modern Typography -->
+  <!-- Clean Brand Typography -->
   <!-- POZITRON -->
-  <text x="82" y="44" 
+  <text x="96" y="47" 
         font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, sans-serif" 
         font-size="28" 
         font-weight="800" 
-        letter-spacing="1.5" 
+        letter-spacing="2" 
         fill="#0f172a">POZITRON</text>
 
   <!-- MARKET -->
-  <text x="242" y="44" 
+  <text x="262" y="47" 
         font-family="-apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Inter', 'Segoe UI', Roboto, sans-serif" 
         font-size="28" 
-        font-weight="400" 
+        font-weight="600" 
         letter-spacing="3" 
         fill="#0284c7">MARKET</text>
 
-  <!-- Subtitle / Tagline -->
-  <text x="84" y="62" 
+  <!-- Subtitle Tagline -->
+  <text x="98" y="66" 
         font-family="-apple-system, BlinkMacSystemFont, 'Inter', Roboto, sans-serif" 
         font-size="9" 
-        font-weight="600" 
-        letter-spacing="2.8" 
-        fill="#64748b">DRONE &amp; FPV HARDWARE STORE</text>
+        font-weight="700" 
+        letter-spacing="3.2" 
+        fill="#64748b">FPV DRONE &amp; HARDWARE STORE</text>
 </svg>
