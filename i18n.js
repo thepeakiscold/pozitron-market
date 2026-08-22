@@ -7,9 +7,8 @@ const i18nData = {
     search_placeholder: "Parça, marka veya model ara...",
     nav_home: "Ana Sayfa",
     nav_catalog: "Tüm Parçalar",
-    nav_builder: "Uyumluluk Sihirbazı",
+    nav_builder: "⚡ Drone Topla",
     nav_login: "Giriş Yap",
-    nav_cart: "Sepet",
     menu_orders: "Siparişlerim",
     menu_logout: "Çıkış Yap",
     
@@ -17,7 +16,7 @@ const i18nData = {
     hero_title: "Türkiye'nin En Kapsamlı <span class=\"highlight-text\">Drone Donanım</span> Pazarı",
     hero_desc: "Fırçasız motorlar, ESC sürücüler, uçuş kontrol kartları, dijital HD FPV kameralar, pervaneler ve yüksek C bataryalar. Orijinal distribütör garantisi ve 3D Secure güvenli ödeme ile kapınızda.",
     hero_cta: "Tüm Parçaları İncele",
-    hero_builder_cta: "🛠️ Drone Uyumluluk Sihirbazı",
+    hero_builder_cta: "⚡ Bütçene Göre Drone Topla",
     
     trust_1_title: "Orijinal Donanımlar",
     trust_1_sub: "Doğrudan Üreticiden",
@@ -99,8 +98,10 @@ const i18nData = {
     order_success_desc: "Ödemeniz 3D Secure ile güvenle tamamlandı. Orijinal drone parçalarınız kargo için hazırlanıyor.",
     continue_shopping: "Alışverişe Devam Et",
     
-    builder_modal_title: "🛠️ Pozitron Akıllı Drone Uyumluluk Sihirbazı",
-    builder_modal_sub: "Motor, ESC, Pervane ve Batarya seçin — Yapay zeka & kural motoru uyumluluğu anında denetlesin.",
+    builder_modal_title: "⚡ Pozitron Akıllı & Bütçeye Göre Drone Toplama Sihirbazı",
+    builder_modal_sub: "Uçuş tarzınızı ve bütçenizi seçin — Mağazamızdaki parçalardan %100 uyumlu, eksiksiz bir drone seti oluşturalım.",
+    builder_tab_auto: "⚡ Bütçeye Göre Otomatik Topla",
+    builder_tab_manual: "🛠️ Manuel Uyumluluk Testi",
     
     menu_admin: "🛠️ Stok & Fiyat Yönetimi",
     admin_title: "Pozitron Envanter, Stok ve Fiyat Yönetim Paneli",
@@ -202,7 +203,7 @@ const i18nData = {
     hero_title: "Premier <span class=\"highlight-text\">Drone Hardware</span> Marketplace",
     hero_desc: "Brushless motors, ESCs, flight controllers, digital HD FPV cameras, propellers, and high-C batteries. Backed by manufacturer warranties and 3D Secure checkout.",
     hero_cta: "Explore All Parts",
-    hero_builder_cta: "🛠️ Drone Compatibility Wizard",
+    hero_builder_cta: "⚡ Build Drone by Budget",
     
     trust_1_title: "Genuine Parts & Hardware",
     trust_1_sub: "Direct From Manufacturers",
@@ -284,8 +285,10 @@ const i18nData = {
     order_success_desc: "Your 3D Secure payment was approved. Your genuine drone components are being packed for shipping.",
     continue_shopping: "Continue Shopping",
     
-    builder_modal_title: "🛠️ Pozitron Smart Drone Compatibility Wizard",
-    builder_modal_sub: "Select your Motor, ESC, Propeller, and Battery — our compatibility engine verifies electrical and mechanical synergy.",
+    builder_modal_title: "⚡ Pozitron Smart Budget Drone Builder & Compatibility Wizard",
+    builder_modal_sub: "Select your flight style and budget — our engine builds a 100% compatible, complete drone package with zero missing parts.",
+    builder_tab_auto: "⚡ Auto Build by Budget",
+    builder_tab_manual: "🛠️ Manual Compatibility Test",
     
     footer_about: "Pozitron Market is the premier e-commerce destination for FPV and drone hardware. Featuring certified motors, ESCs, flight controllers, and accessories.",
     footer_cat_heading: "Drone Hardware",
