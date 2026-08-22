@@ -797,7 +797,8 @@ class PozitronApp {
       const total = data.total || 0;
 
       if (countText) {
-        countText.textContent = window.i18n.t('showing_items', { count: total });
+        countText.textContent = '';
+        countText.style.display = 'none';
       }
 
       this.updateDynamicSeoMeta();
@@ -2181,10 +2182,9 @@ class PozitronApp {
               <!-- Summary & 1-Click Action -->
               <div class="bundle-summary-card">
                 <div class="bundle-prices">
-                  <span class="bundle-orig-price" id="bundle-orig-total"></span>
+                  <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">Seçilenlerin Toplamı:</span>
                   <div class="bundle-deal-price">
                     <span id="bundle-deal-total"></span>
-                    <span class="bundle-save-tag">-%10 İNDİRİM</span>
                   </div>
                 </div>
                 <button type="button" class="btn-bundle-add" id="btn-add-bundle">
@@ -2297,17 +2297,11 @@ class PozitronApp {
             activeCount++;
           }
 
-          // 10% Bundle Discount
-          const dealUSD = sumUSD * 0.90;
-          const dealTRY = sumTRY * 0.90;
-
-          const origEl = document.getElementById('bundle-orig-total');
           const dealEl = document.getElementById('bundle-deal-total');
           const btnTxt = document.getElementById('btn-bundle-text');
 
-          if (origEl) origEl.textContent = this.formatPrice(sumUSD, sumTRY);
-          if (dealEl) dealEl.textContent = this.formatPrice(dealUSD, dealTRY);
-          if (btnTxt) btnTxt.textContent = `${activeCount} Ürünü Birlikte Sepete Ekle (${this.formatPrice(dealUSD, dealTRY)})`;
+          if (dealEl) dealEl.textContent = this.formatPrice(sumUSD, sumTRY);
+          if (btnTxt) btnTxt.textContent = `${activeCount} Ürünü Birlikte Sepete Ekle (${this.formatPrice(sumUSD, sumTRY)})`;
         };
 
         if (chk1) {
@@ -2328,37 +2322,19 @@ class PozitronApp {
         const addBundleBtn = document.getElementById('btn-add-bundle');
         if (addBundleBtn) {
           addBundleBtn.addEventListener('click', () => {
-            // Add main product with 10% discount
-            const pDiscounted = {
-              ...p,
-              price_usd: Math.round(p.price_usd * 0.90 * 100) / 100,
-              price_try: Math.round(p.price_try * 0.90 * 100) / 100,
-              bundle_deal: true
-            };
-            this.addToCart(pDiscounted);
+            // Add main product at regular price
+            this.addToCart(p);
 
             if (chk1 && chk1.checked) {
-              const b1Discounted = {
-                ...bItem1,
-                price_usd: Math.round(bItem1.price_usd * 0.90 * 100) / 100,
-                price_try: Math.round(bItem1.price_try * 0.90 * 100) / 100,
-                bundle_deal: true
-              };
-              this.addToCart(b1Discounted);
+              this.addToCart(bItem1);
             }
 
             if (chk2 && chk2.checked && bItem2) {
-              const b2Discounted = {
-                ...bItem2,
-                price_usd: Math.round(bItem2.price_usd * 0.90 * 100) / 100,
-                price_try: Math.round(bItem2.price_try * 0.90 * 100) / 100,
-                bundle_deal: true
-              };
-              this.addToCart(b2Discounted);
+              this.addToCart(bItem2);
             }
 
             this.closeProductModal();
-            this.showToast('🎉 Seçilen ürünler %10 Bundle İndirimiyle sepete eklendi!', 'success');
+            this.showToast('Uyumlu parçalar sepete eklendi!', 'success');
             this.openCart();
           });
         }
