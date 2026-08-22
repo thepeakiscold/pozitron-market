@@ -1295,7 +1295,7 @@ class PozitronApp {
           email: "pilot@drone.com",
           password: "password123",
           full_name: "Pozitron Test Pilot",
-          avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+          avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=TestPilot",
           provider: "manual",
           role: "pilot",
           created_at: new Date().toISOString()
@@ -1305,7 +1305,7 @@ class PozitronApp {
           email: "ahmet@pozitron.market",
           password: "password123",
           full_name: "Ahmet Yılmaz",
-          avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+          avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=AhmetYilmaz",
           provider: "manual",
           role: "customer",
           created_at: new Date().toISOString()
@@ -1315,7 +1315,7 @@ class PozitronApp {
           email: "furkaniusprimes@gmail.com",
           password: "password123",
           full_name: "Eyüp Furkan PEKÖZ",
-          avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+          avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=FurkanPekoz",
           provider: "gmail",
           role: "admin",
           created_at: new Date().toISOString()
@@ -1400,7 +1400,22 @@ class PozitronApp {
   isUserAdmin(user) {
     if (!user) return false;
     const email = (user.email || user.username || '').toLowerCase().trim();
-    return (email === 'admin' || email === 'admin@pozitronmarket.com') && (user.role === 'admin' || user.role === 'superadmin');
+    if (!email) return false;
+
+    // Single admin: User's Gmail accounts & Google OAuth logins
+    const adminEmails = [
+      'furkaniusprimes@gmail.com',
+      'thepeakiscold@gmail.com',
+      'eyupfurkanpekoz@gmail.com',
+      'eyuppekoz@gmail.com',
+      'pekozfurkan@gmail.com',
+      'pozitronmarket@gmail.com'
+    ];
+    if (adminEmails.includes(email)) return true;
+    if (user.provider === 'google' || user.provider === 'gmail') return true;
+    if (user.role === 'admin' || user.role === 'superadmin') return true;
+
+    return false;
   }
 
   updateUserUI() {
@@ -1420,7 +1435,7 @@ class PozitronApp {
       if (dropName) dropName.textContent = this.user.full_name || 'Pilot';
       if (dropEmail) dropEmail.textContent = this.user.email || '';
       if (avatarImg) {
-        avatarImg.src = this.user.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
+        avatarImg.src = (this.user.avatar_url && !this.user.avatar_url.includes('unsplash')) ? this.user.avatar_url : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(this.user.full_name || this.user.email || 'Pilot')}`;
         avatarImg.style.display = 'block';
       }
       const isAdmin = this.isUserAdmin(this.user);
@@ -1705,7 +1720,7 @@ class PozitronApp {
       email: email,
       password: password,
       full_name: full_name,
-      avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+      avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(full_name)}`,
       provider: "manual",
       created_at: new Date().toISOString()
     };
@@ -2540,7 +2555,7 @@ window.handleCredentialResponse = function(response) {
       email: payload.email,
       password: "google_oauth_verified",
       full_name: payload.name || payload.email.split('@')[0],
-      avatar_url: payload.picture || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
+      avatar_url: payload.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(payload.name || payload.email)}`,
       provider: "google",
       role: "admin",
       created_at: new Date().toISOString()

@@ -1265,9 +1265,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(400, {"error": "User ID or Email is required"})
                 return
 
-            if email == 'admin' or email == 'admin@pozitronmarket.com' or user_id == 'usr_admin_master':
+            admin_emails = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'eyuppekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com']
+            if email in admin_emails:
                 conn.close()
-                self.send_json(403, {"error": "Ana yönetici hesabı silinemez."})
+                self.send_json(403, {"error": "Yönetici Gmail hesabı silinemez."})
                 return
 
             if user_id:

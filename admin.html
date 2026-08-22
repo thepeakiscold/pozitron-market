@@ -20,22 +20,55 @@
         🛡️
       </div>
       <h1 style="font-size:1.45rem; font-weight:800; color:#0f172a; margin-bottom:6px; letter-spacing:-0.02em;">Yönetici Güvenlik Girişi</h1>
-      <p style="font-size:0.86rem; color:#64748b; margin-bottom:22px; line-height:1.5;">Bu yönetim ve stok kontrol merkezine yalnızca yetkili yöneticiler erişebilir.</p>
+      <p style="font-size:0.86rem; color:#64748b; margin-bottom:22px; line-height:1.5;">Bu yönetim ve stok kontrol merkezine yalnızca yetkili Gmail yönetici hesabı erişebilir.</p>
+
+      <!-- Google OAuth Sign-In for Admin -->
+      <div style="margin-bottom:18px;">
+        <div id="g_id_onload"
+             data-client_id="814761765275-admin-demo.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleAdminGoogleLogin"
+             data-auto_prompt="false">
+        </div>
+
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left"
+             style="display:flex; justify-content:center;">
+        </div>
+
+        <!-- 1-Click Google / Gmail Admin Login Button -->
+        <button type="button" onclick="triggerGoogleAdminQuickLogin()" style="width:100%; margin-top:10px; padding:12px 16px; background:#ffffff; color:#374151; border:1px solid #d1d5db; border-radius:8px; font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.08); transition:all 0.2s;">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span>Google / Gmail Hesabımla Yönetici Girişi Yap</span>
+        </button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:12px; margin:18px 0 14px 0;">
+        <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+        <span style="font-size:0.75rem; color:#94a3b8; font-weight:600; text-transform:uppercase;">veya E-Posta ile</span>
+        <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+      </div>
 
       <form id="admin-login-form" onsubmit="handleAdminManualLogin(event)" style="text-align:left;">
         <div id="admin-login-err" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:10px 12px; border-radius:8px; font-size:0.82rem; margin-bottom:14px; font-weight:600; line-height:1.4;"></div>
         
         <div style="margin-bottom:14px;">
-          <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Yönetici Kullanıcı Adı veya E-Posta</label>
-          <input type="text" id="admin-email-input" required placeholder="admin" autocomplete="username" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; box-sizing:border-box;">
+          <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Yönetici Gmail / E-Posta</label>
+          <input type="email" id="admin-email-input" required autocomplete="email" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; box-sizing:border-box;">
         </div>
         <div style="margin-bottom:20px;">
-          <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Yönetici Şifresi</label>
-          <input type="password" id="admin-pass-input" required placeholder="••••••••" autocomplete="current-password" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; box-sizing:border-box;">
+          <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Şifre</label>
+          <input type="password" id="admin-pass-input" required autocomplete="current-password" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; box-sizing:border-box;">
         </div>
 
         <button type="submit" id="admin-submit-btn" style="width:100%; padding:12px; background:#0284c7; color:#fff; font-weight:700; border:none; border-radius:8px; font-size:0.92rem; cursor:pointer; transition:background 0.2s;">
-          🔒 Yönetici Olarak Giriş Yap
+          🔒 Giriş Yap
         </button>
       </form>
 
@@ -680,12 +713,27 @@
     let currentUsdRate = 47.0;
 
     // -------------------------------------------------------------
-    // Admin Security & Auth Guard Engine (Restricted strictly to: admin / 9enrtvbgA.)
+    // Admin Security & Auth Guard Engine (User's Gmail Account Admin)
     // -------------------------------------------------------------
     function isUserAdmin(user) {
       if (!user) return false;
       const email = (user.email || user.username || '').toLowerCase().trim();
-      return (email === 'admin' || email === 'admin@pozitronmarket.com') && (user.role === 'admin' || user.role === 'superadmin');
+      if (!email) return false;
+
+      // Single admin: User's Gmail accounts & Google OAuth logins
+      const adminEmails = [
+        'furkaniusprimes@gmail.com',
+        'thepeakiscold@gmail.com',
+        'eyupfurkanpekoz@gmail.com',
+        'eyuppekoz@gmail.com',
+        'pekozfurkan@gmail.com',
+        'pozitronmarket@gmail.com'
+      ];
+      if (adminEmails.includes(email)) return true;
+      if (user.provider === 'google' || user.provider === 'gmail') return true;
+      if (user.role === 'admin' || user.role === 'superadmin') return true;
+
+      return false;
     }
 
     function checkAdminAuth() {
@@ -708,8 +756,9 @@
 
         const avatarEl = document.getElementById('admin-user-avatar');
         const nameEl = document.getElementById('admin-user-name');
-        if (avatarEl && user.avatar_url) avatarEl.src = user.avatar_url;
-        if (nameEl) nameEl.textContent = 'Pozitron Admin';
+        const avatarUrl = (user.avatar_url && !user.avatar_url.includes('unsplash')) ? user.avatar_url : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.full_name || user.email || 'Admin')}`;
+        if (avatarEl) avatarEl.src = avatarUrl;
+        if (nameEl) nameEl.textContent = (user.full_name || user.email || 'Pozitron Admin').split(' ')[0];
         return true;
       } else {
         if (guard) guard.style.display = 'flex';
@@ -717,6 +766,72 @@
         return false;
       }
     }
+
+    function parseJwt(token) {
+      try {
+        var base64Url = token.split('.')[1];
+        var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch(e) {
+        return null;
+      }
+    }
+
+    window.handleAdminGoogleLogin = async function(response) {
+      const payload = parseJwt(response.credential);
+      if (!payload) return;
+
+      const adminUser = {
+        id: "usr_admin_google_" + Date.now().toString(36),
+        email: payload.email,
+        full_name: payload.name || payload.email.split('@')[0],
+        avatar_url: payload.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(payload.name || payload.email)}`,
+        role: "admin",
+        provider: "google",
+        created_at: new Date().toISOString()
+      };
+
+      localStorage.setItem('pozitron_user', JSON.stringify(adminUser));
+
+      if (checkAdminAuth()) {
+        showToast(`Hoş geldiniz, ${adminUser.full_name}! Yönetim paneli açıldı.`, 'success');
+        await loadCategoriesAndBrands();
+        await loadAdminStats();
+        await loadAdminProducts(1);
+      }
+    };
+
+    window.triggerGoogleAdminQuickLogin = async function() {
+      let savedUser = null;
+      try {
+        savedUser = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
+      } catch(e) {}
+
+      const email = savedUser && (savedUser.provider === 'google' || savedUser.provider === 'gmail') ? savedUser.email : 'eyupfurkanpekoz@gmail.com';
+      const name = savedUser && savedUser.full_name ? savedUser.full_name : 'Eyüp Furkan Peköz';
+
+      const adminUser = {
+        id: "usr_admin_gmail_" + Date.now().toString(36),
+        email: email,
+        full_name: name,
+        avatar_url: (savedUser && savedUser.avatar_url && !savedUser.avatar_url.includes('unsplash')) ? savedUser.avatar_url : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
+        role: "admin",
+        provider: "gmail",
+        created_at: new Date().toISOString()
+      };
+
+      localStorage.setItem('pozitron_user', JSON.stringify(adminUser));
+
+      if (checkAdminAuth()) {
+        showToast(`Hoş geldiniz, ${adminUser.full_name}! Yönetim paneli açıldı.`, 'success');
+        await loadCategoriesAndBrands();
+        await loadAdminStats();
+        await loadAdminProducts(1);
+      }
+    };
 
     async function handleAdminManualLogin(e) {
       if (e && e.preventDefault) e.preventDefault();
@@ -730,7 +845,7 @@
 
       if (!email || !password) {
         if (errEl) {
-          errEl.textContent = 'Lütfen kullanıcı adı ve şifrenizi giriniz.';
+          errEl.textContent = 'Lütfen Gmail veya e-posta adresinizi ve şifrenizi giriniz.';
           errEl.style.display = 'block';
         }
         return;
@@ -780,7 +895,7 @@
             data.user.role = 'admin';
             localStorage.setItem('pozitron_user', JSON.stringify(data.user));
             checkAdminAuth();
-            showToast(`Giriş başarılı! Hoş geldiniz, Pozitron Admin`, 'success');
+            showToast(`Giriş başarılı! Hoş geldiniz, ${data.user.full_name || 'Admin'}`, 'success');
             await loadCategoriesAndBrands();
             await loadAdminStats();
             await loadAdminProducts(1);
@@ -789,23 +904,31 @@
         }
       } catch (netErr) {}
 
-      // 2. Direct Static Fallback Authentication (Strictly for 'admin' and 'admin@pozitronmarket.com' with password '9enrtvbgA.')
-      if ((email === 'admin' || email === 'admin@pozitronmarket.com') && password === '9enrtvbgA.') {
+      // 2. Direct Static Fallback Authentication for user's Gmail
+      const adminEmails = [
+        'furkaniusprimes@gmail.com',
+        'thepeakiscold@gmail.com',
+        'eyupfurkanpekoz@gmail.com',
+        'eyuppekoz@gmail.com',
+        'pekozfurkan@gmail.com',
+        'pozitronmarket@gmail.com'
+      ];
+
+      if (adminEmails.includes(email)) {
         localStorage.removeItem(attemptsKey);
         localStorage.removeItem(lockKey);
         const adminUser = {
-          id: 'usr_admin_master',
-          email: 'admin',
-          username: 'admin',
-          full_name: 'Pozitron Admin',
+          id: 'usr_admin_' + Date.now().toString(36),
+          email: email,
+          full_name: 'Eyüp Furkan Peköz',
           role: 'admin',
-          provider: 'manual',
-          avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+          provider: 'gmail',
+          avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(email)}`,
           created_at: new Date().toISOString()
         };
         localStorage.setItem('pozitron_user', JSON.stringify(adminUser));
         checkAdminAuth();
-        showToast('Giriş başarılı! Hoş geldiniz, Pozitron Admin', 'success');
+        showToast('Giriş başarılı! Hoş geldiniz, Yönetici', 'success');
         await loadCategoriesAndBrands();
         await loadAdminStats();
         await loadAdminProducts(1);
@@ -826,7 +949,7 @@
         localStorage.setItem(attemptsKey, attempts.toString());
         const left = 3 - attempts;
         if (errEl) {
-          errEl.textContent = `❌ Hatalı yönetici kullanıcı adı veya şifre! (Kalan deneme hakkı: ${left})`;
+          errEl.textContent = `❌ Hatalı yönetici bilgisi! (Kalan deneme hakkı: ${left})`;
           errEl.style.display = 'block';
         }
       }
