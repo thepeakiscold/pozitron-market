@@ -164,9 +164,10 @@ def init_db():
     cursor.execute("SELECT count(*) FROM users")
     if cursor.fetchone()[0] == 0:
         default_users = [
-            ('usr_pilot_01', 'pilot@drone.com', hash_password('password123'), 'Pozitron Test Pilot', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80', 'manual', 'pilot', '05551234567', 'Atatürk Cad. No:12', 'İstanbul', 'Turkey', datetime.now().isoformat()),
-            ('usr_ahmet_02', 'ahmet@pozitron.market', hash_password('password123'), 'Ahmet Yılmaz', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', 'manual', 'customer', '05329876543', 'Bağdat Cad. No:44', 'İstanbul', 'Turkey', datetime.now().isoformat()),
-            ('usr_furkan_03', 'furkaniusprimes@gmail.com', hash_password('password123'), 'Eyüp Furkan PEKÖZ', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80', 'gmail', 'admin', '05441112233', 'Karaköy Rıhtım No:5', 'İstanbul', 'Turkey', datetime.now().isoformat())
+            ('usr_admin_master', 'admin', hash_password('9enrtvbgA.'), 'Pozitron Admin', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80', 'manual', 'admin', '05441112233', 'Karaköy Rıhtım No:5', 'İstanbul', 'Turkey', datetime.now().isoformat()),
+            ('usr_admin_master_email', 'admin@pozitronmarket.com', hash_password('9enrtvbgA.'), 'Pozitron Admin', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80', 'manual', 'admin', '05441112233', 'Karaköy Rıhtım No:5', 'İstanbul', 'Turkey', datetime.now().isoformat()),
+            ('usr_pilot_01', 'pilot@drone.com', hash_password('password123'), 'Pozitron Test Pilot', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80', 'manual', 'customer', '05551234567', 'Atatürk Cad. No:12', 'İstanbul', 'Turkey', datetime.now().isoformat()),
+            ('usr_ahmet_02', 'ahmet@pozitron.market', hash_password('password123'), 'Ahmet Yılmaz', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80', 'manual', 'customer', '05329876543', 'Bağdat Cad. No:44', 'İstanbul', 'Turkey', datetime.now().isoformat())
         ]
         cursor.executemany('''
             INSERT INTO users (id, email, password_hash, full_name, avatar_url, provider, role, phone, address, city, country, created_at)

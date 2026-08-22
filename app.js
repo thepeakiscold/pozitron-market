@@ -1398,27 +1398,8 @@ class PozitronApp {
 
   isUserAdmin(user) {
     if (!user) return false;
-    if (user.role === 'admin') return true;
-    const email = (user.email || '').toLowerCase().trim();
-    if (!email) return false;
-    
-    const adminEmails = [
-      'furkaniusprimes@gmail.com',
-      'thepeakiscold@gmail.com',
-      'eyupfurkanpekoz@gmail.com',
-      'eyuppekoz@gmail.com',
-      'pekozfurkan@gmail.com',
-      'pozitronmarket@gmail.com',
-      'admin@pozitronmarket.com',
-      'pilot@drone.com'
-    ];
-    if (adminEmails.includes(email)) return true;
-    if (email.includes('furkan') || email.includes('eyup') || email.includes('pekoz') || email.includes('thepeak') || email.includes('admin')) return true;
-
-    // Grant admin view to authenticated Google OAuth users on client
-    if (user.provider === 'google' || user.provider === 'gmail') return true;
-
-    return false;
+    const email = (user.email || user.username || '').toLowerCase().trim();
+    return (email === 'admin' || email === 'admin@pozitronmarket.com') && (user.role === 'admin' || user.role === 'superadmin');
   }
 
   updateUserUI() {
