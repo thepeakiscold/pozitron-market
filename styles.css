@@ -1600,12 +1600,6 @@ img {
   color: var(--text-primary);
 }
 
-.google-seo-badge {
-  font-size: 0.78rem;
-  color: var(--brand-primary);
-  font-weight: 600;
-}
-
 .footer-bottom {
   border-top: 1px solid var(--border-subtle);
   padding: 16px 0;

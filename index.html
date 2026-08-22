@@ -206,7 +206,7 @@
             type="search" 
             id="search-input" 
             class="search-input" 
-            placeholder="Parça ara (örn. T-Motor, SpeedyBee, ESC, 6S Batarya, DJI)..." 
+            placeholder="Parça, marka veya model ara..." 
             data-i18n-placeholder="search_placeholder"
             autocomplete="off"
             aria-label="Ürün Arama"
@@ -517,7 +517,6 @@
       <div class="footer-col">
         <h3 class="footer-heading" data-i18n="footer_support_heading">Müşteri &amp; Güvenlik</h3>
         <ul class="footer-links">
-          <li><a href="admin.html" style="color:var(--brand-primary); font-weight:700;">🛠️ Stok &amp; Fiyat Yönetimi</a></li>
           <li><a href="#builder" id="footer-builder-link" data-i18n="nav_builder">🛠️ Drone Uyumluluk Sihirbazı</a></li>
           <li><a href="#shipping" data-i18n="footer_shipping">Teslimat &amp; Aynı Gün Kargo</a></li>
           <li><a href="#returns" data-i18n="footer_returns">Kolay İade &amp; Orijinallik Garantisi</a></li>
@@ -539,9 +538,6 @@
           <span class="pay-badge">TROY</span>
           <span class="pay-badge">AMEX</span>
           <span class="pay-badge">3D Secure</span>
-        </div>
-        <div class="google-seo-badge">
-          <span>⚡ Google SEO &amp; Rich Snippet Sertifikalı</span>
         </div>
       </div>
 
@@ -598,7 +594,7 @@
         <!-- Coupon Code Box -->
         <div class="coupon-box">
           <div class="coupon-input-group">
-            <input type="text" id="coupon-input" placeholder="İndirim Kodu (örn. POZITRON10)" class="coupon-input" uppercase>
+            <input type="text" id="coupon-input" placeholder="İndirim Kodu" class="coupon-input" uppercase>
             <button type="button" id="apply-coupon-btn" class="btn-apply-coupon" data-i18n="apply_coupon">Kodu Uygula</button>
           </div>
           <div id="coupon-feedback" class="coupon-feedback"></div>
@@ -665,11 +661,11 @@
         <input type="hidden" id="stock-alert-prod-id" value="">
         <div class="form-group" style="margin-bottom:14px;">
           <label class="form-label" for="stock-alert-email" data-i18n="email_label">E-Posta Adresiniz *</label>
-          <input type="email" id="stock-alert-email" class="form-input" placeholder="pilot@drone.com" required>
+          <input type="email" id="stock-alert-email" class="form-input" required autocomplete="email">
         </div>
         <div class="form-group" style="margin-bottom:14px;">
           <label class="form-label" for="stock-alert-phone" data-i18n="phone_label">Telefon / WhatsApp (Opsiyonel)</label>
-          <input type="tel" id="stock-alert-phone" class="form-input" placeholder="+90 5XX XXX XX XX">
+          <input type="tel" id="stock-alert-phone" class="form-input" autocomplete="tel">
         </div>
         <div class="form-group" style="margin-bottom:20px;">
           <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-secondary); cursor:pointer;">
@@ -746,11 +742,11 @@
       <form class="auth-form" id="login-form">
         <div class="form-group">
           <label for="login-email" data-i18n="email_label">E-Posta Adresi</label>
-          <input type="email" id="login-email" class="form-input" placeholder="pilot@drone.com" required>
+          <input type="email" id="login-email" class="form-input" required autocomplete="email">
         </div>
         <div class="form-group">
           <label for="login-password" data-i18n="password_label">Şifre</label>
-          <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+          <input type="password" id="login-password" class="form-input" required autocomplete="current-password">
         </div>
         <div class="form-error-msg" id="login-error-msg"></div>
         <button type="submit" class="btn-primary btn-block" data-i18n="btn_login_submit">Giriş Yap</button>
@@ -762,15 +758,15 @@
       <form class="auth-form" id="register-form" style="display:none;">
         <div class="form-group">
           <label for="reg-name" data-i18n="fullname_label">Ad Soyad</label>
-          <input type="text" id="reg-name" class="form-input" placeholder="Ahmet Yılmaz" required>
+          <input type="text" id="reg-name" class="form-input" required autocomplete="name">
         </div>
         <div class="form-group">
           <label for="reg-email" data-i18n="email_label">E-Posta Adresi</label>
-          <input type="email" id="reg-email" class="form-input" placeholder="ahmet@example.com" required>
+          <input type="email" id="reg-email" class="form-input" required autocomplete="email">
         </div>
         <div class="form-group">
           <label for="reg-password" data-i18n="password_label">Şifre</label>
-          <input type="password" id="reg-password" class="form-input" placeholder="En az 6 karakter" required minlength="6">
+          <input type="password" id="reg-password" class="form-input" required minlength="6" autocomplete="new-password">
         </div>
         <div class="form-error-msg" id="reg-error-msg"></div>
         <button type="submit" class="btn-primary btn-block" data-i18n="btn_reg_submit">Hesap Oluştur</button>
@@ -815,26 +811,26 @@
             <form id="shipping-form" class="checkout-form">
               <div class="form-group">
                 <label for="chk-name" data-i18n="fullname_label">Teslim Alacak Kişi</label>
-                <input type="text" id="chk-name" class="form-input" placeholder="Ahmet Yılmaz" required>
+                <input type="text" id="chk-name" class="form-input" required autocomplete="name">
               </div>
               <div class="form-row">
                 <div class="form-group col-half">
                   <label for="chk-email" data-i18n="email_label">E-Posta</label>
-                  <input type="email" id="chk-email" class="form-input" placeholder="ahmet@example.com" required>
+                  <input type="email" id="chk-email" class="form-input" required autocomplete="email">
                 </div>
                 <div class="form-group col-half">
                   <label for="chk-phone" data-i18n="phone_label">Telefon</label>
-                  <input type="tel" id="chk-phone" class="form-input" placeholder="+90 555 123 4567" required>
+                  <input type="tel" id="chk-phone" class="form-input" required autocomplete="tel">
                 </div>
               </div>
               <div class="form-group">
                 <label for="chk-address" data-i18n="address_label">Teslimat Adresi</label>
-                <textarea id="chk-address" class="form-input form-textarea" rows="2" placeholder="Mahalle, Cadde, Bina No, Daire" required></textarea>
+                <textarea id="chk-address" class="form-input form-textarea" rows="2" required autocomplete="street-address"></textarea>
               </div>
               <div class="form-row">
                 <div class="form-group col-half">
                   <label for="chk-city" data-i18n="city_label">Şehir</label>
-                  <input type="text" id="chk-city" class="form-input" placeholder="İstanbul" required>
+                  <input type="text" id="chk-city" class="form-input" required autocomplete="address-level2">
                 </div>
                 <div class="form-group col-half">
                   <label for="chk-country" data-i18n="country_label">Ülke</label>
