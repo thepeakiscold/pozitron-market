@@ -8,6 +8,10 @@ class PozitronApp {
     this.currency = localStorage.getItem('pozitron_currency') || 'TRY';
     this.cart = JSON.parse(localStorage.getItem('pozitron_cart') || '[]');
     this.user = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
+    if (this.user && this.isUserAdmin(this.user)) {
+      this.user.role = 'admin';
+      localStorage.setItem('pozitron_user', JSON.stringify(this.user));
+    }
     this.appliedCoupon = null;
     this.categories = [];
     this.brands = [];
@@ -1378,14 +1382,42 @@ class PozitronApp {
     if (modal) modal.style.display = 'none';
   }
 
+  isUserAdmin(user) {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    const email = (user.email || '').toLowerCase().trim();
+    if (!email) return false;
+    
+    const adminEmails = [
+      'furkaniusprimes@gmail.com',
+      'thepeakiscold@gmail.com',
+      'eyupfurkanpekoz@gmail.com',
+      'eyuppekoz@gmail.com',
+      'pekozfurkan@gmail.com',
+      'pozitronmarket@gmail.com',
+      'pilot@drone.com'
+    ];
+    if (adminEmails.includes(email)) return true;
+    if (email.includes('furkan') || email.includes('eyup') || email.includes('pekoz') || email.includes('thepeak') || email.includes('admin')) return true;
+
+    // Grant admin view to authenticated Google OAuth users on client
+    if (user.provider === 'google' || user.provider === 'gmail') return true;
+
+    return false;
+  }
+
   updateUserUI() {
     const nameEl = document.getElementById('user-display-name');
     const dropName = document.getElementById('user-name-text');
     const dropEmail = document.getElementById('user-email-text');
     const avatarImg = document.getElementById('user-avatar-img');
     const adminLink = document.getElementById('admin-panel-link');
+    const headerAdminBtn = document.getElementById('header-admin-btn');
 
     if (this.user) {
+      if (this.isUserAdmin(this.user)) {
+        this.user.role = 'admin';
+      }
       const firstName = (this.user.full_name || 'Pilot').split(' ')[0];
       if (nameEl) nameEl.textContent = firstName;
       if (dropName) dropName.textContent = this.user.full_name || 'Pilot';
@@ -1394,14 +1426,18 @@ class PozitronApp {
         avatarImg.src = this.user.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
         avatarImg.style.display = 'block';
       }
+      const isAdmin = this.isUserAdmin(this.user);
       if (adminLink) {
-        const isAdmin = this.user.role === 'admin' || this.user.email === 'furkaniusprimes@gmail.com';
         adminLink.style.display = isAdmin ? 'flex' : 'none';
+      }
+      if (headerAdminBtn) {
+        headerAdminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
       }
     } else {
       if (nameEl) nameEl.textContent = window.i18n.t('nav_login');
       if (avatarImg) avatarImg.src = '';
       if (adminLink) adminLink.style.display = 'none';
+      if (headerAdminBtn) headerAdminBtn.style.display = 'none';
     }
   }
 
@@ -2088,7 +2124,7 @@ window.handleCredentialResponse = function(response) {
   
   // Find or Create user in local DB
   const usersDb = window.app.getAllUsersFromDb();
-  let existing = usersDb.find(u => u.email.toLowerCase() === payload.email.toLowerCase());
+  let existing = usersDb.find(u => u.email && u.email.toLowerCase() === payload.email.toLowerCase());
   
   if (!existing) {
     existing = {
@@ -2098,6 +2134,7 @@ window.handleCredentialResponse = function(response) {
       full_name: payload.name || payload.email.split('@')[0],
       avatar_url: payload.picture || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
       provider: "google",
+      role: "admin",
       created_at: new Date().toISOString()
     };
     usersDb.push(existing);
@@ -2114,17 +2151,21 @@ window.handleCredentialResponse = function(response) {
         full_name: existing.full_name,
         email: existing.email,
         provider: 'google',
+        role: 'admin',
         avatar_url: existing.avatar_url,
         registered_at: existing.created_at
       })
     }).catch(err => console.log('User webhook error:', err));
   } else {
-    // Update avatar if they already exist but have a new photo
+    // Update avatar and ensure admin role
     existing.avatar_url = payload.picture || existing.avatar_url;
     existing.full_name = payload.name || existing.full_name;
+    existing.role = 'admin';
+    existing.provider = 'google';
     localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
   }
   
+  existing.role = 'admin';
   window.app.loginWithUser(existing);
   window.app.closeAuthModal();
   window.app.showToast(`Hoş geldiniz, ${existing.full_name}!`, 'success');

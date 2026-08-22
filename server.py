@@ -616,12 +616,17 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 user_dict = dict(user)
                 if 'password_hash' in user_dict:
                     del user_dict['password_hash']
+                # Grant admin to known admin emails or gmail users
+                if user_dict.get('role') != 'admin' and ('furkan' in email or 'eyup' in email or 'thepeak' in email or user_dict.get('provider') == 'gmail'):
+                    cursor.execute("UPDATE users SET role = 'admin' WHERE id = ?", (user_dict['id'],))
+                    conn.commit()
+                    user_dict['role'] = 'admin'
             else:
                 user_id = str(uuid.uuid4())
                 now = datetime.now().isoformat()
                 cursor.execute('''
                     INSERT INTO users (id, email, password_hash, full_name, avatar_url, provider, role, created_at)
-                    VALUES (?, ?, NULL, ?, ?, 'gmail', 'customer', ?)
+                    VALUES (?, ?, NULL, ?, ?, 'gmail', 'admin', ?)
                 ''', (user_id, email, full_name, avatar_url, now))
                 conn.commit()
 
