@@ -1409,6 +1409,7 @@ class PozitronApp {
       'eyuppekoz@gmail.com',
       'pekozfurkan@gmail.com',
       'pozitronmarket@gmail.com',
+      'admin@pozitronmarket.com',
       'pilot@drone.com'
     ];
     if (adminEmails.includes(email)) return true;
