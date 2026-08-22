@@ -866,8 +866,8 @@ class PozitronApp {
           <div class="card-body">
             <div class="card-brand-row">
               <span class="card-brand">${p.brand}</span>
-              <span class="card-stock-status">
-                <span class="card-stock-dot"></span>
+              <span class="card-stock-status ${p.stock > 0 ? '' : 'out-of-stock'}">
+                <span class="card-stock-dot ${p.stock > 0 ? '' : 'out-of-stock'}"></span>
                 <span>${p.stock > 0 ? window.i18n.t('in_stock') : window.i18n.t('out_of_stock')}</span>
               </span>
             </div>
@@ -888,14 +888,20 @@ class PozitronApp {
                 ${origPriceHtml}
                 <span class="current-price">${priceFormatted}</span>
               </div>
-              <button type="button" class="btn-card-add" data-action="add-to-cart" data-id="${p.id}">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                  <line x1="3" y1="6" x2="21" y2="6"></line>
-                  <path d="M16 10a4 4 0 0 1-8 0"></path>
-                </svg>
-                <span>${window.i18n.t('add_to_cart')}</span>
-              </button>
+              ${p.stock > 0 ? `
+                <button type="button" class="btn-card-add" data-action="add-to-cart" data-id="${p.id}">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                  </svg>
+                  <span>${window.i18n.t('add_to_cart')}</span>
+                </button>
+              ` : `
+                <button type="button" class="btn-card-alert" data-action="stock-alert" data-id="${p.id}">
+                  <span>🔔 ${window.i18n.t('stock_alert_btn')}</span>
+                </button>
+              `}
             </div>
 
           </div>
@@ -912,6 +918,14 @@ class PozitronApp {
         const pid = e.currentTarget.getAttribute('data-id');
         const prod = products.find(x => x.id === pid);
         if (prod) this.addToCart(prod);
+      });
+    });
+
+    grid.querySelectorAll('[data-action="stock-alert"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pid = e.currentTarget.getAttribute('data-id');
+        this.openStockAlertModal(pid);
       });
     });
 
@@ -1949,7 +1963,133 @@ class PozitronApp {
   }
 
   // ==========================================
-  // PRODUCT QUICK VIEW MODAL
+  // BUNDLE & STOCK ALERT SYSTEM
+  // ==========================================
+  getBundleRecommendations(mainProd) {
+    const all = this.getStaticData().products || [];
+    let cat1 = 'propellers', cat2 = 'esc';
+    if (mainProd.category_id === 'motors') {
+      cat1 = 'propellers';
+      cat2 = 'esc';
+    } else if (mainProd.category_id === 'flight_controllers') {
+      cat1 = 'vtx_cameras';
+      cat2 = 'frames';
+    } else if (mainProd.category_id === 'frames') {
+      cat1 = 'motors';
+      cat2 = 'flight_controllers';
+    } else if (mainProd.category_id === 'batteries_chargers') {
+      cat1 = 'propellers';
+      cat2 = 'accessories';
+    } else if (mainProd.category_id === 'antennas') {
+      cat1 = 'vtx_cameras';
+      cat2 = 'transmitters_receivers';
+    } else {
+      cat1 = 'accessories';
+      cat2 = 'propellers';
+    }
+
+    const item1 = all.find(x => x.category_id === cat1 && x.id !== mainProd.id) || all.find(x => x.id !== mainProd.id);
+    const item2 = all.find(x => x.category_id === cat2 && x.id !== mainProd.id && (!item1 || x.id !== item1.id)) || all.find(x => x.id !== mainProd.id && (!item1 || x.id !== item1.id));
+
+    return [item1, item2].filter(Boolean);
+  }
+
+  openStockAlertModal(prodId) {
+    const modal = document.getElementById('stock-alert-modal-backdrop');
+    if (!modal) return;
+
+    let p = null;
+    const staticData = this.getStaticData();
+    p = (staticData.products || []).find(x => x.id === prodId || x.slug === prodId);
+    if (!p) return;
+
+    const lang = window.i18n.currentLang;
+    const title = lang === 'tr' ? (p.name_tr || p.name_en) : (p.name_en || p.name_tr);
+
+    const imgEl = document.getElementById('stock-alert-img');
+    const nameEl = document.getElementById('stock-alert-prod-name');
+    const brandEl = document.getElementById('stock-alert-prod-brand');
+    const skuEl = document.getElementById('stock-alert-prod-sku');
+    const idEl = document.getElementById('stock-alert-prod-id');
+    const emailEl = document.getElementById('stock-alert-email');
+
+    if (imgEl) imgEl.src = this.formatImgUrl(p.image_url);
+    if (nameEl) nameEl.textContent = title;
+    if (brandEl) brandEl.textContent = p.brand || 'Pozitron';
+    if (skuEl) skuEl.textContent = p.sku || p.id;
+    if (idEl) idEl.value = p.id;
+    if (emailEl && this.user && this.user.email) {
+      emailEl.value = this.user.email;
+    }
+
+    modal.style.display = 'flex';
+  }
+
+  closeStockAlertModal() {
+    const modal = document.getElementById('stock-alert-modal-backdrop');
+    if (modal) modal.style.display = 'none';
+  }
+
+  handleStockAlertSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const prodId = document.getElementById('stock-alert-prod-id').value;
+    const email = document.getElementById('stock-alert-email').value.trim();
+    const phone = document.getElementById('stock-alert-phone').value.trim();
+    const waOpt = document.getElementById('stock-alert-wa-opt') ? document.getElementById('stock-alert-wa-opt').checked : true;
+
+    if (!email || !this.isValidEmail(email)) {
+      this.showToast('Lütfen geçerli bir e-posta adresi giriniz.', 'error');
+      return;
+    }
+
+    const alerts = JSON.parse(localStorage.getItem('pozitron_stock_alerts') || '[]');
+    const existing = alerts.find(a => a.prod_id === prodId && a.email.toLowerCase() === email.toLowerCase());
+
+    if (existing) {
+      this.showToast(window.i18n.t('stock_alert_already'), 'info');
+      this.closeStockAlertModal();
+      return;
+    }
+
+    const staticData = this.getStaticData();
+    const prod = (staticData.products || []).find(x => x.id === prodId);
+    const prodName = prod ? (prod.name_tr || prod.name_en) : prodId;
+
+    const newAlert = {
+      id: 'alt_' + Date.now().toString(36),
+      prod_id: prodId,
+      prod_name: prodName,
+      email: email,
+      phone: phone,
+      whatsapp: waOpt,
+      created_at: new Date().toISOString()
+    };
+
+    alerts.push(newAlert);
+    localStorage.setItem('pozitron_stock_alerts', JSON.stringify(alerts));
+
+    // Send Webhook to Google Sheets CRM (Stock Alerts)
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'stock_alert',
+        prod_id: prodId,
+        prod_name: prodName,
+        email: email,
+        phone: phone,
+        created_at: newAlert.created_at
+      })
+    }).catch(err => console.log('Alert webhook error:', err));
+
+    this.closeStockAlertModal();
+    this.showToast(window.i18n.t('stock_alert_success'), 'success');
+  }
+
+  // ==========================================
+  // PRODUCT QUICK VIEW MODAL & BUNDLE ENGINE
   // ==========================================
   async openProductModal(idOrSlug) {
     const modal = document.getElementById('product-modal-backdrop');
@@ -1974,9 +2114,10 @@ class PozitronApp {
       if (!p) return;
 
       const lang = window.i18n.currentLang;
-      const name = lang === 'tr' ? p.name_tr : p.name_en;
+      const name = lang === 'tr' ? (p.name_tr || p.name_en) : (p.name_en || p.name_tr);
       const desc = lang === 'tr' ? (p.description_tr || p.desc_tr) : (p.description_en || p.desc_en);
       const price = this.formatPrice(p.price_usd, p.price_try);
+      const isOutOfStock = (parseInt(p.stock) || 0) <= 0;
 
       let specsList = '';
       if (p.specs) {
@@ -1989,10 +2130,87 @@ class PozitronApp {
       let galleryHtml = '';
       if (gallery.length > 1) {
         galleryHtml = `
-          <div style="display:flex; gap:8px; margin-top:12px; justify-content:center;">
+          <div style="display:flex; gap:8px; margin-top:12px; justify-content:center; flex-wrap:wrap;">
             ${gallery.map((img, idx) => `
               <img src="${this.formatImgUrl(img)}" alt="${name} view ${idx + 1}" class="modal-thumb-img ${idx === 0 ? 'active' : ''}" style="width:52px; height:52px; object-fit:cover; border-radius:8px; border:2px solid ${idx === 0 ? 'var(--brand-primary)' : 'var(--border-subtle)'}; cursor:pointer; background:var(--bg-secondary); padding:2px;" data-src="${this.formatImgUrl(img)}">
             `).join('')}
+          </div>
+        `;
+      }
+
+      // Find 2 compatible bundle items
+      const bundleItems = this.getBundleRecommendations(p);
+
+      let bundleSectionHtml = '';
+      if (bundleItems.length > 0) {
+        const bItem1 = bundleItems[0];
+        const bItem2 = bundleItems[1];
+        const bName1 = lang === 'tr' ? (bItem1.name_tr || bItem1.name_en) : (bItem1.name_en || bItem1.name_tr);
+        const bName2 = bItem2 ? (lang === 'tr' ? (bItem2.name_tr || bItem2.name_en) : (bItem2.name_en || bItem2.name_tr)) : '';
+
+        bundleSectionHtml = `
+          <div class="bundle-section">
+            <div class="bundle-header">
+              <h3 class="bundle-title">📦 ${window.i18n.t('bundle_title')}</h3>
+              <span class="bundle-badge">${window.i18n.t('bundle_badge')}</span>
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">${window.i18n.t('bundle_save_hint')}</div>
+
+            <div class="bundle-container">
+              <div class="bundle-items-row">
+                <!-- Main Product -->
+                <div class="bundle-item-card" style="border-color:var(--brand-primary); background:#f0f9ff;">
+                  <input type="checkbox" checked disabled title="${window.i18n.t('this_item')}">
+                  <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="bundle-item-img">
+                  <div class="bundle-item-info">
+                    <span style="font-size:0.7rem; font-weight:700; color:var(--brand-primary);">${window.i18n.t('this_item')}</span>
+                    <span class="bundle-item-name" title="${name}">${name}</span>
+                    <span class="bundle-item-price">${price}</span>
+                  </div>
+                </div>
+
+                <div class="bundle-plus-icon">+</div>
+
+                <!-- Bundle Item 1 -->
+                <div class="bundle-item-card" id="bundle-card-1">
+                  <input type="checkbox" id="bundle-chk-1" checked>
+                  <img src="${this.formatImgUrl(bItem1.image_url)}" alt="${bName1}" class="bundle-item-img">
+                  <div class="bundle-item-info">
+                    <span class="bundle-item-name" title="${bName1}">${bName1}</span>
+                    <span class="bundle-item-price">${this.formatPrice(bItem1.price_usd, bItem1.price_try)}</span>
+                  </div>
+                </div>
+
+                ${bItem2 ? `
+                  <div class="bundle-plus-icon">+</div>
+
+                  <!-- Bundle Item 2 -->
+                  <div class="bundle-item-card" id="bundle-card-2">
+                    <input type="checkbox" id="bundle-chk-2" checked>
+                    <img src="${this.formatImgUrl(bItem2.image_url)}" alt="${bName2}" class="bundle-item-img">
+                    <div class="bundle-item-info">
+                      <span class="bundle-item-name" title="${bName2}">${bName2}</span>
+                      <span class="bundle-item-price">${this.formatPrice(bItem2.price_usd, bItem2.price_try)}</span>
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+
+              <!-- Summary & 1-Click Action -->
+              <div class="bundle-summary-card">
+                <div class="bundle-prices">
+                  <span class="bundle-orig-price" id="bundle-orig-total"></span>
+                  <div class="bundle-deal-price">
+                    <span id="bundle-deal-total"></span>
+                    <span class="bundle-save-tag">-%10 İNDİRİM</span>
+                  </div>
+                </div>
+                <button type="button" class="btn-bundle-add" id="btn-add-bundle">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                  <span id="btn-bundle-text">${window.i18n.t('bundle_add_btn')}</span>
+                </button>
+              </div>
+            </div>
           </div>
         `;
       }
@@ -2006,12 +2224,16 @@ class PozitronApp {
             ${galleryHtml}
           </div>
           <div style="display:flex; flex-direction:column; gap:12px;">
-            <div style="font-size:0.8rem; font-weight:700; color:var(--brand-primary); text-transform:uppercase; letter-spacing:0.5px;">${p.brand} • SKU: ${p.sku}</div>
+            <div style="font-size:0.8rem; font-weight:700; color:var(--brand-primary); text-transform:uppercase; letter-spacing:0.5px;">${p.brand} • SKU: ${p.sku || p.id}</div>
             <h2 style="font-size:1.35rem; font-weight:800; line-height:1.3; color:var(--text-primary); margin:0;">${name}</h2>
             <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-              <span style="color:#d97706; font-weight:700;">★ ${p.rating}</span>
-              <span style="color:var(--text-muted);">(${p.review_count || 12} pilot değerlendirmesi)</span>
-              <span style="color:var(--status-success); margin-left:auto; font-weight:600; font-size:0.82rem;">● Stokta Var (${p.stock} adet)</span>
+              <span style="color:#d97706; font-weight:700;">★ ${p.rating || '4.9'}</span>
+              <span style="color:var(--text-muted);">(${p.review_count || 14} pilot değerlendirmesi)</span>
+              ${!isOutOfStock ? `
+                <span style="color:var(--status-success); margin-left:auto; font-weight:600; font-size:0.82rem;">● ${window.i18n.t('in_stock')} (${p.stock} adet)</span>
+              ` : `
+                <span style="color:var(--status-error); margin-left:auto; font-weight:600; font-size:0.82rem;">● ${window.i18n.t('out_of_stock')}</span>
+              `}
             </div>
             <div style="font-size:1.6rem; font-weight:800; color:var(--brand-primary); margin:4px 0;">${price}</div>
             <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.6; margin:0;">${desc || ''}</p>
@@ -2019,16 +2241,24 @@ class PozitronApp {
             <div style="background:var(--bg-secondary); padding:12px 16px; border-radius:8px; border:1px solid var(--border-subtle); margin:6px 0;">
               <strong style="font-size:0.85rem; display:block; margin-bottom:6px; color:var(--text-primary);">Teknik Özellikler:</strong>
               <ul style="list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.8rem; color:var(--text-secondary); padding:0; margin:0;">
-                ${specsList}
+                ${specsList || '<li><strong>Uyumluluk:</strong> <span>FPV Drone Standart</span></li>'}
               </ul>
             </div>
 
-            <button type="button" class="btn-primary" id="btn-modal-add-cart" style="margin-top:8px; width:100%; justify-content:center; padding:12px;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-              <span>Sepete Ekle (${price})</span>
-            </button>
+            ${!isOutOfStock ? `
+              <button type="button" class="btn-primary" id="btn-modal-add-cart" style="margin-top:6px; width:100%; justify-content:center; padding:12px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                <span>${window.i18n.t('add_to_cart')} (${price})</span>
+              </button>
+            ` : `
+              <button type="button" class="btn-primary" id="btn-modal-stock-alert" style="margin-top:6px; width:100%; justify-content:center; padding:12px; background:#f59e0b; border-color:#f59e0b; font-weight:700;">
+                <span>🔔 ${window.i18n.t('stock_alert_btn')}</span>
+              </button>
+            `}
           </div>
         </div>
+
+        ${bundleSectionHtml}
       `;
 
       modal.style.display = 'flex';
@@ -2044,10 +2274,113 @@ class PozitronApp {
         });
       });
 
-      document.getElementById('btn-modal-add-cart').addEventListener('click', () => {
-        this.addToCart(p);
-        this.closeProductModal();
-      });
+      // Regular Add to Cart
+      const addCartBtn = document.getElementById('btn-modal-add-cart');
+      if (addCartBtn) {
+        addCartBtn.addEventListener('click', () => {
+          this.addToCart(p);
+          this.closeProductModal();
+        });
+      }
+
+      // Stock Alert Button
+      const alertBtn = document.getElementById('btn-modal-stock-alert');
+      if (alertBtn) {
+        alertBtn.addEventListener('click', () => {
+          this.closeProductModal();
+          this.openStockAlertModal(p.id);
+        });
+      }
+
+      // Bundle Interactive Recalculation & Add Handler
+      if (bundleItems.length > 0) {
+        const bItem1 = bundleItems[0];
+        const bItem2 = bundleItems[1];
+        const chk1 = document.getElementById('bundle-chk-1');
+        const chk2 = document.getElementById('bundle-chk-2');
+
+        const updateBundle = () => {
+          let sumUSD = p.price_usd;
+          let sumTRY = p.price_try;
+          let activeCount = 1;
+
+          if (chk1 && chk1.checked) {
+            sumUSD += bItem1.price_usd;
+            sumTRY += bItem1.price_try;
+            activeCount++;
+          }
+          if (chk2 && chk2.checked && bItem2) {
+            sumUSD += bItem2.price_usd;
+            sumTRY += bItem2.price_try;
+            activeCount++;
+          }
+
+          // 10% Bundle Discount
+          const dealUSD = sumUSD * 0.90;
+          const dealTRY = sumTRY * 0.90;
+
+          const origEl = document.getElementById('bundle-orig-total');
+          const dealEl = document.getElementById('bundle-deal-total');
+          const btnTxt = document.getElementById('btn-bundle-text');
+
+          if (origEl) origEl.textContent = this.formatPrice(sumUSD, sumTRY);
+          if (dealEl) dealEl.textContent = this.formatPrice(dealUSD, dealTRY);
+          if (btnTxt) btnTxt.textContent = `${activeCount} Ürünü Birlikte Sepete Ekle (${this.formatPrice(dealUSD, dealTRY)})`;
+        };
+
+        if (chk1) {
+          chk1.addEventListener('change', () => {
+            document.getElementById('bundle-card-1').classList.toggle('disabled', !chk1.checked);
+            updateBundle();
+          });
+        }
+        if (chk2) {
+          chk2.addEventListener('change', () => {
+            document.getElementById('bundle-card-2').classList.toggle('disabled', !chk2.checked);
+            updateBundle();
+          });
+        }
+
+        updateBundle();
+
+        const addBundleBtn = document.getElementById('btn-add-bundle');
+        if (addBundleBtn) {
+          addBundleBtn.addEventListener('click', () => {
+            // Add main product with 10% discount
+            const pDiscounted = {
+              ...p,
+              price_usd: Math.round(p.price_usd * 0.90 * 100) / 100,
+              price_try: Math.round(p.price_try * 0.90 * 100) / 100,
+              bundle_deal: true
+            };
+            this.addToCart(pDiscounted);
+
+            if (chk1 && chk1.checked) {
+              const b1Discounted = {
+                ...bItem1,
+                price_usd: Math.round(bItem1.price_usd * 0.90 * 100) / 100,
+                price_try: Math.round(bItem1.price_try * 0.90 * 100) / 100,
+                bundle_deal: true
+              };
+              this.addToCart(b1Discounted);
+            }
+
+            if (chk2 && chk2.checked && bItem2) {
+              const b2Discounted = {
+                ...bItem2,
+                price_usd: Math.round(bItem2.price_usd * 0.90 * 100) / 100,
+                price_try: Math.round(bItem2.price_try * 0.90 * 100) / 100,
+                bundle_deal: true
+              };
+              this.addToCart(b2Discounted);
+            }
+
+            this.closeProductModal();
+            this.showToast('🎉 Seçilen ürünler %10 Bundle İndirimiyle sepete eklendi!', 'success');
+            this.openCart();
+          });
+        }
+      }
 
     } catch (e) {
       console.error(e);
@@ -2055,7 +2388,8 @@ class PozitronApp {
   }
 
   closeProductModal() {
-    document.getElementById('product-modal-backdrop').style.display = 'none';
+    const modal = document.getElementById('product-modal-backdrop');
+    if (modal) modal.style.display = 'none';
   }
 
   // ==========================================

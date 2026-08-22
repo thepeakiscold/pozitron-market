@@ -1236,6 +1236,215 @@ img {
   color: #ffffff;
 }
 
+.card-stock-status.out-of-stock {
+  color: var(--status-error);
+}
+.card-stock-dot.out-of-stock {
+  background: var(--status-error);
+}
+
+.btn-card-alert {
+  padding: 7px 11px;
+  border-radius: var(--radius-sm);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.btn-card-alert:hover {
+  background: #f59e0b;
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   BUNDLE / FREQUENTLY BOUGHT TOGETHER SECTION
+   ========================================================================== */
+.bundle-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.bundle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bundle-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bundle-badge {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+}
+
+.bundle-container {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bundle-items-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bundle-item-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  flex: 1;
+  min-width: 130px;
+  transition: all 0.2s ease;
+}
+
+.bundle-item-card.disabled {
+  opacity: 0.5;
+  background: #f1f5f9;
+}
+
+.bundle-item-card input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--brand-primary);
+  cursor: pointer;
+}
+
+.bundle-item-img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 2px;
+  border: 1px solid #f1f5f9;
+}
+
+.bundle-item-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bundle-item-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.bundle-item-price {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+.bundle-plus-icon {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.bundle-summary-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.bundle-prices {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bundle-orig-price {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.bundle-deal-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bundle-save-tag {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btn-bundle-add {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+}
+
+.btn-bundle-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+}
+
 /* Empty State */
 .empty-catalog-state {
   text-align: center;

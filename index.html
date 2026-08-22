@@ -643,6 +643,48 @@
     </div>
   </div>
 
+  <!-- Back in Stock Alert Modal -->
+  <div class="modal-backdrop" id="stock-alert-modal-backdrop" style="display:none;">
+    <div class="modal-card modal-auth" style="max-width:480px;" role="dialog" aria-modal="true">
+      <button type="button" class="modal-close-btn" onclick="window.app && window.app.closeStockAlertModal()">&times;</button>
+      <div class="auth-header">
+        <div style="font-size:2.2rem; margin-bottom:6px;">🔔</div>
+        <h2 class="auth-title" data-i18n="stock_alert_title">Stoğa Girince Haber Ver</h2>
+        <p class="auth-subtitle" data-i18n="stock_alert_sub">Bu ürün envanterimize yeniden girdiğinde e-posta ve WhatsApp ile anında bilgilendirileceksiniz.</p>
+      </div>
+
+      <div id="stock-alert-prod-preview" style="display:flex; align-items:center; gap:14px; background:#f8fafc; border:1px solid var(--border-subtle); padding:12px; border-radius:12px; margin-bottom:18px;">
+        <img id="stock-alert-img" src="" alt="" style="width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;">
+        <div style="flex:1; min-width:0;">
+          <h4 id="stock-alert-prod-name" style="font-size:0.92rem; font-weight:700; color:var(--text-primary); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></h4>
+          <div style="font-size:0.8rem; color:var(--text-muted);"><span id="stock-alert-prod-brand"></span> • <code id="stock-alert-prod-sku"></code></div>
+        </div>
+      </div>
+
+      <form id="stock-alert-form" onsubmit="window.app && window.app.handleStockAlertSubmit(event)">
+        <input type="hidden" id="stock-alert-prod-id" value="">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" for="stock-alert-email" data-i18n="email_label">E-Posta Adresiniz *</label>
+          <input type="email" id="stock-alert-email" class="form-input" placeholder="pilot@drone.com" required>
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" for="stock-alert-phone" data-i18n="phone_label">Telefon / WhatsApp (Opsiyonel)</label>
+          <input type="tel" id="stock-alert-phone" class="form-input" placeholder="+90 5XX XXX XX XX">
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-secondary); cursor:pointer;">
+            <input type="checkbox" id="stock-alert-wa-opt" checked style="width:16px; height:16px; accent-color:var(--brand-primary);">
+            <span>WhatsApp üzerinden anlık stok bildirimi almak istiyorum</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; padding:12px; font-weight:700; border-radius:8px;">
+          🔔 Bildirim Oluştur
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- Drone Compatibility Builder Modal -->
   <div class="modal-backdrop" id="builder-modal-backdrop" style="display:none;">
     <div class="modal-card modal-builder" role="dialog" aria-modal="true">
