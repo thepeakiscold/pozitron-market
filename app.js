@@ -1961,35 +1961,44 @@ class PozitronApp {
   }
 
   // ==========================================
-  // BUNDLE & STOCK ALERT SYSTEM
+  // RECOMMENDED PRODUCTS & STOCK ALERT SYSTEM
   // ==========================================
   getBundleRecommendations(mainProd) {
     const all = this.getStaticData().products || [];
-    let cat1 = 'propellers', cat2 = 'esc';
+    let targetCats = ['propellers', 'esc', 'batteries_chargers'];
+
     if (mainProd.category_id === 'motors') {
-      cat1 = 'propellers';
-      cat2 = 'esc';
+      targetCats = ['propellers', 'esc', 'batteries_chargers'];
     } else if (mainProd.category_id === 'flight_controllers') {
-      cat1 = 'vtx_cameras';
-      cat2 = 'frames';
+      targetCats = ['esc', 'vtx_cameras', 'receivers'];
     } else if (mainProd.category_id === 'frames') {
-      cat1 = 'motors';
-      cat2 = 'flight_controllers';
+      targetCats = ['motors', 'flight_controllers', 'propellers'];
     } else if (mainProd.category_id === 'batteries_chargers') {
-      cat1 = 'propellers';
-      cat2 = 'accessories';
+      targetCats = ['propellers', 'accessories', 'tools'];
     } else if (mainProd.category_id === 'antennas') {
-      cat1 = 'vtx_cameras';
-      cat2 = 'transmitters_receivers';
+      targetCats = ['vtx_cameras', 'transmitters_receivers', 'accessories'];
+    } else if (mainProd.category_id === 'vtx_cameras') {
+      targetCats = ['antennas', 'goggles', 'flight_controllers'];
     } else {
-      cat1 = 'accessories';
-      cat2 = 'propellers';
+      targetCats = ['accessories', 'propellers', 'tools'];
     }
 
-    const item1 = all.find(x => x.category_id === cat1 && x.id !== mainProd.id) || all.find(x => x.id !== mainProd.id);
-    const item2 = all.find(x => x.category_id === cat2 && x.id !== mainProd.id && (!item1 || x.id !== item1.id)) || all.find(x => x.id !== mainProd.id && (!item1 || x.id !== item1.id));
+    const recommended = [];
+    targetCats.forEach(c => {
+      const match = all.find(x => x.category_id === c && x.id !== mainProd.id && !recommended.some(r => r.id === x.id) && (parseInt(x.stock) > 0));
+      if (match) recommended.push(match);
+    });
 
-    return [item1, item2].filter(Boolean);
+    // Fill remaining up to 3 items
+    if (recommended.length < 3) {
+      all.forEach(x => {
+        if (recommended.length < 3 && x.id !== mainProd.id && !recommended.some(r => r.id === x.id)) {
+          recommended.push(x);
+        }
+      });
+    }
+
+    return recommended.slice(0, 3);
   }
 
   openStockAlertModal(prodId) {
@@ -2136,77 +2145,39 @@ class PozitronApp {
         `;
       }
 
-      // Find 2 compatible bundle items
-      const bundleItems = this.getBundleRecommendations(p);
+      // Find 3 compatible recommended items
+      const recommendedItems = this.getBundleRecommendations(p);
 
-      let bundleSectionHtml = '';
-      if (bundleItems.length > 0) {
-        const bItem1 = bundleItems[0];
-        const bItem2 = bundleItems[1];
-        const bName1 = lang === 'tr' ? (bItem1.name_tr || bItem1.name_en) : (bItem1.name_en || bItem1.name_tr);
-        const bName2 = bItem2 ? (lang === 'tr' ? (bItem2.name_tr || bItem2.name_en) : (bItem2.name_en || bItem2.name_tr)) : '';
-
-        bundleSectionHtml = `
-          <div class="bundle-section">
-            <div class="bundle-header">
-              <h3 class="bundle-title">📦 ${window.i18n.t('bundle_title')}</h3>
-              <span class="bundle-badge">${window.i18n.t('bundle_badge')}</span>
+      let recSectionHtml = '';
+      if (recommendedItems.length > 0) {
+        recSectionHtml = `
+          <div class="recommended-section">
+            <div class="recommended-header">
+              <h3 class="recommended-title">${window.i18n.t('recommended_title')}</h3>
+              <p class="recommended-subtitle">${window.i18n.t('recommended_subtitle')}</p>
             </div>
-            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">${window.i18n.t('bundle_save_hint')}</div>
 
-            <div class="bundle-container">
-              <div class="bundle-items-row">
-                <!-- Main Product -->
-                <div class="bundle-item-card" style="border-color:var(--brand-primary); background:#f0f9ff;">
-                  <input type="checkbox" checked disabled title="${window.i18n.t('this_item')}">
-                  <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="bundle-item-img">
-                  <div class="bundle-item-info">
-                    <span style="font-size:0.7rem; font-weight:700; color:var(--brand-primary);">${window.i18n.t('this_item')}</span>
-                    <span class="bundle-item-name" title="${name}">${name}</span>
-                    <span class="bundle-item-price">${price}</span>
-                  </div>
-                </div>
+            <div class="recommended-grid">
+              ${recommendedItems.map(item => {
+                const itemName = lang === 'tr' ? (item.name_tr || item.name_en) : (item.name_en || item.name_tr);
+                const itemPrice = this.formatPrice(item.price_usd, item.price_try);
 
-                <div class="bundle-plus-icon">+</div>
-
-                <!-- Bundle Item 1 -->
-                <div class="bundle-item-card" id="bundle-card-1">
-                  <input type="checkbox" id="bundle-chk-1" checked>
-                  <img src="${this.formatImgUrl(bItem1.image_url)}" alt="${bName1}" class="bundle-item-img">
-                  <div class="bundle-item-info">
-                    <span class="bundle-item-name" title="${bName1}">${bName1}</span>
-                    <span class="bundle-item-price">${this.formatPrice(bItem1.price_usd, bItem1.price_try)}</span>
-                  </div>
-                </div>
-
-                ${bItem2 ? `
-                  <div class="bundle-plus-icon">+</div>
-
-                  <!-- Bundle Item 2 -->
-                  <div class="bundle-item-card" id="bundle-card-2">
-                    <input type="checkbox" id="bundle-chk-2" checked>
-                    <img src="${this.formatImgUrl(bItem2.image_url)}" alt="${bName2}" class="bundle-item-img">
-                    <div class="bundle-item-info">
-                      <span class="bundle-item-name" title="${bName2}">${bName2}</span>
-                      <span class="bundle-item-price">${this.formatPrice(bItem2.price_usd, bItem2.price_try)}</span>
+                return `
+                  <div class="recommended-card" data-prod-id="${item.id}" title="${itemName}">
+                    <div class="recommended-img-wrap">
+                      <img src="${this.formatImgUrl(item.image_url)}" alt="${itemName}" class="recommended-img" loading="lazy">
+                    </div>
+                    <div class="recommended-info">
+                      <span class="recommended-brand">${item.brand}</span>
+                      <h4 class="recommended-name">${itemName}</h4>
+                      <div class="recommended-bottom">
+                        <span class="recommended-price">${itemPrice}</span>
+                        <span class="recommended-btn-view">${window.i18n.t('recommended_view_btn')}</span>
+                      </div>
                     </div>
                   </div>
-                ` : ''}
-              </div>
-
-              <!-- Summary & 1-Click Action -->
-              <div class="bundle-summary-card">
-                <div class="bundle-prices">
-                  <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">Seçilenlerin Toplamı:</span>
-                  <div class="bundle-deal-price">
-                    <span id="bundle-deal-total"></span>
-                  </div>
-                </div>
-                <button type="button" class="btn-bundle-add" id="btn-add-bundle">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                  <span id="btn-bundle-text">${window.i18n.t('bundle_add_btn')}</span>
-                </button>
-              </div>
+                `;
+              }).join('')}
             </div>
           </div>
         `;
@@ -2255,7 +2226,7 @@ class PozitronApp {
           </div>
         </div>
 
-        ${bundleSectionHtml}
+        ${recSectionHtml}
       `;
 
       modal.style.display = 'flex';
@@ -2289,71 +2260,15 @@ class PozitronApp {
         });
       }
 
-      // Bundle Interactive Recalculation & Add Handler
-      if (bundleItems.length > 0) {
-        const bItem1 = bundleItems[0];
-        const bItem2 = bundleItems[1];
-        const chk1 = document.getElementById('bundle-chk-1');
-        const chk2 = document.getElementById('bundle-chk-2');
-
-        const updateBundle = () => {
-          let sumUSD = p.price_usd;
-          let sumTRY = p.price_try;
-          let activeCount = 1;
-
-          if (chk1 && chk1.checked) {
-            sumUSD += bItem1.price_usd;
-            sumTRY += bItem1.price_try;
-            activeCount++;
+      // Click listeners for Recommended Product Cards (opens product detail modal)
+      body.querySelectorAll('.recommended-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          const targetId = card.getAttribute('data-prod-id');
+          if (targetId) {
+            this.openProductModal(targetId);
           }
-          if (chk2 && chk2.checked && bItem2) {
-            sumUSD += bItem2.price_usd;
-            sumTRY += bItem2.price_try;
-            activeCount++;
-          }
-
-          const dealEl = document.getElementById('bundle-deal-total');
-          const btnTxt = document.getElementById('btn-bundle-text');
-
-          if (dealEl) dealEl.textContent = this.formatPrice(sumUSD, sumTRY);
-          if (btnTxt) btnTxt.textContent = `${activeCount} Ürünü Birlikte Sepete Ekle (${this.formatPrice(sumUSD, sumTRY)})`;
-        };
-
-        if (chk1) {
-          chk1.addEventListener('change', () => {
-            document.getElementById('bundle-card-1').classList.toggle('disabled', !chk1.checked);
-            updateBundle();
-          });
-        }
-        if (chk2) {
-          chk2.addEventListener('change', () => {
-            document.getElementById('bundle-card-2').classList.toggle('disabled', !chk2.checked);
-            updateBundle();
-          });
-        }
-
-        updateBundle();
-
-        const addBundleBtn = document.getElementById('btn-add-bundle');
-        if (addBundleBtn) {
-          addBundleBtn.addEventListener('click', () => {
-            // Add main product at regular price
-            this.addToCart(p);
-
-            if (chk1 && chk1.checked) {
-              this.addToCart(bItem1);
-            }
-
-            if (chk2 && chk2.checked && bItem2) {
-              this.addToCart(bItem2);
-            }
-
-            this.closeProductModal();
-            this.showToast('Uyumlu parçalar sepete eklendi!', 'success');
-            this.openCart();
-          });
-        }
-      }
+        });
+      });
 
     } catch (e) {
       console.error(e);
