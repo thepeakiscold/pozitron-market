@@ -1891,6 +1891,22 @@ class PozitronApp {
       this.pendingWaOrder = null;
     }
 
+    // Automatically Deduct Purchased Stock in Local DB & Admin Store
+    try {
+      const adminProds = JSON.parse(localStorage.getItem('pozitron_admin_products') || '[]');
+      if (adminProds.length > 0) {
+        this.cart.forEach(cItem => {
+          const prod = adminProds.find(p => p.id === cItem.id);
+          if (prod) {
+            prod.stock = Math.max(0, (prod.stock || 0) - (cItem.quantity || 1));
+          }
+        });
+        localStorage.setItem('pozitron_admin_products', JSON.stringify(adminProds));
+      }
+    } catch (stkErr) {
+      console.error('Stock deduction error:', stkErr);
+    }
+
     this.cart = [];
     localStorage.removeItem('pozitron_cart');
     this.appliedCoupon = null;

@@ -629,16 +629,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(400, {"error": "Email and password are required."})
                 return
 
-            # Check if email or IP is currently locked
-            is_locked_email, rem_sec_e, rem_min_e, attempts_left_e = check_login_rate_limit(email)
-            is_locked_ip, rem_sec_ip, rem_min_ip, attempts_left_ip = check_login_rate_limit(client_ip)
+            # Check if email is currently locked (3 failed attempts -> 30 min cooldown)
+            is_locked, rem_sec, rem_min, attempts_left = check_login_rate_limit(email)
 
-            if is_locked_email or is_locked_ip:
+            if is_locked:
                 conn.close()
-                rem_min = max(rem_min_e, rem_min_ip)
-                rem_sec = max(rem_sec_e, rem_sec_ip)
                 self.send_json(429, {
-                    "error": f"🛡️ Güvenlik Koruması: Çok fazla başarısız deneme yapıldı! Hesabınız kilitlendi. Lütfen {rem_min} dakika sonra tekrar deneyiniz.",
+                    "error": f"🛡️ Güvenlik Koruması: 3 kez hatalı deneme yapıldığı için bu hesap kilitlendi! Lütfen {rem_min} dakika sonra tekrar deneyiniz.",
                     "locked": True,
                     "remaining_seconds": rem_sec,
                     "remaining_minutes": rem_min
@@ -650,12 +647,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             if not user or dict(user).get('password_hash') != hash_password(password):
                 conn.close()
-                is_now_locked_e, rem_sec_e, rem_min_e, left_e = record_failed_login(email)
-                is_now_locked_ip, rem_sec_ip, rem_min_ip, left_ip = record_failed_login(client_ip)
+                is_now_locked, rem_sec, rem_min, left = record_failed_login(email)
                 
-                if is_now_locked_e or is_now_locked_ip:
-                    rem_min = max(rem_min_e, rem_min_ip)
-                    rem_sec = max(rem_sec_e, rem_sec_ip)
+                if is_now_locked:
                     self.send_json(429, {
                         "error": "🛡️ 3 kez hatalı giriş yapıldı! Güvenlik nedeniyle hesabınız 30 dakika süreyle kilitlenmiştir.",
                         "locked": True,
@@ -663,17 +657,15 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "remaining_minutes": rem_min
                     })
                 else:
-                    attempts_left = min(left_e, left_ip)
                     self.send_json(401, {
-                        "error": f"❌ Hatalı şifre veya e-posta! Kalan deneme hakkınız: {attempts_left}",
-                        "attempts_left": attempts_left,
+                        "error": f"❌ Hatalı şifre veya e-posta! Kalan deneme hakkınız: {left}",
+                        "attempts_left": left,
                         "locked": False
                     })
                 return
 
-            # Successful login - Clear failed attempts
+            # Successful login - Clear failed attempts for this email
             clear_login_attempts(email)
-            clear_login_attempts(client_ip)
 
             user_dict = dict(user)
             if 'password_hash' in user_dict:
