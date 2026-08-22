@@ -9,6 +9,7 @@ const i18nData = {
     nav_catalog: "Tüm Parçalar",
     nav_builder: "⚡ Drone Topla",
     nav_login: "Giriş Yap",
+    nav_cart: "Sepetim",
     menu_orders: "Siparişlerim",
     menu_logout: "Çıkış Yap",
     
