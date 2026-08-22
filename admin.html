@@ -640,7 +640,10 @@
       const app = document.getElementById('admin-app');
       let user = null;
       try {
-        user = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
+        const raw = localStorage.getItem('pozitron_user');
+        if (raw && typeof raw === 'string' && raw.trim().startsWith('{')) {
+          user = JSON.parse(raw);
+        }
       } catch(e) {}
 
       if (user && isUserAdmin(user)) {
@@ -724,37 +727,41 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
-        const data = await res.json();
-        if (res.status === 429 || data.locked) {
-          if (errEl) {
-            errEl.innerHTML = `🛡️ <strong>Güvenlik Koruması:</strong> ${data.error}`;
-            errEl.style.display = 'block';
-          }
-          return;
-        }
-        if (res.ok && data.success && data.user) {
-          if (!isUserAdmin(data.user)) {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await res.json();
+          if (res.status === 429 || data.locked) {
             if (errEl) {
-              errEl.textContent = '⛔ Bu hesap yönetici yetkisine sahip değildir.';
+              errEl.innerHTML = `🛡️ <strong>Güvenlik Koruması:</strong> ${data.error}`;
               errEl.style.display = 'block';
             }
             return;
           }
-          data.user.role = 'admin';
-          localStorage.setItem('pozitron_user', JSON.stringify(data.user));
-          checkAdminAuth();
-          showToast(`Giriş başarılı! Hoş geldiniz, ${data.user.full_name}`, 'success');
-          loadCategoriesAndBrands();
-          loadAdminStats();
-          loadAdminProducts(1);
-          return;
+          if (res.ok && data.success && data.user) {
+            if (!isUserAdmin(data.user)) {
+              if (errEl) {
+                errEl.textContent = '⛔ Bu hesap yönetici yetkisine sahip değildir.';
+                errEl.style.display = 'block';
+              }
+              return;
+            }
+            data.user.role = 'admin';
+            localStorage.setItem('pozitron_user', JSON.stringify(data.user));
+            checkAdminAuth();
+            showToast(`Giriş başarılı! Hoş geldiniz, ${data.user.full_name}`, 'success');
+            loadCategoriesAndBrands();
+            loadAdminStats();
+            loadAdminProducts(1);
+            return;
+          }
         }
       } catch (netErr) {}
 
       // 2. Local Fallback Database
       let usersDb = [];
       try {
-        usersDb = JSON.parse(localStorage.getItem('pozitron_users_db') || '[]');
+        const raw = localStorage.getItem('pozitron_users_db');
+        if (raw && raw.trim().startsWith('[')) usersDb = JSON.parse(raw);
       } catch(e) {}
 
       let matched = usersDb.find(u => u.email && u.email.toLowerCase() === email);
@@ -805,22 +812,29 @@
     // -------------------------------------------------------------
     function getLocalAdminProducts() {
       const cached = localStorage.getItem('pozitron_admin_products');
-      if (cached) {
+      if (cached && typeof cached === 'string' && cached.trim().startsWith('[')) {
         try {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         } catch(e) {}
       }
-      if (window.pozitronData && Array.isArray(window.pozitronData.products) && window.pozitronData.products.length > 0) {
-        const list = JSON.parse(JSON.stringify(window.pozitronData.products));
-        localStorage.setItem('pozitron_admin_products', JSON.stringify(list));
-        return list;
+      const dataBundle = window.pozitronData || window.__POZITRON_DATA__;
+      if (dataBundle && Array.isArray(dataBundle.products) && dataBundle.products.length > 0) {
+        try {
+          const list = JSON.parse(JSON.stringify(dataBundle.products));
+          localStorage.setItem('pozitron_admin_products', JSON.stringify(list));
+          return list;
+        } catch(e) {
+          return dataBundle.products;
+        }
       }
       return [];
     }
 
     function saveLocalAdminProducts(prods) {
-      localStorage.setItem('pozitron_admin_products', JSON.stringify(prods));
+      try {
+        localStorage.setItem('pozitron_admin_products', JSON.stringify(prods));
+      } catch(e) {}
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -920,26 +934,32 @@
     async function loadCategoriesAndBrands() {
       try {
         const catRes = await fetch('/api/categories');
-        if (catRes.ok) {
+        const ct = catRes.headers.get('content-type') || '';
+        if (catRes.ok && ct.includes('application/json')) {
           const catData = await catRes.json();
           categoriesList = catData.categories || [];
         }
       } catch (err) {}
 
       if (!categoriesList || categoriesList.length === 0) {
-        if (window.pozitronData && window.pozitronData.categories) {
-          categoriesList = window.pozitronData.categories;
+        const bundle = window.pozitronData || window.__POZITRON_DATA__;
+        if (bundle && bundle.categories) {
+          categoriesList = bundle.categories;
         } else {
           try {
             const r = await fetch('data/categories.json');
-            categoriesList = await r.json();
+            const ct = r.headers.get('content-type') || '';
+            if (r.ok && ct.includes('application/json')) {
+              categoriesList = await r.json();
+            }
           } catch(e) {}
         }
       }
 
       try {
         const brandRes = await fetch('/api/brands');
-        if (brandRes.ok) {
+        const ct = brandRes.headers.get('content-type') || '';
+        if (brandRes.ok && ct.includes('application/json')) {
           const brandData = await brandRes.json();
           brandsList = brandData.brands || [];
         }
@@ -988,7 +1008,8 @@
       let stats = null;
       try {
         const res = await fetch('/api/admin/stats');
-        if (res.ok) {
+        const ct = res.headers.get('content-type') || '';
+        if (res.ok && ct.includes('application/json')) {
           stats = await res.json();
         }
       } catch (err) {}
@@ -1664,9 +1685,20 @@
         localStorage.setItem('pozitron_webhook_url', url);
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">Google Sheets CRM\'den yükleniyor...</td></tr>';
         fetch(url)
-          .then(r => r.json())
+          .then(async r => {
+            const ct = r.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+              return await r.json();
+            }
+            const txt = await r.text();
+            try {
+              return JSON.parse(txt);
+            } catch(e) {
+              return [];
+            }
+          })
           .then(data => {
-            if (!data || data.length === 0) {
+            if (!data || !Array.isArray(data) || data.length === 0) {
               tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">Kayıtlı sipariş bulunamadı.</td></tr>';
               return;
             }
@@ -1688,7 +1720,12 @@
       } else {
         // Fallback: Local database orders
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">Veritabanından siparişler yükleniyor...</td></tr>';
-        const orders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
+        let orders = [];
+        try {
+          const raw = localStorage.getItem('pozitron_orders');
+          if (raw && raw.trim().startsWith('[')) orders = JSON.parse(raw);
+        } catch(e) {}
+
         if (orders.length === 0) {
           tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">Henüz verilmiş sipariş bulunmamaktadır.</td></tr>';
           return;

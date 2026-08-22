@@ -66,6 +66,7 @@ def export_static_data():
     with open(os.path.join(OUTPUT_DIR, "pozitron_data.js"), "w", encoding="utf-8") as f:
         f.write(f"// Pozitron Market Static Data Bundle for GitHub Pages\n")
         f.write(f"window.__POZITRON_DATA__ = {json.dumps(full_data, ensure_ascii=False)};\n")
+        f.write(f"window.pozitronData = window.__POZITRON_DATA__;\n")
 
     print(f"Exported {len(products)} products, {len(categories)} categories, and {len(brands)} brands to {OUTPUT_DIR}")
 
