@@ -2,93 +2,1282 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>Sipariş Pipeline - Pozitron Market</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #0f172a; }
-    h1 { margin-bottom: 20px; }
-    .card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    input.url-input { width: 100%; padding: 10px; box-sizing: border-box; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 4px; }
-    button { padding: 10px 16px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    button:hover { background: #1d4ed8; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; }
-    th { background: #f1f5f9; font-weight: 600; }
-    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; background: #fef08a; color: #854d0e; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pozitron Market - Stok, Fiyat ve Envanter Yönetim Paneli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="admin-body">
 
-  <div class="card">
-    <h1>📦 Sipariş CRM Pipeline</h1>
-    <p>Google Apps Script Web App URL'nizi aşağıya yapıştırarak tabloyu anlık olarak çekebilirsiniz.</p>
-    <input type="text" id="webhook-url" class="url-input" placeholder="https://script.google.com/macros/s/..../exec">
-    <button id="btn-load">Siparişleri Yükle (Yenile)</button>
+  <!-- Top Admin Bar -->
+  <header class="admin-header-bar">
+    <div class="admin-header-inner">
+      <div class="admin-logo-group">
+        <a href="/" style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:1.25rem; color:var(--text-primary); text-decoration:none;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+          </svg>
+          <span>POZITRON<span style="color:#0284c7;">.ADMIN</span></span>
+        </a>
+        <span class="admin-badge">Stok & Fiyat Kontrol Merkezi</span>
+      </div>
+
+      <div class="admin-header-actions">
+        <!-- Live USD/TRY Indicator -->
+        <div style="background:#f8fafc; border:1px solid var(--border-subtle); padding:6px 12px; border-radius:var(--radius-full); font-size:0.82rem; font-weight:600; display:flex; align-items:center; gap:6px;">
+          <span style="color:#16a34a;">●</span> USD Kuru: <strong id="header-usd-rate">47.00 ₺</strong>
+        </div>
+
+        <!-- Sync to Static Bundle Button -->
+        <button type="button" class="admin-btn-secondary" id="btn-sync-export" style="display:flex; align-items:center; gap:6px; font-size:0.85rem; padding:8px 14px;" title="GitHub Pages statik verilerini yenile">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span id="txt-sync-export">Statik Veriyi Güncelle</span>
+        </button>
+
+        <!-- Storefront Link -->
+        <a href="/" class="admin-btn-primary" style="font-size:0.85rem; padding:8px 16px; text-decoration:none; display:flex; align-items:center; gap:6px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+          <span>Mağazaya Dön</span>
+        </a>
+
+        <!-- Language Switcher -->
+        <button type="button" class="btn-action-icon" id="btn-lang-toggle" title="Dili Değiştir / Switch Language" style="font-weight:700; font-size:0.8rem;">
+          TR
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-container">
+
+    <!-- KPI Analytics Cards -->
+    <section class="admin-kpi-grid" id="kpi-section">
+      <div class="admin-kpi-card">
+        <div class="kpi-icon-wrap kpi-blue">📦</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Toplam Drone Parçası</span>
+          <span class="kpi-val" id="kpi-total-prods">--</span>
+          <span class="kpi-sub">Katalogtaki aktif modeller</span>
+        </div>
+      </div>
+
+      <div class="admin-kpi-card">
+        <div class="kpi-icon-wrap kpi-green">📊</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Toplam Stok Adedi</span>
+          <span class="kpi-val" id="kpi-total-units">--</span>
+          <span class="kpi-sub">Depodaki toplam ürün adedi</span>
+        </div>
+      </div>
+
+      <div class="admin-kpi-card" style="cursor:pointer;" onclick="filterStockStatus('low_stock')">
+        <div class="kpi-icon-wrap kpi-amber">⚠️</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Kritik Düşük Stok (≤5)</span>
+          <span class="kpi-val" id="kpi-low-stock" style="color:#d97706;">--</span>
+          <span class="kpi-sub">Filtrelemek için tıklayın</span>
+        </div>
+      </div>
+
+      <div class="admin-kpi-card" style="cursor:pointer;" onclick="filterStockStatus('out_of_stock')">
+        <div class="kpi-icon-wrap kpi-red">🚫</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Tükenen Parçalar (0)</span>
+          <span class="kpi-val" id="kpi-out-stock" style="color:#dc2626;">--</span>
+          <span class="kpi-sub">Filtrelemek için tıklayın</span>
+        </div>
+      </div>
+
+      <div class="admin-kpi-card">
+        <div class="kpi-icon-wrap kpi-purple">💰</div>
+        <div class="kpi-details">
+          <span class="kpi-label">Toplam Envanter Değeri</span>
+          <span class="kpi-val" id="kpi-valuation-usd" style="font-size:1.35rem;">--</span>
+          <span class="kpi-sub" id="kpi-valuation-try">--</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="admin-tabs-bar">
+      <button type="button" class="admin-tab-btn active" data-tab="tab-inventory" onclick="switchAdminTab('tab-inventory')">
+        <span>📦</span> <span>Stok & Fiyat Yöneticisi</span>
+      </button>
+      <button type="button" class="admin-tab-btn" data-tab="tab-bulk" onclick="switchAdminTab('tab-bulk')">
+        <span>⚡</span> <span>Toplu İşlemler & Kur Senkronizasyonu</span>
+      </button>
+      <button type="button" class="admin-tab-btn" data-tab="tab-add" onclick="switchAdminTab('tab-add')">
+        <span>➕</span> <span>Yeni Ürün Ekle</span>
+      </button>
+      <button type="button" class="admin-tab-btn" data-tab="tab-orders" onclick="switchAdminTab('tab-orders')">
+        <span>📋</span> <span>Sipariş CRM Pipeline</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: STOCK & PRICE MANAGER -->
+    <section id="tab-inventory" class="tab-content">
+      <div class="admin-card">
+        <!-- Search & Filter Toolbar -->
+        <div class="admin-toolbar">
+          <div class="admin-search-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="admin-search-input" placeholder="Ürün adı, SKU, marka veya kategori ara (örn: SpeedyBee, 2306, ESC)...">
+          </div>
+
+          <div class="admin-filters-group">
+            <select class="admin-select" id="filter-category" onchange="loadAdminProducts(1)">
+              <option value="all">Tüm Kategoriler</option>
+            </select>
+
+            <select class="admin-select" id="filter-brand" onchange="loadAdminProducts(1)">
+              <option value="all">Tüm Markalar</option>
+            </select>
+
+            <select class="admin-select" id="filter-stock-status" onchange="loadAdminProducts(1)">
+              <option value="all">Tüm Stok Seviyeleri</option>
+              <option value="in_stock">Stokta Var (>5)</option>
+              <option value="low_stock">Kritik Stok (1-5)</option>
+              <option value="out_of_stock">Tükenenler (0)</option>
+            </select>
+
+            <select class="admin-select" id="filter-sort" onchange="loadAdminProducts(1)">
+              <option value="id_asc">Sırala: ID (Artan)</option>
+              <option value="stock_asc">Stok: En Düşükten</option>
+              <option value="stock_desc">Stok: En Yüksekten</option>
+              <option value="price_usd_asc">Fiyat: Düşükten Yükseğe</option>
+              <option value="price_usd_desc">Fiyat: Yüksekten Düşüğe</option>
+              <option value="discount_desc">En Yüksek İndirim</option>
+              <option value="name_asc">İsim (A-Z)</option>
+            </select>
+
+            <button type="button" class="admin-btn-secondary" onclick="resetAdminFilters()" style="padding:9px 14px;">
+              Sıfırla
+            </button>
+          </div>
+        </div>
+
+        <!-- Inventory Data Table -->
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="inventory-table">
+            <thead>
+              <tr>
+                <th style="width:40px; text-align:center;"><input type="checkbox" id="chk-select-all" onchange="toggleSelectAll(this)"></th>
+                <th>Ürün Bilgisi & SKU</th>
+                <th>Kategori / Marka</th>
+                <th style="min-width:180px;">Stok Adedi & Durum</th>
+                <th style="min-width:130px;">Fiyat (USD $)</th>
+                <th style="min-width:140px;">Fiyat (TRY ₺)</th>
+                <th style="min-width:90px;">İndirim %</th>
+                <th style="text-align:right;">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody">
+              <tr>
+                <td colspan="8" style="text-align:center; padding:40px; color:#64748b;">
+                  Envanter verileri yükleniyor...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:20px; flex-wrap:wrap; gap:12px;">
+          <div style="font-size:0.88rem; color:var(--text-muted);" id="pagination-info">
+            0 ürün listeleniyor
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <select class="admin-select" id="page-limit-select" onchange="loadAdminProducts(1)" style="padding:6px 10px; font-size:0.82rem;">
+              <option value="25">25 / sayfa</option>
+              <option value="50" selected>50 / sayfa</option>
+              <option value="100">100 / sayfa</option>
+            </select>
+            <button type="button" class="admin-btn-secondary" id="btn-prev-page" onclick="changeAdminPage(-1)" style="padding:6px 12px;">Önceki</button>
+            <span style="font-weight:600; font-size:0.88rem; padding:0 8px;" id="current-page-num">1 / 1</span>
+            <button type="button" class="admin-btn-secondary" id="btn-next-page" onclick="changeAdminPage(1)" style="padding:6px 12px;">Sonraki</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: BULK OPERATIONS & FX SYNC -->
+    <section id="tab-bulk" class="tab-content" style="display:none;">
+      <div class="admin-card">
+        <h2 style="font-size:1.3rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+          <span>💱</span> Döviz Kuru ve Otomatik Fiyat Senkronizasyonu
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+          USD bazlı tüm fiyatları tek tıkla güncel döviz kuruna göre Türk Lirası'na dönüştürün.
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:20px; max-width:680px; margin-bottom:32px;">
+          <div class="admin-form-row">
+            <div class="admin-form-group">
+              <label for="bulk-usd-rate">Döviz Kuru (1 USD = ? TRY)</label>
+              <input type="number" id="bulk-usd-rate" step="0.1" value="47.0" style="font-weight:700; font-size:1.1rem; color:#0284c7;">
+            </div>
+            <div class="admin-form-group">
+              <label for="bulk-rate-category">Uygulanacak Kategori</label>
+              <select id="bulk-rate-category">
+                <option value="all">Tüm Katalog</option>
+              </select>
+            </div>
+          </div>
+          <button type="button" class="admin-btn-primary" onclick="runCurrencySync()">
+            ⚡ Tüm TRY Fiyatlarını Kur ile Güncelle
+          </button>
+        </div>
+
+        <hr style="border:none; border-top:1px solid var(--border-subtle); margin:30px 0;">
+
+        <h2 style="font-size:1.3rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+          <span>📦</span> Kategori / Marka Bazlı Toplu Stok Güncellemesi
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+          Yeni sevkiyat geldiğinde seçili kategori veya markadaki tüm ürünlere toplu stok ekleyin.
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:20px; max-width:680px; margin-bottom:32px;">
+          <div class="admin-form-row">
+            <div class="admin-form-group">
+              <label for="bulk-stock-cat">Hedef Kategori</label>
+              <select id="bulk-stock-cat">
+                <option value="all">Tüm Kategoriler</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="bulk-stock-brand">Hedef Marka</label>
+              <select id="bulk-stock-brand">
+                <option value="all">Tüm Markalar</option>
+              </select>
+            </div>
+          </div>
+          <div class="admin-form-row">
+            <div class="admin-form-group">
+              <label for="bulk-stock-action">İşlem Türü</label>
+              <select id="bulk-stock-action">
+                <option value="stock_increment">Stok Ekle (+ Adet)</option>
+                <option value="stock_set">Stoğu Sabit Değere Ayarla (= Adet)</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="bulk-stock-val">Adet Değeri</label>
+              <input type="number" id="bulk-stock-val" value="25">
+            </div>
+          </div>
+          <button type="button" class="admin-btn-primary" onclick="runBulkStockByFilter()">
+            📦 Toplu Stoğu Uygula
+          </button>
+        </div>
+
+        <hr style="border:none; border-top:1px solid var(--border-subtle); margin:30px 0;">
+
+        <h2 style="font-size:1.3rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+          <span>🏷️</span> Toplu İndirim / Fiyat Yüzdesi Kampanyası
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+          Sezonluk indirim veya fiyat artışı uygulayın.
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:20px; max-width:680px;">
+          <div class="admin-form-row">
+            <div class="admin-form-group">
+              <label for="bulk-promo-cat">Hedef Kategori</label>
+              <select id="bulk-promo-cat">
+                <option value="all">Tüm Kategoriler</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="bulk-promo-val">İndirim Yüzdesi (%)</label>
+              <input type="number" id="bulk-promo-val" value="15" min="0" max="90">
+            </div>
+          </div>
+          <button type="button" class="admin-btn-primary" onclick="runBulkDiscountByFilter()">
+            🏷️ İndirim Kampanyasını Tanımla
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ADD NEW PRODUCT -->
+    <section id="tab-add" class="tab-content" style="display:none;">
+      <div class="admin-card">
+        <h2 style="font-size:1.3rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+          <span>➕</span> Envantere Yeni Drone Parçası Ekle
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:24px;">
+          Veritabanına yeni bir motor, kontrol kartı, ESC, pervane veya aksesuar kaydedin.
+        </p>
+
+        <form id="add-product-form" onsubmit="handleCreateProduct(event)">
+          <div class="admin-form-row">
+            <div class="admin-form-group">
+              <label for="new-name-en">Ürün Adı (İngilizce / EN) *</label>
+              <input type="text" id="new-name-en" required placeholder="örn: T-Motor F60 PRO V 1950KV Brushless Motor">
+            </div>
+            <div class="admin-form-group">
+              <label for="new-name-tr">Ürün Adı (Türkçe / TR) *</label>
+              <input type="text" id="new-name-tr" required placeholder="örn: T-Motor F60 PRO V 1950KV FPV Motoru">
+            </div>
+          </div>
+
+          <div class="admin-form-row">
+            <div class="admin-form-group">
+              <label for="new-category">Kategori *</label>
+              <select id="new-category" required>
+                <!-- Filled dynamically -->
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="new-brand">Marka *</label>
+              <input type="text" id="new-brand" required placeholder="örn: T-Motor, SpeedyBee, BetaFPV, DJI">
+            </div>
+            <div class="admin-form-group">
+              <label for="new-sku">SKU Kodu (Boş bırakılırsa otomatik üretilir)</label>
+              <input type="text" id="new-sku" placeholder="örn: PZT-MOT-2306-01">
+            </div>
+          </div>
+
+          <div class="admin-form-row">
+            <div class="admin-form-group">
+              <label for="new-price-usd">Fiyat (USD $) *</label>
+              <input type="number" id="new-price-usd" step="0.01" required value="29.99" oninput="syncNewProductTryPrice()">
+            </div>
+            <div class="admin-form-group">
+              <label for="new-price-try">Fiyat (TRY ₺) *</label>
+              <input type="number" id="new-price-try" step="0.01" required value="1409.53">
+            </div>
+            <div class="admin-form-group">
+              <label for="new-stock">Başlangıç Stok Adedi *</label>
+              <input type="number" id="new-stock" required value="50" min="0">
+            </div>
+            <div class="admin-form-group">
+              <label for="new-badge">Rozet (Badge)</label>
+              <select id="new-badge">
+                <option value="NEW">NEW (Yeni)</option>
+                <option value="TOP SELLER">TOP SELLER (En Çok Satan)</option>
+                <option value="PRO">PRO PILOT</option>
+                <option value="SALE">SALE (İndirimde)</option>
+                <option value="">Rozet Yok</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="admin-form-group" style="margin-bottom:16px;">
+            <label for="new-image-url">Ürün Görsel URL'si</label>
+            <input type="url" id="new-image-url" value="https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80">
+          </div>
+
+          <div class="admin-form-row">
+            <div class="admin-form-group">
+              <label for="new-desc-en">Açıklama (EN)</label>
+              <textarea id="new-desc-en" rows="3" placeholder="High performance drone racing motor with titanium shaft..."></textarea>
+            </div>
+            <div class="admin-form-group">
+              <label for="new-desc-tr">Açıklama (TR)</label>
+              <textarea id="new-desc-tr" rows="3" placeholder="Titanyum milli yüksek performanslı FPV yarış motoru..."></textarea>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; gap:12px;">
+            <button type="submit" class="admin-btn-primary">
+              💾 Ürünü Kaydet ve Envantere Ekle
+            </button>
+            <button type="reset" class="admin-btn-secondary">
+              Formu Temizle
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 4: ORDERS CRM PIPELINE -->
+    <section id="tab-orders" class="tab-content" style="display:none;">
+      <div class="admin-card">
+        <h2 style="font-size:1.3rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+          <span>📦</span> Sipariş CRM Pipeline
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+          Google Apps Script Webhook URL'nizi bağlayarak veya SQLite veritabanındaki siparişleri anlık görüntüleyin.
+        </p>
+
+        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+          <input type="text" id="webhook-url" class="admin-select" style="flex:1; min-width:300px;" placeholder="https://script.google.com/macros/s/..../exec">
+          <button type="button" class="admin-btn-primary" id="btn-load-orders" onclick="loadCrmOrders()">
+            Siparişleri Yükle / Yenile
+          </button>
+        </div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="orders-table">
+            <thead>
+              <tr>
+                <th>Tarih</th>
+                <th>Sipariş No</th>
+                <th>Müşteri</th>
+                <th>Telefon</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th>Adres</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" style="text-align:center; color:#64748b; padding:30px;">Henüz sipariş yüklenmedi.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Floating Bulk Action Bar -->
+  <div class="bulk-floating-bar" id="bulk-bar" style="display:none;">
+    <div>
+      <strong id="bulk-count-text">0 ürün seçildi</strong>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button type="button" class="bulk-btn" onclick="executeBulkAction('stock_increment', 10)">+10 Stok</button>
+      <button type="button" class="bulk-btn" onclick="executeBulkAction('stock_increment', -5)">-5 Stok</button>
+      <button type="button" class="bulk-btn" onclick="executeBulkAction('price_percent', 10)">+%10 Fiyat</button>
+      <button type="button" class="bulk-btn" onclick="executeBulkAction('discount_set', 15)">%15 İndirim</button>
+      <button type="button" class="bulk-btn" onclick="executeBulkAction('currency_sync', 47.0)">Kurla Eşitle</button>
+      <button type="button" class="bulk-btn" style="background:#ef4444;" onclick="executeBulkDelete()">Seçilenleri Sil</button>
+      <button type="button" class="bulk-btn" style="background:transparent; border:1px solid rgba(255,255,255,0.4);" onclick="clearAllSelection()">✕</button>
+    </div>
   </div>
 
-  <div class="card" style="overflow-x: auto;">
-    <table id="orders-table">
-      <thead>
-        <tr>
-          <th>Tarih</th>
-          <th>Sipariş No</th>
-          <th>Müşteri</th>
-          <th>Telefon</th>
-          <th>Tutar</th>
-          <th>Durum</th>
-          <th>Adres</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Data will be loaded here -->
-        <tr><td colspan="7" style="text-align:center; color:#64748b;">Henüz sipariş yüklenmedi veya tablo boş.</td></tr>
-      </tbody>
-    </table>
+  <!-- Deep Edit Modal -->
+  <div class="modal-backdrop" id="edit-modal-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:var(--radius-lg); width:95%; max-width:700px; max-height:90vh; overflow-y:auto; padding:28px; box-shadow:var(--shadow-lg);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+        <h3 style="font-size:1.25rem; font-weight:700;" id="edit-modal-title">Ürün Düzenle</h3>
+        <button type="button" onclick="closeEditModal()" style="font-size:1.5rem; color:#64748b; cursor:pointer;">&times;</button>
+      </div>
+
+      <form id="edit-product-form" onsubmit="handleSaveEditModal(event)">
+        <input type="hidden" id="edit-prod-id">
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label for="edit-name-en">Ürün Adı (EN)</label>
+            <input type="text" id="edit-name-en" required>
+          </div>
+          <div class="admin-form-group">
+            <label for="edit-name-tr">Ürün Adı (TR)</label>
+            <input type="text" id="edit-name-tr" required>
+          </div>
+        </div>
+
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label for="edit-category">Kategori</label>
+            <select id="edit-category" required></select>
+          </div>
+          <div class="admin-form-group">
+            <label for="edit-brand">Marka</label>
+            <input type="text" id="edit-brand" required>
+          </div>
+        </div>
+
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label for="edit-stock">Stok Adedi</label>
+            <input type="number" id="edit-stock" required min="0">
+          </div>
+          <div class="admin-form-group">
+            <label for="edit-price-usd">Fiyat (USD $)</label>
+            <input type="number" id="edit-price-usd" step="0.01" required oninput="syncEditModalTryPrice()">
+          </div>
+          <div class="admin-form-group">
+            <label for="edit-price-try">Fiyat (TRY ₺)</label>
+            <input type="number" id="edit-price-try" step="0.01" required>
+          </div>
+          <div class="admin-form-group">
+            <label for="edit-discount">İndirim %</label>
+            <input type="number" id="edit-discount" min="0" max="99" value="0">
+          </div>
+        </div>
+
+        <div class="admin-form-row">
+          <div class="admin-form-group">
+            <label for="edit-badge">Rozet</label>
+            <input type="text" id="edit-badge" placeholder="NEW, TOP SELLER, SALE">
+          </div>
+          <div class="admin-form-group">
+            <label for="edit-image-url">Görsel URL</label>
+            <input type="url" id="edit-image-url">
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+          <button type="button" class="admin-btn-secondary" onclick="closeEditModal()">İptal</button>
+          <button type="submit" class="admin-btn-primary">💾 Güncellemeleri Kaydet</button>
+        </div>
+      </form>
+    </div>
   </div>
 
+  <!-- Toast Container -->
+  <div id="admin-toast-container" style="position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px;"></div>
+
+  <script src="i18n.js"></script>
   <script>
-    // Sayfa açıldığında daha önce kaydedilmiş URL varsa kutuya yaz
-    document.addEventListener('DOMContentLoaded', () => {
+    /**
+     * Pozitron Admin Dashboard Engine
+     */
+    let currentPage = 1;
+    let totalPages = 1;
+    let selectedProductIds = new Set();
+    let categoriesList = [];
+    let brandsList = [];
+    let currentUsdRate = 47.0;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check saved lang & webhook
+      const savedLang = localStorage.getItem('pozitron_lang') || 'tr';
+      document.getElementById('btn-lang-toggle').textContent = savedLang.toUpperCase();
+
       const savedUrl = localStorage.getItem('pozitron_webhook_url');
-      if (savedUrl) {
-        document.getElementById('webhook-url').value = savedUrl;
+      if (savedUrl) document.getElementById('webhook-url').value = savedUrl;
+
+      // Event listener for search debounce
+      let searchTimeout = null;
+      document.getElementById('admin-search-input').addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          currentPage = 1;
+          loadAdminProducts(1);
+        }, 300);
+      });
+
+      // Language Switcher
+      document.getElementById('btn-lang-toggle').addEventListener('click', () => {
+        const current = localStorage.getItem('pozitron_lang') || 'tr';
+        const next = current === 'tr' ? 'en' : 'tr';
+        localStorage.setItem('pozitron_lang', next);
+        document.getElementById('btn-lang-toggle').textContent = next.toUpperCase();
+        loadAdminProducts(currentPage);
+      });
+
+      // Sync button
+      document.getElementById('btn-sync-export').addEventListener('click', handleSyncExport);
+
+      // Load initial data
+      await loadCategoriesAndBrands();
+      await loadAdminStats();
+      await loadAdminProducts(1);
+    });
+
+    // -------------------------------------------------------------
+    // UI Helpers & Tab Switching
+    // -------------------------------------------------------------
+    function switchAdminTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+
+      const targetTab = document.getElementById(tabId);
+      if (targetTab) targetTab.style.display = 'block';
+
+      const activeBtn = document.querySelector(`.admin-tab-btn[data-tab="${tabId}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      if (tabId === 'tab-inventory') {
+        loadAdminStats();
+        loadAdminProducts(currentPage);
       }
-    });
+    }
 
-    document.getElementById('btn-load').addEventListener('click', () => {
-      const url = document.getElementById('webhook-url').value.trim();
-      if (!url) return alert('Lütfen Google Apps Script URL adresini girin!');
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('admin-toast-container');
+      const toast = document.createElement('div');
+      toast.style.padding = '12px 20px';
+      toast.style.borderRadius = '8px';
+      toast.style.color = '#fff';
+      toast.style.fontWeight = '600';
+      toast.style.fontSize = '0.9rem';
+      toast.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
+      toast.style.background = type === 'success' ? '#16a34a' : (type === 'error' ? '#dc2626' : '#0284c7');
+      toast.style.transition = 'all 0.25s ease';
+      toast.textContent = msg;
 
-      // ÖNEMLİ: Ana sitenin bu URL'ye siparişleri gönderebilmesi için URL'yi tarayıcıya kaydet
-      localStorage.setItem('pozitron_webhook_url', url);
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
 
-      const tbody = document.querySelector('#orders-table tbody');
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Yükleniyor... Lütfen bekleyin.</td></tr>';
+    // -------------------------------------------------------------
+    // API: Load Categories & Brands
+    // -------------------------------------------------------------
+    async function loadCategoriesAndBrands() {
+      try {
+        const catRes = await fetch('/api/categories');
+        const catData = await catRes.json();
+        categoriesList = catData.categories || [];
 
-      fetch(url)
-        .then(res => res.json())
-        .then(data => {
-          if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Kayıtlı sipariş bulunamadı.</td></tr>';
-            return;
-          }
+        const brandRes = await fetch('/api/brands');
+        const brandData = await brandRes.json();
+        brandsList = brandData.brands || [];
 
-          tbody.innerHTML = data.reverse().map(row => `
-            <tr>
-              <td>${row['Tarih'] || '-'}</td>
-              <td><strong>${row['Sipariş No'] || '-'}</strong></td>
-              <td>${row['Müşteri Adı'] || '-'}</td>
-              <td>${row['Telefon'] || '-'}</td>
-              <td><strong>${row['Tutar (TRY)'] || '0'} ₺</strong></td>
-              <td><span class="status-badge">${row['Durum'] || '-'}</span></td>
-              <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${row['Adres']}">${row['Adres'] || '-'}</td>
-            </tr>
-          `).join('');
-        })
-        .catch(err => {
-          console.error(err);
-          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:red;">Hata oluştu: ${err.message}</td></tr>`;
+        // Populate category dropdowns
+        const filterCat = document.getElementById('filter-category');
+        const bulkRateCat = document.getElementById('bulk-rate-category');
+        const bulkStockCat = document.getElementById('bulk-stock-cat');
+        const bulkPromoCat = document.getElementById('bulk-promo-cat');
+        const newCat = document.getElementById('new-category');
+        const editCat = document.getElementById('edit-category');
+
+        categoriesList.forEach(c => {
+          const opt = `<option value="${c.id}">${c.name_tr} (${c.name_en})</option>`;
+          filterCat.innerHTML += opt;
+          bulkRateCat.innerHTML += opt;
+          bulkStockCat.innerHTML += opt;
+          bulkPromoCat.innerHTML += opt;
+          newCat.innerHTML += opt;
+          editCat.innerHTML += opt;
         });
-    });
+
+        // Populate brand dropdowns
+        const filterBrand = document.getElementById('filter-brand');
+        const bulkStockBrand = document.getElementById('bulk-stock-brand');
+        brandsList.forEach(b => {
+          const opt = `<option value="${b}">${b}</option>`;
+          filterBrand.innerHTML += opt;
+          bulkStockBrand.innerHTML += opt;
+        });
+
+      } catch (err) {
+        console.error("Error loading categories/brands", err);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // API: Load KPI Stats
+    // -------------------------------------------------------------
+    async function loadAdminStats() {
+      try {
+        const res = await fetch('/api/admin/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        document.getElementById('kpi-total-prods').textContent = data.total_products.toLocaleString();
+        document.getElementById('kpi-total-units').textContent = data.total_stock.toLocaleString() + ' Adet';
+        document.getElementById('kpi-low-stock').textContent = data.low_stock_count;
+        document.getElementById('kpi-out-stock').textContent = data.out_of_stock_count;
+        document.getElementById('kpi-valuation-usd').textContent = '$' + data.total_val_usd.toLocaleString('en-US', {minimumFractionDigits:2});
+        document.getElementById('kpi-valuation-try').textContent = data.total_val_try.toLocaleString('tr-TR', {minimumFractionDigits:2}) + ' ₺';
+      } catch (err) {
+        console.error("Error loading admin stats", err);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // API: Load Products Table
+    // -------------------------------------------------------------
+    async function loadAdminProducts(page = 1) {
+      currentPage = page;
+      const q = document.getElementById('admin-search-input').value.trim();
+      const cat = document.getElementById('filter-category').value;
+      const brand = document.getElementById('filter-brand').value;
+      const stockStatus = document.getElementById('filter-stock-status').value;
+      const sort = document.getElementById('filter-sort').value;
+      const limit = document.getElementById('page-limit-select').value;
+
+      const params = new URLSearchParams({
+        page: currentPage,
+        limit: limit,
+        sort: sort
+      });
+
+      if (q) params.set('q', q);
+      if (cat !== 'all') params.set('category', cat);
+      if (brand !== 'all') params.set('brand', brand);
+      if (stockStatus !== 'all') params.set('stock_status', stockStatus);
+
+      const tbody = document.getElementById('inventory-tbody');
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#64748b;">Yükleniyor...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/admin/products?${params.toString()}`);
+        const data = await res.json();
+        const products = data.products || [];
+        totalPages = data.total_pages || 1;
+
+        document.getElementById('pagination-info').textContent = `Toplam ${data.total} üründen ${(page-1)*limit + 1} - ${Math.min(page*limit, data.total)} arası gösteriliyor`;
+        document.getElementById('current-page-num').textContent = `${currentPage} / ${totalPages}`;
+        document.getElementById('btn-prev-page').disabled = currentPage <= 1;
+        document.getElementById('btn-next-page').disabled = currentPage >= totalPages;
+
+        if (products.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:#64748b;">Kriterlere uygun ürün bulunamadı.</td></tr>`;
+          return;
+        }
+
+        const lang = localStorage.getItem('pozitron_lang') || 'tr';
+
+        tbody.innerHTML = products.map(p => {
+          const isChecked = selectedProductIds.has(p.id);
+          const isLow = p.stock > 0 && p.stock <= 5;
+          const isOut = p.stock === 0;
+          const rowClass = isOut ? 'row-out-stock' : (isLow ? 'row-low-stock' : '');
+          
+          let badgeHtml = '<span class="badge-stock badge-stock-in">STOKTA</span>';
+          if (isOut) badgeHtml = '<span class="badge-stock badge-stock-out">TÜKENDİ</span>';
+          else if (isLow) badgeHtml = '<span class="badge-stock badge-stock-low">KRİTİK STOK</span>';
+
+          const title = lang === 'tr' ? p.name_tr : p.name_en;
+
+          return `
+            <tr class="${rowClass}" id="row-${p.id}">
+              <td style="text-align:center;">
+                <input type="checkbox" class="chk-prod" data-id="${p.id}" ${isChecked ? 'checked' : ''} onchange="handleProductSelect('${p.id}', this.checked)">
+              </td>
+              <td>
+                <div class="product-cell" style="cursor:pointer;" onclick="openEditModal('${p.id}')" title="Ürün detaylarını düzenlemek için tıklayın">
+                  <img src="${p.image_url}" alt="" onerror="this.src='https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=150&q=80'" style="cursor:pointer;">
+                  <div>
+                    <div class="product-meta-name" title="${title}" style="cursor:pointer; font-weight:600;">${title}</div>
+                    <div class="product-meta-sub"><code style="background:#e2e8f0; padding:1px 5px; border-radius:4px;">${p.sku}</code></div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="font-weight:600; color:var(--text-primary); font-size:0.88rem;">${p.brand}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">${p.category_name_tr || p.category_id}</div>
+              </td>
+              <td>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div class="stock-stepper-group">
+                    <button type="button" class="btn-step" onclick="adjustRowStock('${p.id}', -1)">-</button>
+                    <input type="number" class="input-stock" id="stock-${p.id}" value="${p.stock}" min="0">
+                    <button type="button" class="btn-step" onclick="adjustRowStock('${p.id}', 1)">+</button>
+                  </div>
+                  ${badgeHtml}
+                </div>
+              </td>
+              <td>
+                <div class="price-input-cell">
+                  <span>$</span>
+                  <input type="number" step="0.01" id="usd-${p.id}" value="${p.price_usd}" oninput="handleUsdRowInput('${p.id}')">
+                </div>
+              </td>
+              <td>
+                <div class="price-input-cell">
+                  <span>₺</span>
+                  <input type="number" step="0.01" id="try-${p.id}" value="${p.price_try}">
+                </div>
+              </td>
+              <td>
+                <div class="price-input-cell" style="width:65px;">
+                  <input type="number" min="0" max="99" id="disc-${p.id}" value="${p.discount_pct || 0}">
+                  <span>%</span>
+                </div>
+              </td>
+              <td style="text-align:right;">
+                <div style="display:inline-flex; align-items:center; gap:6px;">
+                  <button type="button" class="btn-action-save" id="btn-save-${p.id}" onclick="saveRowProduct('${p.id}')" title="Satırı Kaydet">
+                    💾 Kaydet
+                  </button>
+                  <button type="button" class="btn-action-icon" onclick="openEditModal('${p.id}')" title="Detaylı Düzenle">
+                    ✏️
+                  </button>
+                  <a href="/#product=${p.slug || p.id}" target="_blank" class="btn-action-icon" title="Mağazada Gör">
+                    🔗
+                  </a>
+                  <button type="button" class="btn-action-icon btn-action-delete" onclick="deleteSingleProduct('${p.id}')" title="Ürünü Sil">
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#dc2626;">Hata: ${err.message}</td></tr>`;
+      }
+    }
+
+    function changeAdminPage(delta) {
+      const newPage = currentPage + delta;
+      if (newPage >= 1 && newPage <= totalPages) {
+        loadAdminProducts(newPage);
+      }
+    }
+
+    function resetAdminFilters() {
+      document.getElementById('admin-search-input').value = '';
+      document.getElementById('filter-category').value = 'all';
+      document.getElementById('filter-brand').value = 'all';
+      document.getElementById('filter-stock-status').value = 'all';
+      document.getElementById('filter-sort').value = 'id_asc';
+      loadAdminProducts(1);
+    }
+
+    function filterStockStatus(status) {
+      document.getElementById('filter-stock-status').value = status;
+      switchAdminTab('tab-inventory');
+      loadAdminProducts(1);
+    }
+
+    // -------------------------------------------------------------
+    // Inline Quick Adjustments & Saving
+    // -------------------------------------------------------------
+    function adjustRowStock(id, delta) {
+      const input = document.getElementById(`stock-${id}`);
+      if (input) {
+        let val = parseInt(input.value) || 0;
+        val = Math.max(0, val + delta);
+        input.value = val;
+      }
+    }
+
+    function handleUsdRowInput(id) {
+      const usdInput = document.getElementById(`usd-${id}`);
+      const tryInput = document.getElementById(`try-${id}`);
+      if (usdInput && tryInput) {
+        const usd = parseFloat(usdInput.value) || 0;
+        tryInput.value = (usd * currentUsdRate).toFixed(2);
+      }
+    }
+
+    async function saveRowProduct(id) {
+      const btn = document.getElementById(`btn-save-${id}`);
+      const stock = parseInt(document.getElementById(`stock-${id}`).value) || 0;
+      const priceUsd = parseFloat(document.getElementById(`usd-${id}`).value) || 0;
+      const priceTry = parseFloat(document.getElementById(`try-${id}`).value) || 0;
+      const discount = parseInt(document.getElementById(`disc-${id}`).value) || 0;
+
+      if (btn) {
+        btn.textContent = '⌛ Kaydediliyor...';
+        btn.disabled = true;
+      }
+
+      try {
+        const res = await fetch('/api/admin/products/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: id,
+            stock: stock,
+            price_usd: priceUsd,
+            price_try: priceTry,
+            discount_pct: discount
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Ürün başarıyla güncellendi!', 'success');
+          loadAdminStats();
+          if (btn) btn.textContent = '✅ Kaydedildi';
+          setTimeout(() => {
+            if (btn) {
+              btn.textContent = '💾 Kaydet';
+              btn.disabled = false;
+            }
+          }, 1500);
+        } else {
+          showToast(data.error || 'Hata oluştu!', 'error');
+          if (btn) {
+            btn.textContent = '💾 Kaydet';
+            btn.disabled = false;
+          }
+        }
+      } catch (err) {
+        showToast('Bağlantı hatası: ' + err.message, 'error');
+        if (btn) {
+          btn.textContent = '💾 Kaydet';
+          btn.disabled = false;
+        }
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Bulk Operations
+    // -------------------------------------------------------------
+    function toggleSelectAll(masterChk) {
+      const checkboxes = document.querySelectorAll('.chk-prod');
+      checkboxes.forEach(chk => {
+        chk.checked = masterChk.checked;
+        const id = chk.dataset.id;
+        if (masterChk.checked) selectedProductIds.add(id);
+        else selectedProductIds.delete(id);
+      });
+      updateBulkBar();
+    }
+
+    function handleProductSelect(id, isChecked) {
+      if (isChecked) selectedProductIds.add(id);
+      else selectedProductIds.delete(id);
+      updateBulkBar();
+    }
+
+    function updateBulkBar() {
+      const bar = document.getElementById('bulk-bar');
+      const count = selectedProductIds.size;
+      if (count > 0) {
+        bar.style.display = 'flex';
+        document.getElementById('bulk-count-text').textContent = `${count} ürün seçildi`;
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    function clearAllSelection() {
+      selectedProductIds.clear();
+      document.querySelectorAll('.chk-prod').forEach(chk => chk.checked = false);
+      const master = document.getElementById('chk-select-all');
+      if (master) master.checked = false;
+      updateBulkBar();
+    }
+
+    async function executeBulkAction(action, value) {
+      if (selectedProductIds.size === 0) return;
+      const ids = Array.from(selectedProductIds);
+
+      try {
+        const res = await fetch('/api/admin/products/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            product_ids: ids,
+            action: action,
+            value: value
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`${ids.length} ürün toplu olarak güncellendi!`, 'success');
+          loadAdminStats();
+          loadAdminProducts(currentPage);
+          clearAllSelection();
+        } else {
+          showToast(data.error || 'Hata!', 'error');
+        }
+      } catch (err) {
+        showToast('Hata: ' + err.message, 'error');
+      }
+    }
+
+    async function executeBulkDelete() {
+      if (selectedProductIds.size === 0) return;
+      if (!confirm(`${selectedProductIds.size} adet ürünü silmek istediğinize emin misiniz?`)) return;
+
+      const ids = Array.from(selectedProductIds);
+      for (const id of ids) {
+        await fetch('/api/admin/products/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+        });
+      }
+      showToast(`${ids.length} ürün silindi.`, 'success');
+      clearAllSelection();
+      loadAdminStats();
+      loadAdminProducts(currentPage);
+    }
+
+    async function deleteSingleProduct(id) {
+      if (!confirm("Bu drone parçasını envanterden kalıcı olarak silmek istediğinize emin misiniz?")) return;
+
+      try {
+        const res = await fetch('/api/admin/products/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Ürün başarıyla silindi.', 'success');
+          loadAdminStats();
+          loadAdminProducts(currentPage);
+        }
+      } catch (err) {
+        showToast('Silme hatası: ' + err.message, 'error');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Bulk Tab Actions (Currency Sync, Filtered Batch Actions)
+    // -------------------------------------------------------------
+    async function runCurrencySync() {
+      const rate = parseFloat(document.getElementById('bulk-usd-rate').value) || 47.0;
+      const cat = document.getElementById('bulk-rate-category').value;
+
+      currentUsdRate = rate;
+      document.getElementById('header-usd-rate').textContent = rate.toFixed(2) + ' ₺';
+
+      try {
+        const res = await fetch('/api/admin/currency-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usd_rate: rate,
+            category_id: cat
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`${data.updated_count} ürünün TRY fiyatı 1 USD = ${rate} ₺ kuruna göre güncellendi!`, 'success');
+          loadAdminStats();
+        }
+      } catch (err) {
+        showToast('Kur güncelleme hatası: ' + err.message, 'error');
+      }
+    }
+
+    async function runBulkStockByFilter() {
+      const cat = document.getElementById('bulk-stock-cat').value;
+      const brand = document.getElementById('bulk-stock-brand').value;
+      const action = document.getElementById('bulk-stock-action').value;
+      const val = parseInt(document.getElementById('bulk-stock-val').value) || 0;
+
+      // Fetch IDs matching filter
+      const pRes = await fetch(`/api/admin/products?limit=500&category=${cat}&brand=${brand}`);
+      const pData = await pRes.json();
+      const ids = (pData.products || []).map(p => p.id);
+
+      if (ids.length === 0) {
+        showToast('Seçili kriterlere uyan ürün bulunamadı.', 'error');
+        return;
+      }
+
+      const res = await fetch('/api/admin/products/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_ids: ids, action: action, value: val })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`${ids.length} ürüne toplu stok uygulandı!`, 'success');
+        loadAdminStats();
+      }
+    }
+
+    async function runBulkDiscountByFilter() {
+      const cat = document.getElementById('bulk-promo-cat').value;
+      const disc = parseInt(document.getElementById('bulk-promo-val').value) || 0;
+
+      const pRes = await fetch(`/api/admin/products?limit=500&category=${cat}`);
+      const pData = await pRes.json();
+      const ids = (pData.products || []).map(p => p.id);
+
+      if (ids.length === 0) return showToast('Ürün bulunamadı.', 'error');
+
+      const res = await fetch('/api/admin/products/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_ids: ids, action: 'discount_set', value: disc })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`${ids.length} ürüne %${disc} indirim uygulandı!`, 'success');
+        loadAdminStats();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Add Product Form
+    // -------------------------------------------------------------
+    function syncNewProductTryPrice() {
+      const usd = parseFloat(document.getElementById('new-price-usd').value) || 0;
+      document.getElementById('new-price-try').value = (usd * currentUsdRate).toFixed(2);
+    }
+
+    async function handleCreateProduct(e) {
+      e.preventDefault();
+      const payload = {
+        name_en: document.getElementById('new-name-en').value.trim(),
+        name_tr: document.getElementById('new-name-tr').value.trim(),
+        category_id: document.getElementById('new-category').value,
+        brand: document.getElementById('new-brand').value.trim(),
+        sku: document.getElementById('new-sku').value.trim(),
+        price_usd: parseFloat(document.getElementById('new-price-usd').value),
+        price_try: parseFloat(document.getElementById('new-price-try').value),
+        stock: parseInt(document.getElementById('new-stock').value) || 0,
+        badge: document.getElementById('new-badge').value,
+        image_url: document.getElementById('new-image-url').value.trim(),
+        description_en: document.getElementById('new-desc-en').value.trim(),
+        description_tr: document.getElementById('new-desc-tr').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/admin/products/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Yeni ürün başarıyla envantere eklendi!', 'success');
+          document.getElementById('add-product-form').reset();
+          switchAdminTab('tab-inventory');
+        } else {
+          showToast(data.error || 'Ürün eklenemedi!', 'error');
+        }
+      } catch (err) {
+        showToast('Hata: ' + err.message, 'error');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Deep Edit Modal
+    // -------------------------------------------------------------
+    async function openEditModal(id) {
+      try {
+        const res = await fetch(`/api/products/${id}`);
+        const data = await res.json();
+        const p = data.product;
+        if (!p) return;
+
+        document.getElementById('edit-prod-id').value = p.id;
+        document.getElementById('edit-modal-title').textContent = `Düzenle: ${p.name_tr || p.name_en}`;
+        document.getElementById('edit-name-en').value = p.name_en;
+        document.getElementById('edit-name-tr').value = p.name_tr;
+        document.getElementById('edit-category').value = p.category_id;
+        document.getElementById('edit-brand').value = p.brand;
+        document.getElementById('edit-stock').value = p.stock;
+        document.getElementById('edit-price-usd').value = p.price_usd;
+        document.getElementById('edit-price-try').value = p.price_try;
+        document.getElementById('edit-discount').value = p.discount_pct || 0;
+        document.getElementById('edit-badge').value = p.badge || '';
+        document.getElementById('edit-image-url').value = p.image_url || '';
+
+        document.getElementById('edit-modal-backdrop').style.display = 'flex';
+      } catch (err) {
+        showToast('Ürün bilgisi alınamadı: ' + err.message, 'error');
+      }
+    }
+
+    function closeEditModal() {
+      document.getElementById('edit-modal-backdrop').style.display = 'none';
+    }
+
+    function syncEditModalTryPrice() {
+      const usd = parseFloat(document.getElementById('edit-price-usd').value) || 0;
+      document.getElementById('edit-price-try').value = (usd * currentUsdRate).toFixed(2);
+    }
+
+    async function handleSaveEditModal(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-prod-id').value;
+      const payload = {
+        id: id,
+        name_en: document.getElementById('edit-name-en').value.trim(),
+        name_tr: document.getElementById('edit-name-tr').value.trim(),
+        category_id: document.getElementById('edit-category').value,
+        brand: document.getElementById('edit-brand').value.trim(),
+        stock: parseInt(document.getElementById('edit-stock').value) || 0,
+        price_usd: parseFloat(document.getElementById('edit-price-usd').value),
+        price_try: parseFloat(document.getElementById('edit-price-try').value),
+        discount_pct: parseInt(document.getElementById('edit-discount').value) || 0,
+        badge: document.getElementById('edit-badge').value.trim(),
+        image_url: document.getElementById('edit-image-url').value.trim()
+      };
+
+      try {
+        const res = await fetch('/api/admin/products/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Ürün detayları kaydedildi!', 'success');
+          closeEditModal();
+          loadAdminStats();
+          loadAdminProducts(currentPage);
+        }
+      } catch (err) {
+        showToast('Hata: ' + err.message, 'error');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Static Export Synchronization
+    // -------------------------------------------------------------
+    async function handleSyncExport() {
+      const btn = document.getElementById('btn-sync-export');
+      const txt = document.getElementById('txt-sync-export');
+      txt.textContent = 'Senkronize ediliyor...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/admin/sync-export', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('🌐 GitHub Pages statik veri paketi başarıyla güncellendi!', 'success');
+        } else {
+          showToast(data.error || 'Dışa aktarma hatası!', 'error');
+        }
+      } catch (err) {
+        showToast('Hata: ' + err.message, 'error');
+      } finally {
+        txt.textContent = 'Statik Veriyi Güncelle';
+        btn.disabled = false;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Orders CRM
+    // -------------------------------------------------------------
+    function loadCrmOrders() {
+      const url = document.getElementById('webhook-url').value.trim();
+      const tbody = document.querySelector('#orders-table tbody');
+
+      if (url) {
+        localStorage.setItem('pozitron_webhook_url', url);
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">Google Sheets CRM\'den yükleniyor...</td></tr>';
+        fetch(url)
+          .then(r => r.json())
+          .then(data => {
+            if (!data || data.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">Kayıtlı sipariş bulunamadı.</td></tr>';
+              return;
+            }
+            tbody.innerHTML = data.reverse().map(row => `
+              <tr>
+                <td>${row['Tarih'] || '-'}</td>
+                <td><strong>${row['Sipariş No'] || '-'}</strong></td>
+                <td>${row['Müşteri Adı'] || '-'}</td>
+                <td>${row['Telefon'] || '-'}</td>
+                <td><strong>${row['Tutar (TRY)'] || '0'} ₺</strong></td>
+                <td><span class="badge-stock badge-stock-in">${row['Durum'] || 'ONAYLANDI'}</span></td>
+                <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${row['Adres'] || '-'}</td>
+              </tr>
+            `).join('');
+          })
+          .catch(err => {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#dc2626; padding:30px;">Hata: ${err.message}</td></tr>`;
+          });
+      } else {
+        // Fallback: Local database orders
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">Veritabanından siparişler yükleniyor...</td></tr>';
+        const orders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
+        if (orders.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;">Henüz verilmiş sipariş bulunmamaktadır.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = orders.reverse().map(od => `
+          <tr>
+            <td>${od.created_at ? od.created_at.split('T')[0] : '-'}</td>
+            <td><strong>${od.order_number || '-'}</strong></td>
+            <td>${od.customer_name || '-'}</td>
+            <td>${od.customer_phone || '-'}</td>
+            <td><strong>${od.total_try ? od.total_try.toFixed(2) : od.total_usd} ${od.currency || 'TRY'}</strong></td>
+            <td><span class="badge-stock badge-stock-in">${od.status || 'CONFIRMED'}</span></td>
+            <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${od.shipping_address || '-'}</td>
+          </tr>
+        `).join('');
+      }
+    }
   </script>
 </body>
 </html>

@@ -9,6 +9,7 @@ import re
 import random
 from datetime import datetime
 from database import get_db, hash_password
+from export_data import export_static_data
 
 PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +53,49 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.end_headers()
+
+    def do_DELETE(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+
+        if path.startswith('/api/'):
+            try:
+                self.handle_api_delete(path)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self.send_json(500, {"error": str(e)})
+            return
+
+        self.send_json(404, {"error": "Endpoint not found"})
+
+    def handle_api_delete(self, path):
+        conn = get_db()
+        cursor = conn.cursor()
+
+        prod_match = re.match(r'^/api/admin/products/([a-zA-Z0-9_-]+)$', path)
+        if not prod_match:
+            prod_match = re.match(r'^/api/products/([a-zA-Z0-9_-]+)$', path)
+
+        if prod_match:
+            prod_id = prod_match.group(1)
+            cursor.execute("SELECT category_id FROM products WHERE id = ? OR slug = ?", (prod_id, prod_id))
+            row = cursor.fetchone()
+            if not row:
+                conn.close()
+                self.send_json(404, {"error": "Product not found"})
+                return
+
+            cat_id = row[0]
+            cursor.execute("DELETE FROM products WHERE id = ? OR slug = ?", (prod_id, prod_id))
+            cursor.execute("UPDATE categories SET item_count = MAX(0, item_count - 1) WHERE id = ?", (cat_id,))
+            conn.commit()
+            conn.close()
+            self.send_json(200, {"success": True, "deleted_id": prod_id})
+            return
+
+        conn.close()
+        self.send_json(404, {"error": "Route not found"})
 
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
@@ -161,6 +205,122 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
     def handle_api_get(self, path, query):
         conn = get_db()
         cursor = conn.cursor()
+
+        # Admin: Stats & KPI Metrics
+        if path == '/api/admin/stats':
+            cursor.execute("SELECT COUNT(*), COALESCE(SUM(stock), 0), COALESCE(SUM(stock * price_usd), 0), COALESCE(SUM(stock * price_try), 0) FROM products")
+            row = cursor.fetchone()
+            total_products, total_stock, total_val_usd, total_val_try = row[0], row[1], row[2], row[3]
+
+            cursor.execute("SELECT COUNT(*) FROM products WHERE stock <= 5 AND stock > 0")
+            low_stock_count = cursor.fetchone()[0]
+
+            cursor.execute("SELECT COUNT(*) FROM products WHERE stock = 0")
+            out_of_stock_count = cursor.fetchone()[0]
+
+            cursor.execute('''
+                SELECT c.id, c.name_en, c.name_tr, COUNT(p.id) as count, COALESCE(SUM(p.stock), 0) as category_stock
+                FROM categories c
+                LEFT JOIN products p ON c.id = p.category_id
+                GROUP BY c.id
+                ORDER BY count DESC
+            ''')
+            categories_stats = [dict(r) for r in cursor.fetchall()]
+            conn.close()
+
+            self.send_json(200, {
+                "total_products": total_products,
+                "total_stock": total_stock,
+                "low_stock_count": low_stock_count,
+                "out_of_stock_count": out_of_stock_count,
+                "total_val_usd": round(total_val_usd, 2),
+                "total_val_try": round(total_val_try, 2),
+                "categories_stats": categories_stats
+            })
+            return
+
+        # Admin: Products Inventory List with Search, Filter & Stock Status
+        if path == '/api/admin/products':
+            q = query.get('q', [''])[0].strip()
+            cat = query.get('category', ['all'])[0]
+            brand = query.get('brand', ['all'])[0]
+            stock_status = query.get('stock_status', ['all'])[0]
+            sort_by = query.get('sort', ['id_asc'])[0]
+            page = max(1, int(query.get('page', [1])[0]))
+            limit = min(500, max(1, int(query.get('limit', [50])[0])))
+
+            where_clauses = ["1=1"]
+            params = []
+
+            if q:
+                where_clauses.append("(p.name_en LIKE ? OR p.name_tr LIKE ? OR p.brand LIKE ? OR p.sku LIKE ? OR p.id LIKE ?)")
+                like_str = f"%{q}%"
+                params.extend([like_str, like_str, like_str, like_str, like_str])
+
+            if cat and cat != 'all':
+                where_clauses.append("p.category_id = ?")
+                params.append(cat)
+
+            if brand and brand != 'all':
+                where_clauses.append("p.brand = ?")
+                params.append(brand)
+
+            if stock_status == 'low_stock':
+                where_clauses.append("p.stock <= 5 AND p.stock > 0")
+            elif stock_status == 'out_of_stock':
+                where_clauses.append("p.stock = 0")
+            elif stock_status == 'in_stock':
+                where_clauses.append("p.stock > 0")
+
+            where_sql = " AND ".join(where_clauses)
+
+            sort_map = {
+                'id_asc': 'p.id ASC',
+                'id_desc': 'p.id DESC',
+                'stock_asc': 'p.stock ASC',
+                'stock_desc': 'p.stock DESC',
+                'price_usd_asc': 'p.price_usd ASC',
+                'price_usd_desc': 'p.price_usd DESC',
+                'price_try_asc': 'p.price_try ASC',
+                'price_try_desc': 'p.price_try DESC',
+                'name_asc': 'p.name_en ASC',
+                'discount_desc': 'p.discount_pct DESC'
+            }
+            sort_sql = sort_map.get(sort_by, 'p.id ASC')
+
+            count_query = f"SELECT COUNT(*) FROM products p WHERE {where_sql}"
+            cursor.execute(count_query, params)
+            total_items = cursor.fetchone()[0]
+
+            offset = (page - 1) * limit
+            data_query = f'''
+                SELECT p.*, c.name_en AS category_name_en, c.name_tr AS category_name_tr, c.icon AS category_icon
+                FROM products p
+                JOIN categories c ON p.category_id = c.id
+                WHERE {where_sql}
+                ORDER BY {sort_sql}
+                LIMIT ? OFFSET ?
+            '''
+            cursor.execute(data_query, params + [limit, offset])
+            rows = cursor.fetchall()
+            products = []
+            for r in rows:
+                p = dict(r)
+                p['specs'] = json.loads(p['specs_json']) if p.get('specs_json') else {}
+                p['tags'] = json.loads(p['tags_json']) if p.get('tags_json') else []
+                p['gallery'] = json.loads(p['gallery_json'] or '[]')
+                p['compatibility'] = json.loads(p['compatibility_json'] or '{}')
+                products.append(p)
+
+            conn.close()
+            self.send_json(200, {
+                "products": products,
+                "total": total_items,
+                "page": page,
+                "limit": limit,
+                "total_pages": (total_items + limit - 1) // limit if limit > 0 else 1
+            })
+            return
 
         # 1. Categories
         if path == '/api/categories':
@@ -772,6 +932,276 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "recommendations": recommendations,
                 "parts_selected": list(selected.keys())
             })
+            return
+
+        # 8. Admin: Update Single Product (Stock, Prices, Metadata)
+        if path == '/api/admin/products/update':
+            prod_id = data.get('id')
+            if not prod_id:
+                conn.close()
+                self.send_json(400, {"error": "Product ID is required"})
+                return
+
+            cursor.execute("SELECT * FROM products WHERE id = ?", (prod_id,))
+            existing = cursor.fetchone()
+            if not existing:
+                conn.close()
+                self.send_json(404, {"error": "Product not found"})
+                return
+
+            curr = dict(existing)
+
+            stock = int(data.get('stock', curr['stock']))
+            stock = max(0, stock)
+
+            price_usd = float(data.get('price_usd', curr['price_usd']))
+            price_try = float(data.get('price_try', curr['price_try']))
+            if 'price_usd' in data and 'price_try' not in data:
+                price_try = round(price_usd * 47.0, 2)
+
+            orig_price_usd = float(data['original_price_usd']) if data.get('original_price_usd') is not None and data['original_price_usd'] != '' else curr['original_price_usd']
+            orig_price_try = float(data['original_price_try']) if data.get('original_price_try') is not None and data['original_price_try'] != '' else curr['original_price_try']
+            discount_pct = int(data.get('discount_pct', curr['discount_pct']))
+
+            name_en = data.get('name_en', curr['name_en'])
+            name_tr = data.get('name_tr', curr['name_tr'])
+            category_id = data.get('category_id', curr['category_id'])
+            brand = data.get('brand', curr['brand'])
+            badge = data.get('badge', curr['badge'])
+            featured = int(data.get('featured', curr['featured']))
+            is_bestseller = int(data.get('is_bestseller', curr['is_bestseller']))
+            image_url = data.get('image_url', curr['image_url'])
+
+            cursor.execute('''
+                UPDATE products SET
+                    stock = ?,
+                    price_usd = ?,
+                    price_try = ?,
+                    original_price_usd = ?,
+                    original_price_try = ?,
+                    discount_pct = ?,
+                    name_en = ?,
+                    name_tr = ?,
+                    category_id = ?,
+                    brand = ?,
+                    badge = ?,
+                    featured = ?,
+                    is_bestseller = ?,
+                    image_url = ?
+                WHERE id = ?
+            ''', (
+                stock, price_usd, price_try, orig_price_usd, orig_price_try, discount_pct,
+                name_en, name_tr, category_id, brand, badge, featured, is_bestseller, image_url, prod_id
+            ))
+            conn.commit()
+
+            cursor.execute('''
+                SELECT p.*, c.name_en AS category_name_en, c.name_tr AS category_name_tr, c.icon AS category_icon
+                FROM products p
+                JOIN categories c ON p.category_id = c.id
+                WHERE p.id = ?
+            ''', (prod_id,))
+            updated_prod = dict(cursor.fetchone())
+            updated_prod['specs'] = json.loads(updated_prod['specs_json']) if updated_prod.get('specs_json') else {}
+            updated_prod['tags'] = json.loads(updated_prod['tags_json']) if updated_prod.get('tags_json') else []
+            updated_prod['gallery'] = json.loads(updated_prod['gallery_json'] or '[]')
+            conn.close()
+
+            self.send_json(200, {
+                "success": True,
+                "message": "Product updated successfully",
+                "product": updated_prod
+            })
+            return
+
+        # 9. Admin: Bulk Operations (Stock increment/set, Price multiplier/discount, FX Sync)
+        if path == '/api/admin/products/bulk':
+            prod_ids = data.get('product_ids', [])
+            action = data.get('action')
+            value = data.get('value', 0)
+
+            if not prod_ids or not action:
+                conn.close()
+                self.send_json(400, {"error": "product_ids and action are required"})
+                return
+
+            placeholders = ",".join("?" for _ in prod_ids)
+
+            if action == 'stock_increment':
+                inc_val = int(value)
+                cursor.execute(f'''
+                    UPDATE products
+                    SET stock = CASE WHEN stock + ? < 0 THEN 0 ELSE stock + ? END
+                    WHERE id IN ({placeholders})
+                ''', [inc_val, inc_val] + prod_ids)
+
+            elif action == 'stock_set':
+                set_val = max(0, int(value))
+                cursor.execute(f'''
+                    UPDATE products
+                    SET stock = ?
+                    WHERE id IN ({placeholders})
+                ''', [set_val] + prod_ids)
+
+            elif action == 'price_percent':
+                factor = 1.0 + (float(value) / 100.0)
+                if factor <= 0:
+                    factor = 0.01
+                cursor.execute(f'''
+                    UPDATE products
+                    SET price_usd = ROUND(price_usd * ?, 2),
+                        price_try = ROUND(price_try * ?, 2),
+                        original_price_usd = CASE WHEN original_price_usd IS NOT NULL THEN ROUND(original_price_usd * ?, 2) ELSE NULL END,
+                        original_price_try = CASE WHEN original_price_try IS NOT NULL THEN ROUND(original_price_try * ?, 2) ELSE NULL END
+                    WHERE id IN ({placeholders})
+                ''', [factor, factor, factor, factor] + prod_ids)
+
+            elif action == 'discount_set':
+                disc_val = max(0, min(99, int(value)))
+                cursor.execute(f'''
+                    UPDATE products
+                    SET discount_pct = ?
+                    WHERE id IN ({placeholders})
+                ''', [disc_val] + prod_ids)
+
+            elif action == 'currency_sync':
+                rate = float(value) if value else 47.0
+                cursor.execute(f'''
+                    UPDATE products
+                    SET price_try = ROUND(price_usd * ?, 2),
+                        original_price_try = CASE WHEN original_price_usd IS NOT NULL THEN ROUND(original_price_usd * ?, 2) ELSE NULL END
+                    WHERE id IN ({placeholders})
+                ''', [rate, rate] + prod_ids)
+
+            conn.commit()
+            conn.close()
+
+            self.send_json(200, {
+                "success": True,
+                "action": action,
+                "updated_count": len(prod_ids)
+            })
+            return
+
+        # 10. Admin: Create New Product
+        if path == '/api/admin/products/create':
+            name_en = data.get('name_en', '').strip()
+            name_tr = data.get('name_tr', '').strip() or name_en
+            category_id = data.get('category_id', 'motors')
+            brand = data.get('brand', 'Pozitron')
+            price_usd = float(data.get('price_usd', 29.99))
+            price_try = float(data.get('price_try', round(price_usd * 47.0, 2)))
+            stock = max(0, int(data.get('stock', 50)))
+            badge = data.get('badge', 'NEW')
+            image_url = data.get('image_url', 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80')
+            sku = data.get('sku', '').strip() or f"PZT-{category_id[:4].upper()}-{random.randint(1000, 9999)}"
+            slug = re.sub(r'[^a-zA-Z0-9_-]', '-', name_en.lower()).strip('-') + f"-{random.randint(100, 999)}"
+            prod_id = f"pzt_{uuid.uuid4().hex[:8]}"
+            now_iso = datetime.now().isoformat()
+
+            cursor.execute('''
+                INSERT INTO products (
+                    id, slug, sku, name_en, name_tr, category_id, brand,
+                    price_usd, price_try, original_price_usd, original_price_try,
+                    discount_pct, rating, review_count, stock, badge,
+                    specs_json, tags_json, image_url, gallery_json,
+                    description_en, description_tr, compatibility_json,
+                    featured, is_bestseller, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 5.0, 0, ?, ?, '{}', '[]', ?, '[]', ?, ?, '{}', 0, 0, ?)
+            ''', (
+                prod_id, slug, sku, name_en, name_tr, category_id, brand,
+                price_usd, price_try, stock, badge, image_url,
+                data.get('description_en', name_en), data.get('description_tr', name_tr), now_iso
+            ))
+
+            cursor.execute("UPDATE categories SET item_count = item_count + 1 WHERE id = ?", (category_id,))
+            conn.commit()
+
+            cursor.execute('''
+                SELECT p.*, c.name_en AS category_name_en, c.name_tr AS category_name_tr, c.icon AS category_icon
+                FROM products p
+                JOIN categories c ON p.category_id = c.id
+                WHERE p.id = ?
+            ''', (prod_id,))
+            new_prod = dict(cursor.fetchone())
+            new_prod['specs'] = {}
+            new_prod['tags'] = []
+            new_prod['gallery'] = []
+            conn.close()
+
+            self.send_json(201, {
+                "success": True,
+                "message": "Product created successfully",
+                "product": new_prod
+            })
+            return
+
+        # 11. Admin: Delete Product
+        if path == '/api/admin/products/delete':
+            prod_id = data.get('id')
+            if not prod_id:
+                conn.close()
+                self.send_json(400, {"error": "Product ID is required"})
+                return
+
+            cursor.execute("SELECT category_id FROM products WHERE id = ?", (prod_id,))
+            p = cursor.fetchone()
+            if p:
+                cat_id = p[0]
+                cursor.execute("DELETE FROM products WHERE id = ?", (prod_id,))
+                cursor.execute("UPDATE categories SET item_count = MAX(0, item_count - 1) WHERE id = ?", (cat_id,))
+                conn.commit()
+
+            conn.close()
+            self.send_json(200, {"success": True, "deleted_id": prod_id})
+            return
+
+        # 12. Admin: Currency Sync across catalog
+        if path == '/api/admin/currency-sync':
+            rate = float(data.get('usd_rate', 47.0))
+            cat = data.get('category_id')
+            brand = data.get('brand')
+
+            where_clauses = ["1=1"]
+            params = [rate, rate]
+
+            if cat and cat != 'all':
+                where_clauses.append("category_id = ?")
+                params.append(cat)
+
+            if brand and brand != 'all':
+                where_clauses.append("brand = ?")
+                params.append(brand)
+
+            where_sql = " AND ".join(where_clauses)
+            cursor.execute(f'''
+                UPDATE products
+                SET price_try = ROUND(price_usd * ?, 2),
+                    original_price_try = CASE WHEN original_price_usd IS NOT NULL THEN ROUND(original_price_usd * ?, 2) ELSE NULL END
+                WHERE {where_sql}
+            ''', params)
+            conn.commit()
+            count = cursor.rowcount
+            conn.close()
+
+            self.send_json(200, {
+                "success": True,
+                "usd_rate": rate,
+                "updated_count": count
+            })
+            return
+
+        # 13. Admin: Export to static data files
+        if path == '/api/admin/sync-export':
+            conn.close()
+            try:
+                export_static_data()
+                self.send_json(200, {
+                    "success": True,
+                    "message": "Static data bundle exported successfully to data/ folder"
+                })
+            except Exception as ex:
+                self.send_json(500, {"error": f"Export failed: {str(ex)}"})
             return
 
         conn.close()

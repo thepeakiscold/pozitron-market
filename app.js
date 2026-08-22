@@ -107,13 +107,13 @@ class PozitronApp {
   updateDynamicSeoMeta() {
     const lang = window.i18n.currentLang;
     const catObj = this.categories.find(c => c.id === this.filters.category);
-    let title = "Pozitron Market | 500+ Drone & FPV Donanım Parçası";
+    let title = "Pozitron Market | Drone & FPV Donanım Mağazası";
 
     if (this.filters.q) {
       title = `${this.filters.q} - Drone Parçaları | Pozitron Market`;
     } else if (catObj) {
       const catName = lang === 'tr' ? catObj.name_tr : catObj.name_en;
-      title = `${catName} | Pozitron Market (500+ Parça)`;
+      title = `${catName} | Pozitron Market`;
     }
 
     document.title = title;
@@ -648,7 +648,7 @@ class PozitronApp {
     const lang = window.i18n.currentLang;
     let html = `
       <button type="button" class="category-pill-btn ${this.filters.category === 'all' ? 'active' : ''}" data-cat="all">
-        <span>⚡</span> <span>${lang === 'tr' ? 'Tüm Parçalar (500)' : 'All 500 Parts'}</span>
+        <span>⚡</span> <span>${lang === 'tr' ? 'Tüm Parçalar' : 'All Parts'}</span>
       </button>
     `;
 
@@ -681,12 +681,13 @@ class PozitronApp {
     if (!list) return;
 
     const lang = window.i18n.currentLang;
+    const totalCount = this.categories.reduce((acc, c) => acc + (c.item_count || 0), 0);
     let html = `
       <label class="custom-checkbox">
         <input type="radio" name="sidebar-cat" value="all" ${this.filters.category === 'all' ? 'checked' : ''}>
         <span class="checkmark"></span>
         <span>${lang === 'tr' ? 'Tüm Kategoriler' : 'All Categories'}</span>
-        <span class="filter-count">500</span>
+        ${totalCount > 0 ? `<span class="filter-count">${totalCount}</span>` : ''}
       </label>
     `;
 
@@ -847,9 +848,9 @@ class PozitronApp {
 
       html += `
         <article class="product-card" data-id="${p.id}" data-slug="${p.slug}">
-          <div class="card-media-wrap">
+          <div class="card-media-wrap" data-action="quickview" data-id="${p.id}" style="cursor:pointer;" title="${name}">
             ${badgeHtml}
-            <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="card-product-img" loading="lazy">
+            <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="card-product-img" loading="lazy" data-action="quickview" data-id="${p.id}" style="cursor:pointer;">
             <button type="button" class="card-quick-view-btn" data-action="quickview" data-id="${p.id}" title="${window.i18n.t('quick_view')}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -1349,7 +1350,7 @@ class PozitronApp {
         <div style="text-align:center; padding:32px 16px;">
           <div style="font-size:2.5rem; margin-bottom:10px;">📦</div>
           <strong style="display:block; font-size:1.05rem; color:var(--text-primary); margin-bottom:6px;">Henüz bir siparişiniz bulunmuyor</strong>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">500+ drone parçası arasından dilediğinizi sepetinize ekleyip sipariş oluşturabilirsiniz.</p>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Geniş drone donanım stoğumuzdan dilediğinizi sepetinize ekleyip sipariş oluşturabilirsiniz.</p>
         </div>
       `;
     } else {
@@ -1382,6 +1383,7 @@ class PozitronApp {
     const dropName = document.getElementById('user-name-text');
     const dropEmail = document.getElementById('user-email-text');
     const avatarImg = document.getElementById('user-avatar-img');
+    const adminLink = document.getElementById('admin-panel-link');
 
     if (this.user) {
       const firstName = (this.user.full_name || 'Pilot').split(' ')[0];
@@ -1392,9 +1394,14 @@ class PozitronApp {
         avatarImg.src = this.user.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
         avatarImg.style.display = 'block';
       }
+      if (adminLink) {
+        const isAdmin = this.user.role === 'admin' || this.user.email === 'furkaniusprimes@gmail.com';
+        adminLink.style.display = isAdmin ? 'flex' : 'none';
+      }
     } else {
       if (nameEl) nameEl.textContent = window.i18n.t('nav_login');
       if (avatarImg) avatarImg.src = '';
+      if (adminLink) adminLink.style.display = 'none';
     }
   }
 

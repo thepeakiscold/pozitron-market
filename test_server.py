@@ -128,5 +128,117 @@ class TestPozitronAPI(unittest.TestCase):
         self.assertEqual(o_status, 200)
         self.assertEqual(o_data["order"]["order_number"], order_num)
 
+    def test_08_admin_stats(self):
+        status, data = self.get("/api/admin/stats")
+        self.assertEqual(status, 200)
+        self.assertIn("total_products", data)
+        self.assertIn("total_stock", data)
+        self.assertIn("low_stock_count", data)
+        self.assertIn("out_of_stock_count", data)
+        self.assertIn("total_val_usd", data)
+        self.assertIn("total_val_try", data)
+        self.assertGreater(data["total_products"], 0)
+        self.assertGreater(data["total_stock"], 0)
+
+    def test_09_admin_products_filter_and_search(self):
+        # Filter all
+        status, data = self.get("/api/admin/products?limit=10")
+        self.assertEqual(status, 200)
+        self.assertEqual(len(data["products"]), 10)
+        self.assertIn("total", data)
+
+        # Filter by low_stock or in_stock
+        s_status, s_data = self.get("/api/admin/products?stock_status=in_stock&limit=5")
+        self.assertEqual(s_status, 200)
+        for p in s_data["products"]:
+            self.assertGreater(p["stock"], 0)
+
+    def test_10_admin_update_product_stock_and_price(self):
+        # Fetch first product
+        _, p_data = self.get("/api/admin/products?limit=1")
+        prod = p_data["products"][0]
+        pid = prod["id"]
+        orig_stock = prod["stock"]
+
+        # Update stock to 88 and price_usd to 199.99
+        up_payload = {
+            "id": pid,
+            "stock": 88,
+            "price_usd": 199.99,
+            "price_try": 9399.53,
+            "discount_pct": 10,
+            "badge": "RESTOCKED"
+        }
+        status, res = self.post("/api/admin/products/update", up_payload)
+        self.assertEqual(status, 200)
+        self.assertTrue(res["success"])
+        self.assertEqual(res["product"]["stock"], 88)
+        self.assertEqual(res["product"]["price_usd"], 199.99)
+        self.assertEqual(res["product"]["badge"], "RESTOCKED")
+
+    def test_11_admin_bulk_operations(self):
+        # Fetch 2 products
+        _, p_data = self.get("/api/admin/products?limit=2")
+        ids = [p["id"] for p in p_data["products"]]
+
+        # Bulk stock increment (+15)
+        bulk_payload = {
+            "product_ids": ids,
+            "action": "stock_increment",
+            "value": 15
+        }
+        status, res = self.post("/api/admin/products/bulk", bulk_payload)
+        self.assertEqual(status, 200)
+        self.assertTrue(res["success"])
+        self.assertEqual(res["updated_count"], 2)
+
+        # Bulk price percent (+5%)
+        bulk_price_payload = {
+            "product_ids": ids,
+            "action": "price_percent",
+            "value": 5
+        }
+        status, res = self.post("/api/admin/products/bulk", bulk_price_payload)
+        self.assertEqual(status, 200)
+        self.assertTrue(res["success"])
+
+    def test_12_admin_create_and_delete_product(self):
+        new_item = {
+            "name_en": "Pozitron Hyperion 6S 2306 Motor",
+            "name_tr": "Pozitron Hyperion 6S 2306 FPV Motoru",
+            "category_id": "motors",
+            "brand": "Pozitron",
+            "price_usd": 24.50,
+            "price_try": 1150.00,
+            "stock": 40,
+            "badge": "PROTOTYPE",
+            "image_url": "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80"
+        }
+        status, res = self.post("/api/admin/products/create", new_item)
+        self.assertEqual(status, 201)
+        self.assertTrue(res["success"])
+        created_id = res["product"]["id"]
+        self.assertEqual(res["product"]["name_en"], "Pozitron Hyperion 6S 2306 Motor")
+
+        # Delete it
+        del_status, del_res = self.post("/api/admin/products/delete", {"id": created_id})
+        self.assertEqual(del_status, 200)
+        self.assertTrue(del_res["success"])
+
+    def test_13_admin_currency_sync_and_export(self):
+        # Currency sync with custom rate
+        sync_payload = {
+            "usd_rate": 47.5
+        }
+        status, res = self.post("/api/admin/currency-sync", sync_payload)
+        self.assertEqual(status, 200)
+        self.assertTrue(res["success"])
+        self.assertEqual(res["usd_rate"], 47.5)
+
+        # Export static data
+        exp_status, exp_res = self.post("/api/admin/sync-export", {})
+        self.assertEqual(exp_status, 200)
+        self.assertTrue(exp_res["success"])
+
 if __name__ == '__main__':
     unittest.main()
