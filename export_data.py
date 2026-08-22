@@ -83,5 +83,12 @@ def export_static_data():
 
     print(f"Exported {len(products)} products, {len(categories)} categories, {len(users)} users, and {len(brands)} brands to {OUTPUT_DIR}")
 
+    # Generate Google Merchant XML & TSV Feeds
+    try:
+        from generate_google_feed import generate_feeds
+        generate_feeds()
+    except Exception as fe:
+        print(f"Feed generation note: {fe}")
+
 if __name__ == "__main__":
     export_static_data()
