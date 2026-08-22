@@ -1845,7 +1845,7 @@ class PozitronApp {
 
     // Encode message and open WhatsApp
     const encodedMessage = encodeURIComponent(waMessage);
-    const waNumber = "905442451118"; // User's WhatsApp number
+    const waNumber = "905425465562"; // User's WhatsApp number (+905425465562)
     const waUrl = `https://wa.me/${waNumber}?text=${encodedMessage}`;
     
     window.open(waUrl, '_blank');
