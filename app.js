@@ -3731,7 +3731,7 @@ class PozitronApp {
       this._currentMesh = null;
     }
 
-    // Universal Regex for all STEP CAD formats
+    // 1. Universal Regex for all STEP CAD formats
     const ptRegex = /CARTESIAN_POINT\s*\(\s*[^,]*,\s*\(\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*\)\s*\)/gi;
     let match;
     let minX = Infinity, maxX = -Infinity;
@@ -3755,14 +3755,55 @@ class PozitronApp {
       }
     }
 
+    // 2. Parse CIRCLE, CYLINDRICAL_SURFACE, CONICAL_SURFACE for cylindrical revolved CAD parts
+    let maxRadius = 0;
+    const circleRegex = /CIRCLE\s*\(\s*[^,]*,[^,]*,\s*([-\d.]+)\s*\)/gi;
+    while ((match = circleRegex.exec(stepText)) !== null) {
+      const r = parseFloat(match[1]);
+      if (!isNaN(r) && r > maxRadius && r < 2000) maxRadius = r;
+    }
+
+    const conicalRegex = /CONICAL_SURFACE\s*\(\s*[^,]*,[^,]*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/gi;
+    while ((match = conicalRegex.exec(stepText)) !== null) {
+      const r = parseFloat(match[1]);
+      if (!isNaN(r) && r > maxRadius && r < 2000) maxRadius = r;
+    }
+
+    const cylRegex = /CYLINDRICAL_SURFACE\s*\(\s*[^,]*,[^,]*,\s*([-\d.]+)\s*\)/gi;
+    while ((match = cylRegex.exec(stepText)) !== null) {
+      const r = parseFloat(match[1]);
+      if (!isNaN(r) && r > maxRadius && r < 2000) maxRadius = r;
+    }
+
     let sizeX = 45, sizeY = 25, sizeZ = 35;
     let volCm3 = 14.5;
+    let isCylinder = false;
 
-    if (count >= 4 && isFinite(minX) && isFinite(maxX) && (maxX - minX) > 0.5) {
-      sizeX = Math.max(6, Math.round(maxX - minX));
-      sizeY = Math.max(6, Math.round(maxY - minY));
-      sizeZ = Math.max(6, Math.round(maxZ - minZ));
-      
+    const spanX = isFinite(maxX - minX) ? (maxX - minX) : 0;
+    const spanY = isFinite(maxY - minY) ? (maxY - minY) : 0;
+    const spanZ = isFinite(maxZ - minZ) ? (maxZ - minZ) : 0;
+
+    if (maxRadius > 0) {
+      isCylinder = true;
+      const diameter = Math.round(maxRadius * 2 * 10) / 10;
+      if (spanZ >= spanX && spanZ >= spanY) {
+        sizeX = Math.round(diameter);
+        sizeY = Math.round(diameter);
+        sizeZ = Math.max(1, Math.round(spanZ || 100));
+      } else if (spanY >= spanX && spanY >= spanZ) {
+        sizeX = Math.round(diameter);
+        sizeY = Math.max(1, Math.round(spanY || 100));
+        sizeZ = Math.round(diameter);
+      } else {
+        sizeX = Math.max(1, Math.round(spanX || 100));
+        sizeY = Math.round(diameter);
+        sizeZ = Math.round(diameter);
+      }
+      volCm3 = Math.max(0.5, Math.round((Math.PI * Math.pow(maxRadius, 2) * sizeZ / 1000) * 10) / 10);
+    } else if (count >= 4 && isFinite(minX) && isFinite(maxX) && spanX > 0.5) {
+      sizeX = Math.max(4, Math.round(spanX));
+      sizeY = Math.max(4, Math.round(spanY > 0.5 ? spanY : spanX));
+      sizeZ = Math.max(4, Math.round(spanZ > 0.5 ? spanZ : 20));
       const boundingVolCm3 = (sizeX * sizeY * sizeZ) / 1000;
       volCm3 = Math.max(0.5, Math.round(boundingVolCm3 * 0.45 * 10) / 10);
     } else {
@@ -3778,10 +3819,15 @@ class PozitronApp {
     this._3dConfig.dimZ = sizeZ;
     this._3dConfig.volumeCm3 = volCm3;
 
-    // Create realistic engineered CAD model with crisp edge lines
+    // 3. Create realistic engineered CAD geometry
     const group = new THREE.Group();
+    let geometry;
 
-    const geometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ, 2, 2, 2);
+    if (isCylinder) {
+      geometry = new THREE.CylinderGeometry(sizeX / 2, sizeX / 2, sizeZ, 36, 1);
+    } else {
+      geometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ, 2, 2, 2);
+    }
     geometry.computeVertexNormals();
 
     const material = new THREE.MeshStandardMaterial({
@@ -3795,20 +3841,20 @@ class PozitronApp {
     group.add(mesh);
 
     // CAD Blueprint Edges for authentic CAD preview
-    const edgesGeom = new THREE.EdgesGeometry(geometry);
+    const edgesGeom = new THREE.EdgesGeometry(geometry, isCylinder ? 25 : 15);
     const edgesMat = new THREE.LineBasicMaterial({ color: 0x0284c7, linewidth: 1.5, transparent: true, opacity: 0.5 });
     const edges = new THREE.LineSegments(edgesGeom, edgesMat);
     group.add(edges);
 
     this._currentMesh = group;
-    this._currentMesh.position.y = sizeY / 2;
+    this._currentMesh.position.y = sizeZ / 2;
     this._3dScene.add(this._currentMesh);
 
-    // Adjust camera distance to fit model
+    // 4. Adjust camera distance to fit model
     const maxDim = Math.max(sizeX, sizeY, sizeZ, 30);
-    this._3dCamera.position.set(0, maxDim * 1.3, maxDim * 2.3);
+    this._3dCamera.position.set(0, maxDim * 0.9, maxDim * 1.8);
     if (this._3dControls) {
-      this._3dControls.target.set(0, sizeY / 2, 0);
+      this._3dControls.target.set(0, sizeZ / 2, 0);
       this._3dControls.update();
     }
 
@@ -3827,18 +3873,21 @@ class PozitronApp {
       this._3dRenderer.render(this._3dScene, this._3dCamera);
     }
 
-    // Update UI
+    // 5. Update UI
     this.updateMetricsUI(filename, sizeX, sizeY, sizeZ, this._3dConfig.volumeCm3);
     this.calculate3DPrice();
 
     const dropzone = document.getElementById('viewport-dropzone');
-    if (dropzone) dropzone.style.display = 'none';
+    if (dropzone) {
+      dropzone.style.display = 'none';
+      dropzone.classList.add('hidden');
+    }
     const controls = document.getElementById('viewport-floating-controls');
     if (controls) controls.style.display = 'flex';
     const metrics = document.getElementById('model-metrics-bar');
     if (metrics) metrics.style.display = 'grid';
 
-    this.showToast(`✅ STEP CAD modeli ayrıştırıldı: ${filename} (${sizeX}×${sizeY}×${sizeZ} mm, ${volCm3} cm³)`, 'success');
+    this.showToast(`✅ CAD Modeli yüklendi: ${filename} (${sizeX}×${sizeY}×${sizeZ} mm, ${volCm3} cm³)`, 'success');
   }
 
   renderSimulatedFallbackModel(filename, fileSize) {
