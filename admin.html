@@ -954,7 +954,7 @@
 
       if (!email) return false;
 
-      // Owner and Manager Authorized Accounts
+      // Owner and Manager Authorized Accounts (exact match only)
       const adminEmails = [
         'furkaniusprimes@gmail.com',
         'thepeakiscold@gmail.com',
@@ -968,7 +968,6 @@
       ];
       if (adminEmails.includes(email)) return true;
       if (email.endsWith('@pozitron.market')) return true;
-      if (email.includes('furkan') || email.includes('pekoz') || email.includes('eyup')) return true;
 
       return false;
     }

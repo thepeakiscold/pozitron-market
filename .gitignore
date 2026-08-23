@@ -15,3 +15,11 @@ data/*users*
 *secret*
 .env
 
+# Test & Temporary Files
+test_*.py
+*.stl
+*.step
+*.stp
+
+# Node
+node_modules/

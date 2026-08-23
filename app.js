@@ -26,6 +26,15 @@ class PozitronApp {
         .replace(/'/g, '&#039;');
     };
 
+    // SHA-256 password hashing for secure storage
+    this.hashPassword = async (password) => {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password + '_pozitron_salt_2026');
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+
     // Query Filters State
     this.filters = {
       q: '',
@@ -1423,7 +1432,7 @@ class PozitronApp {
     if (role === 'admin' || role === 'superadmin') return true;
     if (!email) return false;
 
-    // Owner and Manager Authorized Accounts
+    // Owner and Manager Authorized Accounts (exact match only)
     const adminEmails = [
       'furkaniusprimes@gmail.com',
       'thepeakiscold@gmail.com',
@@ -1437,7 +1446,6 @@ class PozitronApp {
     ];
     if (adminEmails.includes(email)) return true;
     if (email.endsWith('@pozitron.market')) return true;
-    if (email.includes('furkan') || email.includes('pekoz') || email.includes('eyup')) return true;
 
     return false;
   }
@@ -1657,7 +1665,18 @@ class PozitronApp {
     const usersDb = this.getAllUsersFromDb();
     const matchedUser = usersDb.find(u => u.email.toLowerCase() === email);
 
-    if (!matchedUser || matchedUser.password !== password) {
+    // Hash the entered password for comparison
+    const hashedPassword = await this.hashPassword(password);
+    // Support both legacy plaintext and new hashed passwords
+    const passwordMatch = matchedUser && (matchedUser.password === hashedPassword || matchedUser.password === password);
+
+    // If legacy plaintext match found, upgrade to hashed
+    if (matchedUser && matchedUser.password === password && matchedUser.password !== hashedPassword) {
+      matchedUser.password = hashedPassword;
+      localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
+    }
+
+    if (!matchedUser || !passwordMatch) {
       const failRes = this.recordLoginFailure(email);
       if (failRes.locked) {
         if (err) {
@@ -1739,10 +1758,13 @@ class PozitronApp {
 
     if (err) err.style.display = 'none';
 
+    // Hash password before storing (never store plaintext)
+    const hashedPw = await this.hashPassword(password);
+
     const newUser = {
       id: "usr_" + Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
       email: email,
-      password: password,
+      password: hashedPw,
       full_name: full_name,
       avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(full_name)}`,
       provider: "manual",
