@@ -71,7 +71,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=20260823_sec_v30">
+  <link rel="stylesheet" href="./styles.css?v=20260823_step_fix_v35">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
   <link rel="apple-touch-icon" href="./assets/favicon.png?v=20260822_v2">
@@ -1062,6 +1062,9 @@
   <!-- 3D Print Custom Manufacturing Studio Modal -->
   <div class="modal-backdrop" id="studio-3d-modal-backdrop" style="display:none;">
     <div class="modal-card modal-3d-studio" role="dialog" aria-modal="true">
+      <!-- Hidden File Input directly attached to modal root (never hidden by container) -->
+      <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.obj,.3mf" style="display:none;" onchange="window.app && window.app.handle3DFileInputChange(this)">
+
       <div class="modal-3d-header">
         <div style="display:flex; align-items:center; gap:10px;">
           <span style="font-size:1.6rem;">🖨️</span>
@@ -1081,7 +1084,6 @@
             
             <!-- Overlay Dropzone when no model or dragover -->
             <div class="viewport-dropzone" id="viewport-dropzone">
-              <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.obj,.3mf" style="display:none;" onchange="window.app && window.app.handle3DFileInputChange(this)">
               <div class="dropzone-inner" onclick="window.app && window.app.trigger3DFileUpload(event)">
                 <div class="dropzone-icon">📥</div>
                 <strong style="font-size:1.05rem; color:#0f172a; display:block; margin-bottom:6px;">3D Modelinizi Buraya Sürükleyin veya Seçin</strong>
@@ -1254,8 +1256,8 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260823_sec_v31"></script>
-  <script src="./i18n.js?v=20260823_sec_v31"></script>
-  <script src="./app.js?v=20260823_sec_v31"></script>
+  <script src="./data/pozitron_data.js?v=20260823_step_fix_v35"></script>
+  <script src="./i18n.js?v=20260823_step_fix_v35"></script>
+  <script src="./app.js?v=20260823_step_fix_v35"></script>
 </body>
 </html>

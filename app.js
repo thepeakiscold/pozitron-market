@@ -3576,24 +3576,26 @@ class PozitronApp {
       this._currentMesh = null;
     }
 
-    // Parse CARTESIAN_POINT entities from STEP
-    const ptRegex = /CARTESIAN_POINT\s*\(\s*(?:'[^']*')?\s*,\s*\(\s*([-\d.eE+]+)\s*,\s*([-\d.eE+]+)\s*,\s*([-\d.eE+]+)\s*\)\s*\)/g;
+    // 1. Universal Regex for all STEP CAD formats (SolidWorks, Inventor, Siemens NX, CATIA, Fusion 360, FreeCAD)
+    const ptRegex = /CARTESIAN_POINT\s*\(\s*[^,]*,\s*\(\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*\)\s*\)/gi;
     let match;
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
     let minZ = Infinity, maxZ = -Infinity;
     let count = 0;
 
-    while ((match = ptRegex.exec(stepText)) !== null) {
-      const x = parseFloat(match[1]);
-      const y = parseFloat(match[2]);
-      const z = parseFloat(match[3]);
-      if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
-        if (Math.abs(x) < 4000 && Math.abs(y) < 4000 && Math.abs(z) < 4000) {
-          minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-          minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-          minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
-          count++;
+    if (typeof stepText === 'string' && stepText.length > 0) {
+      while ((match = ptRegex.exec(stepText)) !== null) {
+        const x = parseFloat(match[1].replace(/\s+/g, ''));
+        const y = parseFloat(match[2].replace(/\s+/g, ''));
+        const z = parseFloat(match[3].replace(/\s+/g, ''));
+        if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
+          if (Math.abs(x) < 4000 && Math.abs(y) < 4000 && Math.abs(z) < 4000) {
+            minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+            minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+            count++;
+          }
         }
       }
     }
@@ -3602,9 +3604,9 @@ class PozitronApp {
     let volCm3 = 14.5;
 
     if (count >= 4 && isFinite(minX) && isFinite(maxX) && (maxX - minX) > 0.5) {
-      sizeX = Math.max(5, Math.round(maxX - minX));
-      sizeY = Math.max(5, Math.round(maxY - minY));
-      sizeZ = Math.max(5, Math.round(maxZ - minZ));
+      sizeX = Math.max(6, Math.round(maxX - minX));
+      sizeY = Math.max(6, Math.round(maxY - minY));
+      sizeZ = Math.max(6, Math.round(maxZ - minZ));
       
       const boundingVolCm3 = (sizeX * sizeY * sizeZ) / 1000;
       volCm3 = Math.max(0.5, Math.round(boundingVolCm3 * 0.45 * 10) / 10);
@@ -3653,6 +3655,10 @@ class PozitronApp {
     if (this._3dControls) {
       this._3dControls.target.set(0, sizeY / 2, 0);
       this._3dControls.update();
+    }
+
+    if (this._3dRenderer && this._3dScene && this._3dCamera) {
+      this._3dRenderer.render(this._3dScene, this._3dCamera);
     }
 
     // Update UI
