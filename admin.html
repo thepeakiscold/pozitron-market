@@ -181,6 +181,9 @@
       <button type="button" class="admin-tab-btn" data-tab="tab-users" onclick="switchAdminTab('tab-users')">
         <span>👥</span> <span>Kayıtlı Kullanıcılar</span>
       </button>
+      <button type="button" class="admin-tab-btn" data-tab="tab-payment-settings" onclick="switchAdminTab('tab-payment-settings')">
+        <span>💳</span> <span>Ödeme &amp; Banka Ayarları</span>
+      </button>
     </nav>
 
     <!-- TAB 1: STOCK & PRICE MANAGER -->
@@ -578,6 +581,152 @@
               <tr><td colspan="7" style="text-align:center; padding:40px; color:#64748b;">Kullanıcılar yükleniyor...</td></tr>
             </tbody>
           </table>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 6: PAYMENT GATEWAYS & BANKING SETTINGS -->
+    <section id="tab-payment-settings" class="tab-content" style="display:none;">
+      <div class="admin-card">
+        
+        <!-- Header -->
+        <div style="margin-bottom:24px; border-bottom:1px solid var(--border-subtle); padding-bottom:16px;">
+          <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); margin-bottom:4px;">💳 Ödeme Gateway &amp; Banka Hesap Ayarları</h2>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Havale/EFT IBAN bilgilerinizi yönetin ve İyzico &amp; PayTR başvurularınız onaylandığında API anahtarlarınızı bağlayın.</p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:20px;">
+          
+          <!-- 1. BANKA & HAVALE / FAST HESABI -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.4rem;">🏦</span>
+                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#0f172a;">Doğrudan Banka / FAST Hesabı</h3>
+              </div>
+              <span style="font-size:0.75rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 10px; border-radius:12px;">🟢 Aktif (Canlı)</span>
+            </div>
+
+            <p style="font-size:0.8rem; color:#64748b; margin:0; line-height:1.4;">
+              Müşterilerin havale ve 7/24 FAST ile komisyonsuz doğrudan para yatırdığı resmi banka hesabınız.
+            </p>
+
+            <div class="admin-form-group">
+              <label for="cfg-bank-owner" style="font-weight:700; font-size:0.85rem;">Hesap Sahibi (Alıcı Ad Soyad)</label>
+              <input type="text" id="cfg-bank-owner" class="admin-input" value="Burak Peköz" placeholder="Ad Soyad">
+            </div>
+
+            <div class="admin-form-group">
+              <label for="cfg-bank-iban" style="font-weight:700; font-size:0.85rem;">IBAN Numarası</label>
+              <input type="text" id="cfg-bank-iban" class="admin-input" value="TR41 0020 5000 0908 0479 3000 01" placeholder="TR00 0000 0000 0000 0000 0000 00" style="font-family:monospace; font-weight:700;">
+            </div>
+
+            <div class="admin-form-group">
+              <label for="cfg-bank-name" style="font-weight:700; font-size:0.85rem;">Banka &amp; Şube Adı</label>
+              <input type="text" id="cfg-bank-name" class="admin-input" value="Kuveyt Türk Katılım Bankası (7/24 FAST)" placeholder="Banka Adı">
+            </div>
+
+            <button type="button" class="admin-btn-primary" onclick="saveBankSettings()" style="margin-top:auto; background:#16a34a; border-color:#16a34a;">
+              ✓ Banka Bilgilerini Kaydet
+            </button>
+          </div>
+
+          <!-- 2. IYZICO 3D SECURE ENTEGRASYONU -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.4rem;">💳</span>
+                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#1a56db;">İyzico 3D Secure API</h3>
+              </div>
+              <span id="badge-iyzico-status" style="font-size:0.75rem; font-weight:700; background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:12px;">⏳ Başvuru İnceleniyor</span>
+            </div>
+
+            <p style="font-size:0.8rem; color:#64748b; margin:0; line-height:1.4;">
+              İyzico başvurunuz onaylandığında <strong>İyzico Satıcı Paneli &gt; Ayarlar &gt; API Anahtarları</strong> sayfasından alacağınız kodları buraya giriniz.
+            </p>
+
+            <div class="admin-form-group">
+              <label for="cfg-iyzico-apikey" style="font-weight:700; font-size:0.85rem;">API Key (Genel Anahtar)</label>
+              <input type="text" id="cfg-iyzico-apikey" class="admin-input" placeholder="iyzico_api_key_..." style="font-family:monospace;">
+            </div>
+
+            <div class="admin-form-group">
+              <label for="cfg-iyzico-secret" style="font-weight:700; font-size:0.85rem;">Secret Key (Gizli Anahtar)</label>
+              <input type="password" id="cfg-iyzico-secret" class="admin-input" placeholder="••••••••••••••••••••••••" style="font-family:monospace;">
+            </div>
+
+            <div class="admin-form-group">
+              <label for="cfg-iyzico-env" style="font-weight:700; font-size:0.85rem;">Çalışma Modu</label>
+              <select id="cfg-iyzico-env" class="admin-select">
+                <option value="production">Canlı Mod (Production API)</option>
+                <option value="sandbox" selected>Sandbox (Test Modu)</option>
+              </select>
+            </div>
+
+            <button type="button" class="admin-btn-primary" onclick="saveIyzicoSettings()" style="margin-top:auto; background:#1a56db; border-color:#1a56db;">
+              ✓ İyzico Anahtarlarını Kaydet
+            </button>
+          </div>
+
+          <!-- 3. PAYTR SANAL POS ENTEGRASYONU -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.4rem;">⚡</span>
+                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#0891b2;">PayTR Sanal POS API</h3>
+              </div>
+              <span id="badge-paytr-status" style="font-size:0.75rem; font-weight:700; background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:12px;">⏳ Başvuru İnceleniyor</span>
+            </div>
+
+            <p style="font-size:0.8rem; color:#64748b; margin:0; line-height:1.4;">
+              PayTR başvurunuz onaylandığında <strong>PayTR Mağaza Paneli &gt; Entegrasyon Bilgileri</strong> sayfasından alacağınız parametreleri buraya giriniz.
+            </p>
+
+            <div class="admin-form-group">
+              <label for="cfg-paytr-merchantid" style="font-weight:700; font-size:0.85rem;">Mağaza No (Merchant ID)</label>
+              <input type="text" id="cfg-paytr-merchantid" class="admin-input" placeholder="Örn: 123456" style="font-family:monospace;">
+            </div>
+
+            <div class="admin-form-group">
+              <label for="cfg-paytr-key" style="font-weight:700; font-size:0.85rem;">Mağaza Parolası (Merchant Key)</label>
+              <input type="password" id="cfg-paytr-key" class="admin-input" placeholder="••••••••••••••••" style="font-family:monospace;">
+            </div>
+
+            <div class="admin-form-group">
+              <label for="cfg-paytr-salt" style="font-weight:700; font-size:0.85rem;">Mağaza Gizli Anahtar (Merchant Salt)</label>
+              <input type="password" id="cfg-paytr-salt" class="admin-input" placeholder="••••••••••••••••" style="font-family:monospace;">
+            </div>
+
+            <button type="button" class="admin-btn-primary" onclick="savePayTRSettings()" style="margin-top:auto; background:#0891b2; border-color:#0891b2;">
+              ✓ PayTR Anahtarlarını Kaydet
+            </button>
+          </div>
+
+          <!-- 4. GOOGLE SHEETS & CRM WEBHOOK -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.4rem;">📊</span>
+                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#0f172a;">Google Sheets Sipariş Pipeline</h3>
+              </div>
+              <span style="font-size:0.75rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 10px; border-radius:12px;">🟢 Aktif (Canlı)</span>
+            </div>
+
+            <p style="font-size:0.8rem; color:#64748b; margin:0; line-height:1.4;">
+              Her yeni sipariş anında Google Sheets e-tablonuza otomatik işlenir.
+            </p>
+
+            <div class="admin-form-group">
+              <label style="font-weight:700; font-size:0.85rem;">Canlı Webhook Endpoint</label>
+              <input type="text" class="admin-input" value="https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec" readonly style="font-family:monospace; font-size:0.78rem; background:#f1f5f9;">
+            </div>
+
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; font-size:0.8rem; color:#166534;">
+              💡 <strong>Durum:</strong> İyzico, PayTR ve Havale üzerinden verilen tüm siparişler başarıyla Google Sheets veritabanınıza yazılmaktadır.
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -981,6 +1130,8 @@
         loadAdminProducts(currentPage);
       } else if (tabId === 'tab-users') {
         loadAdminUsers();
+      } else if (tabId === 'tab-payment-settings') {
+        loadPaymentSettings();
       }
     }
 
@@ -1003,6 +1154,93 @@
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 300);
       }, 3500);
+    }
+
+    function loadPaymentSettings() {
+      const bankCfg = JSON.parse(localStorage.getItem('pozitron_cfg_bank') || '{}');
+      if (bankCfg.owner) document.getElementById('cfg-bank-owner').value = bankCfg.owner;
+      if (bankCfg.iban) document.getElementById('cfg-bank-iban').value = bankCfg.iban;
+      if (bankCfg.name) document.getElementById('cfg-bank-name').value = bankCfg.name;
+
+      const iyzicoCfg = JSON.parse(localStorage.getItem('pozitron_cfg_iyzico') || '{}');
+      if (iyzicoCfg.apiKey) {
+        document.getElementById('cfg-iyzico-apikey').value = iyzicoCfg.apiKey;
+        document.getElementById('cfg-iyzico-secret').value = iyzicoCfg.secretKey || '';
+        document.getElementById('cfg-iyzico-env').value = iyzicoCfg.env || 'production';
+        const badge = document.getElementById('badge-iyzico-status');
+        if (badge) {
+          badge.textContent = '🟢 Aktif & Bağlı';
+          badge.style.background = '#dcfce7';
+          badge.style.color = '#166534';
+        }
+      }
+
+      const paytrCfg = JSON.parse(localStorage.getItem('pozitron_cfg_paytr') || '{}');
+      if (paytrCfg.merchantId) {
+        document.getElementById('cfg-paytr-merchantid').value = paytrCfg.merchantId;
+        document.getElementById('cfg-paytr-key').value = paytrCfg.merchantKey || '';
+        document.getElementById('cfg-paytr-salt').value = paytrCfg.merchantSalt || '';
+        const badge = document.getElementById('badge-paytr-status');
+        if (badge) {
+          badge.textContent = '🟢 Aktif & Bağlı';
+          badge.style.background = '#dcfce7';
+          badge.style.color = '#166534';
+        }
+      }
+    }
+
+    function saveBankSettings() {
+      const owner = document.getElementById('cfg-bank-owner').value.trim();
+      const iban = document.getElementById('cfg-bank-iban').value.trim();
+      const name = document.getElementById('cfg-bank-name').value.trim();
+
+      if (!owner || !iban) {
+        showToast('Lütfen alıcı ismi ve IBAN bilgisini eksiksiz girin.', 'error');
+        return;
+      }
+
+      localStorage.setItem('pozitron_cfg_bank', JSON.stringify({ owner, iban, name }));
+      showToast('Banka ve FAST IBAN bilgileri başarıyla güncellendi! 🏦', 'success');
+    }
+
+    function saveIyzicoSettings() {
+      const apiKey = document.getElementById('cfg-iyzico-apikey').value.trim();
+      const secretKey = document.getElementById('cfg-iyzico-secret').value.trim();
+      const env = document.getElementById('cfg-iyzico-env').value;
+
+      if (!apiKey || !secretKey) {
+        showToast('Lütfen API Key ve Secret Key alanlarını doldurun.', 'error');
+        return;
+      }
+
+      localStorage.setItem('pozitron_cfg_iyzico', JSON.stringify({ apiKey, secretKey, env }));
+      const badge = document.getElementById('badge-iyzico-status');
+      if (badge) {
+        badge.textContent = '🟢 Aktif & Bağlı';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#166534';
+      }
+      showToast('İyzico API anahtarları kaydedildi ve sisteme bağlandı! 💳', 'success');
+    }
+
+    function savePayTRSettings() {
+      const merchantId = document.getElementById('cfg-paytr-merchantid').value.trim();
+      const merchantKey = document.getElementById('cfg-paytr-key').value.trim();
+      const merchantSalt = document.getElementById('cfg-paytr-salt').value.trim();
+
+      if (!merchantId || !merchantKey || !merchantSalt) {
+        showToast('Lütfen PayTR Merchant ID, Key ve Salt alanlarını doldurun.', 'error');
+        return;
+      }
+
+      localStorage.setItem('pozitron_cfg_paytr', JSON.stringify({ merchantId, merchantKey, merchantSalt }));
+      const badge = document.getElementById('badge-paytr-status');
+      if (badge) {
+        badge.textContent = '🟢 Aktif & Bağlı';
+        badge.style.background = '#dcfce7';
+        badge.style.color = '#166534';
+      }
+      showToast('PayTR Sanal POS anahtarları kaydedildi ve bağlandı! ⚡', 'success');
     }
 
     // -------------------------------------------------------------

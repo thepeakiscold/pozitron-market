@@ -962,28 +962,28 @@
               <div class="form-group">
                 <label for="havale-bank-select">Banka Hesabı Seçiniz</label>
                 <select id="havale-bank-select" class="form-input form-select" onchange="window.app && window.app.updateBankInfo(this.value)">
+                  <option value="main">Kuveyt Türk / 7/24 FAST (Ana Hesap)</option>
                   <option value="ziraat">Ziraat Bankası (7/24 FAST)</option>
                   <option value="garanti">Garanti BBVA</option>
                   <option value="isbank">Türkiye İş Bankası</option>
-                  <option value="akbank">Akbank</option>
-                  <option value="enpara">QNB Enpara</option>
+                  <option value="enpara">QNB Enpara / FAST</option>
                 </select>
               </div>
 
               <!-- Bank Account Card Box -->
               <div class="bank-account-box" id="bank-account-display">
                 <div class="bank-box-header">
-                  <strong id="bank-box-name" style="color:#0f172a; font-size:0.95rem;">Ziraat Bankası</strong>
+                  <strong id="bank-box-name" style="color:#0f172a; font-size:0.95rem;">Kuveyt Türk / 7/24 FAST</strong>
                   <span class="fast-badge">FAST Uyumlu</span>
                 </div>
                 <div class="bank-box-row">
                   <span class="bank-label">Alıcı:</span>
-                  <strong class="bank-val">Eyüp Furkan PEKÖZ</strong>
+                  <strong class="bank-val" id="bank-box-owner">Burak Peköz</strong>
                 </div>
                 <div class="bank-box-row">
                   <span class="bank-label">IBAN:</span>
                   <div class="iban-copy-row">
-                    <code id="bank-box-iban" class="iban-code">TR52 0006 7010 0000 0023 9483 65</code>
+                    <code id="bank-box-iban" class="iban-code">TR41 0020 5000 0908 0479 3000 01</code>
                     <button type="button" class="btn-copy-iban" onclick="window.app && window.app.copyIban()">📋 Kopyala</button>
                   </div>
                 </div>

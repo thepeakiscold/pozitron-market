@@ -1886,17 +1886,19 @@ class PozitronApp {
 
   updateBankInfo(bankKey) {
     const banks = {
-      ziraat: { name: 'Ziraat Bankası', iban: 'TR52 0006 7010 0000 0023 9483 65', owner: 'Eyüp Furkan PEKÖZ' },
-      garanti: { name: 'Garanti BBVA', iban: 'TR89 0006 2000 0001 9283 7465 01', owner: 'Eyüp Furkan PEKÖZ' },
-      isbank: { name: 'Türkiye İş Bankası', iban: 'TR45 0006 4000 0012 8374 6501 22', owner: 'Eyüp Furkan PEKÖZ' },
-      akbank: { name: 'Akbank', iban: 'TR12 0004 6000 0088 3746 5012 33', owner: 'Eyüp Furkan PEKÖZ' },
-      enpara: { name: 'QNB Enpara', iban: 'TR78 0011 1000 0000 9876 5432 10', owner: 'Eyüp Furkan PEKÖZ' }
+      main: { name: 'Kuveyt Türk / 7/24 FAST', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' },
+      ziraat: { name: 'Ziraat Bankası (7/24 FAST)', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' },
+      garanti: { name: 'Garanti BBVA', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' },
+      isbank: { name: 'Türkiye İş Bankası', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' },
+      enpara: { name: 'QNB Enpara / FAST', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' }
     };
-    const b = banks[bankKey] || banks.ziraat;
+    const b = banks[bankKey] || banks.main;
     const nameEl = document.getElementById('bank-box-name');
     const ibanEl = document.getElementById('bank-box-iban');
+    const ownerEl = document.getElementById('bank-box-owner');
     if (nameEl) nameEl.textContent = b.name;
     if (ibanEl) ibanEl.textContent = b.iban;
+    if (ownerEl) ownerEl.textContent = b.owner;
   }
 
   copyIban() {
