@@ -17,8 +17,8 @@
   <!-- Primary SEO Meta Tags for Google Search Ranking -->
   <title>Pozitron Market | Drone &amp; FPV Donanım Mağazası</title>
   <meta name="title" content="Pozitron Market | Drone &amp; FPV Donanım Mağazası">
-  <meta name="description" content="Türkiye'nin en kapsamlı drone ve FPV donanım pazarı Pozitron Market. FPV motorlar, ESC sürücüler, uçuş kontrol kartları (FC), DJI O3 kameralar, pervaneler, bataryalar ve orijinal drone yedek parçaları. Hızlı kargo &amp; 3D Secure güvenli ödeme.">
-  <meta name="keywords" content="drone parçaları, fpv drone, brushless motor, esc sürücü, uçuş kontrol kartı, flight controller, dji o3 air unit, drone pervanesi, lipo batarya, t-motor, speedybee, iflight, geprc, emap, pozitron market, drone satışı">
+  <meta name="description" content="Pozitron Market — Türkiye'nin en kapsamlı drone ve FPV donanım pazarı. 🖨️ Online 3D Baskı Studio ile özel parça bastır, ⚡ Drone Toplama Sihirbazı ile bütçene göre drone topla! FPV motorlar, ESC sürücüler, uçuş kontrol kartları, DJI O3, pervaneler, bataryalar. Hızlı kargo &amp; 3D Secure güvenli ödeme.">
+  <meta name="keywords" content="drone parçaları, fpv drone, brushless motor, esc sürücü, uçuş kontrol kartı, flight controller, dji o3 air unit, drone pervanesi, lipo batarya, t-motor, speedybee, iflight, geprc, emap, pozitron market, drone satışı, 3d baskı, 3d print, özel drone parçası, tpu mount, drone toplama sihirbazı">
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
   <meta name="author" content="Pozitron Market FPV Hardware Ltd.">
   <link rel="canonical" href="https://pozitronmarket.com/">
@@ -27,7 +27,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://pozitronmarket.com/">
   <meta property="og:title" content="Pozitron Market | Orijinal Drone &amp; FPV Parçaları">
-  <meta property="og:description" content="FPV motorlar, ESC'ler, Uçuş Kontrol Kartları, DJI HD sistemleri ve zengin drone donanımları. Pozitron Market ile güvenli alışveriş.">
+  <meta property="og:description" content="🖨️ 3D Baskı Studio ile özel drone parçası bastır, ⚡ Drone Toplama Sihirbazı ile bütçene göre FPV drone topla! FPV motorlar, ESC'ler, uçuş kontrol kartları, DJI HD sistemleri. Pozitron Market.">
   <meta property="og:image" content="https://pozitronmarket.com/assets/hero_drone.png">
   <meta property="og:site_name" content="Pozitron Market">
   <meta property="og:locale" content="tr_TR">
@@ -37,7 +37,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://pozitronmarket.com/">
   <meta name="twitter:title" content="Pozitron Market | Drone &amp; FPV Pazarı">
-  <meta name="twitter:description" content="Türkiye'nin en kapsamlı drone parçası satış platformu.">
+  <meta name="twitter:description" content="🖨️ 3D Baskı Studio ile özel parça bastır, ⚡ Drone Toplama Sihirbazı ile bütçene göre drone topla! Türkiye'nin en kapsamlı FPV donanım pazarı.">
   <meta name="twitter:image" content="https://pozitronmarket.com/assets/hero_drone.png">
 
   <!-- JSON-LD Schema (Google'da üstte çıkmayı destekler) -->
@@ -218,6 +218,12 @@
 
       <!-- Action Nav Buttons -->
       <nav class="header-actions" aria-label="Kullanıcı Menüsü">
+        <!-- 3D Print Studio Custom Manufacturing Button -->
+        <button type="button" class="btn-3d-print-nav" id="open-3d-studio-btn" onclick="window.app && window.app.open3DStudioModal()" aria-label="3D Baskı Studio">
+          <span>🖨️</span>
+          <span>3D Baskı Studio</span>
+        </button>
+
         <!-- Drone Compatibility Builder Tool -->
         <button type="button" class="btn-builder-nav" id="open-builder-btn" aria-label="Drone Uyumluluk Sihirbazı">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -312,6 +318,9 @@
             </button>
             <button type="button" class="btn-secondary" id="hero-builder-btn" data-i18n="hero_builder_cta">
               ⚡ Bütçene Göre Drone Topla
+            </button>
+            <button type="button" class="btn-3d-hero" id="hero-3d-btn" onclick="window.app && window.app.open3DStudioModal()" style="display:flex; align-items:center; gap:8px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#fff; padding:12px 22px; border-radius:10px; font-weight:700; border:none; cursor:pointer; box-shadow:0 4px 14px rgba(2,132,199,0.25);">
+              <span>🖨️</span> <span>Özel 3D Parça Bastır</span>
             </button>
           </div>
 
@@ -545,12 +554,10 @@
     <div class="footer-bottom">
       <div class="container footer-bottom-inner">
         <p>© 2026 Pozitron Market FPV Hardware Ltd. Tüm hakları saklıdır.</p>
-        <div class="footer-bottom-links">
+        <!-- SEO links hidden from UI but still accessible to crawlers via sitemap.xml and robots.txt -->
+        <div class="footer-bottom-links" style="display:none;" aria-hidden="true">
           <a href="./sitemap.xml" target="_blank" rel="noopener">Sitemap.xml</a>
-          <span>•</span>
           <a href="./robots.txt" target="_blank" rel="noopener">Robots.txt</a>
-          <span>•</span>
-          <span>Bilingual: TR / EN</span>
         </div>
       </div>
     </div>
@@ -1053,6 +1060,175 @@
     </div>
   </div>
 
+  <!-- 3D Print Custom Manufacturing Studio Modal -->
+  <div class="modal-backdrop" id="studio-3d-modal-backdrop" style="display:none;">
+    <div class="modal-card modal-3d-studio" role="dialog" aria-modal="true">
+      <div class="modal-3d-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.6rem;">🖨️</span>
+          <div>
+            <h2 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); margin:0;">3D Baskı &amp; Özel İmalat Studio</h2>
+            <p style="font-size:0.8rem; color:var(--text-secondary); margin:0;">STL / STEP modelinizi yükleyin, malzeme ve doluluk seçin, anında canlı fiyat teklifi alın.</p>
+          </div>
+        </div>
+        <button type="button" class="btn-close-modal" onclick="window.app && window.app.close3DStudioModal()">&times;</button>
+      </div>
+
+      <div class="modal-3d-body">
+        <!-- Left: 3D WebGL Canvas & Dropzone -->
+        <div class="studio-3d-viewport-col">
+          <div class="viewport-canvas-wrap" id="viewport-3d-container">
+            <canvas id="canvas-3d-viewer"></canvas>
+            
+            <!-- Overlay Dropzone when no model or dragover -->
+            <div class="viewport-dropzone" id="viewport-dropzone">
+              <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.obj,.3mf" style="display:none;">
+              <div class="dropzone-inner" onclick="document.getElementById('file-3d-input').click()">
+                <div class="dropzone-icon">📥</div>
+                <strong style="font-size:1rem; color:#0f172a; display:block; margin-bottom:6px;">3D Modelinizi Buraya Sürükleyin veya Seçin</strong>
+                <p style="font-size:0.8rem; color:#64748b; margin-bottom:14px;">Desteklenen formatlar: <strong>.STL, .STEP, .STP, .OBJ</strong> (Max: 50MB)</p>
+                <button type="button" class="btn-primary btn-upload-model">📂 Dosya Seç</button>
+              </div>
+            </div>
+
+            <!-- Viewport Controls Overlay (wireframe, rotate, reset, change file) -->
+            <div class="viewport-floating-controls" id="viewport-floating-controls" style="display:none;">
+              <button type="button" class="ctrl-btn" id="btn-3d-wireframe" title="Tel Kafes / Katı Mod" onclick="window.app && window.app.toggle3DWireframe()">🌐 Tel Kafes</button>
+              <button type="button" class="ctrl-btn" id="btn-3d-autorotate" title="Otomatik Döndür" onclick="window.app && window.app.toggle3DAutoRotate()">🔄 Döndür</button>
+              <button type="button" class="ctrl-btn" id="btn-3d-reset-cam" title="Kamerayı Sıfırla" onclick="window.app && window.app.reset3DCamera()">🎯 Ortala</button>
+              <button type="button" class="ctrl-btn" style="color:#0284c7; background:#f0f9ff;" onclick="document.getElementById('file-3d-input').click()">📂 Değiştir</button>
+            </div>
+          </div>
+
+          <!-- Model Geometry Metrics Bar -->
+          <div class="model-metrics-bar" id="model-metrics-bar" style="display:none;">
+            <div class="metric-item">
+              <span class="m-label">Boyutlar (X × Y × Z):</span>
+              <strong class="m-val" id="metric-dim">0 × 0 × 0 mm</strong>
+            </div>
+            <div class="metric-item">
+              <span class="m-label">Net Hacim:</span>
+              <strong class="m-val" id="metric-vol">0.0 cm³</strong>
+            </div>
+            <div class="metric-item">
+              <span class="m-label">Dosya Adı:</span>
+              <strong class="m-val" id="metric-filename" style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Material, Infill, Color & Pricing Column -->
+        <div class="studio-3d-config-col">
+          
+          <!-- 1. Material Selector -->
+          <div class="config-section">
+            <label class="config-label">1. Filament Malzemesi Seçiniz</label>
+            <div class="material-cards-grid" id="material-selector-grid">
+              <button type="button" class="mat-card active" data-mat="PLA" onclick="window.app && window.app.select3DMaterial('PLA')">
+                <div class="mat-name">PLA</div>
+                <div class="mat-desc">Standart &amp; Ekonomik Prototip</div>
+                <div class="mat-tags"><span class="tag">Genel</span><span class="tag price" id="mat-price-tag-PLA">1.50 ₺/g</span></div>
+              </button>
+              <button type="button" class="mat-card" data-mat="PETG" onclick="window.app && window.app.select3DMaterial('PETG')">
+                <div class="mat-name">PETG</div>
+                <div class="mat-desc">Dirençli &amp; Darbeye Dayanıklı</div>
+                <div class="mat-tags"><span class="tag">Isı Direnci</span><span class="tag price" id="mat-price-tag-PETG">2.00 ₺/g</span></div>
+              </button>
+              <button type="button" class="mat-card" data-mat="TPU" onclick="window.app && window.app.select3DMaterial('TPU')">
+                <div class="mat-name">TPU (Flex) 🏆</div>
+                <div class="mat-desc">Esnek FPV Drone Koruma &amp; Ayak</div>
+                <div class="mat-tags"><span class="tag highlight">FPV Favori</span><span class="tag price" id="mat-price-tag-TPU">3.50 ₺/g</span></div>
+              </button>
+              <button type="button" class="mat-card" data-mat="ABS" onclick="window.app && window.app.select3DMaterial('ABS')">
+                <div class="mat-name">ABS</div>
+                <div class="mat-desc">Yüksek Mukavemet &amp; Sıcaklık</div>
+                <div class="mat-tags"><span class="tag">100°C Isı</span><span class="tag price" id="mat-price-tag-ABS">2.25 ₺/g</span></div>
+              </button>
+              <button type="button" class="mat-card" data-mat="ASA" onclick="window.app && window.app.select3DMaterial('ASA')">
+                <div class="mat-name">ASA</div>
+                <div class="mat-desc">Dış Ortam &amp; UV Işın Direnci</div>
+                <div class="mat-tags"><span class="tag">Güneş/UV</span><span class="tag price" id="mat-price-tag-ASA">2.50 ₺/g</span></div>
+              </button>
+              <button type="button" class="mat-card" data-mat="PA6" onclick="window.app && window.app.select3DMaterial('PA6')">
+                <div class="mat-name">PA6 (Naylon)</div>
+                <div class="mat-desc">Endüstriyel Aşınmaz &amp; Tok</div>
+                <div class="mat-tags"><span class="tag">Ultra Rijit</span><span class="tag price" id="mat-price-tag-PA6">5.00 ₺/g</span></div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Infill & Quality Row -->
+          <div class="config-row-2col">
+            <div class="config-section">
+              <label class="config-label">2. Doluluk Oranı (Infill): <strong id="infill-percentage-text" style="color:#0284c7;">%20</strong></label>
+              <div class="infill-slider-wrap">
+                <input type="range" id="input-3d-infill" min="10" max="100" step="10" value="20" oninput="window.app && window.app.update3DInfill(this.value)" style="width:100%;">
+                <div class="infill-hint" id="infill-hint-text" style="font-size:0.75rem; color:#64748b; margin-top:4px;">Standart Sağlamlık (Drone montaj &amp; genel parçalar)</div>
+              </div>
+            </div>
+
+            <div class="config-section">
+              <label class="config-label">3. Katman Hassasiyeti</label>
+              <select id="select-3d-layer" class="form-input form-select" onchange="window.app && window.app.update3DLayer(this.value)">
+                <option value="0.20" selected>0.20 mm (Standart Kalite)</option>
+                <option value="0.12">0.12 mm (Ultra İnce / Pürüzsüz)</option>
+                <option value="0.28">0.28 mm (Hızlı Fonksiyonel)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 4. Color Palette Picker -->
+          <div class="config-section">
+            <label class="config-label">4. Baskı Rengi: <strong id="selected-color-name" style="color:#0f172a;">Mat Siyah</strong></label>
+            <div class="color-swatches-row" id="color-swatches-row">
+              <button type="button" class="swatch-btn active" data-color="#1e293b" data-name="Mat Siyah" style="background:#1e293b;" onclick="window.app && window.app.select3DColor('#1e293b', 'Mat Siyah')" title="Mat Siyah"></button>
+              <button type="button" class="swatch-btn" data-color="#f8fafc" data-name="Kar Beyazı" style="background:#ffffff; border:1px solid #cbd5e1;" onclick="window.app && window.app.select3DColor('#f8fafc', 'Kar Beyazı')" title="Kar Beyazı"></button>
+              <button type="button" class="swatch-btn" data-color="#ef4444" data-name="Yarış Kırmızısı" style="background:#ef4444;" onclick="window.app && window.app.select3DColor('#ef4444', 'Yarış Kırmızısı')" title="Yarış Kırmızısı"></button>
+              <button type="button" class="swatch-btn" data-color="#0284c7" data-name="Kobalt Mavi" style="background:#0284c7;" onclick="window.app && window.app.select3DColor('#0284c7', 'Kobalt Mavi')" title="Kobalt Mavi"></button>
+              <button type="button" class="swatch-btn" data-color="#f97316" data-name="Pozitron Turuncu" style="background:#f97316;" onclick="window.app && window.app.select3DColor('#f97316', 'Pozitron Turuncu')" title="Pozitron Turuncu"></button>
+              <button type="button" class="swatch-btn" data-color="#eab308" data-name="Neon Sarı (TPU)" style="background:#eab308;" onclick="window.app && window.app.select3DColor('#eab308', 'Neon Sarı (TPU)')" title="Neon Sarı (TPU)"></button>
+              <button type="button" class="swatch-btn" data-color="#64748b" data-name="Askeri Gri" style="background:#64748b;" onclick="window.app && window.app.select3DColor('#64748b', 'Askeri Gri')" title="Askeri Gri"></button>
+            </div>
+          </div>
+
+          <!-- Price & Weight Breakdown Summary Card -->
+          <div class="studio-pricing-card">
+            <div class="price-breakdown-row">
+              <span>Tahmini Baskı Ağırlığı:</span>
+              <strong id="price-calc-weight">0.0 gr</strong>
+            </div>
+            <div class="price-breakdown-row">
+              <span>Baskı &amp; Malzeme Bedeli:</span>
+              <span id="price-calc-mat">0,00 ₺</span>
+            </div>
+            <div class="price-breakdown-row">
+              <span>Makine Hazırlık &amp; Dilimleme:</span>
+              <span id="price-calc-setup">50,00 ₺</span>
+            </div>
+            <div class="price-total-row">
+              <span>Birim Fiyat:</span>
+              <strong class="total-badge" id="price-calc-total">0,00 ₺</strong>
+            </div>
+          </div>
+
+          <!-- Add to Cart Action -->
+          <div class="studio-cart-actions">
+            <div class="quantity-input-wrap">
+              <button type="button" class="qty-btn" onclick="window.app && window.app.adjust3DQty(-1)">-</button>
+              <input type="number" id="input-3d-qty" min="1" max="100" value="1" readonly>
+              <button type="button" class="qty-btn" onclick="window.app && window.app.adjust3DQty(1)">+</button>
+            </div>
+            <button type="button" class="btn-primary btn-add-3d-cart" id="btn-add-3d-to-cart" onclick="window.app && window.app.add3DPrintToCart()">
+              <span>🛒</span>
+              <span>Özel 3D Baskıyı Sepete Ekle</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Order Success Invoice Receipt Modal -->
   <div class="modal-backdrop" id="success-modal-backdrop" style="display:none;">
     <div class="modal-card modal-success" role="dialog" aria-modal="true">
@@ -1073,9 +1249,14 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container" aria-live="assertive"></div>
 
+  <!-- Three.js 3D WebGL Engine & STLLoader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260823_sec_v30"></script>
-  <script src="./i18n.js?v=20260823_sec_v30"></script>
-  <script src="./app.js?v=20260823_sec_v30"></script>
+  <script src="./data/pozitron_data.js?v=20260823_sec_v31"></script>
+  <script src="./i18n.js?v=20260823_sec_v31"></script>
+  <script src="./app.js?v=20260823_sec_v31"></script>
 </body>
 </html>

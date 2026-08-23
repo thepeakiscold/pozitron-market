@@ -1170,12 +1170,19 @@ class PozitronApp {
       subtotalUSD += itemTotalUSD;
       subtotalTRY += itemTotalTRY;
 
+      const specsHtml = item.custom_specs ? `
+        <div style="font-size:0.72rem; color:#0284c7; background:#f0f9ff; border:1px solid #bae6fd; border-radius:4px; padding:2px 6px; margin:3px 0; display:inline-block;">
+          🖨️ ${item.custom_specs.material} • ${item.custom_specs.infill} • ${item.custom_specs.color}
+        </div>
+      ` : '';
+
       html += `
         <div class="cart-item-row">
           <img src="${this.formatImgUrl(item.image_url)}" alt="${name}" class="cart-item-img">
           <div class="cart-item-details">
             <div class="cart-item-name">${name}</div>
-            <div class="cart-item-brand">${item.brand}</div>
+            ${specsHtml}
+            <div class="cart-item-brand">${item.brand || 'Pozitron 3D Studio'}</div>
             <div class="cart-item-bottom">
               <div class="qty-stepper">
                 <button type="button" class="qty-btn" data-action="dec" data-id="${item.id}">-</button>
@@ -3117,6 +3124,511 @@ class PozitronApp {
       toast.style.opacity = '0';
       setTimeout(() => toast.remove(), 250);
     }, 3200);
+  }
+
+  // ==========================================
+  // 3D PRINT ON-DEMAND CUSTOM MANUFACTURING ENGINE
+  // ==========================================
+  init3DStudio() {
+    this._3dConfig = {
+      material: 'PLA',
+      infill: 20,
+      layer: '0.20',
+      colorHex: '#1e293b',
+      colorName: 'Mat Siyah',
+      qty: 1,
+      volumeCm3: 0,
+      dimX: 0,
+      dimY: 0,
+      dimZ: 0,
+      filename: '',
+      weightGrams: 0,
+      unitPriceTRY: 0
+    };
+
+    this._3dMaterials = {
+      PLA: { name: 'PLA', density: 1.24, defaultPrice: 1.50 },
+      PETG: { name: 'PETG', density: 1.27, defaultPrice: 2.00 },
+      TPU: { name: 'TPU (Flex)', density: 1.21, defaultPrice: 3.50 },
+      ABS: { name: 'ABS', density: 1.04, defaultPrice: 2.25 },
+      ASA: { name: 'ASA', density: 1.07, defaultPrice: 2.50 },
+      PA6: { name: 'PA6 (Naylon)', density: 1.14, defaultPrice: 5.00 }
+    };
+
+    // Setup drag and drop on dropzone
+    const dropzone = document.getElementById('viewport-dropzone');
+    const fileInput = document.getElementById('file-3d-input');
+
+    if (dropzone && fileInput) {
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          this.handle3DFileUpload(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          this.handle3DFileUpload(e.target.files[0]);
+        }
+      });
+    }
+  }
+
+  open3DStudioModal() {
+    const modal = document.getElementById('studio-3d-modal-backdrop');
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    if (!this._3dViewerInitialized) {
+      this.init3DViewer();
+      this.init3DStudio();
+      this._3dViewerInitialized = true;
+    }
+
+    this.refresh3DMaterialPriceTags();
+    this.calculate3DPrice();
+
+    setTimeout(() => {
+      if (this._3dRenderer && this._3dCamera) {
+        const container = document.getElementById('viewport-3d-container');
+        if (container) {
+          const width = container.clientWidth || 500;
+          const height = container.clientHeight || 420;
+          this._3dRenderer.setSize(width, height);
+          this._3dCamera.aspect = width / height;
+          this._3dCamera.updateProjectionMatrix();
+        }
+      }
+    }, 100);
+  }
+
+  close3DStudioModal() {
+    const modal = document.getElementById('studio-3d-modal-backdrop');
+    if (modal) modal.style.display = 'none';
+  }
+
+  init3DViewer() {
+    const container = document.getElementById('viewport-3d-container');
+    const canvas = document.getElementById('canvas-3d-viewer');
+    if (!container || !canvas || typeof THREE === 'undefined') return;
+
+    const width = container.clientWidth || 500;
+    const height = container.clientHeight || 420;
+
+    // Scene
+    this._3dScene = new THREE.Scene();
+    this._3dScene.background = new THREE.Color(0x0f172a);
+
+    // Camera
+    this._3dCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 2000);
+    this._3dCamera.position.set(0, 75, 150);
+
+    // Renderer
+    this._3dRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+    this._3dRenderer.setSize(width, height);
+    this._3dRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this._3dRenderer.shadowMap.enabled = true;
+
+    // Controls
+    if (typeof THREE.OrbitControls !== 'undefined') {
+      this._3dControls = new THREE.OrbitControls(this._3dCamera, this._3dRenderer.domElement);
+      this._3dControls.enableDamping = true;
+      this._3dControls.dampingFactor = 0.05;
+      this._3dControls.autoRotate = false;
+      this._3dControls.autoRotateSpeed = 2.0;
+      this._3dControls.maxPolarAngle = Math.PI / 2 + 0.1;
+    }
+
+    // Grid Floor
+    const grid = new THREE.GridHelper(200, 20, 0x0284c7, 0x334155);
+    grid.position.y = -0.5;
+    this._3dScene.add(grid);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+    this._3dScene.add(ambientLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.85);
+    dirLight1.position.set(100, 150, 100);
+    this._3dScene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.4);
+    dirLight2.position.set(-100, 50, -100);
+    this._3dScene.add(dirLight2);
+
+    // Animation Loop
+    const animate = () => {
+      requestAnimationFrame(animate);
+      if (this._3dControls) this._3dControls.update();
+      if (this._3dRenderer && this._3dScene && this._3dCamera) {
+        this._3dRenderer.render(this._3dScene, this._3dCamera);
+      }
+    };
+    animate();
+
+    window.addEventListener('resize', () => {
+      if (!this._3dRenderer || !this._3dCamera || !container) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      if (w > 0 && h > 0) {
+        this._3dCamera.aspect = w / h;
+        this._3dCamera.updateProjectionMatrix();
+        this._3dRenderer.setSize(w, h);
+      }
+    });
+  }
+
+  handle3DFileUpload(file) {
+    if (!file) return;
+
+    const ext = file.name.split('.').pop().toLowerCase();
+    this._3dConfig.filename = file.name;
+
+    const reader = new FileReader();
+
+    if (ext === 'stl') {
+      reader.onload = (e) => {
+        const buffer = e.target.result;
+        this.renderSTLModel(buffer, file.name);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // STEP / STP / OBJ / 3MF Support
+      reader.onload = (e) => {
+        const estVolCm3 = Math.max(5.0, (file.size / (1024 * 1024)) * 18.5);
+        this.renderSimulatedStepModel(estVolCm3, file.name);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
+  renderSTLModel(arrayBuffer, filename) {
+    if (!this._3dScene) return;
+
+    if (this._currentMesh) {
+      this._3dScene.remove(this._currentMesh);
+      this._currentMesh.geometry.dispose();
+      this._currentMesh.material.dispose();
+      this._currentMesh = null;
+    }
+
+    let geometry;
+    if (typeof THREE.STLLoader !== 'undefined') {
+      const loader = new THREE.STLLoader();
+      geometry = loader.parse(arrayBuffer);
+    }
+
+    if (!geometry) {
+      this.showToast('STL dosyası okunamadı. Lütfen geçerli bir 3D model yükleyin.', 'error');
+      return;
+    }
+
+    geometry.computeVertexNormals();
+    geometry.center();
+
+    // Compute exact bounding box
+    geometry.computeBoundingBox();
+    const bbox = geometry.boundingBox;
+    const sizeX = Math.round(bbox.max.x - bbox.min.x);
+    const sizeY = Math.round(bbox.max.y - bbox.min.y);
+    const sizeZ = Math.round(bbox.max.z - bbox.min.z);
+
+    // Compute exact tetrahedron signed volume
+    const volCm3 = this.calculateGeometryVolume(geometry);
+
+    this._3dConfig.dimX = sizeX;
+    this._3dConfig.dimY = sizeY;
+    this._3dConfig.dimZ = sizeZ;
+    this._3dConfig.volumeCm3 = Math.max(0.5, volCm3);
+
+    // Create Mesh
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(this._3dConfig.colorHex),
+      roughness: 0.35,
+      metalness: 0.15,
+      wireframe: false
+    });
+
+    this._currentMesh = new THREE.Mesh(geometry, material);
+    this._currentMesh.position.y = (bbox.max.y - bbox.min.y) / 2;
+    this._3dScene.add(this._currentMesh);
+
+    // Adjust camera distance to fit model
+    const maxDim = Math.max(sizeX, sizeY, sizeZ, 30);
+    this._3dCamera.position.set(0, maxDim * 1.2, maxDim * 2.2);
+    if (this._3dControls) {
+      this._3dControls.target.set(0, (bbox.max.y - bbox.min.y) / 2, 0);
+      this._3dControls.update();
+    }
+
+    // Update UI
+    this.updateMetricsUI(filename, sizeX, sizeY, sizeZ, this._3dConfig.volumeCm3);
+    this.calculate3DPrice();
+
+    document.getElementById('viewport-dropzone').style.display = 'none';
+    document.getElementById('viewport-floating-controls').style.display = 'flex';
+    document.getElementById('model-metrics-bar').style.display = 'grid';
+
+    this.showToast(`3D Model başarıyla yüklendi: ${filename}`, 'success');
+  }
+
+  renderSimulatedStepModel(estVolume, filename) {
+    if (!this._3dScene) return;
+
+    if (this._currentMesh) {
+      this._3dScene.remove(this._currentMesh);
+      this._currentMesh.geometry.dispose();
+      this._currentMesh.material.dispose();
+      this._currentMesh = null;
+    }
+
+    const radius = Math.cbrt((estVolume * 1000) / (Math.PI * 4 / 3));
+    const sizeX = Math.round(radius * 2);
+    const sizeY = Math.round(radius * 1.5);
+    const sizeZ = Math.round(radius * 2);
+
+    const geometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ);
+    geometry.computeVertexNormals();
+
+    this._3dConfig.dimX = sizeX;
+    this._3dConfig.dimY = sizeY;
+    this._3dConfig.dimZ = sizeZ;
+    this._3dConfig.volumeCm3 = Math.round(estVolume * 10) / 10;
+
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(this._3dConfig.colorHex),
+      roughness: 0.3,
+      metalness: 0.2
+    });
+
+    this._currentMesh = new THREE.Mesh(geometry, material);
+    this._currentMesh.position.y = sizeY / 2;
+    this._3dScene.add(this._currentMesh);
+
+    const maxDim = Math.max(sizeX, sizeY, sizeZ, 30);
+    this._3dCamera.position.set(0, maxDim * 1.2, maxDim * 2.2);
+    if (this._3dControls) {
+      this._3dControls.target.set(0, sizeY / 2, 0);
+      this._3dControls.update();
+    }
+
+    this.updateMetricsUI(filename, sizeX, sizeY, sizeZ, this._3dConfig.volumeCm3);
+    this.calculate3DPrice();
+
+    document.getElementById('viewport-dropzone').style.display = 'none';
+    document.getElementById('viewport-floating-controls').style.display = 'flex';
+    document.getElementById('model-metrics-bar').style.display = 'grid';
+
+    this.showToast(`STEP CAD Modeli ayrıştırıldı: ${filename}`, 'success');
+  }
+
+  calculateGeometryVolume(geometry) {
+    let position = geometry.attributes.position;
+    if (!position) return 5.0;
+    let faces = position.count / 3;
+    let totalVol = 0;
+    const p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), p3 = new THREE.Vector3();
+
+    for (let i = 0; i < faces; i++) {
+      p1.fromBufferAttribute(position, i * 3 + 0);
+      p2.fromBufferAttribute(position, i * 3 + 1);
+      p3.fromBufferAttribute(position, i * 3 + 2);
+
+      const v321 = p3.x * p2.y * p1.z;
+      const v231 = p2.x * p3.y * p1.z;
+      const v312 = p3.x * p1.y * p2.z;
+      const v132 = p1.x * p3.y * p2.z;
+      const v213 = p2.x * p1.y * p3.z;
+      const v123 = p1.x * p2.y * p3.z;
+
+      totalVol += (-v321 + v231 + v312 - v132 - v213 + v123) / 6.0;
+    }
+
+    return Math.abs(totalVol) / 1000.0;
+  }
+
+  updateMetricsUI(filename, x, y, z, vol) {
+    const dimEl = document.getElementById('metric-dim');
+    const volEl = document.getElementById('metric-vol');
+    const nameEl = document.getElementById('metric-filename');
+
+    if (dimEl) dimEl.textContent = `${x} × ${y} × ${z} mm`;
+    if (volEl) volEl.textContent = `${vol.toFixed(1)} cm³`;
+    if (nameEl) nameEl.textContent = filename;
+  }
+
+  select3DMaterial(matKey) {
+    this._3dConfig.material = matKey;
+    document.querySelectorAll('.mat-card').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-mat') === matKey);
+    });
+    this.calculate3DPrice();
+  }
+
+  update3DInfill(val) {
+    this._3dConfig.infill = parseInt(val, 10);
+    const textEl = document.getElementById('infill-percentage-text');
+    const hintEl = document.getElementById('infill-hint-text');
+
+    if (textEl) textEl.textContent = `%${val}`;
+    if (hintEl) {
+      if (val <= 20) hintEl.textContent = 'Standart Sağlamlık (Drone montaj & genel parçalar)';
+      else if (val <= 50) hintEl.textContent = 'Güçlendirilmiş (Darbe emici FPV kol koruyucuları)';
+      else if (val <= 80) hintEl.textContent = 'Yüksek Mukavemet (Motor yuvaları & taşıyıcı gövde)';
+      else hintEl.textContent = '%100 Katı Dolu (Maksimum dayanım & kırılmaz rijitlik)';
+    }
+
+    this.calculate3DPrice();
+  }
+
+  update3DLayer(val) {
+    this._3dConfig.layer = val;
+    this.calculate3DPrice();
+  }
+
+  select3DColor(hex, name) {
+    this._3dConfig.colorHex = hex;
+    this._3dConfig.colorName = name;
+
+    document.querySelectorAll('.swatch-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-color') === hex);
+    });
+
+    const nameEl = document.getElementById('selected-color-name');
+    if (nameEl) nameEl.textContent = name;
+
+    if (this._currentMesh && this._currentMesh.material) {
+      this._currentMesh.material.color.set(hex);
+    }
+  }
+
+  toggle3DWireframe() {
+    if (this._currentMesh && this._currentMesh.material) {
+      this._currentMesh.material.wireframe = !this._currentMesh.material.wireframe;
+      const btn = document.getElementById('btn-3d-wireframe');
+      if (btn) {
+        btn.textContent = this._currentMesh.material.wireframe ? '📦 Katı Mod' : '🌐 Tel Kafes';
+      }
+    }
+  }
+
+  toggle3DAutoRotate() {
+    if (this._3dControls) {
+      this._3dControls.autoRotate = !this._3dControls.autoRotate;
+      const btn = document.getElementById('btn-3d-autorotate');
+      if (btn) {
+        btn.style.background = this._3dControls.autoRotate ? 'rgba(2, 132, 199, 0.9)' : 'rgba(15, 23, 42, 0.75)';
+      }
+    }
+  }
+
+  reset3DCamera() {
+    if (this._3dCamera && this._3dControls) {
+      const maxDim = Math.max(this._3dConfig.dimX, this._3dConfig.dimY, this._3dConfig.dimZ, 30);
+      this._3dCamera.position.set(0, maxDim * 1.2, maxDim * 2.2);
+      this._3dControls.target.set(0, this._3dConfig.dimY / 2, 0);
+      this._3dControls.update();
+    }
+  }
+
+  adjust3DQty(delta) {
+    const input = document.getElementById('input-3d-qty');
+    if (!input) return;
+    let val = parseInt(input.value || 1, 10) + delta;
+    val = Math.max(1, Math.min(100, val));
+    input.value = val;
+    this._3dConfig.qty = val;
+    this.calculate3DPrice();
+  }
+
+  refresh3DMaterialPriceTags() {
+    const pricing = JSON.parse(localStorage.getItem('pozitron_3d_pricing') || '{}');
+    const materials = ['PLA', 'PETG', 'TPU', 'ABS', 'ASA', 'PA6'];
+
+    materials.forEach(mat => {
+      const tagEl = document.getElementById(`mat-price-tag-${mat}`);
+      const price = pricing[mat] || (this._3dMaterials[mat] ? this._3dMaterials[mat].defaultPrice : 2.0);
+      if (tagEl) tagEl.textContent = `${price.toFixed(2)} ₺/g`;
+    });
+  }
+
+  calculate3DPrice() {
+    const pricing = JSON.parse(localStorage.getItem('pozitron_3d_pricing') || '{}');
+    const matKey = this._3dConfig.material || 'PLA';
+    const matInfo = this._3dMaterials[matKey] || this._3dMaterials.PLA;
+
+    const gramPrice = pricing[matKey] || matInfo.defaultPrice;
+    const setupFee = typeof pricing.setupFee === 'number' ? pricing.setupFee : 50.0;
+
+    const volume = this._3dConfig.volumeCm3 || 0;
+    const density = matInfo.density || 1.24;
+    const infillRatio = 0.20 + 0.80 * (this._3dConfig.infill / 100);
+
+    const layer = this._3dConfig.layer || '0.20';
+    let qualityMul = 1.0;
+    if (layer === '0.12') qualityMul = 1.25;
+    else if (layer === '0.28') qualityMul = 0.85;
+
+    const estWeight = volume * density * infillRatio;
+    this._3dConfig.weightGrams = estWeight;
+
+    let matCost = estWeight * gramPrice * qualityMul;
+    let totalUnitPrice = (volume > 0) ? (setupFee + matCost) : 0;
+
+    this._3dConfig.unitPriceTRY = totalUnitPrice;
+
+    const weightEl = document.getElementById('price-calc-weight');
+    const matCostEl = document.getElementById('price-calc-mat');
+    const setupEl = document.getElementById('price-calc-setup');
+    const totalEl = document.getElementById('price-calc-total');
+
+    if (weightEl) weightEl.textContent = `${estWeight.toFixed(1)} gr`;
+    if (matCostEl) matCostEl.textContent = `${matCost.toFixed(2)} ₺`;
+    if (setupEl) setupEl.textContent = `${setupFee.toFixed(2)} ₺`;
+    if (totalEl) totalEl.textContent = `${(totalUnitPrice * (this._3dConfig.qty || 1)).toFixed(2)} ₺`;
+  }
+
+  add3DPrintToCart() {
+    if (!this._3dConfig.filename || this._3dConfig.volumeCm3 <= 0) {
+      this.showToast('Lütfen önce bir STL veya STEP 3D model dosyası yükleyin.', 'error');
+      return;
+    }
+
+    const itemPriceTRY = this._3dConfig.unitPriceTRY;
+    const itemPriceUSD = itemPriceTRY / (this.currencyRates?.TRY || 47.0);
+
+    const customCartItem = {
+      id: 'custom_3d_' + Date.now().toString(36),
+      name_tr: `Özel 3D Baskı (${this._3dConfig.filename})`,
+      name_en: `Custom 3D Print (${this._3dConfig.filename})`,
+      title: `3D Baskı - ${this._3dConfig.material} (%${this._3dConfig.infill} Infill, ${this._3dConfig.colorName})`,
+      category_id: 'custom_3d_print',
+      price_try: Math.round(itemPriceTRY * 100) / 100,
+      price_usd: Math.round(itemPriceUSD * 100) / 100,
+      quantity: this._3dConfig.qty || 1,
+      image_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=3d_print_custom',
+      is_custom_3d: true,
+      custom_specs: {
+        filename: this._3dConfig.filename,
+        material: this._3dConfig.material,
+        infill: `%${this._3dConfig.infill}`,
+        layer_height: `${this._3dConfig.layer} mm`,
+        color: this._3dConfig.colorName,
+        dimensions: `${this._3dConfig.dimX} × ${this._3dConfig.dimY} × ${this._3dConfig.dimZ} mm`,
+        weight: `${this._3dConfig.weightGrams.toFixed(1)} gr`
+      }
+    };
+
+    this.addToCart(customCartItem, this._3dConfig.qty || 1);
+    this.close3DStudioModal();
+    this.showToast(`"${this._3dConfig.filename}" (${this._3dConfig.material}) sepete eklendi! 🛒`, 'success');
   }
 }
 

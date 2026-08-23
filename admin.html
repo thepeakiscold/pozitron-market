@@ -181,6 +181,9 @@
       <button type="button" class="admin-tab-btn" data-tab="tab-users" onclick="switchAdminTab('tab-users')">
         <span>👥</span> <span>Kayıtlı Kullanıcılar</span>
       </button>
+      <button type="button" class="admin-tab-btn" data-tab="tab-3d-print" onclick="switchAdminTab('tab-3d-print')">
+        <span>🖨️</span> <span>3D Baskı &amp; Filament Yönetimi</span>
+      </button>
       <button type="button" class="admin-tab-btn" data-tab="tab-payment-settings" onclick="switchAdminTab('tab-payment-settings')">
         <span>💳</span> <span>Ödeme &amp; Banka Ayarları</span>
       </button>
@@ -586,7 +589,95 @@
       </div>
     </section>
 
-    <!-- TAB 6: PAYMENT GATEWAYS & BANKING SETTINGS -->
+    <!-- TAB 6: 3D PRINT & FILAMENT MANAGEMENT -->
+    <section id="tab-3d-print" class="tab-content" style="display:none;">
+      <div class="admin-card">
+        
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; border-bottom:1px solid var(--border-subtle); padding-bottom:16px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); margin-bottom:4px;">🖨️ 3D Baskı Fiyat &amp; Filament Stok Yönetimi</h2>
+            <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Filament gram birim fiyatlarını belirleyin, makine hazırlık ücretini güncelleyin ve filament rulo stoklarını takip edin.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button type="button" class="admin-btn-secondary" onclick="load3DAdminSettings()">🔄 Yenile</button>
+            <button type="button" class="admin-btn-primary" onclick="save3DPricingSettings()">💾 Fiyatları Kaydet</button>
+          </div>
+        </div>
+
+        <!-- 1. PRICING CONFIGURATION GRID -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; margin-bottom:24px;">
+          <h3 style="margin:0 0 14px 0; font-size:1.1rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px;">
+            <span>💰</span> <span>Malzeme Gram Başı Fiyatlandırma &amp; Hazırlık Ücreti</span>
+          </h3>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:16px;">
+            <div class="admin-form-group">
+              <label for="cfg-3d-setup" style="font-weight:700; color:#0284c7;">Makine Hazırlık Ücreti (₺)</label>
+              <input type="number" id="cfg-3d-setup" class="admin-input" step="5" value="50" style="font-weight:700; font-size:1.05rem;">
+            </div>
+            <div class="admin-form-group">
+              <label for="cfg-3d-pla" style="font-weight:700;">PLA (₺/gram)</label>
+              <input type="number" id="cfg-3d-pla" class="admin-input" step="0.1" value="1.50">
+            </div>
+            <div class="admin-form-group">
+              <label for="cfg-3d-petg" style="font-weight:700;">PETG (₺/gram)</label>
+              <input type="number" id="cfg-3d-petg" class="admin-input" step="0.1" value="2.00">
+            </div>
+            <div class="admin-form-group">
+              <label for="cfg-3d-tpu" style="font-weight:700; color:#d97706;">TPU Flex (₺/gram)</label>
+              <input type="number" id="cfg-3d-tpu" class="admin-input" step="0.1" value="3.50">
+            </div>
+            <div class="admin-form-group">
+              <label for="cfg-3d-abs" style="font-weight:700;">ABS (₺/gram)</label>
+              <input type="number" id="cfg-3d-abs" class="admin-input" step="0.1" value="2.25">
+            </div>
+            <div class="admin-form-group">
+              <label for="cfg-3d-asa" style="font-weight:700;">ASA (₺/gram)</label>
+              <input type="number" id="cfg-3d-asa" class="admin-input" step="0.1" value="2.50">
+            </div>
+            <div class="admin-form-group">
+              <label for="cfg-3d-pa6" style="font-weight:700;">PA6 Naylon (₺/gram)</label>
+              <input type="number" id="cfg-3d-pa6" class="admin-input" step="0.1" value="5.00">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. FILAMENT SPOOL STOCK INVENTORY TABLE -->
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px;">
+              <span>🧵</span> <span>Filament Rulo &amp; Gramaj Stok Takibi</span>
+            </h3>
+            <button type="button" class="admin-btn-secondary" onclick="openAddFilamentModal()" style="font-size:0.84rem; padding:6px 14px;">
+              ➕ Yeni Filament Ekle
+            </button>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table" id="filament-stock-table">
+              <thead>
+                <tr>
+                  <th>Malzeme Türü</th>
+                  <th>Renk &amp; Ton</th>
+                  <th>Marka / Üretici</th>
+                  <th>Kalan Rulo (1 kg)</th>
+                  <th>Toplam Gram</th>
+                  <th>Stok Durumu</th>
+                  <th style="text-align:right;">Hızlı Stok Güncelle</th>
+                </tr>
+              </thead>
+              <tbody id="filament-table-body">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 7: PAYMENT GATEWAYS & BANKING SETTINGS -->
     <section id="tab-payment-settings" class="tab-content" style="display:none;">
       <div class="admin-card">
         
@@ -1130,6 +1221,8 @@
         loadAdminProducts(currentPage);
       } else if (tabId === 'tab-users') {
         loadAdminUsers();
+      } else if (tabId === 'tab-3d-print') {
+        load3DAdminSettings();
       } else if (tabId === 'tab-payment-settings') {
         loadPaymentSettings();
       }
@@ -1154,6 +1247,144 @@
         toast.style.opacity = '0';
         setTimeout(() => toast.remove(), 300);
       }, 3500);
+    }
+
+    // =============================================================
+    // 3D PRINT PRICING & FILAMENT INVENTORY MANAGEMENT
+    // =============================================================
+    function load3DAdminSettings() {
+      // 1. Pricing
+      const pricing = JSON.parse(localStorage.getItem('pozitron_3d_pricing') || '{}');
+      if (document.getElementById('cfg-3d-setup')) document.getElementById('cfg-3d-setup').value = pricing.setupFee !== undefined ? pricing.setupFee : 50;
+      if (document.getElementById('cfg-3d-pla')) document.getElementById('cfg-3d-pla').value = pricing.PLA || 1.50;
+      if (document.getElementById('cfg-3d-petg')) document.getElementById('cfg-3d-petg').value = pricing.PETG || 2.00;
+      if (document.getElementById('cfg-3d-tpu')) document.getElementById('cfg-3d-tpu').value = pricing.TPU || 3.50;
+      if (document.getElementById('cfg-3d-abs')) document.getElementById('cfg-3d-abs').value = pricing.ABS || 2.25;
+      if (document.getElementById('cfg-3d-asa')) document.getElementById('cfg-3d-asa').value = pricing.ASA || 2.50;
+      if (document.getElementById('cfg-3d-pa6')) document.getElementById('cfg-3d-pa6').value = pricing.PA6 || 5.00;
+
+      // 2. Filament Inventory
+      renderFilamentStockTable();
+    }
+
+    function save3DPricingSettings() {
+      const setupFee = parseFloat(document.getElementById('cfg-3d-setup')?.value || 50);
+      const pla = parseFloat(document.getElementById('cfg-3d-pla')?.value || 1.5);
+      const petg = parseFloat(document.getElementById('cfg-3d-petg')?.value || 2.0);
+      const tpu = parseFloat(document.getElementById('cfg-3d-tpu')?.value || 3.5);
+      const abs = parseFloat(document.getElementById('cfg-3d-abs')?.value || 2.25);
+      const asa = parseFloat(document.getElementById('cfg-3d-asa')?.value || 2.5);
+      const pa6 = parseFloat(document.getElementById('cfg-3d-pa6')?.value || 5.0);
+
+      const pricing = {
+        setupFee: setupFee,
+        PLA: pla,
+        PETG: petg,
+        TPU: tpu,
+        ABS: abs,
+        ASA: asa,
+        PA6: pa6
+      };
+
+      localStorage.setItem('pozitron_3d_pricing', JSON.stringify(pricing));
+      showToast('3D Baskı birim fiyatları ve hazırlık ücreti kaydedildi! 🖨️', 'success');
+    }
+
+    function getFilamentStockList() {
+      let list = JSON.parse(localStorage.getItem('pozitron_3d_filaments') || 'null');
+      if (!list || list.length === 0) {
+        list = [
+          { id: 'fil_1', material: 'TPU (Flex 95A)', color: 'Neon Sarı (TPU)', brand: 'eSUN / Pozitron', grams: 3400 },
+          { id: 'fil_2', material: 'TPU (Flex 95A)', color: 'Mat Siyah', brand: 'Sunlu', grams: 2100 },
+          { id: 'fil_3', material: 'PLA Plus', color: 'Mat Siyah', brand: 'eSUN High-Speed', grams: 5000 },
+          { id: 'fil_4', material: 'PLA Plus', color: 'Pozitron Turuncu', brand: 'Polymaker', grams: 1800 },
+          { id: 'fil_5', material: 'PETG Carbon', color: 'Karbon Siyahı', brand: 'Prusament', grams: 1200 },
+          { id: 'fil_6', material: 'ABS Tough', color: 'Kar Beyazı', brand: 'eSUN', grams: 2500 },
+          { id: 'fil_7', material: 'PA6-CF (Naylon Karbon)', color: 'Mat Antrasit', brand: 'Bambu Lab', grams: 850 },
+          { id: 'fil_8', material: 'ASA UV-Resistant', color: 'Askeri Gri', brand: 'FormFutura', grams: 1500 }
+        ];
+        localStorage.setItem('pozitron_3d_filaments', JSON.stringify(list));
+      }
+      return list;
+    }
+
+    function renderFilamentStockTable() {
+      const tbody = document.getElementById('filament-table-body');
+      if (!tbody) return;
+
+      const list = getFilamentStockList();
+      let html = '';
+
+      list.forEach(item => {
+        const spools = (item.grams / 1000).toFixed(1);
+        let statusBadge = '<span class="badge-stock badge-stock-in">Stok Yeterli</span>';
+        if (item.grams <= 0) {
+          statusBadge = '<span class="badge-stock badge-stock-out">Tükendi</span>';
+        } else if (item.grams <= 1000) {
+          statusBadge = '<span class="badge-stock badge-stock-low">Kritik Stok</span>';
+        }
+
+        html += `
+          <tr>
+            <td><strong>${item.material}</strong></td>
+            <td><span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#0284c7; margin-right:6px;"></span>${item.color}</td>
+            <td style="color:#64748b;">${item.brand || 'Standart'}</td>
+            <td><strong style="color:#0f172a;">${spools} Rulo</strong></td>
+            <td><strong style="font-family:monospace; color:#0284c7;">${item.grams} gr</strong></td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right;">
+              <div style="display:inline-flex; gap:6px; align-items:center;">
+                <button type="button" class="btn-step" onclick="updateFilamentGrams('${item.id}', 1000)" title="+1kg Ekle">+1kg</button>
+                <button type="button" class="btn-step" onclick="updateFilamentGrams('${item.id}', -100)" title="-100g Düş">-100g</button>
+                <button type="button" class="btn-action-icon btn-action-delete" onclick="deleteFilament('${item.id}')" title="Sil">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function updateFilamentGrams(id, delta) {
+      const list = getFilamentStockList();
+      const item = list.find(f => f.id === id);
+      if (item) {
+        item.grams = Math.max(0, item.grams + delta);
+        localStorage.setItem('pozitron_3d_filaments', JSON.stringify(list));
+        renderFilamentStockTable();
+        showToast(`${item.material} (${item.color}) güncellendi: ${item.grams}g`, 'success');
+      }
+    }
+
+    function deleteFilament(id) {
+      if (!confirm('Bu filamenti listeden silmek istediğinize emin misiniz?')) return;
+      let list = getFilamentStockList();
+      list = list.filter(f => f.id !== id);
+      localStorage.setItem('pozitron_3d_filaments', JSON.stringify(list));
+      renderFilamentStockTable();
+      showToast('Filament kaydı silindi.', 'info');
+    }
+
+    function openAddFilamentModal() {
+      const mat = prompt('Filament Malzeme Türü (örn: TPU Flex, PLA, PETG):', 'TPU (Flex 95A)');
+      if (!mat) return;
+      const color = prompt('Renk & Ton (örn: Neon Sarı, Siyah, Kırmızı):', 'Mat Siyah');
+      if (!color) return;
+      const brand = prompt('Marka / Üretici (örn: eSUN, Sunlu, Bambu Lab):', 'eSUN');
+      const grams = parseInt(prompt('Stok Gramajı (örn: 2000 = 2 kg):', '2000') || 1000, 10);
+
+      const list = getFilamentStockList();
+      list.unshift({
+        id: 'fil_' + Date.now().toString(36),
+        material: mat,
+        color: color,
+        brand: brand || 'Standart',
+        grams: Math.max(0, grams)
+      });
+      localStorage.setItem('pozitron_3d_filaments', JSON.stringify(list));
+      renderFilamentStockTable();
+      showToast('Yeni filament stoğu başarıyla eklendi! 🧵', 'success');
     }
 
     function loadPaymentSettings() {

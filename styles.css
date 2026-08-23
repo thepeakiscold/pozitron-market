@@ -3911,3 +3911,376 @@ img {
   color: var(--text-primary);
 }
 
+/* =============================================================
+   3D PRINT & CUSTOM MANUFACTURING STUDIO STYLES
+   ============================================================= */
+
+/* Nav Trigger Button */
+.btn-3d-print-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-3d-print-nav:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4);
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+}
+
+/* 3D Studio Modal Card */
+.modal-3d-studio {
+  max-width: 1100px;
+  width: 95%;
+  max-height: 90vh;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+}
+
+.modal-3d-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 20px;
+}
+
+.modal-3d-body {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .modal-3d-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left Column: 3D Canvas Viewport */
+.studio-3d-viewport-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.viewport-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 420px;
+  background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #334155;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+#canvas-3d-viewer {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  cursor: grab;
+}
+
+#canvas-3d-viewer:active {
+  cursor: grabbing;
+}
+
+/* Dropzone Overlay */
+.viewport-dropzone {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 10;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.viewport-dropzone.dragover {
+  background: rgba(2, 132, 199, 0.25);
+  border: 2px dashed #38bdf8;
+}
+
+.dropzone-inner {
+  text-align: center;
+  cursor: pointer;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 30px 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  max-width: 380px;
+  border: 2px dashed #94a3b8;
+  transition: all 0.2s ease;
+}
+
+.dropzone-inner:hover {
+  border-color: #0284c7;
+  transform: translateY(-2px);
+}
+
+.dropzone-icon {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+}
+
+.btn-upload-model {
+  padding: 8px 20px;
+  font-size: 0.9rem;
+}
+
+/* Floating 3D Controls */
+.viewport-floating-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+  flex-wrap: wrap;
+}
+
+.ctrl-btn {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ctrl-btn:hover {
+  background: rgba(2, 132, 199, 0.9);
+  color: #fff;
+}
+
+/* Model Metrics Bar */
+.model-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.m-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.m-val {
+  font-size: 0.84rem;
+  color: #0f172a;
+  font-weight: 700;
+  font-family: monospace;
+}
+
+/* Right Column: Configuration & Pricing */
+.studio-3d-config-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.material-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.mat-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mat-card:hover {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.mat-card.active {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+.mat-name {
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.mat-desc {
+  font-size: 0.68rem;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+.mat-tags {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.mat-tags .tag {
+  font-size: 0.64rem;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.mat-tags .tag.price {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.mat-tags .tag.highlight {
+  background: #fef08a;
+  color: #854d0e;
+}
+
+.config-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Color Swatches */
+.color-swatches-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.swatch-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.swatch-btn:hover {
+  transform: scale(1.1);
+}
+
+.swatch-btn.active {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.35);
+  transform: scale(1.15);
+}
+
+/* Pricing Breakdown Card */
+.studio-pricing-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.price-breakdown-row strong, .price-breakdown-row span:last-child {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.price-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px dashed #cbd5e1;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.total-badge {
+  font-size: 1.25rem;
+  color: #0284c7;
+  font-weight: 800;
+}
+
+/* Cart Actions */
+.studio-cart-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-add-3d-cart {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  font-size: 0.96rem;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+}
+
