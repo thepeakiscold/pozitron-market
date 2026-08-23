@@ -363,34 +363,6 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         conn = get_db()
         cursor = conn.cursor()
 
-        # Demo CAD File endpoint for 1-click test
-        if path == '/api/demo-cad':
-            filename = query.get('file', ['Column.stp'])[0]
-            cand_paths = [
-                f"/home/eyup/Downloads/{filename}",
-                f"/home/eyup/Downloads/Column.stp",
-                os.path.join(BASE_DIR, "Column.stp")
-            ]
-            content = None
-            for cp in cand_paths:
-                if os.path.exists(cp):
-                    with open(cp, "r", encoding="utf-8", errors="ignore") as f:
-                        content = f.read()
-                    break
-            
-            if not content:
-                content = "ISO-10303-21;\nHEADER;\nFILE_NAME('Column.stp');\nENDSEC;\nDATA;\n#10=CIRCLE('',#20,5.9);\n#20=AXIS2_PLACEMENT_3D('',#30,#40,#50);\n#30=CARTESIAN_POINT('',(0.0,0.0,0.0));\n#40=DIRECTION('',(0.0,0.0,1.0));\n#50=DIRECTION('',(1.0,0.0,0.0));\n#60=CYLINDRICAL_SURFACE('',#20,5.9);\n#70=CARTESIAN_POINT('',(0.0,0.0,152.75));\nENDSEC;\nEND-ISO-10303-21;"
-            
-            conn.close()
-            content_bytes = content.encode('utf-8')
-            self.send_response(200)
-            self.send_header('Content-Type', 'text/plain; charset=utf-8')
-            self.send_header('Content-Length', str(len(content_bytes)))
-            self.send_header('Access-Control-Allow-Origin', '*')
-            self.end_headers()
-            self.wfile.write(content_bytes)
-            return
-
         # Admin: Stats & KPI Metrics
         if path == '/api/admin/stats':
             cursor.execute("SELECT COUNT(*), COALESCE(SUM(stock), 0), COALESCE(SUM(stock * price_usd), 0), COALESCE(SUM(stock * price_try), 0) FROM products")

@@ -3379,29 +3379,6 @@ class PozitronApp {
     });
   }
 
-  async loadDemoStepModel(filename = 'Column.stp') {
-    if (!this._3dScene || !this._3dRenderer) {
-      this.init3DViewer();
-      this.init3DStudio();
-      this._3dViewerInitialized = true;
-    }
-    this.showToast(`Örnek CAD modeli yükleniyor: ${filename}...`, 'info');
-    try {
-      const res = await fetch(`/api/demo-cad?file=${encodeURIComponent(filename)}`);
-      if (res.ok) {
-        const text = await res.text();
-        this.renderSTEPTextFallback(text, filename, text.length);
-      } else {
-        const fallbackText = `ISO-10303-21;\nDATA;\n#10=CIRCLE('',#20,5.9);\n#60=CYLINDRICAL_SURFACE('',#20,5.9);\n#70=CARTESIAN_POINT('',(0.0,0.0,152.75));\nENDSEC;`;
-        this.renderSTEPTextFallback(fallbackText, filename, 11772);
-      }
-    } catch (err) {
-      console.warn('Demo CAD load error:', err);
-      const fallbackText = `ISO-10303-21;\nDATA;\n#10=CIRCLE('',#20,5.9);\n#60=CYLINDRICAL_SURFACE('',#20,5.9);\n#70=CARTESIAN_POINT('',(0.0,0.0,152.75));\nENDSEC;`;
-      this.renderSTEPTextFallback(fallbackText, filename, 11772);
-    }
-  }
-
   async upload3DFileToServer(file) {
     if (!file) return;
     try {

@@ -1,0 +1,8 @@
+# Autonomous Tool Execution Policy
+- Always translate user intent into direct tool actions rather than text explanations.
+- Never ask the user for file paths or line numbers; locate them autonomously.
+- When the user asks to find/delete/modify something:
+  1. Immediately trigger `search_files` or `list_files` to locate the target.
+  2. Inspect the content using `read_file`.
+  3. Apply changes directly using `replace_in_file` or `write_to_file`.
+- Do not output raw JSON or pseudo-XML function calls in markdown text; call native tools directly.
