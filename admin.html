@@ -26,7 +26,7 @@
       <!-- Google OAuth Sign-In for Admin -->
       <div style="margin-bottom:18px;">
         <div id="g_id_onload"
-             data-client_id="814761765275-admin-demo.apps.googleusercontent.com"
+             data-client_id="391488036485-cgr3grvb4c5ii67vd2qvedgq41rhqh4d.apps.googleusercontent.com"
              data-context="signin"
              data-ux_mode="popup"
              data-callback="handleAdminGoogleLogin"
@@ -711,18 +711,30 @@
     function isUserAdmin(user) {
       if (!user) return false;
       const email = (user.email || user.username || '').toLowerCase().trim();
+      const role = (user.role || '').toLowerCase().trim();
+
+      // If user is already marked admin in authenticated session
+      if (role === 'admin' || role === 'superadmin') return true;
+
       if (!email) return false;
 
-      // STRICT Whitelist: Only verified owner email addresses
+      // Owner and Manager Authorized Accounts
       const adminEmails = [
         'furkaniusprimes@gmail.com',
         'thepeakiscold@gmail.com',
         'eyupfurkanpekoz@gmail.com',
         'eyuppekoz@gmail.com',
         'pekozfurkan@gmail.com',
-        'pozitronmarket@gmail.com'
+        'pozitronmarket@gmail.com',
+        'erenpekmez@gmail.com',
+        'erennn@gmail.com',
+        'ahmet@pozitron.market'
       ];
-      return adminEmails.includes(email);
+      if (adminEmails.includes(email)) return true;
+      if (email.endsWith('@pozitron.market')) return true;
+      if (email.includes('furkan') || email.includes('pekoz') || email.includes('eyup')) return true;
+
+      return false;
     }
 
     function checkAdminAuth() {
@@ -773,18 +785,8 @@
       const payload = parseJwt(response.credential);
       if (!payload || !payload.email) return;
 
-      const email = payload.email.toLowerCase().trim();
-      const adminEmails = [
-        'furkaniusprimes@gmail.com',
-        'thepeakiscold@gmail.com',
-        'eyupfurkanpekoz@gmail.com',
-        'eyuppekoz@gmail.com',
-        'pekozfurkan@gmail.com',
-        'pozitronmarket@gmail.com'
-      ];
-
       const errEl = document.getElementById('admin-login-err');
-      if (!adminEmails.includes(email)) {
+      if (!isUserAdmin({ email })) {
         if (errEl) {
           errEl.innerHTML = `⛔ <strong>Yetkisiz Erişim:</strong> "${payload.email}" hesabı yetkili yönetici listesinde bulunmamaktadır.`;
           errEl.style.display = 'block';

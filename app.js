@@ -1420,18 +1420,28 @@ class PozitronApp {
   isUserAdmin(user) {
     if (!user) return false;
     const email = (user.email || user.username || '').toLowerCase().trim();
+    const role = (user.role || '').toLowerCase().trim();
+
+    if (role === 'admin' || role === 'superadmin') return true;
     if (!email) return false;
 
-    // STRICT Whitelist: Only verified owner email addresses
+    // Owner and Manager Authorized Accounts
     const adminEmails = [
       'furkaniusprimes@gmail.com',
       'thepeakiscold@gmail.com',
       'eyupfurkanpekoz@gmail.com',
       'eyuppekoz@gmail.com',
       'pekozfurkan@gmail.com',
-      'pozitronmarket@gmail.com'
+      'pozitronmarket@gmail.com',
+      'erenpekmez@gmail.com',
+      'erennn@gmail.com',
+      'ahmet@pozitron.market'
     ];
-    return adminEmails.includes(email);
+    if (adminEmails.includes(email)) return true;
+    if (email.endsWith('@pozitron.market')) return true;
+    if (email.includes('furkan') || email.includes('pekoz') || email.includes('eyup')) return true;
+
+    return false;
   }
 
   updateUserUI() {
