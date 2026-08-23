@@ -3181,7 +3181,7 @@ class PozitronApp {
     const dropzone = document.getElementById('viewport-dropzone');
     const fileInput = document.getElementById('file-3d-input');
 
-    if (dropzone && fileInput) {
+    if (dropzone) {
       dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropzone.classList.add('dragover');
@@ -3190,14 +3190,8 @@ class PozitronApp {
       dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropzone.classList.remove('dragover');
-        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
           this.handle3DFileUpload(e.dataTransfer.files[0]);
-        }
-      });
-
-      fileInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) {
-          this.handle3DFileUpload(e.target.files[0]);
         }
       });
     }
@@ -3547,9 +3541,18 @@ class PozitronApp {
     // Adjust camera distance to fit model
     const maxDim = Math.max(sizeX, sizeY, sizeZ, 30);
     this._3dCamera.position.set(0, maxDim * 1.2, maxDim * 2.2);
-    if (this._3dControls) {
-      this._3dControls.target.set(0, (bbox.max.y - bbox.min.y) / 2, 0);
-      this._3dControls.update();
+    const container = document.getElementById('viewport-3d-container');
+    if (container && this._3dRenderer && this._3dCamera) {
+      const w = container.clientWidth || 500;
+      const h = container.clientHeight || 420;
+      if (w > 0 && h > 0) {
+        this._3dCamera.aspect = w / h;
+        this._3dCamera.updateProjectionMatrix();
+        this._3dRenderer.setSize(w, h);
+      }
+    }
+    if (this._3dRenderer && this._3dScene && this._3dCamera) {
+      this._3dRenderer.render(this._3dScene, this._3dCamera);
     }
 
     // Update UI
