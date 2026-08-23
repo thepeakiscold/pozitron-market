@@ -3348,6 +3348,17 @@ class PozitronApp {
 
     this.showToast(`Dosya okunuyor: ${filename}...`, 'info');
 
+    // Immediately hide dropzone and reveal controls/metrics
+    const dropzone = document.getElementById('viewport-dropzone');
+    if (dropzone) {
+      dropzone.style.display = 'none';
+      dropzone.classList.add('hidden');
+    }
+    const controls = document.getElementById('viewport-floating-controls');
+    if (controls) controls.style.display = 'flex';
+    const metrics = document.getElementById('model-metrics-bar');
+    if (metrics) metrics.style.display = 'grid';
+
     const reader = new FileReader();
 
     if (ext === 'stl') {
@@ -3358,9 +3369,13 @@ class PozitronApp {
         } catch (err) {
           console.error('STL Parse Error:', err);
           this.showToast('STL dosyası işlenirken hata oluştu: ' + err.message, 'error');
+          this.renderSimulatedFallbackModel(filename, file.size);
         }
       };
-      reader.onerror = () => this.showToast('STL dosyası okunamadı.', 'error');
+      reader.onerror = () => {
+        this.showToast('STL dosyası okunamadı.', 'error');
+        this.renderSimulatedFallbackModel(filename, file.size);
+      };
       reader.readAsArrayBuffer(file);
     } else if (ext === 'obj') {
       reader.onload = (e) => {
@@ -3377,23 +3392,27 @@ class PozitronApp {
           this.renderSTEPTextFallback(e.target.result || '', filename, file.size);
         }
       };
-      reader.onerror = () => this.showToast('OBJ dosyası okunamadı.', 'error');
+      reader.onerror = () => {
+        this.showToast('OBJ dosyası okunamadı.', 'error');
+        this.renderSimulatedFallbackModel(filename, file.size);
+      };
       reader.readAsText(file);
     } else {
       // STEP / STP / IGES / 3MF CAD Files
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         try {
-          const arrayBuffer = e.target.result;
-          await this.renderSTEPWithOCCT(arrayBuffer, filename, file.size);
-        } catch (err) {
-          console.error('STEP OCCT Error, falling back to text parser:', err);
-          const textDecoder = new TextDecoder('utf-8');
-          const text = textDecoder.decode(e.target.result);
+          const text = typeof e.target.result === 'string' ? e.target.result : new TextDecoder('utf-8').decode(e.target.result);
           this.renderSTEPTextFallback(text, filename, file.size);
+        } catch (err) {
+          console.error('CAD Parse Error:', err);
+          this.renderSimulatedFallbackModel(filename, file.size);
         }
       };
-      reader.onerror = () => this.showToast('STEP dosyası okunamadı.', 'error');
-      reader.readAsArrayBuffer(file);
+      reader.onerror = () => {
+        this.showToast('CAD dosyası okunamadı.', 'error');
+        this.renderSimulatedFallbackModel(filename, file.size);
+      };
+      reader.readAsText(file);
     }
   }
 

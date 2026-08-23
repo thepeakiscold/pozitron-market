@@ -4011,6 +4011,10 @@ img {
   transition: all 0.2s ease;
 }
 
+.viewport-dropzone.hidden {
+  display: none !important;
+}
+
 .viewport-dropzone.dragover {
   background: rgba(240, 249, 255, 0.96);
   border: 2px dashed #0284c7;

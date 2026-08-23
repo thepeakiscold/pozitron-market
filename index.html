@@ -71,7 +71,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=20260823_step_fix_v35">
+  <link rel="stylesheet" href="./styles.css?v=20260823_step_fix_v37">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
   <link rel="apple-touch-icon" href="./assets/favicon.png?v=20260822_v2">
@@ -1063,7 +1063,7 @@
   <div class="modal-backdrop" id="studio-3d-modal-backdrop" style="display:none;">
     <div class="modal-card modal-3d-studio" role="dialog" aria-modal="true">
       <!-- Hidden File Input directly attached to modal root (never hidden by container) -->
-      <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.obj,.3mf" style="display:none;" onchange="window.app && window.app.handle3DFileInputChange(this)">
+      <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.obj,.3mf,.STL,.STEP,.STP,.OBJ,.3MF,application/octet-stream,model/*" style="display:none;" onchange="window.app && window.app.handle3DFileInputChange(this)">
 
       <div class="modal-3d-header">
         <div style="display:flex; align-items:center; gap:10px;">
@@ -1257,8 +1257,8 @@
   <script src="https://cdn.jsdelivr.net/npm/occt-import-js@0.0.22/dist/occt-import-js.js"></script>
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260823_step_fix_v36"></script>
-  <script src="./i18n.js?v=20260823_step_fix_v36"></script>
-  <script src="./app.js?v=20260823_step_fix_v36"></script>
+  <script src="./data/pozitron_data.js?v=20260823_step_fix_v37"></script>
+  <script src="./i18n.js?v=20260823_step_fix_v37"></script>
+  <script src="./app.js?v=20260823_step_fix_v37"></script>
 </body>
 </html>
