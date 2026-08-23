@@ -1308,40 +1308,8 @@ class PozitronApp {
       users = [];
     }
 
-    if (!Array.isArray(users) || users.length === 0) {
-      const defaultAccounts = [
-        {
-          id: "usr_pilot_01",
-          email: "pilot@drone.com",
-          password: "password123",
-          full_name: "Pozitron Test Pilot",
-          avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=TestPilot",
-          provider: "manual",
-          role: "pilot",
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "usr_ahmet_02",
-          email: "ahmet@pozitron.market",
-          password: "password123",
-          full_name: "Ahmet Yılmaz",
-          avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=AhmetYilmaz",
-          provider: "manual",
-          role: "customer",
-          created_at: new Date().toISOString()
-        },
-        {
-          id: "usr_furkan_03",
-          email: "furkaniusprimes@gmail.com",
-          password: "password123",
-          full_name: "Eyüp Furkan PEKÖZ",
-          avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=FurkanPekoz",
-          provider: "gmail",
-          role: "admin",
-          created_at: new Date().toISOString()
-        }
-      ];
-      localStorage.setItem(DB_KEY, JSON.stringify(defaultAccounts));
+    if (!Array.isArray(users)) {
+      localStorage.setItem(DB_KEY, JSON.stringify([]));
     }
   }
 
