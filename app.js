@@ -72,6 +72,7 @@ class PozitronApp {
 
     // 2. Setup Event Listeners
     this.bindEvents();
+    this.init3DStudio();
 
     // 3. Load Initial Data
     await this.loadCategories();
@@ -4049,10 +4050,14 @@ class PozitronApp {
   }
 }
 
-// Instantiate on DOM load
-document.addEventListener('DOMContentLoaded', () => {
-  window.app = new PozitronApp();
-});
+// Safely instantiate immediately or on DOM load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.app) window.app = new PozitronApp();
+  });
+} else {
+  if (!window.app) window.app = new PozitronApp();
+}
 
 // Google Identity Services JWT Parser & Auth Handler
 function parseJwt(token) {
