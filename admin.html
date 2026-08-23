@@ -23,8 +23,10 @@
       <h1 style="font-size:1.45rem; font-weight:800; color:#0f172a; margin-bottom:6px; letter-spacing:-0.02em;">Yönetici Güvenlik Girişi</h1>
       <p style="font-size:0.86rem; color:#64748b; margin-bottom:22px; line-height:1.5;">Bu yönetim ve stok kontrol merkezine yalnızca yetkili Gmail yönetici hesabı erişebilir.</p>
 
+      <div id="admin-login-err" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:12px 14px; border-radius:10px; font-size:0.85rem; margin-bottom:18px; font-weight:600; line-height:1.4; text-align:left;"></div>
+
       <!-- Google OAuth Sign-In for Admin -->
-      <div style="margin-bottom:18px;">
+      <div style="margin:24px 0 16px 0; display:flex; justify-content:center;">
         <div id="g_id_onload"
              data-client_id="391488036485-cgr3grvb4c5ii67vd2qvedgq41rhqh4d.apps.googleusercontent.com"
              data-context="signin"
@@ -44,28 +46,9 @@
         </div>
       </div>
 
-      <div style="display:flex; align-items:center; gap:12px; margin:18px 0 14px 0;">
-        <div style="flex:1; height:1px; background:#e2e8f0;"></div>
-        <span style="font-size:0.75rem; color:#94a3b8; font-weight:600; text-transform:uppercase;">veya E-Posta ile</span>
-        <div style="flex:1; height:1px; background:#e2e8f0;"></div>
+      <div style="margin-top:16px; padding:12px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; font-size:0.78rem; color:#64748b; line-height:1.5; text-align:center;">
+        🔒 <strong>Yüksek Güvenlik:</strong> Şifre denemelerini ve yetkisiz sızmaları engellemek için panel yalnızca doğrulanmış Google OAuth 2.0 yönetici hesabına açıktır.
       </div>
-
-      <form id="admin-login-form" onsubmit="handleAdminManualLogin(event)" style="text-align:left;">
-        <div id="admin-login-err" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; padding:10px 12px; border-radius:8px; font-size:0.82rem; margin-bottom:14px; font-weight:600; line-height:1.4;"></div>
-        
-        <div style="margin-bottom:14px;">
-          <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Yönetici Gmail / E-Posta</label>
-          <input type="email" id="admin-email-input" required autocomplete="email" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; box-sizing:border-box;">
-        </div>
-        <div style="margin-bottom:20px;">
-          <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Şifre</label>
-          <input type="password" id="admin-pass-input" required autocomplete="current-password" style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.9rem; outline:none; box-sizing:border-box;">
-        </div>
-
-        <button type="submit" id="admin-submit-btn" style="width:100%; padding:12px; background:#0284c7; color:#fff; font-weight:700; border:none; border-radius:8px; font-size:0.92rem; cursor:pointer; transition:background 0.2s;">
-          🔒 Giriş Yap
-        </button>
-      </form>
 
       <div style="margin-top:22px;">
         <a href="/" style="font-size:0.85rem; color:#64748b; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
@@ -819,134 +802,6 @@
         }
       } catch (err) {
         console.error('Google Admin Login Error:', err);
-      }
-    };
-
-    window.handleAdminManualLogin = async function(e) {
-      if (e && e.preventDefault) e.preventDefault();
-      const emailInput = document.getElementById('admin-email-input');
-      const passInput = document.getElementById('admin-pass-input');
-      const errEl = document.getElementById('admin-login-err');
-      const submitBtn = document.getElementById('admin-submit-btn');
-
-      const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
-      const password = passInput ? passInput.value : '';
-
-      if (errEl) errEl.style.display = 'none';
-
-      if (!email || !password) {
-        if (errEl) {
-          errEl.textContent = 'Lütfen Gmail / e-posta adresinizi ve şifrenizi giriniz.';
-          errEl.style.display = 'block';
-        }
-        return;
-      }
-
-      if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = '⏳ Giriş Yapılıyor...';
-      }
-
-      try {
-        // Check rate limiting
-        const lockKey = 'pozitron_lock_' + email;
-        const attemptsKey = 'pozitron_attempts_' + email;
-        const lockUntil = parseInt(localStorage.getItem(lockKey) || '0');
-        const now = Date.now();
-        if (lockUntil > now) {
-          const remMin = Math.ceil((lockUntil - now) / 60000);
-          if (errEl) {
-            errEl.innerHTML = `🛡️ <strong>Güvenlik Kilidi:</strong> 3 kez hatalı giriş yapıldı. Lütfen ${remMin} dakika sonra tekrar deneyiniz.`;
-            errEl.style.display = 'block';
-          }
-          return;
-        }
-
-        // SHA-256 computation
-        let pwHash = '';
-        try {
-          const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
-          pwHash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-        } catch (e) {}
-
-        const VALID_HASH = '8d1e651afb66acc04ad8fec7a3ed2044855144f0848adb0bcf268b17e73338a8';
-        const isPassValid = (pwHash === VALID_HASH) || 
-                            password === 'pozitron2026admin' || 
-                            password === 'admin' || 
-                            password === 'password123' ||
-                            password === '123456';
-
-        if (isUserAdmin({ email }) && isPassValid) {
-          localStorage.removeItem(attemptsKey);
-          localStorage.removeItem(lockKey);
-          const adminUser = {
-            id: 'usr_admin_' + Date.now().toString(36),
-            email: email,
-            full_name: email.split('@')[0].toUpperCase(),
-            role: 'admin',
-            provider: 'gmail',
-            avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(email)}`,
-            created_at: new Date().toISOString()
-          };
-          localStorage.setItem('pozitron_user', JSON.stringify(adminUser));
-          checkAdminAuth();
-          showToast('Giriş başarılı! Hoş geldiniz, Yönetici', 'success');
-          await loadCategoriesAndBrands().catch(() => {});
-          await loadAdminStats().catch(() => {});
-          await loadAdminProducts(1).catch(() => {});
-          return;
-        }
-
-        // Check backend API if available
-        try {
-          const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data && data.success && data.user) {
-              data.user.role = 'admin';
-              localStorage.setItem('pozitron_user', JSON.stringify(data.user));
-              checkAdminAuth();
-              showToast('Giriş başarılı!', 'success');
-              await loadCategoriesAndBrands().catch(() => {});
-              await loadAdminStats().catch(() => {});
-              await loadAdminProducts(1).catch(() => {});
-              return;
-            }
-          }
-        } catch (netErr) {}
-
-        // Record failed attempt
-        let attempts = parseInt(localStorage.getItem(attemptsKey) || '0') + 1;
-        if (attempts >= 3) {
-          const lockDuration = 30 * 60 * 1000;
-          localStorage.setItem(lockKey, (now + lockDuration).toString());
-          localStorage.removeItem(attemptsKey);
-          if (errEl) {
-            errEl.innerHTML = `🛡️ <strong>Güvenlik Kilidi:</strong> 3 kez hatalı giriş yapıldı! Hesabınız 30 dakika kilitlenmiştir.`;
-            errEl.style.display = 'block';
-          }
-        } else {
-          localStorage.setItem(attemptsKey, attempts.toString());
-          const left = 3 - attempts;
-          if (errEl) {
-            errEl.innerHTML = `❌ <strong>Hatalı Giriş:</strong> Yönetici e-posta veya şifresi uyuşmuyor. (Kalan hak: ${left})<br><span style="font-size:0.75rem; color:#64748b; font-weight:normal;">Varsayılan yönetici şifresi: <code>pozitron2026admin</code></span>`;
-            errEl.style.display = 'block';
-          }
-        }
-      } catch (fatalErr) {
-        if (errEl) {
-          errEl.textContent = 'Giriş işlemi sırasında hata: ' + fatalErr.message;
-          errEl.style.display = 'block';
-        }
-      } finally {
-        if (submitBtn) {
-          submitBtn.disabled = false;
-          submitBtn.textContent = '🔒 Giriş Yap';
-        }
       }
     };
 
