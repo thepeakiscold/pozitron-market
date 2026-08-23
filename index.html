@@ -1084,12 +1084,12 @@
             
             <!-- Overlay Dropzone when no model or dragover -->
             <div class="viewport-dropzone" id="viewport-dropzone">
-              <div class="dropzone-inner" onclick="window.app && window.app.trigger3DFileUpload(event)">
+              <label for="file-3d-input" class="dropzone-inner" style="display:block; cursor:pointer;">
                 <div class="dropzone-icon">📥</div>
                 <strong style="font-size:1.05rem; color:#0f172a; display:block; margin-bottom:6px;">3D Modelinizi Buraya Sürükleyin veya Seçin</strong>
                 <p style="font-size:0.82rem; color:#64748b; margin-bottom:16px;">Desteklenen formatlar: <strong>.STL, .STEP, .STP, .OBJ</strong> (Max: 50MB)</p>
-                <button type="button" class="btn-primary btn-upload-model" onclick="window.app && window.app.trigger3DFileUpload(event)">📂 Dosya Seç</button>
-              </div>
+                <span class="btn-primary btn-upload-model" style="display:inline-flex; align-items:center; justify-content:center; pointer-events:none;">📂 Dosya Seç</span>
+              </label>
             </div>
 
             <!-- Viewport Controls Overlay (wireframe, rotate, reset, change file) -->
@@ -1097,7 +1097,7 @@
               <button type="button" class="ctrl-btn" id="btn-3d-wireframe" title="Tel Kafes / Katı Mod" onclick="window.app && window.app.toggle3DWireframe()">🌐 Tel Kafes</button>
               <button type="button" class="ctrl-btn" id="btn-3d-autorotate" title="Otomatik Döndür" onclick="window.app && window.app.toggle3DAutoRotate()">🔄 Döndür</button>
               <button type="button" class="ctrl-btn" id="btn-3d-reset-cam" title="Kamerayı Sıfırla" onclick="window.app && window.app.reset3DCamera()">🎯 Ortala</button>
-              <button type="button" class="ctrl-btn" style="color:#0284c7; background:#ffffff; font-weight:700;" onclick="window.app && window.app.trigger3DFileUpload(event)">📂 Değiştir</button>
+              <label for="file-3d-input" class="ctrl-btn" style="color:#0284c7; background:#ffffff; font-weight:700; cursor:pointer; display:inline-flex; align-items:center;">📂 Değiştir</label>
             </div>
           </div>
 
