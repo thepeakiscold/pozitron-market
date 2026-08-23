@@ -838,20 +838,167 @@
             </form>
           </div>
 
-          <!-- Payment Card Details -->
+          <!-- Payment Selection & Gateway Column -->
           <div class="checkout-col payment-info-col">
-            <div class="payment-header-flex">
-              <h3 class="checkout-section-title" data-i18n="payment_info_title">2. Kredi / Banka Kartı</h3>
+            <h3 class="checkout-section-title">2. Ödeme Yöntemi Seçiniz</h3>
 
+            <!-- Multi-Method Tabs -->
+            <div class="pay-method-tabs">
+              <button type="button" class="pay-method-tab active" id="tab-pay-iyzico" onclick="window.app && window.app.setPaymentMethod('iyzico')">
+                <span class="pay-tab-logo iyzico-text">iyzico</span>
+                <span class="pay-tab-sub">Kredi/Banka Kartı</span>
+              </button>
+              <button type="button" class="pay-method-tab" id="tab-pay-paytr" onclick="window.app && window.app.setPaymentMethod('paytr')">
+                <span class="pay-tab-logo paytr-text">PayTR</span>
+                <span class="pay-tab-sub">Sanal POS &amp; Taksit</span>
+              </button>
+              <button type="button" class="pay-method-tab" id="tab-pay-havale" onclick="window.app && window.app.setPaymentMethod('havale')">
+                <span class="pay-tab-logo havale-text">🏦 Havale/EFT</span>
+                <span class="pay-tab-sub">FAST &amp; IBAN</span>
+              </button>
             </div>
-            
-            <!-- WhatsApp Info Notice -->
-            <div style="background:#dcfce7; border:1px solid #22c55e; border-radius:10px; padding:16px; margin-bottom:20px;">
-              <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                <h4 style="margin:0; font-size:1.05rem; color:#14532d; font-weight:700;">WhatsApp ile Sipariş</h4>
+
+            <!-- TAB PANEL 1: IYZICO -->
+            <div class="pay-panel active" id="pay-panel-iyzico">
+              <div class="pay-provider-banner iyzico-banner">
+                <div class="banner-badge">🔒 İyzico 3D Secure Korumalı</div>
+                <div class="card-brands-icons">
+                  <span class="brand-chip visa">VISA</span>
+                  <span class="brand-chip mc">Mastercard</span>
+                  <span class="brand-chip troy">TROY</span>
+                </div>
               </div>
-              <p style="margin:0; font-size:0.85rem; color:#166534;">Sipariş bilgileriniz otomatik olarak WhatsApp destek hattımıza iletilecektir. Ödemeyi Havale/EFT ile tamamlayabilirsiniz.</p>
+
+              <div class="form-group">
+                <label for="iyzico-card-number">Kart Numarası</label>
+                <div class="input-with-icon">
+                  <input type="text" id="iyzico-card-number" class="form-input" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number">
+                  <span id="iyzico-card-brand-icon" class="input-brand-badge">💳</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="iyzico-card-name">Kart Üzerindeki İsim</label>
+                <input type="text" id="iyzico-card-name" class="form-input" placeholder="Ad Soyad" autocomplete="cc-name">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-half">
+                  <label for="iyzico-card-expiry">Son Kullanma (AA/YY)</label>
+                  <input type="text" id="iyzico-card-expiry" class="form-input" placeholder="12/28" maxlength="5" autocomplete="cc-exp">
+                </div>
+                <div class="form-group col-half">
+                  <label for="iyzico-card-cvv">Güvenlik Kodu (CVV)</label>
+                  <input type="password" id="iyzico-card-cvv" class="form-input" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="iyzico-installments">İyzico Taksit Seçeneği</label>
+                <select id="iyzico-installments" class="form-input form-select">
+                  <option value="1">Tek Çekim (Komisyonsuz Peşin Fiyatına)</option>
+                  <option value="2">2 Taksit (Peşin Fiyatına)</option>
+                  <option value="3">3 Taksit (Peşin Fiyatına)</option>
+                  <option value="6">6 Taksit</option>
+                  <option value="9">9 Taksit</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- TAB PANEL 2: PAYTR -->
+            <div class="pay-panel" id="pay-panel-paytr" style="display:none;">
+              <div class="pay-provider-banner paytr-banner">
+                <div class="banner-badge">⚡ PayTR Güvenli Ödeme Altyapısı</div>
+                <div class="card-brands-icons">
+                  <span class="brand-chip visa">VISA</span>
+                  <span class="brand-chip mc">Mastercard</span>
+                  <span class="brand-chip troy">TROY</span>
+                  <span class="brand-chip bkm">BKM</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="paytr-card-number">Kart Numarası</label>
+                <div class="input-with-icon">
+                  <input type="text" id="paytr-card-number" class="form-input" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number">
+                  <span id="paytr-card-brand-icon" class="input-brand-badge">⚡</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="paytr-card-name">Kart Üzerindeki İsim</label>
+                <input type="text" id="paytr-card-name" class="form-input" placeholder="Ad Soyad" autocomplete="cc-name">
+              </div>
+
+              <div class="form-row">
+                <div class="form-group col-half">
+                  <label for="paytr-card-expiry">Son Kullanma (AA/YY)</label>
+                  <input type="text" id="paytr-card-expiry" class="form-input" placeholder="08/27" maxlength="5">
+                </div>
+                <div class="form-group col-half">
+                  <label for="paytr-card-cvv">Güvenlik Kodu (CVV)</label>
+                  <input type="password" id="paytr-card-cvv" class="form-input" placeholder="•••" maxlength="4">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="paytr-installments">PayTR Taksit Planı</label>
+                <select id="paytr-installments" class="form-input form-select">
+                  <option value="1">Tek Çekim (Peşin Fiyatına)</option>
+                  <option value="3">3 Taksit (Tüm Bonus &amp; World Kartlar)</option>
+                  <option value="6">6 Taksit</option>
+                  <option value="12">12 Taksit (Ticari Kartlar)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- TAB PANEL 3: HAVALE / EFT / FAST -->
+            <div class="pay-panel" id="pay-panel-havale" style="display:none;">
+              <div class="pay-provider-banner havale-banner">
+                <div class="banner-badge">🏦 FAST &amp; 7/24 Anında Onay</div>
+                <span style="font-size:0.75rem; color:#1e293b; font-weight:700;">Doğrudan Banka Hesabı</span>
+              </div>
+
+              <div class="form-group">
+                <label for="havale-bank-select">Banka Hesabı Seçiniz</label>
+                <select id="havale-bank-select" class="form-input form-select" onchange="window.app && window.app.updateBankInfo(this.value)">
+                  <option value="ziraat">Ziraat Bankası (7/24 FAST)</option>
+                  <option value="garanti">Garanti BBVA</option>
+                  <option value="isbank">Türkiye İş Bankası</option>
+                  <option value="akbank">Akbank</option>
+                  <option value="enpara">QNB Enpara</option>
+                </select>
+              </div>
+
+              <!-- Bank Account Card Box -->
+              <div class="bank-account-box" id="bank-account-display">
+                <div class="bank-box-header">
+                  <strong id="bank-box-name" style="color:#0f172a; font-size:0.95rem;">Ziraat Bankası</strong>
+                  <span class="fast-badge">FAST Uyumlu</span>
+                </div>
+                <div class="bank-box-row">
+                  <span class="bank-label">Alıcı:</span>
+                  <strong class="bank-val">Eyüp Furkan PEKÖZ</strong>
+                </div>
+                <div class="bank-box-row">
+                  <span class="bank-label">IBAN:</span>
+                  <div class="iban-copy-row">
+                    <code id="bank-box-iban" class="iban-code">TR52 0006 7010 0000 0023 9483 65</code>
+                    <button type="button" class="btn-copy-iban" onclick="window.app && window.app.copyIban()">📋 Kopyala</button>
+                  </div>
+                </div>
+                <div class="bank-box-row">
+                  <span class="bank-label">Açıklama:</span>
+                  <div class="iban-copy-row">
+                    <code id="bank-box-ref" class="iban-code" style="color:#0284c7;">PZTR-2026-REF</code>
+                    <button type="button" class="btn-copy-iban" onclick="window.app && window.app.copyRefCode()">📋 Kopyala</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 12px; font-size:0.78rem; color:#166534; line-height:1.4; margin-top:12px;">
+                💡 <strong>Önemli:</strong> Lütfen bankanızdan havale/EFT yaparken açıklama kısmına yukarıdaki <strong>sipariş referans kodunu</strong> yazınız.
+              </div>
             </div>
 
             <!-- Checkout Order Summary & Pay Submit -->
@@ -861,9 +1008,9 @@
                 <strong id="checkout-total-val" class="checkout-total-text">0,00 ₺</strong>
               </div>
               <div class="form-error-msg" id="checkout-error-msg"></div>
-              <button type="button" class="btn-primary btn-block btn-pay-now" id="submit-order-btn" style="background:#25D366; color:#fff; border:none; display:flex; justify-content:center; align-items:center; gap:10px;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffffff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                <span>WhatsApp Üzerinden Tamamla</span>
+              <button type="button" class="btn-primary btn-block btn-pay-now" id="submit-order-btn">
+                <span id="pay-submit-btn-icon">🔒</span>
+                <span id="pay-submit-btn-text">İyzico ile Güvenli Öde</span>
               </button>
             </div>
 
@@ -874,18 +1021,34 @@
     </div>
   </div>
 
-
-  <!-- WhatsApp Confirmation Modal -->
-  <div class="modal-backdrop" id="wa-confirm-modal-backdrop" style="display:none;">
+  <!-- 3D Secure OTP Verification Gateway Modal -->
+  <div class="modal-backdrop" id="secure-3d-modal-backdrop" style="display:none;">
     <div class="modal-card modal-otp" role="dialog" aria-modal="true">
       <div class="otp-header">
-        <div class="otp-shield-icon" style="background:#dcfce7; color:#16a34a;">💬</div>
-        <h2 class="otp-title">WhatsApp'a Yönlendirildiniz</h2>
-        <p class="otp-desc">Sipariş detaylarınız WhatsApp üzerinden hazırlanıp gönderilmeye hazır. Lütfen mesajı gönderdikten sonra siparişinizi onaylayın.</p>
+        <div class="otp-gateway-brand" id="otp-gateway-brand">iyzico 3D Secure</div>
+        <div class="otp-shield-icon" style="background:#f0f9ff; color:#0284c7;">🔒</div>
+        <h2 class="otp-title">SMS Doğrulama Kodu</h2>
+        <p class="otp-desc">
+          <strong id="otp-phone-display">+90 5** *** **62</strong> nolu telefonunuza gönderilen 6 haneli doğrulama kodunu giriniz.
+        </p>
       </div>
-      <div class="otp-actions" style="display:flex; gap:10px; margin-top:20px;">
-        <button type="button" class="btn-outline" id="btn-wa-cancel" style="flex:1;">İptal</button>
-        <button type="button" class="btn-primary" id="btn-wa-confirm" style="flex:1; background:#16a34a; border-color:#16a34a;">Evet, Gönderdim</button>
+
+      <div style="margin:20px 0;">
+        <div class="otp-input-group">
+          <input type="text" id="otp-code-input" class="form-input otp-code-box" placeholder="123456" maxlength="6" autofocus>
+        </div>
+        <div class="otp-timer-row" style="margin-top:10px; font-size:0.8rem; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
+          <span>Kalan Süre: <strong id="otp-countdown-timer" style="color:#ef4444;">02:59</strong></span>
+          <button type="button" class="btn-test-otp" onclick="window.app && window.app.autoFillTestOtp()">🧪 Test Kodu (123456)</button>
+        </div>
+        <div class="form-error-msg" id="otp-error-msg" style="display:none; margin-top:8px;"></div>
+      </div>
+
+      <div class="otp-actions" style="display:flex; gap:10px; margin-top:16px;">
+        <button type="button" class="btn-outline" id="btn-otp-cancel" onclick="window.app && window.app.close3DSecureModal()" style="flex:1;">İptal</button>
+        <button type="button" class="btn-primary" id="btn-otp-verify" onclick="window.app && window.app.verify3DSecureOtp()" style="flex:1.5; background:#0284c7; border-color:#0284c7;">
+          ✓ Onayla &amp; Öde
+        </button>
       </div>
     </div>
   </div>

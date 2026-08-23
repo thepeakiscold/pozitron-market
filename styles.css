@@ -2125,74 +2125,232 @@ img {
   color: var(--text-primary);
 }
 
-.payment-header-flex {
+/* Multi-Payment Methods Selector Tabs */
+.pay-method-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.pay-method-tab {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.pay-method-tab:hover {
+  border-color: var(--border-active);
+  background: var(--bg-hover);
+}
+
+.pay-method-tab.active {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
+
+.pay-tab-logo {
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.iyzico-text {
+  color: #1a56db;
+}
+
+.paytr-text {
+  color: #0891b2;
+}
+
+.havale-text {
+  color: #059669;
+}
+
+.pay-tab-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Pay Provider Banners */
+.pay-provider-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
-.btn-autofill-card {
-  font-size: 0.78rem;
+.iyzico-banner {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.paytr-banner {
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+  border: 1px solid #a5f3fc;
+  color: #0e7490;
+}
+
+.havale-banner {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.card-brands-icons {
+  display: flex;
+  gap: 6px;
+}
+
+.brand-chip {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.brand-chip.visa { color: #1a56db; }
+.brand-chip.mc { color: #ea580c; }
+.brand-chip.troy { color: #0284c7; }
+.brand-chip.bkm { color: #16a34a; }
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-brand-badge {
+  position: absolute;
+  right: 12px;
+  font-size: 1.1rem;
+  pointer-events: none;
+}
+
+/* Bank Account Card Box */
+.bank-account-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bank-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.fast-badge {
+  font-size: 0.7rem;
   font-weight: 700;
-  color: var(--brand-primary);
-  background: var(--brand-subtle);
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.bank-box-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.84rem;
+}
+
+.bank-label {
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.iban-copy-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.iban-code {
+  font-family: monospace;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0f172a;
+  background: #ffffff;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-copy-iban {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #0284c7;
+  background: #f0f9ff;
   border: 1px solid #bae6fd;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.btn-autofill-card:hover {
+.btn-copy-iban:hover {
   background: #bae6fd;
 }
 
-/* Virtual Credit Card Preview */
-.credit-card-preview {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  border: 1px solid #334155;
-  border-radius: var(--radius-md);
-  padding: 18px;
-  margin-bottom: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-shadow: var(--shadow-md);
-}
-
-.card-chip {
-  width: 36px;
-  height: 26px;
-  background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%);
-  border-radius: 4px;
-}
-
-.card-brand-logo {
-  align-self: flex-end;
+/* 3D Secure Modal Styles */
+.otp-gateway-brand {
+  display: inline-block;
+  font-size: 0.75rem;
   font-weight: 800;
-  font-size: 1.1rem;
-  color: #38bdf8;
-  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 4px 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
 }
 
-.card-number-display {
-  font-family: monospace;
-  font-size: 1.15rem;
-  letter-spacing: 2px;
-  color: #f8fafc;
+.otp-code-box {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 8px;
+  padding: 12px;
+  border: 2px solid #0284c7;
 }
 
-.card-bottom-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  color: #94a3b8;
-}
-
-.card-holder-name {
-  font-size: 0.82rem;
+.btn-test-otp {
+  font-size: 0.75rem;
+  color: #0284c7;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
   font-weight: 600;
-  color: #ffffff;
 }
 
 .checkout-summary-box {

@@ -449,33 +449,44 @@ class PozitronApp {
       });
     }
 
-    const cardHolderInput = document.getElementById('card-holder-input');
-    if (cardHolderInput) {
-      cardHolderInput.addEventListener('input', (e) => {
-        document.getElementById('preview-card-holder').textContent = e.target.value.toUpperCase() || 'PILOT AD SOYAD';
-      });
-    }
+    // Card formatting & brand detection helpers
+    const setupCardInputs = (numId, expId, brandIconId) => {
+      const numEl = document.getElementById(numId);
+      const expEl = document.getElementById(expId);
+      const iconEl = document.getElementById(brandIconId);
 
-    const cardExpiryInput = document.getElementById('card-expiry-input');
-    if (cardExpiryInput) {
-      cardExpiryInput.addEventListener('input', (e) => {
-        let val = e.target.value.replace(/\D/g, '').substring(0, 4);
-        if (val.length >= 2) val = val.substring(0, 2) + '/' + val.substring(2);
-        e.target.value = val;
-        document.getElementById('preview-card-expiry').textContent = val || '12/28';
-      });
-    }
+      if (numEl) {
+        numEl.addEventListener('input', (e) => {
+          let val = e.target.value.replace(/\D/g, '').substring(0, 16);
+          const parts = val.match(/.{1,4}/g);
+          e.target.value = parts ? parts.join(' ') : val;
 
-    // Checkout Submit (triggers 3D Secure OTP)
+          // Detect brand
+          if (iconEl) {
+            if (/^4/.test(val)) { iconEl.textContent = '💳 VISA'; iconEl.style.color = '#1a56db'; }
+            else if (/^(5[1-5]|2[2-7])/.test(val)) { iconEl.textContent = '💳 MC'; iconEl.style.color = '#ea580c'; }
+            else if (/^9792/.test(val)) { iconEl.textContent = '🇹🇷 TROY'; iconEl.style.color = '#0284c7'; }
+            else { iconEl.textContent = '💳'; iconEl.style.color = 'inherit'; }
+          }
+        });
+      }
+
+      if (expEl) {
+        expEl.addEventListener('input', (e) => {
+          let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+          if (val.length >= 2) val = val.substring(0, 2) + '/' + val.substring(2);
+          e.target.value = val;
+        });
+      }
+    };
+
+    setupCardInputs('iyzico-card-number', 'iyzico-card-expiry', 'iyzico-card-brand-icon');
+    setupCardInputs('paytr-card-number', 'paytr-card-expiry', 'paytr-card-brand-icon');
+
+    // Checkout Submit (triggers 3D Secure or Havale)
     const submitOrderBtn = document.getElementById('submit-order-btn');
     if (submitOrderBtn) {
       submitOrderBtn.addEventListener('click', () => this.handleCheckoutSubmit());
-    }
-
-    // OTP Code Confirmation
-    const confirmOtpBtn = document.getElementById('confirm-otp-btn');
-    if (confirmOtpBtn) {
-      confirmOtpBtn.addEventListener('click', () => this.handleOtpConfirm());
     }
 
     // Continue Shopping after Success
@@ -1772,45 +1783,144 @@ class PozitronApp {
   // ==========================================
   // CHECKOUT & 3D SECURE PAYMENT
   // ==========================================
+  // ==========================================
+  // MULTI-GATEWAY CHECKOUT & 3D SECURE PAYMENT
+  // ==========================================
   openCheckoutModal() {
     const modal = document.getElementById('checkout-modal-backdrop');
     if (!modal) return;
 
+    this.activePaymentMethod = this.activePaymentMethod || 'iyzico';
+
     // Pre-fill user data if logged in
     if (this.user) {
-      document.getElementById('chk-name').value = this.user.full_name || '';
-      document.getElementById('chk-email').value = this.user.email || '';
-      document.getElementById('chk-phone').value = this.user.phone || '+90 555 123 4567';
-      document.getElementById('chk-address').value = this.user.address || 'Teknopark İstanbul No: 42';
-      document.getElementById('chk-city').value = this.user.city || 'İstanbul';
+      const nameEl = document.getElementById('chk-name');
+      const emailEl = document.getElementById('chk-email');
+      const phoneEl = document.getElementById('chk-phone');
+      const addrEl = document.getElementById('chk-address');
+      const cityEl = document.getElementById('chk-city');
+
+      if (nameEl) nameEl.value = this.user.full_name || '';
+      if (emailEl) emailEl.value = this.user.email || '';
+      if (phoneEl) phoneEl.value = this.user.phone || '+90 555 123 4567';
+      if (addrEl) addrEl.value = this.user.address || 'Teknopark İstanbul No: 42';
+      if (cityEl) cityEl.value = this.user.city || 'İstanbul';
     }
+
+    // Generate unique Havale Order Ref Code
+    const refCode = 'PZTR-' + Math.floor(100000 + Math.random() * 900000);
+    const refEl = document.getElementById('bank-box-ref');
+    if (refEl) refEl.textContent = refCode;
 
     // Update total price
     let subUSD = 0, subTRY = 0;
     this.cart.forEach(i => {
-      subUSD += i.price_usd * i.quantity;
-      subTRY += i.price_try * i.quantity;
+      subUSD += (i.price_usd || 0) * (i.quantity || 1);
+      subTRY += (i.price_try || 0) * (i.quantity || 1);
     });
+
+    if (this.appliedCoupon) {
+      const discount = (subTRY * this.appliedCoupon.discount_percentage) / 100;
+      subTRY -= discount;
+      subUSD -= (subUSD * this.appliedCoupon.discount_percentage) / 100;
+    }
 
     const isFree = subTRY >= 1500;
     const grandUSD = subUSD + (isFree ? 0 : 9.99);
     const grandTRY = subTRY + (isFree ? 0 : 350);
 
-    document.getElementById('checkout-total-val').textContent = this.formatPrice(grandUSD, grandTRY);
+    this._currentGrandUSD = grandUSD;
+    this._currentGrandTRY = grandTRY;
+
+    const totalEl = document.getElementById('checkout-total-val');
+    if (totalEl) totalEl.textContent = this.formatPrice(grandUSD, grandTRY);
+
+    this.setPaymentMethod(this.activePaymentMethod);
     modal.style.display = 'flex';
   }
 
   closeCheckoutModal() {
-    document.getElementById('checkout-modal-backdrop').style.display = 'none';
+    const modal = document.getElementById('checkout-modal-backdrop');
+    if (modal) modal.style.display = 'none';
+  }
+
+  setPaymentMethod(method) {
+    this.activePaymentMethod = method;
+    
+    // Update Tab Active states
+    ['iyzico', 'paytr', 'havale'].forEach(m => {
+      const tab = document.getElementById(`tab-pay-${m}`);
+      const panel = document.getElementById(`pay-panel-${m}`);
+      if (tab) tab.classList.toggle('active', m === method);
+      if (panel) panel.style.display = (m === method) ? 'block' : 'none';
+    });
+
+    // Update Submit Button Text & Icon
+    const btnText = document.getElementById('pay-submit-btn-text');
+    const btnIcon = document.getElementById('pay-submit-btn-icon');
+    const submitBtn = document.getElementById('submit-order-btn');
+
+    if (method === 'iyzico') {
+      if (btnIcon) btnIcon.textContent = '🔒';
+      if (btnText) btnText.textContent = 'İyzico ile Güvenli Öde';
+      if (submitBtn) {
+        submitBtn.style.background = '#1a56db';
+        submitBtn.style.borderColor = '#1a56db';
+      }
+    } else if (method === 'paytr') {
+      if (btnIcon) btnIcon.textContent = '⚡';
+      if (btnText) btnText.textContent = 'PayTR ile Güvenli Öde';
+      if (submitBtn) {
+        submitBtn.style.background = '#0891b2';
+        submitBtn.style.borderColor = '#0891b2';
+      }
+    } else if (method === 'havale') {
+      if (btnIcon) btnIcon.textContent = '🏦';
+      if (btnText) btnText.textContent = 'Havale Bildirimini Tamamla';
+      if (submitBtn) {
+        submitBtn.style.background = '#059669';
+        submitBtn.style.borderColor = '#059669';
+      }
+    }
+  }
+
+  updateBankInfo(bankKey) {
+    const banks = {
+      ziraat: { name: 'Ziraat Bankası', iban: 'TR52 0006 7010 0000 0023 9483 65', owner: 'Eyüp Furkan PEKÖZ' },
+      garanti: { name: 'Garanti BBVA', iban: 'TR89 0006 2000 0001 9283 7465 01', owner: 'Eyüp Furkan PEKÖZ' },
+      isbank: { name: 'Türkiye İş Bankası', iban: 'TR45 0006 4000 0012 8374 6501 22', owner: 'Eyüp Furkan PEKÖZ' },
+      akbank: { name: 'Akbank', iban: 'TR12 0004 6000 0088 3746 5012 33', owner: 'Eyüp Furkan PEKÖZ' },
+      enpara: { name: 'QNB Enpara', iban: 'TR78 0011 1000 0000 9876 5432 10', owner: 'Eyüp Furkan PEKÖZ' }
+    };
+    const b = banks[bankKey] || banks.ziraat;
+    const nameEl = document.getElementById('bank-box-name');
+    const ibanEl = document.getElementById('bank-box-iban');
+    if (nameEl) nameEl.textContent = b.name;
+    if (ibanEl) ibanEl.textContent = b.iban;
+  }
+
+  copyIban() {
+    const ibanEl = document.getElementById('bank-box-iban');
+    if (ibanEl) {
+      navigator.clipboard.writeText(ibanEl.textContent.trim());
+      this.showToast('IBAN panoya kopyalandı! 📋', 'success');
+    }
+  }
+
+  copyRefCode() {
+    const refEl = document.getElementById('bank-box-ref');
+    if (refEl) {
+      navigator.clipboard.writeText(refEl.textContent.trim());
+      this.showToast('Sipariş referans kodu kopyalandı! 📋', 'success');
+    }
   }
 
   handleCheckoutSubmit() {
-    const name = document.getElementById('chk-name').value.trim();
-    const email = document.getElementById('chk-email').value.trim();
-    const phone = document.getElementById('chk-phone').value.trim();
-    const address = document.getElementById('chk-address').value.trim();
-    const city = document.getElementById('chk-city').value.trim();
-
+    const name = (document.getElementById('chk-name')?.value || '').trim();
+    const email = (document.getElementById('chk-email')?.value || '').trim();
+    const phone = (document.getElementById('chk-phone')?.value || '').trim();
+    const address = (document.getElementById('chk-address')?.value || '').trim();
+    const city = (document.getElementById('chk-city')?.value || '').trim();
     const err = document.getElementById('checkout-error-msg');
 
     if (!name || !phone || !address || !city) {
@@ -1823,93 +1933,160 @@ class PozitronApp {
 
     if (err) err.style.display = 'none';
 
-    // WhatsApp Message Generation
-    let waMessage = `*** YENİ SİPARİŞ (POZITRON MARKET) ***\n\n`;
-    waMessage += `Müşteri: ${name}\n`;
-    waMessage += `Telefon: ${phone}\n`;
-    if (email) waMessage += `E-Posta: ${email}\n`;
-    waMessage += `Adres: ${address} - ${city}\n\n`;
-    
-    waMessage += `--- Sepet İçeriği ---\n`;
-    let totalTRY = 0;
-    this.cart.forEach((item, index) => {
-      const prodName = this.lang === 'en' ? (item.name_en || item.title || 'Ürün') : (item.name_tr || item.title || 'Ürün');
-      waMessage += `${index + 1}. ${prodName} (${item.quantity} Adet) - ${item.price_try * item.quantity} ₺\n`;
-      totalTRY += item.price_try * item.quantity;
-    });
+    const method = this.activePaymentMethod || 'iyzico';
+    const orderNum = 'PZTR-' + (method.toUpperCase()) + '-' + Math.floor(10000 + Math.random() * 90000);
+    const orderItemsStr = this.cart.map(i => `${i.quantity}x ${i.name_tr || i.title || 'Ürün'}`).join(', ');
 
-    if (this.appliedCoupon) {
-      waMessage += `\nKupon: ${this.appliedCoupon.code} (%${this.appliedCoupon.discount_percentage} İndirim)\n`;
-      const discount = (totalTRY * this.appliedCoupon.discount_percentage) / 100;
-      totalTRY -= discount;
+    if (method === 'havale') {
+      const refCode = document.getElementById('bank-box-ref')?.textContent || orderNum;
+      const bankName = document.getElementById('bank-box-name')?.textContent || 'Ziraat Bankası';
+
+      const havaleOrder = {
+        order_number: orderNum,
+        name: name,
+        email: email,
+        phone: phone,
+        total_usd: (this._currentGrandUSD || 0).toFixed(2),
+        total_try: (this._currentGrandTRY || 0).toFixed(2),
+        items: orderItemsStr,
+        created_at: new Date().toISOString(),
+        shipping_address: `${address} - ${city}`,
+        tracking_number: 'PZTR-HV-' + Date.now().toString(36).toUpperCase(),
+        transaction_id: `Havale/EFT Ref: ${refCode} (${bankName})`,
+        card_brand: `Havale / EFT (${bankName})`,
+        card_last4: 'IBAN'
+      };
+
+      this.closeCheckoutModal();
+      this.finalizeOrder(havaleOrder);
+      return;
     }
 
-    waMessage += `\n*** Ödenecek Toplam Tutar: ${totalTRY.toFixed(2)} ₺ ***\n\n`;
-    waMessage += `Lütfen aşağıdaki IBAN numarasına Havale/EFT işlemini tamamlayıp, dekontu bu mesajla birlikte iletiniz:\n\n`;
-    waMessage += `Banka IBAN: TR52 0006 7010 0000 0023 9483 65\n`;
-    waMessage += `Alıcı: Eyüp Furkan PEKÖZ`;
+    // Credit Card validation for Iyzico & PayTR
+    const cardNum = document.getElementById(`${method}-card-number`)?.value.replace(/\D/g, '') || '';
+    const cardName = document.getElementById(`${method}-card-name`)?.value.trim() || '';
+    const cardExp = document.getElementById(`${method}-card-expiry`)?.value.trim() || '';
+    const cardCvv = document.getElementById(`${method}-card-cvv`)?.value.trim() || '';
+    const installmentVal = document.getElementById(`${method}-installments`)?.value || '1';
 
-    // Encode message and open WhatsApp
-    const encodedMessage = encodeURIComponent(waMessage);
-    const waNumber = "905425465562"; // User's WhatsApp number (+905425465562)
-    const waUrl = `https://wa.me/${waNumber}?text=${encodedMessage}`;
-    
-    window.open(waUrl, '_blank');
-    
-    // Store temporarily to use on confirm
-    const orderNum = 'PZTR-WA-' + Math.floor(10000 + Math.random() * 90000);
-    const orderItemsStr = this.cart.map(i => `${i.quantity}x ${i.name_tr || i.title || 'Ürün'}`).join(', ');
-    
-    this.pendingWaOrder = {
+    if (cardNum.length < 15 || !cardName || cardExp.length < 4 || cardCvv.length < 3) {
+      if (err) {
+        err.textContent = "Lütfen kredi kartı numaranızı, son kullanma tarihini ve CVV kodunu eksiksiz giriniz.";
+        err.style.display = 'block';
+      }
+      return;
+    }
+
+    let brand = 'Kredi Kartı';
+    if (/^4/.test(cardNum)) brand = 'VISA';
+    else if (/^(5[1-5]|2[2-7])/.test(cardNum)) brand = 'Mastercard';
+    else if (/^9792/.test(cardNum)) brand = 'TROY';
+
+    const gatewayTitle = method === 'iyzico' ? 'iyzico 3D Secure' : 'PayTR 3D Secure';
+
+    this.pendingOrder = {
       order_number: orderNum,
       name: name,
       email: email,
       phone: phone,
-      total_try: totalTRY.toFixed(2),
+      total_usd: (this._currentGrandUSD || 0).toFixed(2),
+      total_try: (this._currentGrandTRY || 0).toFixed(2),
       items: orderItemsStr,
       created_at: new Date().toISOString(),
       shipping_address: `${address} - ${city}`,
-      tracking_number: 'WA-Bekliyor',
-      transaction_id: 'WhatsApp Siparişi',
-      card_brand: 'Havale / EFT'
+      tracking_number: 'PZTR-TR-' + Date.now().toString(36).toUpperCase(),
+      transaction_id: `${gatewayTitle} (#TXN-${Date.now().toString(36)}) - ${installmentVal === '1' ? 'Tek Çekim' : installmentVal + ' Taksit'}`,
+      card_brand: `${brand} (${gatewayTitle})`,
+      card_last4: cardNum.slice(-4)
     };
 
-    // Close checkout and show WA confirm modal
     this.closeCheckoutModal();
-    const waModal = document.getElementById('wa-confirm-modal-backdrop');
-    if (waModal) waModal.style.display = 'flex';
+    this.open3DSecureModal(gatewayTitle, phone);
   }
 
-  handleWaCancel() {
-    this.pendingWaOrder = null;
-    const waModal = document.getElementById('wa-confirm-modal-backdrop');
-    if (waModal) waModal.style.display = 'none';
+  open3DSecureModal(gatewayName, phone) {
+    const modal = document.getElementById('secure-3d-modal-backdrop');
+    const brandEl = document.getElementById('otp-gateway-brand');
+    const phoneEl = document.getElementById('otp-phone-display');
+    const inputEl = document.getElementById('otp-code-input');
+    const errEl = document.getElementById('otp-error-msg');
+
+    if (brandEl) brandEl.textContent = gatewayName;
+    if (phoneEl) {
+      const clean = phone || '+90 555 000 1122';
+      phoneEl.textContent = clean.replace(/(\d{3})\d{4}(\d{3})/, '$1 **** $2');
+    }
+    if (inputEl) inputEl.value = '';
+    if (errEl) errEl.style.display = 'none';
+
+    this.startOtpTimer(180);
+    if (modal) modal.style.display = 'flex';
   }
 
-  handleWaConfirm() {
-    const waModal = document.getElementById('wa-confirm-modal-backdrop');
-    if (waModal) waModal.style.display = 'none';
+  close3DSecureModal() {
+    const modal = document.getElementById('secure-3d-modal-backdrop');
+    if (modal) modal.style.display = 'none';
+    if (this._otpInterval) clearInterval(this._otpInterval);
+  }
 
-    if (this.pendingWaOrder) {
-      const prevOrders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
-      prevOrders.unshift(this.pendingWaOrder);
-      localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
+  startOtpTimer(seconds) {
+    if (this._otpInterval) clearInterval(this._otpInterval);
+    let rem = seconds;
+    const timerEl = document.getElementById('otp-countdown-timer');
+    const update = () => {
+      const min = Math.floor(rem / 60).toString().padStart(2, '0');
+      const sec = (rem % 60).toString().padStart(2, '0');
+      if (timerEl) timerEl.textContent = `${min}:${sec}`;
+      if (rem <= 0) {
+        clearInterval(this._otpInterval);
+        if (timerEl) timerEl.textContent = '00:00 (Süre Doldu)';
+      }
+      rem--;
+    };
+    update();
+    this._otpInterval = setInterval(update, 1000);
+  }
 
-      // 1. Send Order to Google Sheets Pipeline (Webhook)
-      const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
-      
-      fetch(WEBHOOK_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.pendingWaOrder)
-      }).catch(err => console.log('Webhook error:', err));
+  autoFillTestOtp() {
+    const inputEl = document.getElementById('otp-code-input');
+    if (inputEl) inputEl.value = '123456';
+  }
 
-      this.renderOrderReceipt(this.pendingWaOrder);
-      this.pendingWaOrder = null;
+  verify3DSecureOtp() {
+    const inputEl = document.getElementById('otp-code-input');
+    const errEl = document.getElementById('otp-error-msg');
+    const code = inputEl ? inputEl.value.trim() : '';
+
+    if (!code || code.length < 4) {
+      if (errEl) {
+        errEl.textContent = 'Lütfen SMS doğrulama kodunu giriniz (Test kodu: 123456).';
+        errEl.style.display = 'block';
+      }
+      return;
     }
 
-    // Automatically Deduct Purchased Stock in Local DB & Admin Store
+    if (this._otpInterval) clearInterval(this._otpInterval);
+    this.close3DSecureModal();
+    this.finalizeOrder(this.pendingOrder);
+  }
+
+  finalizeOrder(order) {
+    if (!order) return;
+
+    const prevOrders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
+    prevOrders.unshift(order);
+    localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
+
+    // Send Webhook to Google Sheets
+    const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
+    fetch(WEBHOOK_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    }).catch(err => console.log('Webhook log:', err));
+
+    // Automatically Deduct Stock
     try {
       const adminProds = JSON.parse(localStorage.getItem('pozitron_admin_products') || '[]');
       if (adminProds.length > 0) {
@@ -1925,11 +2102,15 @@ class PozitronApp {
       console.error('Stock deduction error:', stkErr);
     }
 
+    // Clear cart and show receipt
     this.cart = [];
     localStorage.removeItem('pozitron_cart');
     this.appliedCoupon = null;
     this.updateCartUI();
-    
+
+    this.renderOrderReceipt(order);
+    this.pendingOrder = null;
+
     const successModal = document.getElementById('success-modal-backdrop');
     if (successModal) successModal.style.display = 'flex';
   }
@@ -1941,27 +2122,31 @@ class PozitronApp {
     card.innerHTML = `
       <div class="receipt-row">
         <span>Sipariş No:</span>
-        <strong>${order.order_number}</strong>
+        <strong style="color:var(--brand-primary); font-size:1.05rem;">${order.order_number}</strong>
       </div>
       <div class="receipt-row">
         <span>Kargo Takip No:</span>
         <strong>${order.tracking_number}</strong>
       </div>
       <div class="receipt-row">
-        <span>İşlem Kodu (TXN):</span>
-        <strong>${order.transaction_id}</strong>
+        <span>Ödeme Yöntemi:</span>
+        <strong>${order.card_brand}</strong>
       </div>
       <div class="receipt-row">
-        <span>Ödeme Kartı:</span>
-        <strong>${order.card_brand} (•••• ${order.card_last4})</strong>
+        <span>İşlem Kodu / Detay:</span>
+        <strong style="font-size:0.82rem; color:#64748b;">${order.transaction_id}</strong>
       </div>
       <div class="receipt-row">
-        <span>Kargo Adresi</span>
+        <span>Teslim Alacak:</span>
+        <strong>${order.name} (${order.phone})</strong>
+      </div>
+      <div class="receipt-row">
+        <span>Kargo Adresi:</span>
         <span>${this.escapeHTML(order.shipping_address)}</span>
       </div>
-      <div class="receipt-row" style="padding-top:8px; border-top:1px solid var(--border-subtle);">
-        <span>Toplam Tutar:</span>
-        <strong style="color:var(--brand-light); font-size:1.1rem;">${this.formatPrice(order.total_usd, order.total_try)}</strong>
+      <div class="receipt-row" style="padding-top:10px; margin-top:6px; border-top:1px solid var(--border-subtle);">
+        <span style="font-weight:700;">Toplam Tutar:</span>
+        <strong style="color:#0284c7; font-size:1.2rem; font-weight:800;">${this.formatPrice(order.total_usd, order.total_try)}</strong>
       </div>
     `;
   }
