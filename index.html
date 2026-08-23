@@ -1062,8 +1062,8 @@
   <!-- 3D Print Custom Manufacturing Studio Modal -->
   <div class="modal-backdrop" id="studio-3d-modal-backdrop" style="display:none;">
     <div class="modal-card modal-3d-studio" role="dialog" aria-modal="true">
-      <!-- Hidden File Input directly attached to modal root (never hidden by container) -->
-      <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.obj,.3mf,.STL,.STEP,.STP,.OBJ,.3MF,application/octet-stream,model/*" style="display:none;" onchange="window.app && window.app.handle3DFileInputChange(this)">
+      <!-- Hidden File Input directly attached to modal root (opacity:0 so native label click always works across all browsers) -->
+      <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.obj,.3mf,.STL,.STEP,.STP,.OBJ,.3MF,application/octet-stream,model/*,*/*" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; z-index:-1;" onchange="window.app && window.app.handle3DFileInputChange(this)">
 
       <div class="modal-3d-header">
         <div style="display:flex; align-items:center; gap:10px;">
@@ -1084,12 +1084,15 @@
             
             <!-- Overlay Dropzone when no model or dragover -->
             <div class="viewport-dropzone" id="viewport-dropzone">
-              <label for="file-3d-input" class="dropzone-inner" style="display:block; cursor:pointer;">
+              <div class="dropzone-inner" style="display:block;">
                 <div class="dropzone-icon">📥</div>
                 <strong style="font-size:1.05rem; color:#0f172a; display:block; margin-bottom:6px;">3D Modelinizi Buraya Sürükleyin veya Seçin</strong>
                 <p style="font-size:0.82rem; color:#64748b; margin-bottom:16px;">Desteklenen formatlar: <strong>.STL, .STEP, .STP, .OBJ</strong> (Max: 50MB)</p>
-                <span class="btn-primary btn-upload-model" style="display:inline-flex; align-items:center; justify-content:center; pointer-events:none;">📂 Dosya Seç</span>
-              </label>
+                <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;">
+                  <label for="file-3d-input" class="btn-primary btn-upload-model" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; margin:0;">📂 Dosya Seç</label>
+                  <button type="button" class="btn-secondary" style="font-size:0.82rem; padding:8px 14px; border-radius:8px; background:#f1f5f9; color:#0f172a; border:1px solid #cbd5e1; font-weight:700; cursor:pointer;" onclick="window.app && window.app.loadDemoStepModel('Column.stp')">⚡ Column.stp Yükle</button>
+                </div>
+              </div>
             </div>
 
             <!-- Viewport Controls Overlay (wireframe, rotate, reset, change file) -->
@@ -1250,14 +1253,14 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container" aria-live="assertive"></div>
 
-  <!-- Three.js 3D WebGL Engine & STLLoader -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+  <!-- Local Three.js 3D WebGL Engine & STLLoader (100% Offline & Reliable) -->
+  <script src="./vendor/three.min.js"></script>
+  <script src="./vendor/OrbitControls.js"></script>
+  <script src="./vendor/STLLoader.js"></script>
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260823_step_fix_v38"></script>
-  <script src="./i18n.js?v=20260823_step_fix_v38"></script>
-  <script src="./app.js?v=20260823_step_fix_v38"></script>
+  <script src="./data/pozitron_data.js?v=20260823_step_fix_v39"></script>
+  <script src="./i18n.js?v=20260823_step_fix_v39"></script>
+  <script src="./app.js?v=20260823_step_fix_v39"></script>
 </body>
 </html>

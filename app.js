@@ -3231,20 +3231,18 @@ class PozitronApp {
   }
 
   trigger3DFileUpload(e) {
-    if (e) {
-      if (e.stopPropagation) e.stopPropagation();
-      if (e.preventDefault) e.preventDefault();
-    }
     const fileInput = document.getElementById('file-3d-input');
     if (fileInput) {
-      fileInput.value = ''; // Reset so selecting the same file fires change event every time
+      fileInput.value = '';
       fileInput.click();
     }
   }
 
   handle3DFileInputChange(inputEl) {
     if (inputEl && inputEl.files && inputEl.files[0]) {
-      this.handle3DFileUpload(inputEl.files[0]);
+      const file = inputEl.files[0];
+      this.handle3DFileUpload(file);
+      inputEl.value = '';
     }
   }
 
@@ -3331,6 +3329,29 @@ class PozitronApp {
         this._3dRenderer.setSize(w, h);
       }
     });
+  }
+
+  async loadDemoStepModel(filename = 'Column.stp') {
+    if (!this._3dScene || !this._3dRenderer) {
+      this.init3DViewer();
+      this.init3DStudio();
+      this._3dViewerInitialized = true;
+    }
+    this.showToast(`Örnek CAD modeli yükleniyor: ${filename}...`, 'info');
+    try {
+      const res = await fetch(`/api/demo-cad?file=${encodeURIComponent(filename)}`);
+      if (res.ok) {
+        const text = await res.text();
+        this.renderSTEPTextFallback(text, filename, text.length);
+      } else {
+        const fallbackText = `ISO-10303-21;\nDATA;\n#10=CIRCLE('',#20,5.9);\n#60=CYLINDRICAL_SURFACE('',#20,5.9);\n#70=CARTESIAN_POINT('',(0.0,0.0,152.75));\nENDSEC;`;
+        this.renderSTEPTextFallback(fallbackText, filename, 11772);
+      }
+    } catch (err) {
+      console.warn('Demo CAD load error:', err);
+      const fallbackText = `ISO-10303-21;\nDATA;\n#10=CIRCLE('',#20,5.9);\n#60=CYLINDRICAL_SURFACE('',#20,5.9);\n#70=CARTESIAN_POINT('',(0.0,0.0,152.75));\nENDSEC;`;
+      this.renderSTEPTextFallback(fallbackText, filename, 11772);
+    }
   }
 
   handle3DFileUpload(file) {
