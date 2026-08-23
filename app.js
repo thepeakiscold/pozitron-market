@@ -3370,28 +3370,30 @@ class PozitronApp {
           if (geometry) {
             this.renderCustomGeometry(geometry, filename);
           } else {
-            this.renderSTEPModel(text, filename, file.size);
+            this.renderSTEPTextFallback(text, filename, file.size);
           }
         } catch (err) {
           console.error('OBJ Parse Error:', err);
-          this.renderSTEPModel(text, filename, file.size);
+          this.renderSTEPTextFallback(e.target.result || '', filename, file.size);
         }
       };
       reader.onerror = () => this.showToast('OBJ dosyası okunamadı.', 'error');
       reader.readAsText(file);
     } else {
-      // STEP / STP / 3MF CAD Files
-      reader.onload = (e) => {
+      // STEP / STP / IGES / 3MF CAD Files
+      reader.onload = async (e) => {
         try {
-          const text = e.target.result;
-          this.renderSTEPModel(text, filename, file.size);
+          const arrayBuffer = e.target.result;
+          await this.renderSTEPWithOCCT(arrayBuffer, filename, file.size);
         } catch (err) {
-          console.error('STEP Parse Error:', err);
-          this.renderSimulatedFallbackModel(filename, file.size);
+          console.error('STEP OCCT Error, falling back to text parser:', err);
+          const textDecoder = new TextDecoder('utf-8');
+          const text = textDecoder.decode(e.target.result);
+          this.renderSTEPTextFallback(text, filename, file.size);
         }
       };
       reader.onerror = () => this.showToast('STEP dosyası okunamadı.', 'error');
-      reader.readAsText(file);
+      reader.readAsArrayBuffer(file);
     }
   }
 
@@ -3569,8 +3571,139 @@ class PozitronApp {
     this.showToast(`✅ STL Model başarıyla yüklendi: ${filename}`, 'success');
   }
 
-  renderSTEPModel(stepText, filename, fileSize) {
-    if (!this._3dScene) return;
+  async renderSTEPWithOCCT(arrayBuffer, filename, fileSize) {
+    if (!this._3dScene || !this._3dRenderer) {
+      this.init3DViewer();
+      this.init3DStudio();
+    }
+
+    this.showToast(`CAD Modeli işleniyor: ${filename}...`, 'info');
+
+    // 1. Try real OpenCascade CAD Tessellation if occtimportjs is available
+    if (typeof occtimportjs !== 'undefined') {
+      try {
+        if (!this._occtEngine) {
+          this._occtEngine = await occtimportjs();
+        }
+        const fileBuffer = new Uint8Array(arrayBuffer);
+        const result = this._occtEngine.ReadStepFile(fileBuffer, null);
+
+        if (result && result.success && result.meshes && result.meshes.length > 0) {
+          if (this._currentMesh) {
+            this._3dScene.remove(this._currentMesh);
+            this._currentMesh = null;
+          }
+
+          const group = new THREE.Group();
+          let totalVolCm3 = 0;
+          let overallMin = new THREE.Vector3(Infinity, Infinity, Infinity);
+          let overallMax = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+
+          for (const meshData of result.meshes) {
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(meshData.attributes.position.array, 3));
+            if (meshData.attributes.normal) {
+              geometry.setAttribute('normal', new THREE.Float32BufferAttribute(meshData.attributes.normal.array, 3));
+            } else {
+              geometry.computeVertexNormals();
+            }
+            if (meshData.index) {
+              geometry.setIndex(new THREE.Uint32BufferAttribute(meshData.index.array, 1));
+            }
+
+            geometry.computeBoundingBox();
+            if (geometry.boundingBox) {
+              overallMin.min(geometry.boundingBox.min);
+              overallMax.max(geometry.boundingBox.max);
+            }
+
+            const vol = this.calculateGeometryVolume(geometry);
+            totalVolCm3 += vol;
+
+            const material = new THREE.MeshStandardMaterial({
+              color: new THREE.Color(this._3dConfig.colorHex),
+              roughness: 0.28,
+              metalness: 0.18,
+              side: THREE.DoubleSide
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+            group.add(mesh);
+          }
+
+          // Center the CAD model
+          const sizeX = Math.max(1, Math.round(overallMax.x - overallMin.x));
+          const sizeY = Math.max(1, Math.round(overallMax.y - overallMin.y));
+          const sizeZ = Math.max(1, Math.round(overallMax.z - overallMin.z));
+
+          const centerX = (overallMax.x + overallMin.x) / 2;
+          const centerY = (overallMax.y + overallMin.y) / 2;
+          const centerZ = (overallMax.z + overallMin.z) / 2;
+
+          group.position.set(-centerX, sizeY / 2 - centerY, -centerZ);
+
+          const wrapper = new THREE.Group();
+          wrapper.add(group);
+
+          this._currentMesh = wrapper;
+          this._3dScene.add(this._currentMesh);
+
+          this._3dConfig.dimX = sizeX;
+          this._3dConfig.dimY = sizeY;
+          this._3dConfig.dimZ = sizeZ;
+          this._3dConfig.volumeCm3 = Math.max(0.5, Math.round(totalVolCm3 * 10) / 10);
+
+          const maxDim = Math.max(sizeX, sizeY, sizeZ, 30);
+          this._3dCamera.position.set(0, maxDim * 1.3, maxDim * 2.3);
+          if (this._3dControls) {
+            this._3dControls.target.set(0, sizeY / 2, 0);
+            this._3dControls.update();
+          }
+
+          const container = document.getElementById('viewport-3d-container');
+          if (container && this._3dRenderer && this._3dCamera) {
+            const w = container.clientWidth || 500;
+            const h = container.clientHeight || 420;
+            if (w > 0 && h > 0) {
+              this._3dCamera.aspect = w / h;
+              this._3dCamera.updateProjectionMatrix();
+              this._3dRenderer.setSize(w, h);
+            }
+          }
+
+          if (this._3dRenderer && this._3dScene && this._3dCamera) {
+            this._3dRenderer.render(this._3dScene, this._3dCamera);
+          }
+
+          this.updateMetricsUI(filename, sizeX, sizeY, sizeZ, this._3dConfig.volumeCm3);
+          this.calculate3DPrice();
+
+          const dropzone = document.getElementById('viewport-dropzone');
+          if (dropzone) dropzone.style.display = 'none';
+          const controls = document.getElementById('viewport-floating-controls');
+          if (controls) controls.style.display = 'flex';
+          const metrics = document.getElementById('model-metrics-bar');
+          if (metrics) metrics.style.display = 'grid';
+
+          this.showToast(`✅ STEP CAD modeli 3D olarak başarıyla yüklendi: ${filename}`, 'success');
+          return;
+        }
+      } catch (occtErr) {
+        console.warn('OCCT Tessellation fallback:', occtErr);
+      }
+    }
+
+    // 2. Fallback: Parse STEP Text entities
+    const textDecoder = new TextDecoder('utf-8');
+    const text = textDecoder.decode(arrayBuffer);
+    this.renderSTEPTextFallback(text, filename, fileSize);
+  }
+
+  renderSTEPTextFallback(stepText, filename, fileSize) {
+    if (!this._3dScene || !this._3dRenderer) {
+      this.init3DViewer();
+      this.init3DStudio();
+    }
 
     if (this._currentMesh) {
       this._3dScene.remove(this._currentMesh);
@@ -3579,7 +3712,7 @@ class PozitronApp {
       this._currentMesh = null;
     }
 
-    // 1. Universal Regex for all STEP CAD formats (SolidWorks, Inventor, Siemens NX, CATIA, Fusion 360, FreeCAD)
+    // Universal Regex for all STEP CAD formats
     const ptRegex = /CARTESIAN_POINT\s*\(\s*[^,]*,\s*\(\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*\)\s*\)/gi;
     let match;
     let minX = Infinity, maxX = -Infinity;
@@ -3658,6 +3791,17 @@ class PozitronApp {
     if (this._3dControls) {
       this._3dControls.target.set(0, sizeY / 2, 0);
       this._3dControls.update();
+    }
+
+    const container = document.getElementById('viewport-3d-container');
+    if (container && this._3dRenderer && this._3dCamera) {
+      const w = container.clientWidth || 500;
+      const h = container.clientHeight || 420;
+      if (w > 0 && h > 0) {
+        this._3dCamera.aspect = w / h;
+        this._3dCamera.updateProjectionMatrix();
+        this._3dRenderer.setSize(w, h);
+      }
     }
 
     if (this._3dRenderer && this._3dScene && this._3dCamera) {
