@@ -1422,7 +1422,7 @@ class PozitronApp {
     const email = (user.email || user.username || '').toLowerCase().trim();
     if (!email) return false;
 
-    // Single admin: User's Gmail accounts & Google OAuth logins
+    // STRICT Whitelist: Only verified owner email addresses
     const adminEmails = [
       'furkaniusprimes@gmail.com',
       'thepeakiscold@gmail.com',
@@ -1431,11 +1431,7 @@ class PozitronApp {
       'pekozfurkan@gmail.com',
       'pozitronmarket@gmail.com'
     ];
-    if (adminEmails.includes(email)) return true;
-    if (user.provider === 'google' || user.provider === 'gmail') return true;
-    if (user.role === 'admin' || user.role === 'superadmin') return true;
-
-    return false;
+    return adminEmails.includes(email);
   }
 
   updateUserUI() {

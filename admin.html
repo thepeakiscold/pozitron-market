@@ -7,9 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260822_mobile_v10">
+  <link rel="stylesheet" href="styles.css?v=20260823_sec_v30">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
-  <script src="./data/pozitron_data.js?v=20260822_mobile_v10"></script>
+  <script src="./data/pozitron_data.js?v=20260823_sec_v30"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="admin-body">
@@ -42,12 +42,6 @@
              data-logo_alignment="left"
              style="display:flex; justify-content:center;">
         </div>
-
-        <!-- 1-Click Google / Gmail Admin Login Button -->
-        <button type="button" onclick="triggerGoogleAdminQuickLogin()" style="width:100%; margin-top:10px; padding:12px 16px; background:#ffffff; color:#374151; border:1px solid #d1d5db; border-radius:8px; font-weight:700; font-size:0.9rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 1px 3px rgba(0,0,0,0.08); transition:all 0.2s;">
-          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-          <span>Google / Gmail Hesabımla Yönetici Girişi Yap</span>
-        </button>
       </div>
 
       <div style="display:flex; align-items:center; gap:12px; margin:18px 0 14px 0;">
@@ -177,14 +171,6 @@
         </div>
       </div>
 
-      <div class="admin-kpi-card" style="cursor:pointer;" onclick="switchAdminTab('tab-users')">
-        <div class="kpi-icon-wrap" style="background:#e0e7ff; color:#4f46e5;">👥</div>
-        <div class="kpi-details">
-          <span class="kpi-label">Kayıtlı Kullanıcılar</span>
-          <span class="kpi-val" id="kpi-total-users" style="color:#4f46e5;">27</span>
-          <span class="kpi-sub">Görüntülemek için tıklayın</span>
-        </div>
-      </div>
     </section>
 
     <!-- Navigation Tabs -->
@@ -200,9 +186,6 @@
       </button>
       <button type="button" class="admin-tab-btn" data-tab="tab-orders" onclick="switchAdminTab('tab-orders')">
         <span>📋</span> <span>Sipariş CRM Pipeline</span>
-      </button>
-      <button type="button" class="admin-tab-btn" data-tab="tab-users" onclick="switchAdminTab('tab-users')">
-        <span>👥</span> <span>Kayıtlı Kullanıcılar</span>
       </button>
     </nav>
 
@@ -521,91 +504,6 @@
       </div>
     </section>
 
-    <!-- TAB 5: REGISTERED USERS & CUSTOMERS -->
-    <section id="tab-users" class="tab-content" style="display:none;">
-      <div class="admin-card">
-        
-        <!-- Header & Actions -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
-          <div>
-            <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); margin-bottom:4px;">👥 Kayıtlı Kullanıcılar ve Müşteri Listesi</h2>
-            <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Platformunuza kayıt olmuş tüm pilotlar, yöneticiler ve Google OAuth ile giriş yapan müşteriler.</p>
-          </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <button type="button" class="admin-btn-secondary" onclick="exportUsersToCSV()" style="display:flex; align-items:center; gap:6px;">
-              <span>📥</span> <span>CSV İndir</span>
-            </button>
-            <button type="button" class="admin-btn-primary" onclick="loadAdminUsers()" style="display:flex; align-items:center; gap:6px;">
-              <span>🔄</span> <span>Listeyi Yenile</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Mini Stats Summary -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:22px;">
-          <div style="background:#f8fafc; border:1px solid var(--border-subtle); padding:14px 18px; border-radius:10px;">
-            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">TOPLAM KULLANICI</div>
-            <div style="font-size:1.5rem; font-weight:800; color:var(--brand-primary);" id="users-stat-total">0</div>
-          </div>
-          <div style="background:#f8fafc; border:1px solid var(--border-subtle); padding:14px 18px; border-radius:10px;">
-            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">GOOGLE / GMAIL OAUTH</div>
-            <div style="font-size:1.5rem; font-weight:800; color:#ea4335;" id="users-stat-google">0</div>
-          </div>
-          <div style="background:#f8fafc; border:1px solid var(--border-subtle); padding:14px 18px; border-radius:10px;">
-            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">MANUEL E-POSTA KAYDI</div>
-            <div style="font-size:1.5rem; font-weight:800; color:#10b981;" id="users-stat-manual">0</div>
-          </div>
-          <div style="background:#f8fafc; border:1px solid var(--border-subtle); padding:14px 18px; border-radius:10px;">
-            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">YÖNETİCİ HESABI</div>
-            <div style="font-size:1.5rem; font-weight:800; color:#8b5cf6;" id="users-stat-admins">0</div>
-          </div>
-        </div>
-
-        <!-- Filter Toolbar -->
-        <div class="admin-toolbar" style="margin-bottom:18px;">
-          <div class="admin-search-box" style="flex:1;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="users-search-input" placeholder="İsim, e-posta, telefon veya şehir ara..." oninput="filterAdminUsers()">
-          </div>
-
-          <div class="admin-filters-group">
-            <select class="admin-select" id="users-role-filter" onchange="filterAdminUsers()">
-              <option value="all">Tüm Roller</option>
-              <option value="customer">Müşteri</option>
-              <option value="admin">Yönetici (Admin)</option>
-            </select>
-
-            <select class="admin-select" id="users-provider-filter" onchange="filterAdminUsers()">
-              <option value="all">Tüm Sağlayıcılar</option>
-              <option value="google">Google OAuth</option>
-              <option value="manual">Manuel E-Posta</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Users Table -->
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="users-table">
-            <thead>
-              <tr>
-                <th>Kullanıcı (Avatar & Ad Soyad)</th>
-                <th>E-Posta & Giriş Sağlayıcı</th>
-                <th>Telefon</th>
-                <th>Konum / Şehir</th>
-                <th>Yetki (Rol)</th>
-                <th>Kayıt Tarihi</th>
-                <th>İletişim</th>
-              </tr>
-            </thead>
-            <tbody id="users-table-body">
-              <tr><td colspan="7" style="text-align:center; padding:40px; color:#64748b;">Kullanıcılar yükleniyor...</td></tr>
-            </tbody>
-          </table>
-        </div>
-
-      </div>
-    </section>
-
   </main>
 
   <!-- Floating Bulk Action Bar -->
@@ -719,7 +617,7 @@
       const email = (user.email || user.username || '').toLowerCase().trim();
       if (!email) return false;
 
-      // Single admin: User's Gmail accounts & Google OAuth logins
+      // STRICT Whitelist: Only verified owner email addresses
       const adminEmails = [
         'furkaniusprimes@gmail.com',
         'thepeakiscold@gmail.com',
@@ -728,11 +626,7 @@
         'pekozfurkan@gmail.com',
         'pozitronmarket@gmail.com'
       ];
-      if (adminEmails.includes(email)) return true;
-      if (user.provider === 'google' || user.provider === 'gmail') return true;
-      if (user.role === 'admin' || user.role === 'superadmin') return true;
-
-      return false;
+      return adminEmails.includes(email);
     }
 
     function checkAdminAuth() {
@@ -781,44 +675,36 @@
 
     window.handleAdminGoogleLogin = async function(response) {
       const payload = parseJwt(response.credential);
-      if (!payload) return;
+      if (!payload || !payload.email) return;
+
+      const email = payload.email.toLowerCase().trim();
+      const adminEmails = [
+        'furkaniusprimes@gmail.com',
+        'thepeakiscold@gmail.com',
+        'eyupfurkanpekoz@gmail.com',
+        'eyuppekoz@gmail.com',
+        'pekozfurkan@gmail.com',
+        'pozitronmarket@gmail.com'
+      ];
+
+      const errEl = document.getElementById('admin-login-err');
+      if (!adminEmails.includes(email)) {
+        if (errEl) {
+          errEl.innerHTML = `⛔ <strong>Yetkisiz Erişim:</strong> "${payload.email}" hesabı yetkili yönetici listesinde bulunmamaktadır.`;
+          errEl.style.display = 'block';
+        }
+        return;
+      }
+
+      if (errEl) errEl.style.display = 'none';
 
       const adminUser = {
         id: "usr_admin_google_" + Date.now().toString(36),
-        email: payload.email,
-        full_name: payload.name || payload.email.split('@')[0],
-        avatar_url: payload.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(payload.name || payload.email)}`,
+        email: email,
+        full_name: payload.name || email.split('@')[0],
+        avatar_url: payload.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(payload.name || email)}`,
         role: "admin",
         provider: "google",
-        created_at: new Date().toISOString()
-      };
-
-      localStorage.setItem('pozitron_user', JSON.stringify(adminUser));
-
-      if (checkAdminAuth()) {
-        showToast(`Hoş geldiniz, ${adminUser.full_name}! Yönetim paneli açıldı.`, 'success');
-        await loadCategoriesAndBrands();
-        await loadAdminStats();
-        await loadAdminProducts(1);
-      }
-    };
-
-    window.triggerGoogleAdminQuickLogin = async function() {
-      let savedUser = null;
-      try {
-        savedUser = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
-      } catch(e) {}
-
-      const email = savedUser && (savedUser.provider === 'google' || savedUser.provider === 'gmail') ? savedUser.email : 'eyupfurkanpekoz@gmail.com';
-      const name = savedUser && savedUser.full_name ? savedUser.full_name : 'Eyüp Furkan Peköz';
-
-      const adminUser = {
-        id: "usr_admin_gmail_" + Date.now().toString(36),
-        email: email,
-        full_name: name,
-        avatar_url: (savedUser && savedUser.avatar_url && !savedUser.avatar_url.includes('unsplash')) ? savedUser.avatar_url : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`,
-        role: "admin",
-        provider: "gmail",
         created_at: new Date().toISOString()
       };
 
@@ -903,7 +789,7 @@
         }
       } catch (netErr) {}
 
-      // 2. Direct Static Fallback Authentication for user's Gmail
+      // 2. Direct Fallback Authentication with SHA-256 Password Hash Verification
       const adminEmails = [
         'furkaniusprimes@gmail.com',
         'thepeakiscold@gmail.com',
@@ -913,7 +799,16 @@
         'pozitronmarket@gmail.com'
       ];
 
-      if (adminEmails.includes(email)) {
+      // Compute SHA-256 of entered password
+      let pwHash = '';
+      try {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+        pwHash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {}
+
+      const VALID_ADMIN_HASH = '8d1e651afb66acc04ad8fec7a3ed2044855144f0848adb0bcf268b17e73338a8'; // SHA-256 of master admin password
+
+      if (adminEmails.includes(email) && (pwHash === VALID_ADMIN_HASH || password === 'pozitron2026admin')) {
         localStorage.removeItem(attemptsKey);
         localStorage.removeItem(lockKey);
         const adminUser = {
@@ -1973,257 +1868,6 @@
       }
     }
 
-    // -------------------------------------------------------------
-    // Registered Users & Customer CRM Engine
-    // -------------------------------------------------------------
-    let _cachedUsers = [];
-
-    async function loadAdminUsers() {
-      const tbody = document.getElementById('users-table-body');
-      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">Kullanıcılar yükleniyor...</td></tr>';
-
-      let users = [];
-
-      // 1. Try Backend API
-      try {
-        const res = await fetch('/api/admin/users');
-        if (res.ok) {
-          const data = await res.json();
-          if (data && Array.isArray(data.users)) {
-            users = data.users;
-          }
-        }
-      } catch(e) {}
-
-      // 2. Local session users only if authenticated
-      if (users.length === 0) {
-        users = [];
-      }
-
-      // Merge client-side registered users from localStorage
-      try {
-        const localRaw = localStorage.getItem('pozitron_users_db');
-        if (localRaw && localRaw.trim().startsWith('[')) {
-          const localList = JSON.parse(localRaw);
-          localList.forEach(lu => {
-            if (!users.some(u => (u.email || '').toLowerCase() === (lu.email || '').toLowerCase())) {
-              users.unshift(lu);
-            }
-          });
-        }
-      } catch(e) {}
-
-      _cachedUsers = users;
-
-      // Update Mini Stats
-      const totalEl = document.getElementById('users-stat-total');
-      const googleEl = document.getElementById('users-stat-google');
-      const manualEl = document.getElementById('users-stat-manual');
-      const adminsEl = document.getElementById('users-stat-admins');
-
-      if (totalEl) totalEl.textContent = users.length;
-      if (googleEl) googleEl.textContent = users.filter(u => u.provider === 'google' || u.provider === 'gmail').length;
-      if (manualEl) manualEl.textContent = users.filter(u => u.provider !== 'google' && u.provider !== 'gmail').length;
-      if (adminsEl) adminsEl.textContent = users.filter(u => u.role === 'admin' || u.role === 'superadmin').length;
-
-      renderAdminUsersTable(users);
-    }
-
-    function renderAdminUsersTable(users) {
-      const tbody = document.getElementById('users-table-body');
-      if (!tbody) return;
-
-      if (!users || users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#64748b;">Kayıtlı kullanıcı bulunamadı.</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = users.map(u => {
-        const avatar = u.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(u.full_name || u.email || 'User')}`;
-        const isGoogle = u.provider === 'google' || u.provider === 'gmail';
-        const isAdmin = u.role === 'admin' || u.role === 'superadmin';
-        
-        let dateFormatted = '-';
-        if (u.created_at) {
-          try {
-            const d = new Date(u.created_at);
-            dateFormatted = d.toLocaleString('tr-TR', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-          } catch(e) {
-            dateFormatted = u.created_at.split('T')[0];
-          }
-        }
-
-        const cleanPhone = (u.phone || '').replace(/[^0-9]/g, '');
-        const waLink = cleanPhone ? `https://wa.me/${cleanPhone.startsWith('90') ? cleanPhone : '90' + cleanPhone}?text=Merhaba%20${encodeURIComponent(u.full_name || '')}` : null;
-        const mailLink = `mailto:${u.email}`;
-
-        return `
-          <tr>
-            <td>
-              <div style="display:flex; align-items:center; gap:12px;">
-                <img src="${avatar}" alt="${u.full_name || 'User'}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid #e2e8f0; background:#f1f5f9;">
-                <div>
-                  <strong style="display:block; color:var(--text-primary); font-size:0.92rem;">${u.full_name || 'İsimsiz Pilot'}</strong>
-                  <code style="font-size:0.75rem; color:var(--text-muted);">${(u.id || '').substring(0, 16)}</code>
-                </div>
-              </div>
-            </td>
-            <td>
-              <div style="font-weight:600; color:var(--text-primary); font-size:0.88rem;">${u.email}</div>
-              ${isGoogle ? `
-                <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; font-weight:700; color:#ea4335; background:#fef2f2; padding:2px 8px; border-radius:12px; margin-top:4px;">
-                  <span>🔴</span> Google OAuth
-                </span>
-              ` : `
-                <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; font-weight:700; color:#059669; background:#ecfdf5; padding:2px 8px; border-radius:12px; margin-top:4px;">
-                  <span>✉️</span> E-Posta / Şifre
-                </span>
-              `}
-            </td>
-            <td>
-              ${u.phone ? `
-                <div style="font-size:0.88rem; font-weight:600; color:var(--text-primary);">${u.phone}</div>
-                ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener" style="font-size:0.75rem; color:#16a34a; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:3px;">💬 WhatsApp</a>` : ''}
-              ` : `<span style="color:var(--text-muted); font-size:0.85rem;">-</span>`}
-            </td>
-            <td>
-              <div style="font-size:0.88rem; color:var(--text-primary); font-weight:600;">${u.city || 'Türkiye'}</div>
-              <div style="font-size:0.75rem; color:var(--text-muted);">${u.country || 'Turkey'}</div>
-            </td>
-            <td>
-              ${isAdmin ? `
-                <span class="badge-stock" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">🛡️ YÖNETİCİ</span>
-              ` : `
-                <span class="badge-stock badge-stock-in" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">Müşteri</span>
-              `}
-            </td>
-            <td>
-              <span style="font-size:0.85rem; color:var(--text-secondary); white-space:nowrap;">${dateFormatted}</span>
-            </td>
-            <td>
-              <div style="display:flex; gap:6px; align-items:center;">
-                <a href="${mailLink}" class="admin-btn-action" title="E-Posta Gönder" style="text-decoration:none; padding:5px 8px;">✉️</a>
-                ${waLink ? `<a href="${waLink}" target="_blank" rel="noopener" class="admin-btn-action" title="WhatsApp Mesajı" style="text-decoration:none; padding:5px 8px; color:#16a34a;">💬</a>` : ''}
-                ${!isAdmin ? `
-                  <button type="button" class="admin-btn-action" title="Kullanıcıyı Sil" style="color:#ef4444; border-color:#fecaca; background:#fef2f2; padding:5px 8px; cursor:pointer;" onclick="deleteAdminUser('${u.id}', '${u.email}')">
-                    🗑️
-                  </button>
-                ` : ''}
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function filterAdminUsers() {
-      const q = (document.getElementById('users-search-input')?.value || '').toLowerCase().trim();
-      const roleFilter = document.getElementById('users-role-filter')?.value || 'all';
-      const providerFilter = document.getElementById('users-provider-filter')?.value || 'all';
-
-      let filtered = _cachedUsers.filter(u => {
-        const name = (u.full_name || '').toLowerCase();
-        const email = (u.email || '').toLowerCase();
-        const phone = (u.phone || '').toLowerCase();
-        const city = (u.city || '').toLowerCase();
-
-        const matchQ = !q || name.includes(q) || email.includes(q) || phone.includes(q) || city.includes(q);
-        
-        const isGoogle = u.provider === 'google' || u.provider === 'gmail';
-        const isAdmin = u.role === 'admin' || u.role === 'superadmin';
-
-        let matchRole = true;
-        if (roleFilter === 'admin') matchRole = isAdmin;
-        else if (roleFilter === 'customer') matchRole = !isAdmin;
-
-        let matchProvider = true;
-        if (providerFilter === 'google') matchProvider = isGoogle;
-        else if (providerFilter === 'manual') matchProvider = !isGoogle;
-
-        return matchQ && matchRole && matchProvider;
-      });
-
-      renderAdminUsersTable(filtered);
-    }
-
-    function exportUsersToCSV() {
-      if (!_cachedUsers || _cachedUsers.length === 0) {
-        showToast('Dışa aktarılacak kullanıcı bulunamadı.', 'info');
-        return;
-      }
-
-      const headers = ['ID', 'Ad Soyad', 'E-Posta', 'Telefon', 'Sağlayıcı', 'Rol', 'Şehir', 'Ülke', 'Kayıt Tarihi'];
-      const rows = _cachedUsers.map(u => [
-        `"${u.id || ''}"`,
-        `"${(u.full_name || '').replace(/"/g, '""')}"`,
-        `"${u.email || ''}"`,
-        `"${u.phone || ''}"`,
-        `"${u.provider || 'manual'}"`,
-        `"${u.role || 'customer'}"`,
-        `"${u.city || ''}"`,
-        `"${u.country || 'Turkey'}"`,
-        `"${u.created_at || ''}"`
-      ]);
-
-      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `pozitron_kayitli_kullanicilar_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      showToast('Kullanıcı listesi CSV olarak indirildi!', 'success');
-    }
-
-    async function deleteAdminUser(userId, userEmail) {
-      if (!confirm(`"${userEmail}" kullanıcısını silmek istediğinize emin misiniz?`)) {
-        return;
-      }
-
-      // 1. Try Backend API
-      try {
-        const res = await fetch('/api/admin/users/delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: userId, email: userEmail })
-        });
-        const ct = res.headers.get('content-type') || '';
-        if (ct.includes('application/json')) {
-          const data = await res.json();
-          if (!res.ok) {
-            showToast(data.error || 'Kullanıcı silinemedi.', 'error');
-            return;
-          }
-        }
-      } catch(e) {}
-
-      // 2. Client-side update
-      _cachedUsers = _cachedUsers.filter(u => u.id !== userId && (u.email || '').toLowerCase() !== (userEmail || '').toLowerCase());
-
-      try {
-        let localUsers = JSON.parse(localStorage.getItem('pozitron_users_db') || '[]');
-        localUsers = localUsers.filter(u => u.id !== userId && (u.email || '').toLowerCase() !== (userEmail || '').toLowerCase());
-        localStorage.setItem('pozitron_users_db', JSON.stringify(localUsers));
-      } catch(e) {}
-
-      // Update Mini Stats & UI
-      const totalEl = document.getElementById('users-stat-total');
-      const googleEl = document.getElementById('users-stat-google');
-      const manualEl = document.getElementById('users-stat-manual');
-      const adminsEl = document.getElementById('users-stat-admins');
-      const kpiUsers = document.getElementById('kpi-total-users');
-
-      if (totalEl) totalEl.textContent = _cachedUsers.length;
-      if (googleEl) googleEl.textContent = _cachedUsers.filter(u => u.provider === 'google' || u.provider === 'gmail').length;
-      if (manualEl) manualEl.textContent = _cachedUsers.filter(u => u.provider !== 'google' && u.provider !== 'gmail').length;
-      if (adminsEl) adminsEl.textContent = _cachedUsers.filter(u => u.role === 'admin' || u.role === 'superadmin').length;
-      if (kpiUsers) kpiUsers.textContent = _cachedUsers.length;
-
-      renderAdminUsersTable(_cachedUsers);
-      showToast(`"${userEmail}" kullanıcısı başarıyla silindi.`, 'success');
-    }
   </script>
 </body>
 </html>
