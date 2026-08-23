@@ -3,3 +3,15 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+
+# Sensitive & Local Database Files
+*.db
+*.sqlite
+*.sqlite3
+data/users.json
+data/*users*
+*.csv
+*orders.json
+*secret*
+.env
+

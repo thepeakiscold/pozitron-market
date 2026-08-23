@@ -1995,20 +1995,9 @@
         }
       } catch(e) {}
 
-      // 2. Fallback to window.pozitronData or localStorage
+      // 2. Local session users only if authenticated
       if (users.length === 0) {
-        const dataBundle = window.pozitronData || window.__POZITRON_DATA__;
-        if (dataBundle && Array.isArray(dataBundle.users) && dataBundle.users.length > 0) {
-          users = dataBundle.users;
-        } else {
-          try {
-            const res = await fetch('data/users.json');
-            if (res.ok) {
-              const staticUsers = await res.json();
-              if (Array.isArray(staticUsers)) users = staticUsers;
-            }
-          } catch(e) {}
-        }
+        users = [];
       }
 
       // Merge client-side registered users from localStorage
