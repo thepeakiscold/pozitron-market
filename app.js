@@ -5,7 +5,7 @@
 class PozitronApp {
   constructor() {
     this.apiBase = '/api';
-    this.currency = localStorage.getItem('pozitron_currency') || 'TRY';
+    this.currency = 'TRY';
     this.cart = JSON.parse(localStorage.getItem('pozitron_cart') || '[]');
     this.user = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
     if (this.user && this.isUserAdmin(this.user)) {
@@ -3328,8 +3328,8 @@ class PozitronApp {
       this._3dControls.maxPolarAngle = Math.PI / 2 + 0.05;
     }
 
-    // 5. Clean Grid Floor
-    const grid = new THREE.GridHelper(220, 22, 0x0284c7, 0xe2e8f0);
+    // 5. Clean Grid Floor — Bambu Lab P1P Build Volume: 256 × 256 × 256 mm
+    const grid = new THREE.GridHelper(256, 16, 0x0284c7, 0xe2e8f0);
     grid.position.y = -0.5;
     this._3dScene.add(grid);
 

@@ -71,7 +71,7 @@
   }
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=20260823_step_fix_v42">
+  <link rel="stylesheet" href="./styles.css?v=20260823_step_fix_v45">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
   <link rel="apple-touch-icon" href="./assets/favicon.png?v=20260822_v2">
@@ -167,15 +167,9 @@
       <div class="announcement-text" id="announcement-text">
         <span class="badge-dot"></span>
         <strong data-i18n="announcement_bold">Orijinal FPV &amp; Drone Donanımları</strong> — 
-        <span data-i18n="announcement_shipping">1500 TL Üzeri Ücretsiz Hızlı Kargo &amp; Teknik Destek</span>
+        <span data-i18n="announcement_shipping">1500 TL Üzeri Ücretsiz Hızlı Kargo</span>
       </div>
       <div class="announcement-actions">
-        <!-- Currency Switcher -->
-        <div class="currency-selector" aria-label="Para Birimi Seçimi">
-          <button type="button" class="curr-btn active" data-currency="TRY">₺ TRY</button>
-          <button type="button" class="curr-btn" data-currency="USD">$ USD</button>
-        </div>
-        <span class="sep">|</span>
         <!-- Language Switcher -->
         <button type="button" class="lang-toggle-btn" id="lang-btn" aria-label="Dili Değiştir / Switch Language">
           <span class="lang-flag" id="lang-flag">🇹🇷</span>
@@ -1131,32 +1125,32 @@
               <button type="button" class="mat-card active" data-mat="PLA" onclick="window.app && window.app.select3DMaterial('PLA')">
                 <div class="mat-name">PLA</div>
                 <div class="mat-desc">Standart &amp; Ekonomik Prototip</div>
-                <div class="mat-tags"><span class="tag">Genel</span><span class="tag price" id="mat-price-tag-PLA">1.50 ₺/g</span></div>
+                <div class="mat-tags"><span class="tag price" id="mat-price-tag-PLA">1.50 ₺/g</span></div>
               </button>
               <button type="button" class="mat-card" data-mat="PETG" onclick="window.app && window.app.select3DMaterial('PETG')">
                 <div class="mat-name">PETG</div>
                 <div class="mat-desc">Dirençli &amp; Darbeye Dayanıklı</div>
-                <div class="mat-tags"><span class="tag">Isı Direnci</span><span class="tag price" id="mat-price-tag-PETG">2.00 ₺/g</span></div>
+                <div class="mat-tags"><span class="tag price" id="mat-price-tag-PETG">2.00 ₺/g</span></div>
               </button>
               <button type="button" class="mat-card" data-mat="TPU" onclick="window.app && window.app.select3DMaterial('TPU')">
                 <div class="mat-name">TPU (Flex) 🏆</div>
                 <div class="mat-desc">Esnek FPV Drone Koruma &amp; Ayak</div>
-                <div class="mat-tags"><span class="tag highlight">FPV Favori</span><span class="tag price" id="mat-price-tag-TPU">3.50 ₺/g</span></div>
+                <div class="mat-tags"><span class="tag price" id="mat-price-tag-TPU">3.50 ₺/g</span></div>
               </button>
               <button type="button" class="mat-card" data-mat="ABS" onclick="window.app && window.app.select3DMaterial('ABS')">
                 <div class="mat-name">ABS</div>
                 <div class="mat-desc">Yüksek Mukavemet &amp; Sıcaklık</div>
-                <div class="mat-tags"><span class="tag">100°C Isı</span><span class="tag price" id="mat-price-tag-ABS">2.25 ₺/g</span></div>
+                <div class="mat-tags"><span class="tag price" id="mat-price-tag-ABS">2.25 ₺/g</span></div>
               </button>
               <button type="button" class="mat-card" data-mat="ASA" onclick="window.app && window.app.select3DMaterial('ASA')">
                 <div class="mat-name">ASA</div>
                 <div class="mat-desc">Dış Ortam &amp; UV Işın Direnci</div>
-                <div class="mat-tags"><span class="tag">Güneş/UV</span><span class="tag price" id="mat-price-tag-ASA">2.50 ₺/g</span></div>
+                <div class="mat-tags"><span class="tag price" id="mat-price-tag-ASA">2.50 ₺/g</span></div>
               </button>
               <button type="button" class="mat-card" data-mat="PA6" onclick="window.app && window.app.select3DMaterial('PA6')">
                 <div class="mat-name">PA6 (Naylon)</div>
                 <div class="mat-desc">Endüstriyel Aşınmaz &amp; Tok</div>
-                <div class="mat-tags"><span class="tag">Ultra Rijit</span><span class="tag price" id="mat-price-tag-PA6">5.00 ₺/g</span></div>
+                <div class="mat-tags"><span class="tag price" id="mat-price-tag-PA6">5.00 ₺/g</span></div>
               </button>
             </div>
           </div>
@@ -1195,20 +1189,8 @@
             </div>
           </div>
 
-          <!-- Price & Weight Breakdown Summary Card -->
+          <!-- Price Summary Card -->
           <div class="studio-pricing-card">
-            <div class="price-breakdown-row">
-              <span>Tahmini Baskı Ağırlığı:</span>
-              <strong id="price-calc-weight">0.0 gr</strong>
-            </div>
-            <div class="price-breakdown-row">
-              <span>Baskı &amp; Malzeme Bedeli:</span>
-              <span id="price-calc-mat">0,00 ₺</span>
-            </div>
-            <div class="price-breakdown-row">
-              <span>Makine Hazırlık &amp; Dilimleme:</span>
-              <span id="price-calc-setup">50,00 ₺</span>
-            </div>
             <div class="price-total-row">
               <span>Birim Fiyat:</span>
               <strong class="total-badge" id="price-calc-total">0,00 ₺</strong>
@@ -1259,8 +1241,8 @@
   <script src="./vendor/STLLoader.js"></script>
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260823_step_fix_v42"></script>
-  <script src="./i18n.js?v=20260823_step_fix_v42"></script>
-  <script src="./app.js?v=20260823_step_fix_v42"></script>
+  <script src="./data/pozitron_data.js?v=20260823_step_fix_v45"></script>
+  <script src="./i18n.js?v=20260823_step_fix_v45"></script>
+  <script src="./app.js?v=20260823_step_fix_v45"></script>
 </body>
 </html>
