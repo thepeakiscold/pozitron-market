@@ -9,6 +9,7 @@ import re
 import random
 import time
 import math
+import base64
 import threading
 from datetime import datetime
 from database import get_db, hash_password
@@ -184,6 +185,30 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
+        # Serve uploaded files from uploads/ directory
+        if path.startswith('/uploads/'):
+            file_name = urllib.parse.unquote(path[len('/uploads/'):])
+            file_path = os.path.join(BASE_DIR, 'uploads', file_name)
+            if os.path.exists(file_path) and os.path.isfile(file_path):
+                self.send_response(200)
+                content_type = 'application/octet-stream'
+                if file_name.lower().endswith('.step') or file_name.lower().endswith('.stp'):
+                    content_type = 'text/plain; charset=utf-8'
+                elif file_name.lower().endswith('.stl'):
+                    content_type = 'application/octet-stream'
+                elif file_name.lower().endswith('.obj'):
+                    content_type = 'text/plain; charset=utf-8'
+                self.send_header('Content-Type', content_type)
+                self.send_header('Content-Length', str(os.path.getsize(file_path)))
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                with open(file_path, 'rb') as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_json(404, {"error": "Uploaded file not found"})
+                return
+
         # Serve frontend static files
         if path == '/' or path == '/index.html':
             self.path = '/index.html'
@@ -245,6 +270,15 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
+        if path == '/api/upload-3d' or path == '/api/upload':
+            try:
+                self.handle_file_upload(path)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                self.send_json(500, {"error": f"Dosya yükleme hatası: {str(e)}"})
+            return
+
         if path.startswith('/api/'):
             content_length = int(self.headers.get('Content-Length', 0))
             body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
@@ -262,6 +296,68 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         self.send_json(404, {"error": "Endpoint not found"})
+
+    def handle_file_upload(self, path):
+        uploads_dir = os.path.join(BASE_DIR, 'uploads')
+        os.makedirs(uploads_dir, exist_ok=True)
+
+        content_length = int(self.headers.get('Content-Length', 0))
+        content_type = self.headers.get('Content-Type', '')
+
+        filename = None
+        file_bytes = b''
+
+        if 'multipart/form-data' in content_type:
+            boundary = content_type.split("boundary=")[-1].strip()
+            raw_data = self.rfile.read(content_length)
+            boundary_bytes = boundary.encode('utf-8')
+            parts = raw_data.split(b'--' + boundary_bytes)
+            for part in parts:
+                if b'filename="' in part:
+                    header_part, _, body = part.partition(b'\r\n\r\n')
+                    body = body.rstrip(b'\r\n-')
+                    header_str = header_part.decode('utf-8', errors='ignore')
+                    fn_match = re.search(r'filename="([^"]+)"', header_str)
+                    if fn_match:
+                        filename = os.path.basename(fn_match.group(1))
+                        file_bytes = body
+                        break
+        else:
+            raw_data = self.rfile.read(content_length)
+            try:
+                json_data = json.loads(raw_data.decode('utf-8'))
+                filename = json_data.get('filename', 'model.step')
+                content = json_data.get('content', '')
+                if json_data.get('is_base64'):
+                    file_bytes = base64.b64decode(content)
+                else:
+                    file_bytes = content.encode('utf-8')
+            except Exception:
+                filename = self.headers.get('X-Filename', 'uploaded_model.step')
+                file_bytes = raw_data
+
+        if not filename:
+            filename = f"model_{int(time.time())}.step"
+
+        # Sanitize filename
+        safe_filename = "".join(c for c in filename if c.isalnum() or c in "._- ")
+        if not safe_filename:
+            safe_filename = f"model_{int(time.time())}.step"
+
+        dest_path = os.path.join(uploads_dir, safe_filename)
+        with open(dest_path, "wb") as f:
+            f.write(file_bytes)
+
+        file_size = len(file_bytes)
+        print(f"[Upload] Saved 3D model: {dest_path} ({file_size} bytes)")
+
+        self.send_json(200, {
+            "success": True,
+            "filename": safe_filename,
+            "url": f"/uploads/{urllib.parse.quote(safe_filename)}",
+            "size": file_size,
+            "message": f"'{safe_filename}' dosyası localhost sunucusuna başarıyla yüklendi! ({file_size} bayt)"
+        })
 
     def handle_api_get(self, path, query):
         conn = get_db()
@@ -1373,7 +1469,7 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 def run_server():
     global PORT
-    ports_to_try = [int(os.environ.get('PORT', 8000)), 8080, 8081, 3000]
+    ports_to_try = [int(os.environ.get('PORT', 8080)), 8080, 8000, 8081, 3000]
     httpd = None
     for p in ports_to_try:
         try:

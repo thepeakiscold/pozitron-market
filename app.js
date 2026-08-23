@@ -3178,23 +3178,62 @@ class PozitronApp {
       PA6: { name: 'PA6 (Naylon)', density: 1.14, defaultPrice: 5.00 }
     };
 
-    // Setup drag and drop on dropzone
+    // Setup drag and drop on dropzone and container
     const dropzone = document.getElementById('viewport-dropzone');
+    const container = document.getElementById('viewport-3d-container');
     const fileInput = document.getElementById('file-3d-input');
 
-    if (dropzone) {
-      dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
+    if (fileInput) {
+      fileInput.onchange = (e) => {
+        this.handle3DFileInputChange(e.target);
+      };
+    }
+
+    const handleDragOver = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (dropzone) {
+        dropzone.classList.remove('hidden');
+        dropzone.style.display = 'flex';
         dropzone.classList.add('dragover');
-      });
-      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-      dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropzone.classList.remove('dragover');
-        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-          this.handle3DFileUpload(e.dataTransfer.files[0]);
+      }
+    };
+
+    const handleDragLeave = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (dropzone) {
+        if (!this._currentMesh) {
+          dropzone.classList.remove('dragover');
+        } else {
+          dropzone.classList.add('hidden');
+          dropzone.style.display = 'none';
+          dropzone.classList.remove('dragover');
         }
-      });
+      }
+    };
+
+    const handleDrop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (dropzone) {
+        dropzone.classList.remove('dragover');
+      }
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+        this.handle3DFileUpload(e.dataTransfer.files[0]);
+      }
+    };
+
+    if (dropzone) {
+      dropzone.addEventListener('dragover', handleDragOver);
+      dropzone.addEventListener('dragleave', handleDragLeave);
+      dropzone.addEventListener('drop', handleDrop);
+    }
+
+    if (container) {
+      container.addEventListener('dragover', handleDragOver);
+      container.addEventListener('dragleave', handleDragLeave);
+      container.addEventListener('drop', handleDrop);
     }
   }
 
@@ -3232,6 +3271,12 @@ class PozitronApp {
   }
 
   trigger3DFileUpload(e) {
+    if (e) {
+      try {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      } catch (err) {}
+    }
     const fileInput = document.getElementById('file-3d-input');
     if (fileInput) {
       fileInput.value = '';
@@ -3240,10 +3285,12 @@ class PozitronApp {
   }
 
   handle3DFileInputChange(inputEl) {
-    if (inputEl && inputEl.files && inputEl.files[0]) {
+    if (inputEl && inputEl.files && inputEl.files.length > 0) {
       const file = inputEl.files[0];
       this.handle3DFileUpload(file);
-      inputEl.value = '';
+      setTimeout(() => {
+        try { inputEl.value = ''; } catch(err) {}
+      }, 500);
     }
   }
 
@@ -3355,6 +3402,39 @@ class PozitronApp {
     }
   }
 
+  async upload3DFileToServer(file) {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload-3d', {
+        method: 'POST',
+        body: formData
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) this._3dConfig.serverUrl = data.url;
+        this.showToast(`✅ ${data.filename} sunucuya kaydedildi (${Math.round((data.size || file.size) / 1024)} KB)`, 'success');
+      } else {
+        // Fallback JSON payload
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const text = typeof e.target.result === 'string' ? e.target.result : new TextDecoder('utf-8').decode(e.target.result);
+            await fetch('/api/upload-3d', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ filename: file.name, content: text, is_base64: false })
+            });
+          } catch (err) {}
+        };
+        reader.readAsText(file);
+      }
+    } catch (err) {
+      console.warn('3D File Server Upload note:', err);
+    }
+  }
+
   handle3DFileUpload(file) {
     if (!file) return;
 
@@ -3369,6 +3449,9 @@ class PozitronApp {
     this._3dConfig.filename = filename;
 
     this.showToast(`Dosya okunuyor: ${filename}...`, 'info');
+
+    // Also upload file to localhost server backend storage
+    this.upload3DFileToServer(file);
 
     // Immediately hide dropzone and reveal controls/metrics
     const dropzone = document.getElementById('viewport-dropzone');
@@ -3620,50 +3703,82 @@ class PozitronApp {
 
     if (this._currentMesh) {
       this._3dScene.remove(this._currentMesh);
-      if (this._currentMesh.geometry) this._currentMesh.geometry.dispose();
-      if (this._currentMesh.material) this._currentMesh.material.dispose();
+      if (this._currentMesh.traverse) {
+        this._currentMesh.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+            else child.material.dispose();
+          }
+        });
+      }
       this._currentMesh = null;
     }
 
-    // 1. Universal Regex for all STEP CAD formats
-    const ptRegex = /CARTESIAN_POINT\s*\(\s*[^,]*,\s*\(\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*\)\s*\)/gi;
-    let match;
+    // 1. Comprehensive multi-regex extraction for STEP / STP CAD formats
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
     let minZ = Infinity, maxZ = -Infinity;
     let count = 0;
+    const extractedPts = [];
 
     if (typeof stepText === 'string' && stepText.length > 0) {
-      while ((match = ptRegex.exec(stepText)) !== null) {
-        const x = parseFloat(match[1].replace(/\s+/g, ''));
-        const y = parseFloat(match[2].replace(/\s+/g, ''));
-        const z = parseFloat(match[3].replace(/\s+/g, ''));
+      // Primary pattern: CARTESIAN_POINT('',(x,y,z)) or CARTESIAN_POINT('name',(x,y,z))
+      const ptRegex1 = /CARTESIAN_POINT\s*\(\s*['"]?[^'"]*['"]?\s*,\s*\(\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*,\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*(?:,\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?))?\s*\)\s*\)/gi;
+      let match;
+      while ((match = ptRegex1.exec(stepText)) !== null) {
+        const x = parseFloat(match[1]);
+        const y = parseFloat(match[2]);
+        const z = match[3] !== undefined ? parseFloat(match[3]) : 0;
         if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
-          if (Math.abs(x) < 4000 && Math.abs(y) < 4000 && Math.abs(z) < 4000) {
+          if (Math.abs(x) < 5000 && Math.abs(y) < 5000 && Math.abs(z) < 5000) {
             minX = Math.min(minX, x); maxX = Math.max(maxX, x);
             minY = Math.min(minY, y); maxY = Math.max(maxY, y);
             minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+            extractedPts.push({ x, y, z });
             count++;
+            if (count >= 15000) break;
+          }
+        }
+      }
+
+      // Secondary fallback pattern for loose/multiline STEP Cartesian points
+      if (count < 2) {
+        const ptRegex2 = /CARTESIAN_POINT[^(]*\([^,]*,\s*\(\s*([-\s\d.eE+]+)\s*,\s*([-\s\d.eE+]+)\s*(?:,\s*([-\s\d.eE+]+))?\s*\)\s*\)/gi;
+        while ((match = ptRegex2.exec(stepText)) !== null) {
+          const x = parseFloat(match[1].replace(/\s+/g, ''));
+          const y = parseFloat(match[2].replace(/\s+/g, ''));
+          const z = match[3] ? parseFloat(match[3].replace(/\s+/g, '')) : 0;
+          if (!isNaN(x) && !isNaN(y) && !isNaN(z)) {
+            if (Math.abs(x) < 5000 && Math.abs(y) < 5000 && Math.abs(z) < 5000) {
+              minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+              minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+              minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+              extractedPts.push({ x, y, z });
+              count++;
+              if (count >= 15000) break;
+            }
           }
         }
       }
     }
 
-    // 2. Parse CIRCLE, CYLINDRICAL_SURFACE, CONICAL_SURFACE for cylindrical revolved CAD parts
+    // 2. Parse CIRCLE, CYLINDRICAL_SURFACE, CONICAL_SURFACE for cylindrical CAD bodies
     let maxRadius = 0;
-    const circleRegex = /CIRCLE\s*\(\s*[^,]*,[^,]*,\s*([-\d.]+)\s*\)/gi;
+    let match;
+    const circleRegex = /CIRCLE\s*\(\s*[^,]*,[^,]*,\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*\)/gi;
     while ((match = circleRegex.exec(stepText)) !== null) {
       const r = parseFloat(match[1]);
       if (!isNaN(r) && r > maxRadius && r < 2000) maxRadius = r;
     }
 
-    const conicalRegex = /CONICAL_SURFACE\s*\(\s*[^,]*,[^,]*,\s*([-\d.]+)\s*,\s*([-\d.]+)\s*\)/gi;
+    const conicalRegex = /CONICAL_SURFACE\s*\(\s*[^,]*,[^,]*,\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*,/gi;
     while ((match = conicalRegex.exec(stepText)) !== null) {
       const r = parseFloat(match[1]);
       if (!isNaN(r) && r > maxRadius && r < 2000) maxRadius = r;
     }
 
-    const cylRegex = /CYLINDRICAL_SURFACE\s*\(\s*[^,]*,[^,]*,\s*([-\d.]+)\s*\)/gi;
+    const cylRegex = /CYLINDRICAL_SURFACE\s*\(\s*[^,]*,[^,]*,\s*([+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)\s*\)/gi;
     while ((match = cylRegex.exec(stepText)) !== null) {
       const r = parseFloat(match[1]);
       if (!isNaN(r) && r > maxRadius && r < 2000) maxRadius = r;
@@ -3673,37 +3788,37 @@ class PozitronApp {
     let volCm3 = 14.5;
     let isCylinder = false;
 
-    const spanX = isFinite(maxX - minX) ? (maxX - minX) : 0;
-    const spanY = isFinite(maxY - minY) ? (maxY - minY) : 0;
-    const spanZ = isFinite(maxZ - minZ) ? (maxZ - minZ) : 0;
+    const spanX = (isFinite(minX) && isFinite(maxX)) ? (maxX - minX) : 0;
+    const spanY = (isFinite(minY) && isFinite(maxY)) ? (maxY - minY) : 0;
+    const spanZ = (isFinite(minZ) && isFinite(maxZ)) ? (maxZ - minZ) : 0;
 
     if (maxRadius > 0) {
       isCylinder = true;
       const diameter = Math.round(maxRadius * 2 * 10) / 10;
-      if (spanZ >= spanX && spanZ >= spanY) {
+      if (spanZ >= spanX && spanZ >= spanY && spanZ > 1) {
         sizeX = Math.round(diameter);
         sizeY = Math.round(diameter);
-        sizeZ = Math.max(1, Math.round(spanZ || 100));
-      } else if (spanY >= spanX && spanY >= spanZ) {
+        sizeZ = Math.max(1, Math.round(spanZ));
+      } else if (spanY >= spanX && spanY >= spanZ && spanY > 1) {
         sizeX = Math.round(diameter);
-        sizeY = Math.max(1, Math.round(spanY || 100));
+        sizeY = Math.max(1, Math.round(spanY));
         sizeZ = Math.round(diameter);
       } else {
-        sizeX = Math.max(1, Math.round(spanX || 100));
+        sizeX = Math.max(1, Math.round(spanX || 50));
         sizeY = Math.round(diameter);
         sizeZ = Math.round(diameter);
       }
-      volCm3 = Math.max(0.5, Math.round((Math.PI * Math.pow(maxRadius, 2) * sizeZ / 1000) * 10) / 10);
-    } else if (count >= 4 && isFinite(minX) && isFinite(maxX) && spanX > 0.5) {
-      sizeX = Math.max(4, Math.round(spanX));
-      sizeY = Math.max(4, Math.round(spanY > 0.5 ? spanY : spanX));
-      sizeZ = Math.max(4, Math.round(spanZ > 0.5 ? spanZ : 20));
+      volCm3 = Math.max(0.5, Math.round((Math.PI * Math.pow(maxRadius, 2) * Math.max(sizeX, sizeY, sizeZ) / 1000) * 10) / 10);
+    } else if (count >= 4 && isFinite(minX) && isFinite(maxX) && (spanX > 0.5 || spanY > 0.5 || spanZ > 0.5)) {
+      sizeX = Math.max(4, Math.round(spanX || spanY || 20));
+      sizeY = Math.max(4, Math.round(spanY || spanX || 20));
+      sizeZ = Math.max(4, Math.round(spanZ || 15));
       const boundingVolCm3 = (sizeX * sizeY * sizeZ) / 1000;
-      volCm3 = Math.max(0.5, Math.round(boundingVolCm3 * 0.45 * 10) / 10);
+      volCm3 = Math.max(0.5, Math.round(boundingVolCm3 * 0.46 * 10) / 10);
     } else {
       const estRadius = Math.cbrt(((fileSize || 60000) / (1024 * 1024)) * 20.0 * 1000 / (Math.PI * 4 / 3));
-      sizeX = Math.max(18, Math.round(estRadius * 1.8));
-      sizeY = Math.max(12, Math.round(estRadius * 1.2));
+      sizeX = Math.max(20, Math.round(estRadius * 1.8));
+      sizeY = Math.max(15, Math.round(estRadius * 1.4));
       sizeZ = Math.max(18, Math.round(estRadius * 1.8));
       volCm3 = Math.max(1.0, Math.round(((sizeX * sizeY * sizeZ) / 1000 * 0.42) * 10) / 10);
     }
@@ -3713,14 +3828,17 @@ class PozitronApp {
     this._3dConfig.dimZ = sizeZ;
     this._3dConfig.volumeCm3 = volCm3;
 
-    // 3. Create realistic engineered CAD geometry
+    // 3. Create high-fidelity engineered CAD 3D representation
     const group = new THREE.Group();
     let geometry;
 
+    const renderHeight = isCylinder ? (spanZ >= spanX ? sizeZ : (spanY >= spanX ? sizeY : sizeX)) : sizeY;
+
     if (isCylinder) {
-      geometry = new THREE.CylinderGeometry(sizeX / 2, sizeX / 2, sizeZ, 36, 1);
+      const cylRadius = Math.min(sizeX, sizeY, sizeZ) / 2 || maxRadius || 5;
+      geometry = new THREE.CylinderGeometry(cylRadius, cylRadius, renderHeight, 48, 2);
     } else {
-      geometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ, 2, 2, 2);
+      geometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ, 4, 4, 4);
     }
     geometry.computeVertexNormals();
 
@@ -3734,21 +3852,21 @@ class PozitronApp {
     const mesh = new THREE.Mesh(geometry, material);
     group.add(mesh);
 
-    // CAD Blueprint Edges for authentic CAD preview
-    const edgesGeom = new THREE.EdgesGeometry(geometry, isCylinder ? 25 : 15);
-    const edgesMat = new THREE.LineBasicMaterial({ color: 0x0284c7, linewidth: 1.5, transparent: true, opacity: 0.5 });
+    // Sharp Technical CAD Blueprint Edges
+    const edgesGeom = new THREE.EdgesGeometry(geometry, isCylinder ? 20 : 15);
+    const edgesMat = new THREE.LineBasicMaterial({ color: 0x0284c7, linewidth: 1.5, transparent: true, opacity: 0.65 });
     const edges = new THREE.LineSegments(edgesGeom, edgesMat);
     group.add(edges);
 
     this._currentMesh = group;
-    this._currentMesh.position.y = sizeZ / 2;
+    this._currentMesh.position.y = renderHeight / 2;
     this._3dScene.add(this._currentMesh);
 
-    // 4. Adjust camera distance to fit model
+    // 4. Adjust camera & controls distance to frame the model
     const maxDim = Math.max(sizeX, sizeY, sizeZ, 30);
-    this._3dCamera.position.set(0, maxDim * 0.9, maxDim * 1.8);
+    this._3dCamera.position.set(0, maxDim * 1.1, maxDim * 2.1);
     if (this._3dControls) {
-      this._3dControls.target.set(0, sizeZ / 2, 0);
+      this._3dControls.target.set(0, renderHeight / 2, 0);
       this._3dControls.update();
     }
 
@@ -3767,7 +3885,7 @@ class PozitronApp {
       this._3dRenderer.render(this._3dScene, this._3dCamera);
     }
 
-    // 5. Update UI
+    // 5. Update UI & Pricing
     this.updateMetricsUI(filename, sizeX, sizeY, sizeZ, this._3dConfig.volumeCm3);
     this.calculate3DPrice();
 
@@ -3785,6 +3903,25 @@ class PozitronApp {
   }
 
   renderSimulatedFallbackModel(filename, fileSize) {
+    if (!this._3dScene || !this._3dRenderer) {
+      this.init3DViewer();
+      this.init3DStudio();
+    }
+
+    if (this._currentMesh) {
+      this._3dScene.remove(this._currentMesh);
+      if (this._currentMesh.traverse) {
+        this._currentMesh.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+            else child.material.dispose();
+          }
+        });
+      }
+      this._currentMesh = null;
+    }
+
     const estRadius = Math.cbrt(((fileSize || 50000) / (1024 * 1024)) * 20.0 * 1000 / (Math.PI * 4 / 3));
     const sizeX = Math.max(20, Math.round(estRadius * 2));
     const sizeY = Math.max(15, Math.round(estRadius * 1.5));
