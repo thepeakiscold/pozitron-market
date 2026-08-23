@@ -1299,6 +1299,18 @@ class PozitronApp {
   // ==========================================
   // ACCOUNTS DATABASE & AUTHENTICATION
   // ==========================================
+  getRobotAvatar(u) {
+    if (!u) return 'https://api.dicebear.com/7.x/bottts/svg?seed=PilotBot&scale=90';
+    const raw = typeof u === 'string' ? u : (u.avatar_url || '');
+    const isHumanStock = raw.includes('unsplash') || raw.includes('pravatar') || raw.includes('randomuser') || raw.includes('photo-') || raw.includes('portrait') || raw.includes('person');
+
+    if (raw && !isHumanStock && (raw.includes('googleusercontent.com') || raw.includes('dicebear'))) {
+      return raw;
+    }
+    const seed = (typeof u === 'object' ? (u.full_name || u.email || u.id) : u) || 'Pilot';
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}&scale=90&backgroundColor=f1f5f9,e0e7ff,f0fdf4,fef3c7,fce7f3`;
+  }
+
   initUserDatabase() {
     const DB_KEY = 'pozitron_users_db';
     let users = [];
@@ -1429,7 +1441,7 @@ class PozitronApp {
       if (dropName) dropName.textContent = this.user.full_name || 'Pilot';
       if (dropEmail) dropEmail.textContent = this.user.email || '';
       if (avatarImg) {
-        avatarImg.src = (this.user.avatar_url && !this.user.avatar_url.includes('unsplash')) ? this.user.avatar_url : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(this.user.full_name || this.user.email || 'Pilot')}`;
+        avatarImg.src = this.getRobotAvatar(this.user);
         avatarImg.style.display = 'block';
       }
       const isAdmin = this.isUserAdmin(this.user);
