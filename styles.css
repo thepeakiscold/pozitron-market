@@ -356,7 +356,8 @@ img {
   gap: 12px;
 }
 
-.btn-builder-nav {
+.btn-builder-nav,
+.btn-3d-print-nav {
   display: flex;
   align-items: center;
   gap: 7px;
@@ -368,13 +369,27 @@ img {
   font-size: 0.88rem;
   font-weight: 600;
   box-shadow: var(--shadow-sm);
+  cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
+  text-decoration: none;
 }
 
-.btn-builder-nav:hover {
+.btn-builder-nav:hover,
+.btn-3d-print-nav:hover {
   border-color: var(--brand-primary);
   color: var(--brand-primary);
   background: var(--brand-subtle);
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-btn-icon {
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .user-auth-wrap {
@@ -3076,10 +3091,12 @@ img {
     gap: 6px;
     margin-left: auto;
   }
-  .btn-builder-nav span {
+  .btn-builder-nav span:not(.nav-btn-icon),
+  .btn-3d-print-nav span:not(.nav-btn-icon) {
     display: none;
   }
-  .btn-builder-nav {
+  .btn-builder-nav,
+  .btn-3d-print-nav {
     padding: 6px 8px;
   }
   .btn-admin-nav span:not(:first-child) {
@@ -3914,29 +3931,6 @@ img {
 /* =============================================================
    3D PRINT & CUSTOM MANUFACTURING STUDIO STYLES
    ============================================================= */
-
-/* Nav Trigger Button */
-.btn-3d-print-nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 8px 14px;
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  font-size: 0.86rem;
-  cursor: pointer;
-  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.25);
-  transition: all 0.2s ease;
-}
-
-.btn-3d-print-nav:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4);
-  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-}
 
 /* 3D Studio Modal Card */
 .modal-3d-studio {

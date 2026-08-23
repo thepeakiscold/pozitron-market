@@ -205,7 +205,7 @@
             type="search" 
             id="search-input" 
             class="search-input" 
-            placeholder="Parça, marka veya model ara..." 
+            placeholder="Ürün ara..." 
             data-i18n-placeholder="search_placeholder"
             autocomplete="off"
             aria-label="Ürün Arama"
@@ -219,17 +219,15 @@
       <!-- Action Nav Buttons -->
       <nav class="header-actions" aria-label="Kullanıcı Menüsü">
         <!-- 3D Print Studio Custom Manufacturing Button -->
-        <button type="button" class="btn-3d-print-nav" id="open-3d-studio-btn" onclick="window.app && window.app.open3DStudioModal()" aria-label="3D Baskı Studio">
-          <span>🖨️</span>
-          <span>3D Baskı Studio</span>
+        <button type="button" class="btn-3d-print-nav" id="open-3d-studio-btn" onclick="window.app && window.app.open3DStudioModal()" aria-label="3D Baskı Studio" title="3D Baskı Studio">
+          <span class="nav-btn-icon">🖨️</span>
+          <span data-i18n="nav_3d_studio">3D Baskı Studio</span>
         </button>
 
         <!-- Drone Compatibility Builder Tool -->
-        <button type="button" class="btn-builder-nav" id="open-builder-btn" aria-label="Drone Uyumluluk Sihirbazı">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-          </svg>
-          <span data-i18n="nav_builder">⚡ Drone Topla</span>
+        <button type="button" class="btn-builder-nav" id="open-builder-btn" aria-label="Drone Uyumluluk Sihirbazı" title="Drone Toplama Sihirbazı">
+          <span class="nav-btn-icon">⚡</span>
+          <span data-i18n="nav_builder">Drone Topla</span>
         </button>
 
         <!-- Direct Admin Panel Button (Shown when Admin is Logged In) -->
@@ -524,7 +522,8 @@
       <div class="footer-col">
         <h3 class="footer-heading" data-i18n="footer_support_heading">Müşteri &amp; Güvenlik</h3>
         <ul class="footer-links">
-          <li><a href="#builder" id="footer-builder-link" data-i18n="nav_builder">🛠️ Drone Uyumluluk Sihirbazı</a></li>
+          <li><a href="#builder" id="footer-builder-link" data-i18n="footer_builder">🛠️ Drone Uyumluluk Sihirbazı</a></li>
+          <li><a href="javascript:void(0)" onclick="window.app && window.app.open3DStudioModal()" id="footer-3d-link" data-i18n="footer_3d_studio">🖨️ 3D Baskı Studio (Özel İmalat)</a></li>
           <li><a href="#shipping" data-i18n="footer_shipping">Teslimat &amp; Aynı Gün Kargo</a></li>
           <li><a href="./iade-politikasi.html" target="_blank" rel="noopener" data-i18n="footer_returns">İade ve Geri Ödeme Politikası (14 Gün İade)</a></li>
           <li><a href="#faq" data-i18n="footer_faq">Sıkça Sorulan Sorular (SSS)</a></li>

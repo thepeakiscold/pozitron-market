@@ -1337,8 +1337,21 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
 
 def run_server():
-    server_address = ('0.0.0.0', PORT)
-    httpd = ThreadedHTTPServer(server_address, PozitronRequestHandler)
+    global PORT
+    ports_to_try = [int(os.environ.get('PORT', 8000)), 8080, 8081, 3000]
+    httpd = None
+    for p in ports_to_try:
+        try:
+            server_address = ('0.0.0.0', p)
+            httpd = ThreadedHTTPServer(server_address, PozitronRequestHandler)
+            PORT = p
+            break
+        except OSError as e:
+            if "Address already in use" in str(e) or e.errno == 98:
+                continue
+            raise
+    if not httpd:
+        raise RuntimeError(f"Could not bind to any port in {ports_to_try}")
     print(f"==================================================")
     print(f" Pozitron Drone Shopping Platform Running on http://localhost:{PORT}")
     print(f" 500 Drone Items Active in SQLite Database")
