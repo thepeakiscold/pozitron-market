@@ -1022,53 +1022,84 @@ class PozitronApp {
       return;
     }
 
-    let items = [];
-    try {
-      const res = await fetch(`${this.apiBase}/products?q=${encodeURIComponent(query)}&limit=5&currency=${this.currency}`);
-      if (res.ok) {
-        const data = await res.json();
-        items = data.products || [];
-      }
-    } catch (e) {
-      // Fallback
-    }
+    const staticData = this.getStaticData();
+    const q = query.toLowerCase().trim();
+    const allMatches = (staticData.products || []).filter(p => {
+      const nameTR = (p.name_tr || '').toLowerCase();
+      const nameEN = (p.name_en || '').toLowerCase();
+      const brand = (p.brand || '').toLowerCase();
+      const sku = (p.sku || '').toLowerCase();
+      const cat = (p.category_id || '').toLowerCase();
+      return nameTR.includes(q) || nameEN.includes(q) || brand.includes(q) || sku.includes(q) || cat.includes(q);
+    });
+
+    const totalCount = allMatches.length;
+    const items = allMatches.slice(0, 6);
+
+    const lang = window.i18n ? window.i18n.currentLang : 'tr';
 
     if (items.length === 0) {
-      const staticData = this.getStaticData();
-      const q = query.toLowerCase();
-      items = (staticData.products || []).filter(p => {
-        const nameTR = (p.name_tr || '').toLowerCase();
-        const nameEN = (p.name_en || '').toLowerCase();
-        const brand = (p.brand || '').toLowerCase();
-        const sku = (p.sku || '').toLowerCase();
-        return nameTR.includes(q) || nameEN.includes(q) || brand.includes(q) || sku.includes(q);
-      }).slice(0, 5);
-    }
-
-    if (items.length === 0) {
-      box.style.display = 'none';
+      box.innerHTML = `
+        <div class="search-no-results">
+          <div class="search-no-results-icon">🔍</div>
+          <div class="search-no-results-title">"${query}" ile eşleşen ürün bulunamadı</div>
+          <div class="search-no-results-sub">Farklı bir marka, model veya kategori aramayı deneyebilirsiniz.</div>
+        </div>
+      `;
+      box.style.display = 'flex';
       return;
     }
 
-    const lang = window.i18n.currentLang;
-    let html = '';
-    items.forEach(p => {
-      const name = lang === 'tr' ? p.name_tr : p.name_en;
-      const price = this.formatPrice(p.price_usd, p.price_try);
-      html += `
-        <div class="suggestion-item" data-id="${p.id}">
-          <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="suggestion-img">
-          <div class="suggestion-info">
-            <div class="suggestion-title">${name}</div>
-            <div class="suggestion-meta">${p.brand} • ${p.category_name_tr || p.category_id}</div>
-          </div>
-          <div class="suggestion-price">${price}</div>
-        </div>
-      `;
+    const categoryMap = {};
+    (staticData.categories || []).forEach(c => {
+      categoryMap[c.id] = lang === 'tr' ? (c.name_tr || c.name) : (c.name_en || c.name);
     });
 
-    box.innerHTML = html;
-    box.style.display = 'block';
+    let itemsHtml = items.map(p => {
+      const name = lang === 'tr' ? p.name_tr : p.name_en;
+      const price = this.formatPrice(p.price_usd, p.price_try);
+      const catName = categoryMap[p.category_id] || p.category_id;
+      const stockText = p.stock > 0 ? (lang === 'tr' ? `Stokta (${p.stock} adet)` : `In Stock (${p.stock})`) : (lang === 'tr' ? 'Tükendi' : 'Out of Stock');
+      const stockColor = p.stock > 0 ? '#16a34a' : '#ef4444';
+
+      return `
+        <div class="suggestion-item" data-id="${p.id}">
+          <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="suggestion-img" loading="lazy">
+          <div class="suggestion-info">
+            <div class="suggestion-title">${name}</div>
+            <div class="suggestion-meta-row">
+              <span class="suggestion-badge-brand">${p.brand}</span>
+              <span class="suggestion-badge-cat">${catName}</span>
+            </div>
+          </div>
+          <div class="suggestion-price-col">
+            <div class="suggestion-price">${price}</div>
+            <div class="suggestion-stock" style="color:${stockColor};">● ${stockText}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    box.innerHTML = `
+      <div class="search-suggestions-header">
+        <span class="search-suggestions-count">
+          <span>🔍</span>
+          <span>"${query}" için <strong>${totalCount}</strong> ürün bulundu</span>
+        </span>
+        <span style="font-size:0.75rem; color:var(--text-muted);">Tıklayarak inceleyin</span>
+      </div>
+      <div class="search-suggestions-list">
+        ${itemsHtml}
+      </div>
+      <div class="search-suggestions-footer">
+        <button type="button" class="search-all-btn" id="btn-search-show-all">
+          <span>Tüm Sonuçları Listele (${totalCount} Ürün)</span>
+          <span>→</span>
+        </button>
+      </div>
+    `;
+
+    box.style.display = 'flex';
 
     box.querySelectorAll('.suggestion-item').forEach(item => {
       item.addEventListener('click', (e) => {
@@ -1077,6 +1108,20 @@ class PozitronApp {
         this.openProductModal(pid);
       });
     });
+
+    const showAllBtn = document.getElementById('btn-search-show-all');
+    if (showAllBtn) {
+      showAllBtn.addEventListener('click', () => {
+        this.filters.q = query;
+        this.filters.page = 1;
+        this.hideSuggestions();
+        this.fetchProducts();
+        const catalogEl = document.getElementById('catalog') || document.getElementById('products-section') || document.querySelector('.products-section');
+        if (catalogEl) {
+          catalogEl.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    }
   }
 
   hideSuggestions() {
