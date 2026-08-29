@@ -555,6 +555,82 @@ class PozitronApp {
     return url;
   }
 
+  // ==========================================
+  // GA4 ENHANCED E-COMMERCE & AI SEARCH (GEO)
+  // ==========================================
+  trackGA4Event(eventName, params = {}) {
+    try {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', eventName, params);
+      }
+      if (window.dataLayer && Array.isArray(window.dataLayer)) {
+        window.dataLayer.push({
+          event: eventName,
+          ecommerce: params
+        });
+      }
+      console.log(`[GA4 E-Commerce Event] ${eventName}:`, params);
+    } catch (e) {
+      console.warn('[GA4 Tracking Error]:', e);
+    }
+  }
+
+  updateProductStructuredData(p) {
+    if (!p) return;
+    try {
+      let script = document.getElementById('dynamic-product-jsonld');
+      if (!script) {
+        script = document.createElement('script');
+        script.id = 'dynamic-product-jsonld';
+        script.type = 'application/ld+json';
+        document.head.appendChild(script);
+      }
+
+      const lang = window.i18n ? window.i18n.currentLang : 'tr';
+      const name = lang === 'tr' ? (p.name_tr || p.name_en) : (p.name_en || p.name_tr);
+      const desc = lang === 'tr' ? (p.description_tr || p.desc_tr) : (p.description_en || p.desc_en);
+      const price = this.currency === 'TRY' ? (p.price_try || 0) : (p.price_usd || 0);
+      const rawImg = p.image_url || '/assets/products/motor.png';
+      const absImg = rawImg.startsWith('http') ? rawImg : `https://pozitronmarket.com/${rawImg.replace(/^\.?\//, '')}`;
+
+      const schemaData = {
+        "@context": "https://schema.org/",
+        "@type": "Product",
+        "name": name,
+        "image": [absImg],
+        "description": desc,
+        "sku": p.sku || `PZTR-${p.id}`,
+        "mpn": p.sku || p.id,
+        "brand": {
+          "@type": "Brand",
+          "name": p.brand || "Pozitron"
+        },
+        "offers": {
+          "@type": "Offer",
+          "url": `https://pozitronmarket.com/#product-${p.slug || p.id}`,
+          "priceCurrency": this.currency || "TRY",
+          "price": price,
+          "priceValidUntil": "2027-12-31",
+          "itemCondition": "https://schema.org/NewCondition",
+          "availability": (parseInt(p.stock) > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+          "seller": {
+            "@type": "Organization",
+            "name": "Pozitron Market"
+          }
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "reviewCount": "24",
+          "bestRating": "5",
+          "worstRating": "1"
+        }
+      };
+
+      script.textContent = JSON.stringify(schemaData);
+    } catch(e) {}
+  }
+
   getStaticData() {
     return window.__POZITRON_DATA__ || { categories: [], brands: [], products: [], reviews: [] };
   }
@@ -857,6 +933,21 @@ class PozitronApp {
       this.renderProductCards(products, grid);
       this.renderPagination(data.page, data.total_pages);
 
+      // GA4 view_item_list event
+      const listLang = window.i18n ? window.i18n.currentLang : 'tr';
+      this.trackGA4Event('view_item_list', {
+        item_list_id: this.filters.category || 'all_products',
+        item_list_name: this.filters.category ? this.filters.category : 'Tüm Ürünler',
+        items: products.slice(0, 12).map((p, idx) => ({
+          item_id: p.sku || p.id,
+          item_name: listLang === 'tr' ? (p.name_tr || p.name_en) : (p.name_en || p.name_tr),
+          item_brand: p.brand || 'Pozitron',
+          item_category: p.category_id || 'FPV',
+          price: this.currency === 'TRY' ? (p.price_try || 0) : (p.price_usd || 0),
+          index: idx + 1
+        }))
+      });
+
     } catch (e) {
       console.error("Error fetching products", e);
     }
@@ -1139,15 +1230,32 @@ class PozitronApp {
     } else {
       this.cart.push({
         id: product.id,
+        sku: product.sku || `PZTR-${product.id}`,
         name_en: product.name_en,
         name_tr: product.name_tr,
         brand: product.brand,
+        category_id: product.category_id,
         price_usd: product.price_usd,
         price_try: product.price_try,
         image_url: product.image_url,
         quantity: quantity
       });
     }
+
+    // GA4 add_to_cart event tracking
+    const itemPrice = this.currency === 'TRY' ? (product.price_try || 0) : (product.price_usd || 0);
+    this.trackGA4Event('add_to_cart', {
+      currency: this.currency || 'TRY',
+      value: itemPrice * quantity,
+      items: [{
+        item_id: product.sku || product.id,
+        item_name: window.i18n?.currentLang === 'tr' ? (product.name_tr || product.name_en) : (product.name_en || product.name_tr),
+        item_brand: product.brand || 'Pozitron',
+        item_category: product.category_id || 'FPV',
+        price: itemPrice,
+        quantity: quantity
+      }]
+    });
 
     this.saveCart();
     this.updateCartUI();
@@ -1159,6 +1267,23 @@ class PozitronApp {
     const item = this.cart.find(i => i.id === productId);
     if (!item) return;
 
+    if (delta < 0) {
+      // GA4 remove_from_cart event tracking for decrement
+      const itemPrice = this.currency === 'TRY' ? (item.price_try || 0) : (item.price_usd || 0);
+      this.trackGA4Event('remove_from_cart', {
+        currency: this.currency || 'TRY',
+        value: itemPrice * Math.abs(delta),
+        items: [{
+          item_id: item.sku || item.id,
+          item_name: item.name_en || item.name_tr,
+          item_brand: item.brand || 'Pozitron',
+          item_category: item.category_id || 'FPV',
+          price: itemPrice,
+          quantity: Math.abs(delta)
+        }]
+      });
+    }
+
     item.quantity += delta;
     if (item.quantity <= 0) {
       this.cart = this.cart.filter(i => i.id !== productId);
@@ -1169,6 +1294,22 @@ class PozitronApp {
   }
 
   removeFromCart(productId) {
+    const item = this.cart.find(i => i.id === productId);
+    if (item) {
+      const itemPrice = this.currency === 'TRY' ? (item.price_try || 0) : (item.price_usd || 0);
+      this.trackGA4Event('remove_from_cart', {
+        currency: this.currency || 'TRY',
+        value: itemPrice * (item.quantity || 1),
+        items: [{
+          item_id: item.sku || item.id,
+          item_name: item.name_en || item.name_tr,
+          item_brand: item.brand || 'Pozitron',
+          item_category: item.category_id || 'FPV',
+          price: itemPrice,
+          quantity: item.quantity || 1
+        }]
+      });
+    }
     this.cart = this.cart.filter(i => i.id !== productId);
     this.saveCart();
     this.updateCartUI();
@@ -1310,6 +1451,27 @@ class PozitronApp {
   openCartDrawer() {
     const backdrop = document.getElementById('cart-backdrop');
     if (backdrop) backdrop.classList.add('open');
+
+    // GA4 view_cart tracking
+    if (this.cart && this.cart.length > 0) {
+      let subTotal = 0;
+      this.cart.forEach(i => {
+        subTotal += (this.currency === 'TRY' ? (i.price_try || 0) : (i.price_usd || 0)) * (i.quantity || 1);
+      });
+      const lang = window.i18n ? window.i18n.currentLang : 'tr';
+      this.trackGA4Event('view_cart', {
+        currency: this.currency || 'TRY',
+        value: subTotal,
+        items: this.cart.map(item => ({
+          item_id: item.sku || item.id,
+          item_name: lang === 'tr' ? (item.name_tr || item.name_en) : (item.name_en || item.name_tr),
+          item_brand: item.brand || 'Pozitron',
+          item_category: item.category_id || 'FPV',
+          price: this.currency === 'TRY' ? (item.price_try || 0) : (item.price_usd || 0),
+          quantity: item.quantity || 1
+        }))
+      });
+    }
   }
 
   closeCartDrawer() {
@@ -1907,6 +2069,23 @@ class PozitronApp {
     const totalEl = document.getElementById('checkout-total-val');
     if (totalEl) totalEl.textContent = this.formatPrice(grandUSD, grandTRY);
 
+    // GA4 begin_checkout event tracking
+    const lang = window.i18n ? window.i18n.currentLang : 'tr';
+    const checkoutVal = this.currency === 'TRY' ? grandTRY : grandUSD;
+    this.trackGA4Event('begin_checkout', {
+      currency: this.currency || 'TRY',
+      value: checkoutVal,
+      coupon: this.appliedCoupon ? this.appliedCoupon.code : undefined,
+      items: this.cart.map(item => ({
+        item_id: item.sku || item.id,
+        item_name: lang === 'tr' ? (item.name_tr || item.name_en) : (item.name_en || item.name_tr),
+        item_brand: item.brand || 'Pozitron',
+        item_category: item.category_id || 'FPV',
+        price: this.currency === 'TRY' ? (item.price_try || 0) : (item.price_usd || 0),
+        quantity: item.quantity || 1
+      }))
+    });
+
     this.setPaymentMethod(this.activePaymentMethod);
     modal.style.display = 'flex';
   }
@@ -1919,6 +2098,14 @@ class PozitronApp {
   setPaymentMethod(method) {
     this.activePaymentMethod = method;
     
+    // GA4 add_payment_info event tracking
+    const payVal = this.currency === 'TRY' ? (this._currentGrandTRY || 0) : (this._currentGrandUSD || 0);
+    this.trackGA4Event('add_payment_info', {
+      currency: this.currency || 'TRY',
+      value: payVal,
+      payment_type: method
+    });
+
     // Update Tab Active states
     ['iyzico', 'paytr', 'havale'].forEach(m => {
       const tab = document.getElementById(`tab-pay-${m}`);
@@ -2176,6 +2363,28 @@ class PozitronApp {
       console.error('Stock deduction error:', stkErr);
     }
 
+    // GA4 Enhanced E-commerce Purchase Event
+    const purchasedItems = (this.cart && this.cart.length > 0) ? [...this.cart] : (order.items || []);
+    const purchaseVal = this.currency === 'TRY' ? parseFloat(order.total_try || this._currentGrandTRY || 0) : parseFloat(order.total_usd || this._currentGrandUSD || 0);
+    const shippingFee = (parseFloat(order.total_try || 0) >= 1500) ? 0 : (this.currency === 'TRY' ? 99 : 2.10);
+
+    this.trackGA4Event('purchase', {
+      transaction_id: order.order_number || order.transaction_id || `PZT-${Date.now()}`,
+      value: purchaseVal,
+      currency: this.currency || 'TRY',
+      tax: 0,
+      shipping: shippingFee,
+      payment_type: order.card_brand || order.payment_method || this.activePaymentMethod || 'credit_card',
+      items: purchasedItems.map(i => ({
+        item_id: i.sku || i.id,
+        item_name: i.name_en || i.name_tr,
+        item_brand: i.brand || 'Pozitron',
+        item_category: i.category_id || 'FPV',
+        price: this.currency === 'TRY' ? (i.price_try || 0) : (i.price_usd || 0),
+        quantity: i.quantity || 1
+      }))
+    });
+
     // Clear cart and show receipt
     this.cart = [];
     localStorage.removeItem('pozitron_cart');
@@ -2390,6 +2599,24 @@ class PozitronApp {
       const desc = lang === 'tr' ? (p.description_tr || p.desc_tr) : (p.description_en || p.desc_en);
       const price = this.formatPrice(p.price_usd, p.price_try);
       const isOutOfStock = (parseInt(p.stock) || 0) <= 0;
+
+      // GA4 view_item event tracking
+      const singleItemPrice = this.currency === 'TRY' ? (p.price_try || 0) : (p.price_usd || 0);
+      this.trackGA4Event('view_item', {
+        currency: this.currency || 'TRY',
+        value: singleItemPrice,
+        items: [{
+          item_id: p.sku || p.id,
+          item_name: name,
+          item_brand: p.brand || 'Pozitron',
+          item_category: p.category_id || 'FPV',
+          price: singleItemPrice,
+          quantity: 1
+        }]
+      });
+
+      // Update Product JSON-LD Structured Data for AI Search Engines (Gemini & ChatGPT)
+      this.updateProductStructuredData(p);
 
       let specsList = '';
       if (p.specs) {

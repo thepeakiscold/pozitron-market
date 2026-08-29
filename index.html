@@ -85,22 +85,22 @@
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <!-- JSON-LD Structured Data for Google Rich Snippets & Sitelinks SearchBox -->
+  <!-- JSON-LD Structured Data for Google Rich Snippets, Sitelinks & AI Search (GEO) -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Organization",
-        "@id": "http://localhost:8000/#organization",
+        "@id": "https://pozitronmarket.com/#organization",
         "name": "Pozitron Market",
-        "url": "http://localhost:8000/",
+        "url": "https://pozitronmarket.com/",
         "logo": {
           "@type": "ImageObject",
-          "url": "http://localhost:8000/assets/logo.svg",
+          "url": "https://pozitronmarket.com/assets/logo.svg",
           "caption": "Pozitron Market Logo"
         },
-        "description": "Türkiye'nin en kapsamlı FPV ve drone donanım mağazası.",
+        "description": "Türkiye'nin en kapsamlı FPV drone parçaları, 3D baskı studio ve donanım mağazası.",
         "contactPoint": {
           "@type": "ContactPoint",
           "telephone": "+90-850-555-7090",
@@ -111,17 +111,55 @@
       },
       {
         "@type": "WebSite",
-        "@id": "http://localhost:8000/#website",
-        "url": "http://localhost:8000/",
+        "@id": "https://pozitronmarket.com/#website",
+        "url": "https://pozitronmarket.com/",
         "name": "Pozitron Market",
         "publisher": {
-          "@id": "http://localhost:8000/#organization"
+          "@id": "https://pozitronmarket.com/#organization"
         },
         "potentialAction": {
           "@type": "SearchAction",
-          "target": "http://localhost:8000/#q={search_term_string}",
+          "target": "https://pozitronmarket.com/?q={search_term_string}",
           "query-input": "required name=search_term_string"
         }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://pozitronmarket.com/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Pozitron Market kargo ücreti ne kadar ve teslimat süresi nedir?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pozitron Market'te standart kargo ücreti tüm Türkiye için sabit 99 TL'dir. 1500 TL ve üzeri tüm siparişlerde kargo tamamen ücretsizdir. Hafta içi saat 16:00'a kadar verilen siparişler aynı gün kargoya verilir ve 1-2 iş günü içerisinde teslim edilir."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "FPV drone motoru, ESC ve batarya uyumluluğu nasıl seçilir?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pozitron Market üzerinde yer alan 'Drone Toplama Sihirbazı' aracını kullanarak 6S (1750-1950KV) ve 4S (2400-2750KV) voltaj, ESC akım kapasitesi (45A-60A) ve pervane boyut uyumunu otomatik olarak kontrol edebilir, bütçenize en uygun konfigürasyonu toplayabilirsiniz."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Özel 3D drone parçası (TPU kamera tutucu, anten aparatı) nasıl bastırılır?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pozitron 3D Baskı Studio üzerinden STL dosyanızı yükleyerek TPU, PETG veya PLA malzemesinde anında gramaj ve fiyat hesaplaması yaptırabilir, siparişinize özel dayanıklı FPV parçaları ürettirebilirsiniz."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Hangi ödeme yöntemleri desteklenmektedir?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "İyzico 3D Secure kredi/banka kartı, PayTR 3D Secure ve FAST / Banka Havalesi ile güvenli ve anında onaylı ödeme yapabilirsiniz."
+            }
+          }
+        ]
       },
       {
         "@type": "ItemList",
@@ -1329,8 +1367,8 @@
   <script src="./vendor/STLLoader.js"></script>
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260829_comment_profile_v49"></script>
-  <script src="./i18n.js?v=20260829_comment_profile_v49"></script>
-  <script src="./app.js?v=20260829_comment_profile_v49"></script>
+  <script src="./data/pozitron_data.js?v=20260829_ga4_ecommerce_v50"></script>
+  <script src="./i18n.js?v=20260829_ga4_ecommerce_v50"></script>
+  <script src="./app.js?v=20260829_ga4_ecommerce_v50"></script>
 </body>
 </html>
