@@ -631,6 +631,38 @@ class PozitronApp {
     } catch(e) {}
   }
 
+  getProductReviewStats(productId, productName = '') {
+    const reviews = this.getCommunityReviews();
+    const pid = String(productId || '').toLowerCase().trim();
+    const pName = String(productName || '').toLowerCase().trim();
+
+    const matched = reviews.filter(r => {
+      if (r.productId && pid && String(r.productId).toLowerCase().trim() === pid) return true;
+      if (pName && r.productName) {
+        const rName = String(r.productName).toLowerCase().trim();
+        if (pName === rName) return true;
+        if (pName.includes(rName) || rName.includes(pName)) return true;
+      }
+      return false;
+    });
+
+    if (matched.length > 0) {
+      const sum = matched.reduce((acc, curr) => acc + (parseInt(curr.rating) || 5), 0);
+      const avg = (sum / matched.length).toFixed(1);
+      return {
+        count: matched.length,
+        rating: avg,
+        hasReviews: true
+      };
+    }
+
+    return {
+      count: 0,
+      rating: '5.0',
+      hasReviews: false
+    };
+  }
+
   getStaticData() {
     return window.__POZITRON_DATA__ || { categories: [], brands: [], products: [], reviews: [] };
   }
@@ -968,6 +1000,21 @@ class PozitronApp {
         origPriceHtml = `<span class="original-price">${this.formatPrice(origUSD, origTRY)}</span>`;
       }
 
+      // Dynamic Review Rating & Count from Real Pilot Comments
+      const reviewStats = this.getProductReviewStats(p.id, name);
+      const ratingVal = reviewStats.hasReviews ? reviewStats.rating : (p.rating || '5.0');
+      const countVal = reviewStats.hasReviews ? reviewStats.count : (p.review_count || 0);
+
+      const ratingRowHtml = `
+        <div class="card-rating-row" style="display:flex; align-items:center; gap:6px; margin: 3px 0 5px 0; font-size:0.80rem;">
+          <div style="display:flex; align-items:center; gap:2px; color:#f59e0b;">
+            <span style="font-size:0.88rem;">★</span>
+            <strong style="color:var(--text-primary); font-size:0.82rem;">${ratingVal}</strong>
+          </div>
+          <span style="color:var(--text-muted); font-size:0.75rem;">(${countVal > 0 ? `${countVal} ${lang === 'tr' ? 'Yorum' : 'Reviews'}` : (lang === 'tr' ? 'Yeni Ürün' : 'New')})</span>
+        </div>
+      `;
+
       // Specs chips
       let specsHtml = '';
       if (p.specs) {
@@ -1008,6 +1055,8 @@ class PozitronApp {
             </div>
 
             <h3 class="card-title" data-action="quickview" data-id="${p.id}">${name}</h3>
+
+            ${ratingRowHtml}
 
             <div class="card-specs-row">
               ${specsHtml}
@@ -2675,6 +2724,10 @@ class PozitronApp {
         `;
       }
 
+      const modalStats = this.getProductReviewStats(p.id, name);
+      const modalRating = modalStats.hasReviews ? modalStats.rating : (p.rating || '5.0');
+      const modalCount = modalStats.hasReviews ? modalStats.count : (p.review_count || 0);
+
       body.innerHTML = `
         <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap: 32px; align-items:start;">
           <div>
@@ -2683,9 +2736,17 @@ class PozitronApp {
             </div>
             ${galleryHtml}
           </div>
-          <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; flex-direction:column; gap:10px;">
             <div style="font-size:0.8rem; font-weight:700; color:var(--brand-primary); text-transform:uppercase; letter-spacing:0.5px;">${p.brand} • SKU: ${p.sku || p.id}</div>
             <h2 style="font-size:1.35rem; font-weight:800; line-height:1.3; color:var(--text-primary); margin:0;">${name}</h2>
+            
+            <!-- Real Dynamic Reviews Rating & Pilot Count -->
+            <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; margin: -2px 0 2px 0;">
+              <div style="color:#f59e0b; font-size:0.95rem; letter-spacing:1px;">★</div>
+              <strong style="color:var(--text-primary); font-size:0.88rem;">${modalRating}</strong>
+              <span style="color:var(--text-muted); font-size:0.80rem;">(${modalCount > 0 ? `${modalCount} ${lang === 'tr' ? 'Doğrulanmış Pilot Değerlendirmesi' : 'Verified Pilot Reviews'}` : (lang === 'tr' ? 'İlk değerlendirmeyi sen yaz' : 'Be the first to review')})</span>
+            </div>
+
             <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem;">
               ${!isOutOfStock ? `
                 <span style="color:var(--status-success); font-weight:600; font-size:0.84rem;">● ${window.i18n.t('in_stock')} (${p.stock} adet)</span>
@@ -4811,6 +4872,7 @@ class PozitronApp {
     this.closeCommentModal();
     this.showToast(window.i18n ? window.i18n.t('comments_success_toast') : 'Yorumunuz başarıyla paylaşıldı!', 'success');
     this.renderCommunityReviews(this.currentCommentFilter);
+    this.fetchProducts();
 
     // If product modal is open, refresh its review list
     const modalReviewList = document.getElementById('modal-product-reviews-list');
