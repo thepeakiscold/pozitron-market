@@ -2496,6 +2496,23 @@ class PozitronApp {
       }))
     });
 
+    // Google Ads Conversion Tracking (Purchase)
+    try {
+      if (typeof window.gtag === 'function') {
+        const orderId = order.order_number || order.transaction_id || `PZT-${Date.now()}`;
+        const orderValTRY = parseFloat(order.total_try || this._currentGrandTRY || purchaseVal || 1.0);
+        window.gtag('event', 'conversion', {
+          'send_to': 'AW-18404787021/9qzqCPmj7-kcEM2Gi8hE',
+          'value': orderValTRY,
+          'currency': 'TRY',
+          'transaction_id': orderId
+        });
+        console.log('[Google Ads Conversion] Purchase event fired:', { orderId, value: orderValTRY, currency: 'TRY' });
+      }
+    } catch (gAdsErr) {
+      console.warn('[Google Ads Conversion Error]:', gAdsErr);
+    }
+
     // Clear cart and show receipt
     this.cart = [];
     localStorage.removeItem('pozitron_cart');
