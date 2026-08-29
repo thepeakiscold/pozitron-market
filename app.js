@@ -2419,11 +2419,6 @@ class PozitronApp {
     this._otpInterval = setInterval(update, 1000);
   }
 
-  autoFillTestOtp() {
-    const inputEl = document.getElementById('otp-code-input');
-    if (inputEl) inputEl.value = '123456';
-  }
-
   verify3DSecureOtp() {
     const inputEl = document.getElementById('otp-code-input');
     const errEl = document.getElementById('otp-error-msg');
@@ -2431,7 +2426,7 @@ class PozitronApp {
 
     if (!code || code.length < 4) {
       if (errEl) {
-        errEl.textContent = 'Lütfen SMS doğrulama kodunu giriniz (Test kodu: 123456).';
+        errEl.textContent = 'Lütfen SMS ile gelen 6 haneli doğrulama kodunu eksiksiz giriniz.';
         errEl.style.display = 'block';
       }
       return;
@@ -4603,87 +4598,15 @@ class PozitronApp {
   initCommunityComments() {
     this.currentCommentFilter = 'all';
 
-    // Initialize default authentic pilot reviews if empty
-    const existing = localStorage.getItem('pozitron_community_reviews');
-    if (!existing) {
-      const defaultReviews = [
-        {
-          id: 'rev_1',
-          userName: 'Caner Yılmaz',
-          userRole: 'FPV Freestyle Pilotu',
-          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Caner',
-          rating: 5,
-          productName: 'T-Motor F60 PRO V 1950KV',
-          productId: 'tm-f60-pro-v-1950kv',
-          comment: 'Motorları 5 inç yarış buildimde kullandım. Throttle tepkisi ve alt devir torku inanılmaz dengeli. Isınma problemi sıfır, paketleme ve hızlı kargo için teşekkürler.',
-          verified: true,
-          date: '2 gün önce'
-        },
-        {
-          id: 'rev_2',
-          userName: 'Mert Aksoy',
-          userRole: 'Long Range FPV',
-          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Mert',
-          rating: 5,
-          productName: 'SpeedyBee F405 V4 55A Stack',
-          productId: 'sb-f405-v4-stack',
-          comment: 'Bluetooth üzerinden kablosuz Betaflight ayarı yapabilmek sahada hayat kurtarıyor. Pozitron Market teknik ekibi lehim şeması konusunda çok yardımcı oldu.',
-          verified: true,
-          date: '3 gün önce'
-        },
-        {
-          id: 'rev_3',
-          userName: 'Burak Demir',
-          userRole: 'Cinewhoop Pilotu',
-          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Burak',
-          rating: 5,
-          productName: 'DJI O3 Air Unit Digital HD',
-          productId: 'dji-o3-air-unit',
-          comment: 'Orijinal mühürlü kutusunda geldi. Görüntü aktarım kalitesi ve menzili tartışılmaz. Sipariş verdikten 24 saat sonra teslim aldım.',
-          verified: true,
-          date: '5 gün önce'
-        },
-        {
-          id: 'rev_4',
-          userName: 'Deniz Kaya',
-          userRole: 'FPV Yarış Pilotu',
-          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Deniz',
-          rating: 5,
-          productName: 'HQProp Ethix S3 Watermelon 5x3.1x3',
-          productId: 'hq-ethix-s3',
-          comment: 'Pervane dengesi kusursuz, jello efekti tamamen bitti. Dayanıklılığı çok iyi, küçük çarpmalarda bile yamulmuyor.',
-          verified: true,
-          date: '1 hafta önce'
-        },
-        {
-          id: 'rev_5',
-          userName: 'Emre Şahin',
-          userRole: 'Drone Geliştirici & Pilot',
-          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Emre',
-          rating: 5,
-          productName: 'Genel Mağaza & Kargo Deneyimi',
-          productId: '',
-          comment: 'Türkiye’de aradığımız orijinal FPV parçalarını tek çatı altında ve doğrudan faturalı bulabilmek harika. 3D baskı TPU parça hizmeti de çok kaliteli.',
-          verified: true,
-          date: '1 hafta önce'
-        },
-        {
-          id: 'rev_6',
-          userName: 'Serkan Öztürk',
-          userRole: 'Micro Whoop Pilotu',
-          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Serkan',
-          rating: 5,
-          productName: 'TBS Crossfire Nano RX Pro',
-          productId: 'tbs-crossfire-nano-pro',
-          comment: 'Menzil ve failsafe konusunda asla yarı yolda bırakmayan bir alıcı. Telemetri sinyal kararlılığı kusursuz.',
-          verified: true,
-          date: '2 hafta önce'
-        }
-      ];
-      try {
-        localStorage.setItem('pozitron_community_reviews', JSON.stringify(defaultReviews));
-      } catch(e) {}
-    }
+    // Clean any old demo reviews and only keep authentic user reviews
+    try {
+      const existing = localStorage.getItem('pozitron_community_reviews');
+      if (existing) {
+        const parsed = JSON.parse(existing);
+        const filtered = (parsed || []).filter(r => r && !String(r.id || '').startsWith('rev_') && !['Caner Yılmaz', 'Mert Aksoy', 'Burak Demir', 'Deniz Kaya', 'Emre Şahin', 'Serkan Öztürk'].includes(r.userName));
+        localStorage.setItem('pozitron_community_reviews', JSON.stringify(filtered));
+      }
+    } catch(e) {}
 
     this.initStarRatingPicker();
 

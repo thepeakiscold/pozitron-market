@@ -531,8 +531,8 @@ def seed_database():
 
             discount_pct = round(((original_price_usd - price_usd) / original_price_usd) * 100) if original_price_usd else 0
 
-            rating = round(random.uniform(4.4, 5.0), 1)
-            review_count = random.randint(5, 180)
+            rating = 0.0
+            review_count = 0
             stock = random.randint(8, 120)
 
             # Badges
@@ -691,44 +691,9 @@ def seed_database():
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', demo_users)
 
-    # Seed sample authentic reviews for top products
-    print("Seeding authentic pilot reviews...")
-    cursor.execute("SELECT id, name_en FROM products LIMIT 50")
-    sample_prods = cursor.fetchall()
-    
-    review_comments = [
-        ("Mert K.", 5, "Incredible response and low vibration!", "İnanılmaz tepki süresi ve sıfır titreşim. 6S pille tam bir canavar, kesinlikle tavsiye ederim!"),
-        ("David R.", 5, "Best performance upgrade on my 5-inch quad", "High build quality, extremely smooth power delivery on Betaflight 4.4."),
-        ("Selim A.", 5, "Kargo çok hızlı geldi, orijinal ürün", "Paketleme harika, kutu içeriğinde montaj vidaları tam çıktı. Pozitron ekibine teşekkürler."),
-        ("Carlos M.", 4, "Great efficiency and durability", "Survived several harsh crashes with only minor scratches. Solid engineering."),
-        ("Burak Y.", 5, "Fiyat/Performans lideri", "Bu fiyata bu kalite inanılmaz. Telemetri verileri çok net ve kararlı.")
-    ]
-
-    reviews_to_insert = []
-    for prod in sample_prods:
-        p_id = prod[0]
-        for idx, (uname, r_val, r_title, r_text) in enumerate(review_comments):
-            r_date = (now - timedelta(days=random.randint(2, 60))).isoformat()
-            reviews_to_insert.append((
-                str(uuid.uuid4()),
-                p_id,
-                uname,
-                f"https://api.dicebear.com/7.x/bottts/svg?seed={uname}",
-                r_val,
-                r_title,
-                r_text,
-                1,
-                r_date
-            ))
-
-    cursor.executemany('''
-        INSERT INTO reviews (id, product_id, user_name, user_avatar, rating, title, comment, verified_purchase, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', reviews_to_insert)
-
     conn.commit()
     conn.close()
-    print(f"Successfully seeded database with {len(products)} products, {len(CATEGORIES)} categories, {len(demo_users)} users, and {len(reviews_to_insert)} reviews!")
+    print(f"Successfully seeded database with {len(products)} products, {len(CATEGORIES)} categories, and {len(demo_users)} users (no mock reviews).")
 
 if __name__ == '__main__':
     seed_database()

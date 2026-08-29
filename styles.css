@@ -2486,16 +2486,6 @@ img {
   border: 2px solid #0284c7;
 }
 
-.btn-test-otp {
-  font-size: 0.75rem;
-  color: #0284c7;
-  background: none;
-  border: none;
-  text-decoration: underline;
-  cursor: pointer;
-  font-weight: 600;
-}
-
 .checkout-summary-box {
   margin-top: 16px;
   padding-top: 16px;
