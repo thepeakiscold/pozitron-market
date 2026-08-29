@@ -2778,7 +2778,7 @@ class PozitronApp {
           <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; margin: -2px 0 2px 0;">
             <div style="color:#f59e0b; font-size:0.95rem; letter-spacing:1px;">★</div>
             <strong style="color:var(--text-primary); font-size:0.88rem;">${modalStats.rating}</strong>
-            <span style="color:var(--text-muted); font-size:0.80rem;">(${modalStats.count} ${lang === 'tr' ? 'Doğrulanmış Pilot Değerlendirmesi' : 'Verified Pilot Reviews'})</span>
+            <span style="color:var(--text-muted); font-size:0.80rem;">(${modalStats.count} ${lang === 'tr' ? 'Değerlendirme' : 'Reviews'})</span>
           </div>
         `;
       }
@@ -4720,7 +4720,6 @@ class PozitronApp {
             <div class="comment-author-wrap">
               <h3 class="comment-author-name">
                 <span>${r.userName}</span>
-                ${r.verified ? `<span class="comment-verified-tag">✓ ${window.i18n.t('comments_verified')}</span>` : ''}
               </h3>
               <div class="comment-date">${r.date || 'Bugün'}</div>
             </div>
@@ -4760,7 +4759,7 @@ class PozitronApp {
       return `
         <div class="product-mini-review-card">
           <div class="product-mini-review-top">
-            <span class="product-mini-review-author">${r.userName} ${r.verified ? '<span style="color:#16a34a; font-size:0.75rem; font-weight:700;">(Doğrulanmış Pilot)</span>' : ''}</span>
+            <span class="product-mini-review-author">${r.userName}</span>
             <span style="color:#f59e0b; font-size:0.8rem;">${starsHtml}</span>
           </div>
           <p class="product-mini-review-text">"${r.comment}"</p>

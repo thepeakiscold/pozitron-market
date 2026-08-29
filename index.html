@@ -516,10 +516,6 @@
       <div class="container">
         <div class="comments-section-header">
           <div class="comments-header-info">
-            <div class="comments-badge">
-              <span>⭐</span>
-              <span data-i18n="comments_verified">Doğrulanmış Pilot Deneyimleri</span>
-            </div>
             <h2 class="comments-section-title" data-i18n="comments_section_title">💬 Müşteri Değerlendirmeleri &amp; Pilot Yorumları</h2>
             <p class="comments-section-sub" data-i18n="comments_section_sub">Pozitron Market'ten alışveriş yapan FPV pilotları ve drone üreticilerinin gerçek deneyimleri.</p>
           </div>
@@ -529,9 +525,6 @@
         <div class="comments-filter-bar">
           <button type="button" class="comment-filter-pill active" data-filter="all" onclick="window.app && window.app.filterComments('all')">
             <span data-i18n="comments_filter_all">Tüm Yorumlar</span>
-          </button>
-          <button type="button" class="comment-filter-pill" data-filter="verified" onclick="window.app && window.app.filterComments('verified')">
-            <span data-i18n="comments_filter_verified">Doğrulanmış Alıcılar</span>
           </button>
           <button type="button" class="comment-filter-pill" data-filter="5star" onclick="window.app && window.app.filterComments('5star')">
             <span data-i18n="comments_filter_top">5 Yıldızlılar</span>
@@ -1317,7 +1310,7 @@
           <div style="flex:1;">
             <div id="comment-user-display-name" style="font-weight:700; font-size:0.92rem; color:var(--text-primary);"></div>
             <div style="font-size:0.75rem; color:#16a34a; font-weight:700; display:flex; align-items:center; gap:4px;">
-              <span>●</span> <span>Doğrulanmış Pilot Hesabı</span>
+              <span>●</span> <span>Aktif Hesap</span>
             </div>
           </div>
         </div>
@@ -1362,8 +1355,8 @@
   <script src="./vendor/STLLoader.js"></script>
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260829_remove_comment_btn_v55"></script>
-  <script src="./i18n.js?v=20260829_remove_comment_btn_v55"></script>
-  <script src="./app.js?v=20260829_remove_comment_btn_v55"></script>
+  <script src="./data/pozitron_data.js?v=20260829_clean_pilot_badges_v56"></script>
+  <script src="./i18n.js?v=20260829_clean_pilot_badges_v56"></script>
+  <script src="./app.js?v=20260829_clean_pilot_badges_v56"></script>
 </body>
 </html>
