@@ -4272,6 +4272,13 @@ class PozitronApp {
 
     this.initStarRatingPicker();
 
+    const openBtn = document.getElementById('btn-open-comment-modal');
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        this.openAddCommentModal();
+      });
+    }
+
     const modalEl = document.getElementById('comment-modal-backdrop');
     if (modalEl) {
       modalEl.addEventListener('click', (e) => {
@@ -4380,6 +4387,19 @@ class PozitronApp {
     }).join('');
   }
 
+  getCurrentUser() {
+    if (this.user) return this.user;
+    try {
+      const stored = localStorage.getItem('pozitron_user');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        this.user = parsed;
+        return parsed;
+      }
+    } catch(e) {}
+    return null;
+  }
+
   openAddCommentModal(productId = '', productName = '') {
     const modal = document.getElementById('comment-modal-backdrop');
     if (!modal) return;
@@ -4396,12 +4416,14 @@ class PozitronApp {
     if (ratingInput) ratingInput.value = '5';
 
     // Pre-fill user name if logged in
-    const currentUser = this.getCurrentUser();
-    if (currentUser && currentUser.full_name && authorNameInput) {
-      authorNameInput.value = currentUser.full_name;
-    } else if (authorNameInput && !authorNameInput.value) {
-      authorNameInput.value = '';
-    }
+    try {
+      const currentUser = this.getCurrentUser();
+      if (currentUser && currentUser.full_name && authorNameInput) {
+        authorNameInput.value = currentUser.full_name;
+      } else if (authorNameInput && !authorNameInput.value) {
+        authorNameInput.value = '';
+      }
+    } catch(e) {}
 
     // Reset star picker
     this.updateStarRatingPicker(5);
