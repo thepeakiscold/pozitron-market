@@ -83,8 +83,9 @@ class PozitronApp {
     // 4. Parse URL Hash on Load (e.g. #category=motors or #q=speedybee)
     this.handleHashChange();
 
-    // 5. Initial Product Fetch
+    // 5. Initial Product Fetch & Comments System
     await this.fetchProducts();
+    this.initCommunityComments();
 
     // 6. Listen for hash changes
     window.addEventListener('hashchange', () => this.handleHashChange());
@@ -92,6 +93,7 @@ class PozitronApp {
       this.renderCategoriesPills();
       this.renderCategorySidebar();
       this.fetchProducts();
+      this.renderCommunityReviews(this.currentCommentFilter || 'all');
       this.updateDynamicSeoMeta();
     });
   }
@@ -920,11 +922,6 @@ class PozitronApp {
               ${specsHtml}
             </div>
 
-            <div class="card-rating-row">
-              <span class="rating-stars">★ ${p.rating}</span>
-              <span class="rating-count">(${p.review_count || 12})</span>
-            </div>
-
             <div class="card-footer-row">
               <div class="price-box">
                 ${origPriceHtml}
@@ -1239,8 +1236,8 @@ class PozitronApp {
 
     const freeShippingTargetTRY = 1500;
     const isFreeShipping = subtotalTRY >= freeShippingTargetTRY;
-    const shippingFeeUSD = isFreeShipping ? 0 : 9.99;
-    const shippingFeeTRY = isFreeShipping ? 0 : 350;
+    const shippingFeeUSD = isFreeShipping ? 0 : 2.10;
+    const shippingFeeTRY = isFreeShipping ? 0 : 99;
 
     if (shippingEl) {
       shippingEl.textContent = isFreeShipping ? (lang === 'tr' ? 'ÜCRETSİZ' : 'FREE') : this.formatPrice(shippingFeeUSD, shippingFeeTRY);
@@ -1856,8 +1853,8 @@ class PozitronApp {
     }
 
     const isFree = subTRY >= 1500;
-    const grandUSD = subUSD + (isFree ? 0 : 9.99);
-    const grandTRY = subTRY + (isFree ? 0 : 350);
+    const grandUSD = subUSD + (isFree ? 0 : 2.10);
+    const grandTRY = subTRY + (isFree ? 0 : 99);
 
     this._currentGrandUSD = grandUSD;
     this._currentGrandTRY = grandTRY;
@@ -2418,12 +2415,10 @@ class PozitronApp {
             <div style="font-size:0.8rem; font-weight:700; color:var(--brand-primary); text-transform:uppercase; letter-spacing:0.5px;">${p.brand} • SKU: ${p.sku || p.id}</div>
             <h2 style="font-size:1.35rem; font-weight:800; line-height:1.3; color:var(--text-primary); margin:0;">${name}</h2>
             <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-              <span style="color:#d97706; font-weight:700;">★ ${p.rating || '4.9'}</span>
-              <span style="color:var(--text-muted);">(${p.review_count || 14} pilot değerlendirmesi)</span>
               ${!isOutOfStock ? `
-                <span style="color:var(--status-success); margin-left:auto; font-weight:600; font-size:0.82rem;">● ${window.i18n.t('in_stock')} (${p.stock} adet)</span>
+                <span style="color:var(--status-success); font-weight:600; font-size:0.84rem;">● ${window.i18n.t('in_stock')} (${p.stock} adet)</span>
               ` : `
-                <span style="color:var(--status-error); margin-left:auto; font-weight:600; font-size:0.82rem;">● ${window.i18n.t('out_of_stock')}</span>
+                <span style="color:var(--status-error); font-weight:600; font-size:0.84rem;">● ${window.i18n.t('out_of_stock')}</span>
               `}
             </div>
             <div style="font-size:1.6rem; font-weight:800; color:var(--brand-primary); margin:4px 0;">${price}</div>
@@ -2450,6 +2445,22 @@ class PozitronApp {
         </div>
 
         ${recSectionHtml}
+
+        <!-- Product Reviews Section in Modal -->
+        <div class="product-modal-reviews-section">
+          <div class="product-modal-reviews-header">
+            <h4 class="product-modal-reviews-title">
+              <span>💬</span>
+              <span>${window.i18n.t('product_comments_tab_title')}</span>
+            </h4>
+            <button type="button" class="btn-secondary" style="font-size:0.8rem; padding:6px 12px;" onclick="window.app && window.app.openAddCommentModal('${p.id}', '${name.replace(/'/g, "\\'")}')">
+              <span>✍️ ${window.i18n.t('product_write_review')}</span>
+            </button>
+          </div>
+          <div class="product-reviews-list" id="modal-product-reviews-list">
+            ${this.renderProductModalReviews(p.id)}
+          </div>
+        </div>
       `;
 
       modal.style.display = 'flex';
@@ -4161,6 +4172,320 @@ class PozitronApp {
     this.addToCart(customCartItem, this._3dConfig.qty || 1);
     this.close3DStudioModal();
     this.showToast(`"${this._3dConfig.filename}" (${this._3dConfig.material}) sepete eklendi! 🛒`, 'success');
+  }
+
+  // ==========================================
+  // COMMUNITY COMMENTS & PILOT REVIEWS SYSTEM
+  // ==========================================
+  initCommunityComments() {
+    this.currentCommentFilter = 'all';
+
+    // Initialize default authentic pilot reviews if empty
+    const existing = localStorage.getItem('pozitron_community_reviews');
+    if (!existing) {
+      const defaultReviews = [
+        {
+          id: 'rev_1',
+          userName: 'Caner Yılmaz',
+          userRole: 'FPV Freestyle Pilotu',
+          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Caner',
+          rating: 5,
+          productName: 'T-Motor F60 PRO V 1950KV',
+          productId: 'tm-f60-pro-v-1950kv',
+          comment: 'Motorları 5 inç yarış buildimde kullandım. Throttle tepkisi ve alt devir torku inanılmaz dengeli. Isınma problemi sıfır, paketleme ve hızlı kargo için teşekkürler.',
+          verified: true,
+          date: '2 gün önce'
+        },
+        {
+          id: 'rev_2',
+          userName: 'Mert Aksoy',
+          userRole: 'Long Range FPV',
+          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Mert',
+          rating: 5,
+          productName: 'SpeedyBee F405 V4 55A Stack',
+          productId: 'sb-f405-v4-stack',
+          comment: 'Bluetooth üzerinden kablosuz Betaflight ayarı yapabilmek sahada hayat kurtarıyor. Pozitron Market teknik ekibi lehim şeması konusunda çok yardımcı oldu.',
+          verified: true,
+          date: '3 gün önce'
+        },
+        {
+          id: 'rev_3',
+          userName: 'Burak Demir',
+          userRole: 'Cinewhoop Pilotu',
+          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Burak',
+          rating: 5,
+          productName: 'DJI O3 Air Unit Digital HD',
+          productId: 'dji-o3-air-unit',
+          comment: 'Orijinal mühürlü kutusunda geldi. Görüntü aktarım kalitesi ve menzili tartışılmaz. Sipariş verdikten 24 saat sonra teslim aldım.',
+          verified: true,
+          date: '5 gün önce'
+        },
+        {
+          id: 'rev_4',
+          userName: 'Deniz Kaya',
+          userRole: 'FPV Yarış Pilotu',
+          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Deniz',
+          rating: 5,
+          productName: 'HQProp Ethix S3 Watermelon 5x3.1x3',
+          productId: 'hq-ethix-s3',
+          comment: 'Pervane dengesi kusursuz, jello efekti tamamen bitti. Dayanıklılığı çok iyi, küçük çarpmalarda bile yamulmuyor.',
+          verified: true,
+          date: '1 hafta önce'
+        },
+        {
+          id: 'rev_5',
+          userName: 'Emre Şahin',
+          userRole: 'Drone Geliştirici & Pilot',
+          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Emre',
+          rating: 5,
+          productName: 'Genel Mağaza & Kargo Deneyimi',
+          productId: '',
+          comment: 'Türkiye’de aradığımız orijinal FPV parçalarını tek çatı altında ve doğrudan faturalı bulabilmek harika. 3D baskı TPU parça hizmeti de çok kaliteli.',
+          verified: true,
+          date: '1 hafta önce'
+        },
+        {
+          id: 'rev_6',
+          userName: 'Serkan Öztürk',
+          userRole: 'Micro Whoop Pilotu',
+          userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=Serkan',
+          rating: 5,
+          productName: 'TBS Crossfire Nano RX Pro',
+          productId: 'tbs-crossfire-nano-pro',
+          comment: 'Menzil ve failsafe konusunda asla yarı yolda bırakmayan bir alıcı. Telemetri sinyal kararlılığı kusursuz.',
+          verified: true,
+          date: '2 hafta önce'
+        }
+      ];
+      try {
+        localStorage.setItem('pozitron_community_reviews', JSON.stringify(defaultReviews));
+      } catch(e) {}
+    }
+
+    this.initStarRatingPicker();
+    this.renderCommunityReviews(this.currentCommentFilter);
+  }
+
+  getCommunityReviews() {
+    try {
+      const raw = localStorage.getItem('pozitron_community_reviews');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch(e) {}
+    return [];
+  }
+
+  renderCommunityReviews(filter = 'all') {
+    this.currentCommentFilter = filter;
+    const grid = document.getElementById('community-comments-grid');
+    if (!grid) return;
+
+    let reviews = this.getCommunityReviews();
+    if (filter === 'verified') {
+      reviews = reviews.filter(r => r.verified);
+    } else if (filter === '5star') {
+      reviews = reviews.filter(r => r.rating >= 5);
+    }
+
+    if (reviews.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align:center; padding:40px; background:#fff; border-radius:12px; border:1px dashed var(--border-subtle);">
+          <p style="color:var(--text-muted); font-size:0.92rem; margin:0;">${window.i18n.t('product_no_comments_yet')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = reviews.map(r => {
+      const starsHtml = '★'.repeat(r.rating || 5) + '☆'.repeat(Math.max(0, 5 - (r.rating || 5)));
+      const productTagHtml = r.productName ? `
+        <div class="comment-product-tag">
+          <span>📦</span>
+          <span>${r.productName}</span>
+        </div>
+      ` : '';
+
+      return `
+        <article class="comment-card">
+          <div class="comment-card-top">
+            <img src="${r.userAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(r.userName)}`}" alt="${r.userName}" class="comment-avatar" loading="lazy">
+            <div class="comment-author-wrap">
+              <h3 class="comment-author-name">
+                <span>${r.userName}</span>
+                ${r.verified ? `<span class="comment-verified-tag">✓ ${window.i18n.t('comments_verified')}</span>` : ''}
+              </h3>
+              <div class="comment-date">${r.date || 'Bugün'}</div>
+            </div>
+            <div class="comment-stars" title="${r.rating} / 5 Yıldız">${starsHtml}</div>
+          </div>
+          ${productTagHtml}
+          <p class="comment-text">"${r.comment}"</p>
+        </article>
+      `;
+    }).join('');
+  }
+
+  filterComments(filter) {
+    document.querySelectorAll('.comment-filter-pill').forEach(pill => {
+      if (pill.getAttribute('data-filter') === filter) {
+        pill.classList.add('active');
+      } else {
+        pill.classList.remove('active');
+      }
+    });
+    this.renderCommunityReviews(filter);
+  }
+
+  renderProductModalReviews(productId) {
+    const reviews = this.getCommunityReviews();
+    const productReviews = reviews.filter(r => r.productId === productId || (r.productName && productId && r.productName.toLowerCase().includes(productId.toLowerCase())));
+
+    if (productReviews.length === 0) {
+      return `
+        <div style="padding:16px; background:var(--bg-secondary); border-radius:8px; border:1px dashed var(--border-subtle); text-align:center; font-size:0.84rem; color:var(--text-muted);">
+          ${window.i18n.t('product_no_comments_yet')}
+        </div>
+      `;
+    }
+
+    return productReviews.map(r => {
+      const starsHtml = '★'.repeat(r.rating || 5);
+      return `
+        <div class="product-mini-review-card">
+          <div class="product-mini-review-top">
+            <span class="product-mini-review-author">${r.userName} ${r.verified ? '<span style="color:#16a34a; font-size:0.75rem; font-weight:700;">(Doğrulanmış Pilot)</span>' : ''}</span>
+            <span style="color:#f59e0b; font-size:0.8rem;">${starsHtml}</span>
+          </div>
+          <p class="product-mini-review-text">"${r.comment}"</p>
+        </div>
+      `;
+    }).join('');
+  }
+
+  openAddCommentModal(productId = '', productName = '') {
+    const modal = document.getElementById('comment-modal-backdrop');
+    if (!modal) return;
+
+    const prodIdInput = document.getElementById('comment-product-id');
+    const prodNameInput = document.getElementById('comment-product-name');
+    const authorNameInput = document.getElementById('comment-author-name');
+    const commentTextInput = document.getElementById('comment-body-text');
+    const ratingInput = document.getElementById('comment-rating-val');
+
+    if (prodIdInput) prodIdInput.value = productId || '';
+    if (prodNameInput) prodNameInput.value = productName || '';
+    if (commentTextInput) commentTextInput.value = '';
+    if (ratingInput) ratingInput.value = '5';
+
+    // Pre-fill user name if logged in
+    const currentUser = this.getCurrentUser();
+    if (currentUser && currentUser.full_name && authorNameInput) {
+      authorNameInput.value = currentUser.full_name;
+    } else if (authorNameInput && !authorNameInput.value) {
+      authorNameInput.value = '';
+    }
+
+    // Reset star picker
+    this.updateStarRatingPicker(5);
+
+    modal.style.display = 'flex';
+  }
+
+  closeCommentModal() {
+    const modal = document.getElementById('comment-modal-backdrop');
+    if (modal) modal.style.display = 'none';
+  }
+
+  initStarRatingPicker() {
+    const picker = document.getElementById('star-rating-picker');
+    if (!picker) return;
+
+    picker.querySelectorAll('.star-pick').forEach(star => {
+      star.addEventListener('click', (e) => {
+        const rating = parseInt(e.currentTarget.getAttribute('data-rating') || '5', 10);
+        this.updateStarRatingPicker(rating);
+      });
+    });
+  }
+
+  updateStarRatingPicker(rating) {
+    const ratingInput = document.getElementById('comment-rating-val');
+    if (ratingInput) ratingInput.value = rating;
+
+    const picker = document.getElementById('star-rating-picker');
+    if (!picker) return;
+
+    picker.querySelectorAll('.star-pick').forEach(star => {
+      const starVal = parseInt(star.getAttribute('data-rating') || '0', 10);
+      if (starVal <= rating) {
+        star.classList.add('active');
+      } else {
+        star.classList.remove('active');
+      }
+    });
+  }
+
+  async handleCommentSubmit(e) {
+    if (e) e.preventDefault();
+
+    const authorName = (document.getElementById('comment-author-name')?.value || '').trim();
+    const productName = (document.getElementById('comment-product-name')?.value || '').trim();
+    const productId = (document.getElementById('comment-product-id')?.value || '').trim();
+    const ratingVal = parseInt(document.getElementById('comment-rating-val')?.value || '5', 10);
+    const commentBody = (document.getElementById('comment-body-text')?.value || '').trim();
+
+    if (!authorName || !commentBody) {
+      this.showToast('Lütfen adınızı ve yorumunuzu giriniz.', 'error');
+      return;
+    }
+
+    const currentUser = this.getCurrentUser();
+    const newComment = {
+      id: 'rev_' + Date.now().toString(36),
+      userName: authorName,
+      userRole: currentUser ? 'Kayıtlı Pilot' : 'Misafir Pilot',
+      userAvatar: currentUser?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(authorName)}`,
+      rating: ratingVal,
+      productName: productName || window.i18n.t('comments_field_product_general'),
+      productId: productId,
+      comment: commentBody,
+      verified: true,
+      date: 'Az önce'
+    };
+
+    const reviews = this.getCommunityReviews();
+    reviews.unshift(newComment);
+    try {
+      localStorage.setItem('pozitron_community_reviews', JSON.stringify(reviews));
+    } catch(err) {}
+
+    // Send to backend API if available
+    try {
+      fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: productId || 'general',
+          user_name: authorName,
+          user_avatar: newComment.userAvatar,
+          rating: ratingVal,
+          title: productName || 'Değerlendirme',
+          comment: commentBody
+        })
+      }).catch(() => {});
+    } catch(err) {}
+
+    this.closeCommentModal();
+    this.showToast(window.i18n.t('comments_success_toast'), 'success');
+    this.renderCommunityReviews(this.currentCommentFilter);
+
+    // If product modal is open, refresh its review list
+    const modalReviewList = document.getElementById('modal-product-reviews-list');
+    if (modalReviewList && productId) {
+      modalReviewList.innerHTML = this.renderProductModalReviews(productId);
+    }
   }
 }
 

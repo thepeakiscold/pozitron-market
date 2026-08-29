@@ -1068,12 +1068,38 @@
     // -------------------------------------------------------------
     let _adminMemoryProducts = null;
 
-    async function getLocalAdminProducts() {
-      if (_adminMemoryProducts && Array.isArray(_adminMemoryProducts) && _adminMemoryProducts.length > 0) {
+    async function getLocalAdminProducts(forceRefresh = false) {
+      if (!forceRefresh && _adminMemoryProducts && Array.isArray(_adminMemoryProducts) && _adminMemoryProducts.length > 0) {
         return _adminMemoryProducts;
       }
 
-      // 1. Check LocalStorage
+      // 1. Prioritize Live Backend API (Single Source of Truth across devices)
+      try {
+        const r = await fetch('/api/admin/products?limit=1000', { cache: 'no-cache' });
+        if (r.ok) {
+          const d = await r.json();
+          if (d && Array.isArray(d.products) && d.products.length > 0) {
+            _adminMemoryProducts = d.products;
+            try { localStorage.setItem('pozitron_admin_products', JSON.stringify(d.products)); } catch(e) {}
+            return d.products;
+          }
+        }
+      } catch(e) {}
+
+      // 2. Fetch fresh static data bundle (with cache-busting)
+      try {
+        const r = await fetch(`data/products.json?t=${Date.now()}`, { cache: 'no-cache' });
+        if (r.ok) {
+          const prods = await r.json();
+          if (Array.isArray(prods) && prods.length > 0) {
+            _adminMemoryProducts = prods;
+            try { localStorage.setItem('pozitron_admin_products', JSON.stringify(prods)); } catch(e) {}
+            return prods;
+          }
+        }
+      } catch(e) {}
+
+      // 3. Fallback to LocalStorage (Offline Safety Net)
       const cached = localStorage.getItem('pozitron_admin_products');
       if (cached && typeof cached === 'string' && cached.trim().startsWith('[')) {
         try {
@@ -1085,39 +1111,12 @@
         } catch(e) {}
       }
 
-      // 2. Check window.pozitronData or window.__POZITRON_DATA__
+      // 4. Fallback to embedded window.pozitronData
       const dataBundle = window.pozitronData || window.__POZITRON_DATA__;
       if (dataBundle && Array.isArray(dataBundle.products) && dataBundle.products.length > 0) {
         _adminMemoryProducts = dataBundle.products;
-        try { localStorage.setItem('pozitron_admin_products', JSON.stringify(dataBundle.products)); } catch(e) {}
         return dataBundle.products;
       }
-
-      // 3. Fetch data/products.json directly
-      try {
-        const r = await fetch('data/products.json');
-        if (r.ok) {
-          const prods = await r.json();
-          if (Array.isArray(prods) && prods.length > 0) {
-            _adminMemoryProducts = prods;
-            try { localStorage.setItem('pozitron_admin_products', JSON.stringify(prods)); } catch(e) {}
-            return prods;
-          }
-        }
-      } catch(e) {}
-
-      // 4. Fetch /api/admin/products?limit=500
-      try {
-        const r = await fetch('/api/admin/products?limit=500');
-        if (r.ok) {
-          const d = await r.json();
-          if (d && Array.isArray(d.products) && d.products.length > 0) {
-            _adminMemoryProducts = d.products;
-            try { localStorage.setItem('pozitron_admin_products', JSON.stringify(d.products)); } catch(e) {}
-            return d.products;
-          }
-        }
-      } catch(e) {}
 
       return [];
     }

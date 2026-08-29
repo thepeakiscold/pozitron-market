@@ -982,9 +982,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                             discount_usd = min(subtotal_usd, c['discount_value'])
                             discount_try = min(subtotal_try, c['discount_value'] * 35.5)
 
-            # Shipping fees (Free for orders > $150 or > 5000 TRY)
-            shipping_fee_usd = 0.0 if subtotal_usd >= 150.0 else 9.99
-            shipping_fee_try = 0.0 if subtotal_try >= 5000.0 else 350.0
+            # Shipping fees (Free for orders >= 1500 TRY or >= $35 USD)
+            shipping_fee_usd = 0.0 if subtotal_usd >= 35.0 else 2.10
+            shipping_fee_try = 0.0 if subtotal_try >= 1500.0 else 99.0
 
             total_usd = max(0.0, round(subtotal_usd - discount_usd + shipping_fee_usd, 2))
             total_try = max(0.0, round(subtotal_try - discount_try + shipping_fee_try, 2))
