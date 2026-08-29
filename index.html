@@ -1276,18 +1276,27 @@
 
       <form id="add-comment-form" onsubmit="window.app && window.app.handleCommentSubmit(event)">
         <input type="hidden" id="comment-product-id" value="">
+        <input type="hidden" id="comment-product-name" value="">
 
-        <div class="form-group" style="margin-bottom:14px;">
+        <!-- Logged-in User Profile Card (Shown when logged in) -->
+        <div id="comment-logged-user-badge" style="display:none; align-items:center; gap:12px; padding:12px 14px; background:#f8fafc; border:1px solid var(--border-subtle); border-radius:10px; margin-bottom:16px;">
+          <img id="comment-user-avatar" src="./assets/logo.svg" alt="Avatar" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1px solid #cbd5e1; background:#ffffff;">
+          <div style="flex:1;">
+            <div id="comment-user-display-name" style="font-weight:700; font-size:0.92rem; color:var(--text-primary);"></div>
+            <div style="font-size:0.75rem; color:#16a34a; font-weight:700; display:flex; align-items:center; gap:4px;">
+              <span>●</span> <span>Doğrulanmış Pilot Hesabı</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guest Name Input (Only shown when not logged in) -->
+        <div class="form-group" id="comment-guest-name-group" style="margin-bottom:16px;">
           <label class="form-label" for="comment-author-name" data-i18n="comments_field_name">Adınız &amp; Soyadınız *</label>
-          <input type="text" id="comment-author-name" class="form-input" placeholder="Örn: Caner Yılmaz" required>
+          <input type="text" id="comment-author-name" class="form-input" placeholder="Örn: Caner Yılmaz">
         </div>
 
-        <div class="form-group" style="margin-bottom:14px;">
-          <label class="form-label" for="comment-product-name" data-i18n="comments_field_product">İlgili Ürün veya Konu</label>
-          <input type="text" id="comment-product-name" class="form-input" placeholder="Örn: T-Motor F60 PRO V / Genel Mağaza Deneyimi">
-        </div>
-
-        <div class="form-group" style="margin-bottom:14px;">
+        <!-- Star Rating Picker -->
+        <div class="form-group" style="margin-bottom:16px;">
           <label class="form-label" data-i18n="comments_field_rating">Puanınız *</label>
           <div class="star-rating-picker" id="star-rating-picker">
             <span class="star-pick active" data-rating="1">★</span>
@@ -1320,8 +1329,8 @@
   <script src="./vendor/STLLoader.js"></script>
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20260829_search_wide_v48"></script>
-  <script src="./i18n.js?v=20260829_search_wide_v48"></script>
-  <script src="./app.js?v=20260829_search_wide_v48"></script>
+  <script src="./data/pozitron_data.js?v=20260829_comment_profile_v49"></script>
+  <script src="./i18n.js?v=20260829_comment_profile_v49"></script>
+  <script src="./app.js?v=20260829_comment_profile_v49"></script>
 </body>
 </html>

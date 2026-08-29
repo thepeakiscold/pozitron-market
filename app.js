@@ -4460,15 +4460,32 @@ class PozitronApp {
     if (commentTextInput) commentTextInput.value = '';
     if (ratingInput) ratingInput.value = '5';
 
-    // Pre-fill user name if logged in
-    try {
-      const currentUser = this.getCurrentUser();
-      if (currentUser && currentUser.full_name && authorNameInput) {
-        authorNameInput.value = currentUser.full_name;
-      } else if (authorNameInput && !authorNameInput.value) {
+    const userBadge = document.getElementById('comment-logged-user-badge');
+    const guestGroup = document.getElementById('comment-guest-name-group');
+    const userAvatar = document.getElementById('comment-user-avatar');
+    const userDisplayName = document.getElementById('comment-user-display-name');
+
+    const currentUser = this.getCurrentUser();
+
+    if (currentUser) {
+      // Logged in: Do not ask for name, display their authenticated pilot badge
+      if (guestGroup) guestGroup.style.display = 'none';
+      if (authorNameInput) {
+        authorNameInput.removeAttribute('required');
+        authorNameInput.value = currentUser.full_name || currentUser.email || 'Pilot';
+      }
+      if (userBadge) userBadge.style.display = 'flex';
+      if (userAvatar) userAvatar.src = this.getRobotAvatar(currentUser);
+      if (userDisplayName) userDisplayName.textContent = currentUser.full_name || currentUser.email;
+    } else {
+      // Guest: Ask for name
+      if (userBadge) userBadge.style.display = 'none';
+      if (guestGroup) guestGroup.style.display = 'block';
+      if (authorNameInput) {
+        authorNameInput.setAttribute('required', 'true');
         authorNameInput.value = '';
       }
-    } catch(e) {}
+    }
 
     // Reset star picker
     this.updateStarRatingPicker(5);
@@ -4513,28 +4530,32 @@ class PozitronApp {
   async handleCommentSubmit(e) {
     if (e) e.preventDefault();
 
-    const authorName = (document.getElementById('comment-author-name')?.value || '').trim();
-    const productName = (document.getElementById('comment-product-name')?.value || '').trim();
+    const currentUser = this.getCurrentUser();
+    let authorName = (document.getElementById('comment-author-name')?.value || '').trim();
+    if (currentUser && !authorName) {
+      authorName = currentUser.full_name || currentUser.email || 'Pilot';
+    }
+
     const productId = (document.getElementById('comment-product-id')?.value || '').trim();
+    const productName = (document.getElementById('comment-product-name')?.value || '').trim();
     const ratingVal = parseInt(document.getElementById('comment-rating-val')?.value || '5', 10);
     const commentBody = (document.getElementById('comment-body-text')?.value || '').trim();
 
     if (!authorName || !commentBody) {
-      this.showToast('Lütfen adınızı ve yorumunuzu giriniz.', 'error');
+      this.showToast('Lütfen yorumunuzu giriniz.', 'error');
       return;
     }
 
-    const currentUser = this.getCurrentUser();
     const newComment = {
       id: 'rev_' + Date.now().toString(36),
       userName: authorName,
       userRole: currentUser ? 'Kayıtlı Pilot' : 'Misafir Pilot',
-      userAvatar: currentUser?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(authorName)}`,
+      userAvatar: currentUser ? this.getRobotAvatar(currentUser) : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(authorName)}`,
       rating: ratingVal,
-      productName: productName || window.i18n.t('comments_field_product_general'),
+      productName: productName || (window.i18n ? window.i18n.t('comments_field_product_general') : 'Genel Mağaza Deneyimi'),
       productId: productId,
       comment: commentBody,
-      verified: true,
+      verified: !!currentUser,
       date: 'Az önce'
     };
 
@@ -4561,7 +4582,7 @@ class PozitronApp {
     } catch(err) {}
 
     this.closeCommentModal();
-    this.showToast(window.i18n.t('comments_success_toast'), 'success');
+    this.showToast(window.i18n ? window.i18n.t('comments_success_toast') : 'Yorumunuz başarıyla paylaşıldı!', 'success');
     this.renderCommunityReviews(this.currentCommentFilter);
 
     // If product modal is open, refresh its review list
