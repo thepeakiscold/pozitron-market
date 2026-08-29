@@ -2453,7 +2453,7 @@ class PozitronApp {
               <span>💬</span>
               <span>${window.i18n.t('product_comments_tab_title')}</span>
             </h4>
-            <button type="button" class="btn-secondary" style="font-size:0.8rem; padding:6px 12px;" onclick="window.app && window.app.openAddCommentModal('${p.id}', '${name.replace(/'/g, "\\'")}')">
+            <button type="button" class="btn-secondary" id="btn-modal-write-review" style="font-size:0.8rem; padding:6px 12px; cursor:pointer;">
               <span>✍️ ${window.i18n.t('product_write_review')}</span>
             </button>
           </div>
@@ -2475,6 +2475,14 @@ class PozitronApp {
           e.currentTarget.style.borderColor = 'var(--brand-primary)';
         });
       });
+
+      // Write Review Button
+      const writeReviewBtn = document.getElementById('btn-modal-write-review');
+      if (writeReviewBtn) {
+        writeReviewBtn.addEventListener('click', () => {
+          this.openAddCommentModal(p.id, name);
+        });
+      }
 
       // Regular Add to Cart
       const addCartBtn = document.getElementById('btn-modal-add-cart');
@@ -4263,6 +4271,14 @@ class PozitronApp {
     }
 
     this.initStarRatingPicker();
+
+    const modalEl = document.getElementById('comment-modal-backdrop');
+    if (modalEl) {
+      modalEl.addEventListener('click', (e) => {
+        if (e.target === modalEl) this.closeCommentModal();
+      });
+    }
+
     this.renderCommunityReviews(this.currentCommentFilter);
   }
 

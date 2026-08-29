@@ -4564,4 +4564,9 @@ img {
   margin: 0;
 }
 
+#comment-modal-backdrop {
+  z-index: 1200;
+}
+
+
 
