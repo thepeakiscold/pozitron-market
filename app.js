@@ -4758,9 +4758,8 @@ class PozitronApp {
       const tooltipText = window.i18n?.currentLang === 'tr' ? 'Ürünü İncele' : 'View Product';
 
       const productTagHtml = r.productName ? `
-        <div class="comment-product-tag ${isClickable ? 'clickable' : ''}" ${isClickable ? `data-product-id="${targetId}" title="${tooltipText}" role="button"` : ''}>
+        <div class="comment-product-tag" data-product-id="${targetId}" data-product-name="${encodeURIComponent(r.productName)}" title="${tooltipText}" role="button">
           <span>${r.productName}</span>
-          ${isClickable ? '<span class="comment-tag-arrow">→</span>' : ''}
         </div>
       ` : '';
 
@@ -4783,12 +4782,22 @@ class PozitronApp {
     }).join('');
 
     // Attach click listeners to product tags on comment cards
-    grid.querySelectorAll('.comment-product-tag.clickable').forEach(tag => {
+    grid.querySelectorAll('.comment-product-tag').forEach(tag => {
       tag.addEventListener('click', (e) => {
         e.stopPropagation();
         const prodId = e.currentTarget.getAttribute('data-product-id');
+        const rawName = decodeURIComponent(e.currentTarget.getAttribute('data-product-name') || '');
         if (prodId) {
           this.openProductModal(prodId);
+        } else if (rawName) {
+          const staticData = this.getStaticData();
+          const match = (staticData.products || []).find(p => 
+            (p.name_tr && p.name_tr.includes(rawName)) || 
+            (p.name_en && p.name_en.includes(rawName))
+          );
+          if (match) {
+            this.openProductModal(match.slug || match.id);
+          }
         }
       });
     });
