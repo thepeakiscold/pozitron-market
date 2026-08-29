@@ -683,6 +683,21 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"orders": orders})
             return
 
+        # 7. Admin All Orders: /api/admin/orders
+        if path == '/api/admin/orders':
+            cursor.execute("SELECT * FROM orders ORDER BY created_at DESC")
+            orders = []
+            for r in cursor.fetchall():
+                od = dict(r)
+                try:
+                    od['items'] = json.loads(od['items_json'])
+                except:
+                    od['items'] = []
+                orders.append(od)
+            conn.close()
+            self.send_json(200, {"orders": orders})
+            return
+
         conn.close()
         self.send_json(404, {"error": "API route not found"})
 
