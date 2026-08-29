@@ -4683,6 +4683,52 @@ class PozitronApp {
     return [];
   }
 
+  findProductByReview(r) {
+    if (!r) return null;
+    const staticData = this.getStaticData();
+    const prods = staticData.products || [];
+    const rId = String(r.productId || '').toLowerCase().trim();
+    const rName = String(r.productName || '').toLowerCase().trim();
+
+    if (!rId && (!rName || rName.includes('genel') || rName.includes('general'))) {
+      return null;
+    }
+
+    // 1. Direct ID / SKU / Slug match
+    if (rId) {
+      const match = prods.find(p => 
+        String(p.id).toLowerCase() === rId || 
+        String(p.sku).toLowerCase() === rId || 
+        String(p.slug).toLowerCase() === rId ||
+        String(p.id).toLowerCase().includes(rId)
+      );
+      if (match) return match;
+    }
+
+    // 2. Name Match
+    if (rName && !rName.includes('genel') && !rName.includes('general')) {
+      const directMatch = prods.find(p => {
+        const tr = String(p.name_tr || '').toLowerCase();
+        const en = String(p.name_en || '').toLowerCase();
+        return tr.includes(rName) || en.includes(rName) || rName.includes(tr) || rName.includes(en);
+      });
+      if (directMatch) return directMatch;
+
+      const cleanRName = rName.replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, ' ').trim();
+      const rKeywords = cleanRName.split(/\s+/).filter(w => w.length >= 3 && !['v1', 'v2', 'v3', 'v4', 'v5', 'pro', 'drone', 'fpv', 'set', 'kiti', 'stack', 'unit'].includes(w));
+      if (rKeywords.length >= 2) {
+        const kwMatch = prods.find(p => {
+          const cleanTR = String(p.name_tr || '').toLowerCase().replace(/[^a-z0-9]/g, ' ');
+          const cleanEN = String(p.name_en || '').toLowerCase().replace(/[^a-z0-9]/g, ' ');
+          return rKeywords.every(kw => cleanTR.includes(kw)) || rKeywords.every(kw => cleanEN.includes(kw));
+        });
+        if (kwMatch) return kwMatch;
+      }
+    }
+
+    return null;
+  }
+
   renderCommunityReviews(filter = 'all') {
     this.currentCommentFilter = filter;
     const grid = document.getElementById('community-comments-grid');
@@ -4706,10 +4752,16 @@ class PozitronApp {
 
     grid.innerHTML = reviews.map(r => {
       const starsHtml = '★'.repeat(r.rating || 5) + '☆'.repeat(Math.max(0, 5 - (r.rating || 5)));
+      const matchedProd = this.findProductByReview(r);
+      const isClickable = !!matchedProd;
+      const targetId = matchedProd ? (matchedProd.slug || matchedProd.id) : (r.productId || '');
+      const tooltipText = window.i18n?.currentLang === 'tr' ? 'Ürünü İncele' : 'View Product';
+
       const productTagHtml = r.productName ? `
-        <div class="comment-product-tag">
+        <div class="comment-product-tag ${isClickable ? 'clickable' : ''}" ${isClickable ? `data-product-id="${targetId}" title="${tooltipText}" role="button"` : ''}>
           <span>📦</span>
           <span>${r.productName}</span>
+          ${isClickable ? '<span class="comment-tag-arrow">→</span>' : ''}
         </div>
       ` : '';
 
@@ -4730,6 +4782,17 @@ class PozitronApp {
         </article>
       `;
     }).join('');
+
+    // Attach click listeners to product tags on comment cards
+    grid.querySelectorAll('.comment-product-tag.clickable').forEach(tag => {
+      tag.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const prodId = e.currentTarget.getAttribute('data-product-id');
+        if (prodId) {
+          this.openProductModal(prodId);
+        }
+      });
+    });
   }
 
   filterComments(filter) {
