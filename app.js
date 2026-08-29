@@ -4759,7 +4759,6 @@ class PozitronApp {
 
       const productTagHtml = r.productName ? `
         <div class="comment-product-tag ${isClickable ? 'clickable' : ''}" ${isClickable ? `data-product-id="${targetId}" title="${tooltipText}" role="button"` : ''}>
-          <span>📦</span>
           <span>${r.productName}</span>
           ${isClickable ? '<span class="comment-tag-arrow">→</span>' : ''}
         </div>
