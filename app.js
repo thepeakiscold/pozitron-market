@@ -783,7 +783,22 @@ class PozitronApp {
     } else if (sort === 'price_desc') {
       items.sort((a, b) => (curr === 'TRY' ? b.price_try - a.price_try : b.price_usd - a.price_usd));
     } else if (sort === 'rating') {
-      items.sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.review_count || 0) - (a.review_count || 0));
+      items.sort((a, b) => {
+        const statsA = this.getProductReviewStats(a);
+        const statsB = this.getProductReviewStats(b);
+        const hasA = statsA.hasReviews && statsA.count > 0 ? 1 : 0;
+        const hasB = statsB.hasReviews && statsB.count > 0 ? 1 : 0;
+        if (hasA !== hasB) {
+          return hasB - hasA; // Products with real reviews come first!
+        }
+        if (hasA && hasB) {
+          const rA = parseFloat(statsA.rating) || 0;
+          const rB = parseFloat(statsB.rating) || 0;
+          if (rB !== rA) return rB - rA;
+          return statsB.count - statsA.count;
+        }
+        return (b.is_bestseller || 0) - (a.is_bestseller || 0);
+      });
     } else if (sort === 'newest') {
       items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
     } else if (sort === 'discount') {
