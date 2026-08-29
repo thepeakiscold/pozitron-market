@@ -2,6 +2,7 @@ import sqlite3
 import json
 import random
 import uuid
+import os
 from datetime import datetime, timedelta
 from database import get_db, init_db, hash_password
 
@@ -343,6 +344,95 @@ def get_product_images(cat_id, product_idx, brand, sku=None):
     fallback = CATEGORY_FALLBACKS.get(cat_id, "./assets/products/motor.png")
     return fallback, [fallback]
 
+def generate_turkish_product_name(cat_id, brand, base_model_name, spec_variant, version_suffix, selected_opt):
+    # Standard Turkish FPV e-commerce naming patterns (Robotistan / DroneMarket / FPVTR style)
+    if cat_id == "motors":
+        clean_model = base_model_name.replace("Brushless Motor", "").replace("Motor", "").strip()
+        return f"{brand} {clean_model} {spec_variant} {version_suffix} Fırçasız FPV Drone Motoru ({selected_opt})"
+    
+    elif cat_id == "esc":
+        clean_model = base_model_name.replace("ESC", "").strip()
+        return f"{brand} {clean_model} {version_suffix} 4'ü 1 Arada Fırçasız ESC Sürücü ({selected_opt})"
+    
+    elif cat_id == "propellers":
+        clean_model = base_model_name.replace("Propeller", "").replace("Props", "").replace("Pervane", "").strip()
+        return f"{brand} {clean_model} {version_suffix} 3 Kanatlı Dayanıklı FPV Drone Pervanesi ({selected_opt} - 4'lü Set)"
+    
+    elif cat_id == "converters":
+        clean_model = base_model_name.replace("Converter", "").strip()
+        if "BEC" in clean_model:
+            return f"{brand} {clean_model} {version_suffix} Voltaj Düşürücü Regülatör Modülü ({selected_opt})"
+        elif "PDB" in clean_model or "Power" in clean_model:
+            return f"{brand} {clean_model} {version_suffix} Güç Dağıtım ve Filtre Kartı ({selected_opt})"
+        elif "Filter" in clean_model or "LC" in clean_model:
+            return f"{brand} {clean_model} {version_suffix} Parazit Önleyici LC Filtre Modülü ({selected_opt})"
+        elif "Sensor" in clean_model:
+            return f"{brand} {clean_model} {version_suffix} Yüksek Hassasiyetli Akım Ölçüm Kartı ({selected_opt})"
+        return f"{brand} {clean_model} {version_suffix} Güç Dağıtım ve Voltaj Regülatör Modülü ({selected_opt})"
+    
+    elif cat_id == "flight_controllers":
+        clean_model = base_model_name.replace("Flight Controller", "").replace("FC", "").strip()
+        if "Pixhawk" in clean_model:
+            return f"{brand} {clean_model} {version_suffix} Endüstriyel Otonom Uçuş Kontrolcüsü ({selected_opt})"
+        return f"{brand} {clean_model} {version_suffix} FPV Uçuş Kontrol Kartı ({selected_opt})"
+    
+    elif cat_id == "cameras":
+        clean_model = base_model_name.replace("Camera", "").replace("Kamera", "").strip()
+        if "O3" in clean_model or "Avatar" in clean_model or "HDZero" in clean_model:
+            return f"{brand} {clean_model} {version_suffix} Dijital HD FPV Görüntü Aktarım Kiti ({selected_opt})"
+        elif "Thumb" in clean_model:
+            return f"{brand} {clean_model} {version_suffix} Ultra Hafif 4K HD Aksiyon Kamerası ({selected_opt})"
+        return f"{brand} {clean_model} {version_suffix} FPV Kamera ({selected_opt})"
+    
+    elif cat_id == "vtx":
+        clean_model = base_model_name.replace("Video Transmitter", "").replace("VTX", "").strip()
+        return f"{brand} {clean_model} {version_suffix} 5.8GHz FPV Video Verici VTX ({selected_opt})"
+    
+    elif cat_id == "transmitters_receivers":
+        clean_model = base_model_name.replace("Radio", "").replace("Transmitter", "").replace("Receiver", "").strip()
+        if "RP1" in base_model_name or "Nano" in base_model_name or "Receiver" in base_model_name or "Diversity" in base_model_name:
+            return f"{brand} {clean_model} {version_suffix} FPV Kumanda Alıcısı ({selected_opt})"
+        return f"{brand} {clean_model} {version_suffix} FPV Drone Kumandası ({selected_opt})"
+    
+    elif cat_id == "batteries_chargers":
+        clean_model = base_model_name.replace("Battery", "").replace("Pack", "").strip()
+        if "Charger" in base_model_name or "Şarj" in base_model_name or "K4" in base_model_name or "608AC" in base_model_name or "M6D" in base_model_name:
+            return f"{brand} {clean_model} {version_suffix} Akıllı Dengeleyici LiPo Şarj Cihazı ({selected_opt})"
+        elif "Li-ion" in base_model_name:
+            return f"{brand} {clean_model} {version_suffix} Uzun Menzilli Li-ion Drone Bataryası ({selected_opt})"
+        return f"{brand} {clean_model} {version_suffix} Yüksek Deşarjlı LiPo Drone Bataryası ({selected_opt})"
+    
+    elif cat_id == "frames":
+        clean_model = base_model_name.replace("Frame Kit", "").replace("Frame", "").strip()
+        return f"{brand} {clean_model} {version_suffix} Karbon Fiber FPV Drone Gövde Çerçeve Kiti ({selected_opt})"
+    
+    elif cat_id == "antennas":
+        clean_model = base_model_name.replace("Antenna", "").replace("Anten", "").strip()
+        return f"{brand} {clean_model} {version_suffix} Yüksek Kazançlı 5.8GHz FPV Drone Anteni ({selected_opt})"
+    
+    elif cat_id == "gps_telemetry":
+        clean_model = base_model_name.replace("GPS Module", "").replace("GPS", "").strip()
+        if "Lidar" in base_model_name or "Optical Flow" in base_model_name:
+            return f"{brand} {clean_model} {version_suffix} Optik Akış ve Lidar Konumlandırma Sensörü ({selected_opt})"
+        return f"{brand} {clean_model} {version_suffix} Yüksek Hassasiyetli Drone GPS ve Pusula Modülü ({selected_opt})"
+    
+    elif cat_id == "tools_accessories":
+        clean_model = base_model_name.strip()
+        if "Soldering Iron" in clean_model:
+            return f"{brand} {clean_model.replace('Soldering Iron', '').strip()} {version_suffix} Akıllı Dijital Taşınabilir Havya Seti ({selected_opt})"
+        elif "Screwdriver" in clean_model or "Hex" in clean_model:
+            return f"{brand} {clean_model.replace('Screwdriver Tool Set', '').strip()} {version_suffix} Sertleştirilmiş Titanyum Alyan Takımı ({selected_opt})"
+        elif "Smoke Stopper" in clean_model:
+            return f"{brand} {clean_model} {version_suffix} Kısa Devre ve Ters Kutup Koruma Sigortası ({selected_opt})"
+        elif "Solder Wire" in clean_model:
+            return f"{brand} {clean_model.replace('Solder Wire', '').strip()} {version_suffix} Yüksek Kaliteli Lehim Teli ({selected_opt})"
+        elif "Standoff" in clean_model:
+            return f"{brand} {clean_model.replace('Standoff Kit', '').strip()} {version_suffix} Kapsamlı Drone Montaj Civata ve Yükseltici Seti ({selected_opt})"
+        return f"{brand} {clean_model} {version_suffix} FPV Drone Servis ve Montaj Ekipmanı ({selected_opt})"
+    
+    return f"{brand} {base_model_name} {version_suffix} ({selected_opt})"
+
+
 def seed_database():
     init_db()
     conn = get_db()
@@ -419,9 +509,9 @@ def seed_database():
             sub_id = (i // len(templates)) + 1
             version_suffix = f"V{sub_id}" if sub_id > 1 else "PRO"
             
-            # Product Names
+            # Product Names (Authentic English and Turkish titles)
             name_en = f"{brand} {base_model_name} {version_suffix} ({selected_opt})"
-            name_tr = f"{brand} {base_model_name} {version_suffix} ({selected_opt})"
+            name_tr = generate_turkish_product_name(cat_id, brand, base_model_name, spec_variant, version_suffix, selected_opt)
 
             slug = f"{brand.lower().replace(' ', '-').replace('(', '').replace(')', '')}-{base_model_name.lower().replace(' ', '-').replace('/', '-')}-{version_suffix.lower()}-{i+1}"
             sku = f"PZTR-{cat_id[:3].upper()}-{product_idx:04d}"
