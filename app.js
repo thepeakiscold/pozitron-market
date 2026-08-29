@@ -631,23 +631,65 @@ class PozitronApp {
     } catch(e) {}
   }
 
-  getProductReviewStats(productId, productName = '') {
+  getProductReviewsList(prod) {
+    if (!prod) return [];
     const reviews = this.getCommunityReviews();
-    const pid = String(productId || '').toLowerCase().trim();
-    const pName = String(productName || '').toLowerCase().trim();
+    
+    // Support either product object or id/string
+    let p = prod;
+    if (typeof prod === 'string') {
+      const staticData = this.getStaticData();
+      p = (staticData.products || []).find(x => x.id === prod || x.slug === prod || x.sku === prod) || { id: prod, name_tr: prod, name_en: prod };
+    }
 
-    const matched = reviews.filter(r => {
-      // General feedback without specific product ID/name should not match products
-      if (!r.productId && (!r.productName || r.productName.toLowerCase().includes('genel') || r.productName.toLowerCase().includes('general'))) {
+    const pId = String(p.id || '').toLowerCase().trim();
+    const pSlug = String(p.slug || '').toLowerCase().trim();
+    const pSku = String(p.sku || '').toLowerCase().trim();
+    const pNameTR = String(p.name_tr || '').toLowerCase().trim();
+    const pNameEN = String(p.name_en || '').toLowerCase().trim();
+
+    return reviews.filter(r => {
+      if (!r) return false;
+      const rName = String(r.productName || '').toLowerCase().trim();
+      const rId = String(r.productId || '').toLowerCase().trim();
+
+      // Skip general store reviews
+      if (!rId && (!rName || rName.includes('genel') || rName.includes('general'))) {
         return false;
       }
-      if (r.productId && pid && String(r.productId).toLowerCase().trim() === pid) return true;
-      if (pName && r.productName) {
-        const rName = String(r.productName).toLowerCase().trim();
-        if (pName === rName) return true;
+
+      // 1. Direct ID / SKU / Slug matching
+      if (rId) {
+        if (pId && (rId === pId || pId.includes(rId) || rId.includes(pId))) return true;
+        if (pSlug && (rId === pSlug || pSlug.includes(rId) || rId.includes(pSlug))) return true;
+        if (pSku && (rId === pSku || pSku.includes(rId) || rId.includes(pSku))) return true;
       }
+
+      // 2. Intelligent Product Name matching
+      if (rName && !rName.includes('genel') && !rName.includes('general')) {
+        // Direct inclusion
+        if (pNameTR && (pNameTR.includes(rName) || rName.includes(pNameTR))) return true;
+        if (pNameEN && (pNameEN.includes(rName) || rName.includes(pNameEN))) return true;
+
+        // Clean model words and match keywords
+        const cleanRName = rName.replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, ' ').trim();
+        const cleanTR = pNameTR.replace(/[^a-z0-9]/g, ' ').trim();
+        const cleanEN = pNameEN.replace(/[^a-z0-9]/g, ' ').trim();
+
+        const rKeywords = cleanRName.split(/\s+/).filter(w => w.length >= 3 && !['v1', 'v2', 'v3', 'v4', 'v5', 'pro', 'drone', 'fpv', 'set', 'kiti', 'stack', 'unit'].includes(w));
+        if (rKeywords.length >= 2) {
+          const matchTR = rKeywords.every(kw => cleanTR.includes(kw));
+          const matchEN = rKeywords.every(kw => cleanEN.includes(kw));
+          if (matchTR || matchEN) return true;
+        }
+      }
+
       return false;
     });
+  }
+
+  getProductReviewStats(prod) {
+    const matched = this.getProductReviewsList(prod);
 
     if (matched.length > 0) {
       const sum = matched.reduce((acc, curr) => acc + (parseInt(curr.rating) || 5), 0);
@@ -655,14 +697,16 @@ class PozitronApp {
       return {
         count: matched.length,
         rating: avg,
-        hasReviews: true
+        hasReviews: true,
+        reviews: matched
       };
     }
 
     return {
       count: 0,
       rating: '0',
-      hasReviews: false
+      hasReviews: false,
+      reviews: []
     };
   }
 
@@ -1004,7 +1048,7 @@ class PozitronApp {
       }
 
       // Dynamic Review Rating & Count from Real Pilot Comments: ONLY display if real reviews exist!
-      const reviewStats = this.getProductReviewStats(p.id, name);
+      const reviewStats = this.getProductReviewStats(p);
       let ratingRowHtml = '';
       if (reviewStats.hasReviews && reviewStats.count > 0) {
         ratingRowHtml = `
@@ -2727,7 +2771,7 @@ class PozitronApp {
         `;
       }
 
-      const modalStats = this.getProductReviewStats(p.id, name);
+      const modalStats = this.getProductReviewStats(p);
       let modalRatingRowHtml = '';
       if (modalStats.hasReviews && modalStats.count > 0) {
         modalRatingRowHtml = `
@@ -2797,7 +2841,7 @@ class PozitronApp {
             </button>
           </div>
           <div class="product-reviews-list" id="modal-product-reviews-list">
-            ${this.renderProductModalReviews(p.id)}
+            ${this.renderProductModalReviews(p)}
           </div>
         </div>
       `;
@@ -4700,9 +4744,8 @@ class PozitronApp {
     this.renderCommunityReviews(filter);
   }
 
-  renderProductModalReviews(productId) {
-    const reviews = this.getCommunityReviews();
-    const productReviews = reviews.filter(r => r.productId === productId || (r.productName && productId && r.productName.toLowerCase().includes(productId.toLowerCase())));
+  renderProductModalReviews(prod) {
+    const productReviews = this.getProductReviewsList(prod);
 
     if (productReviews.length === 0) {
       return `
