@@ -637,11 +637,14 @@ class PozitronApp {
     const pName = String(productName || '').toLowerCase().trim();
 
     const matched = reviews.filter(r => {
+      // General feedback without specific product ID/name should not match products
+      if (!r.productId && (!r.productName || r.productName.toLowerCase().includes('genel') || r.productName.toLowerCase().includes('general'))) {
+        return false;
+      }
       if (r.productId && pid && String(r.productId).toLowerCase().trim() === pid) return true;
       if (pName && r.productName) {
         const rName = String(r.productName).toLowerCase().trim();
         if (pName === rName) return true;
-        if (pName.includes(rName) || rName.includes(pName)) return true;
       }
       return false;
     });
@@ -658,7 +661,7 @@ class PozitronApp {
 
     return {
       count: 0,
-      rating: '5.0',
+      rating: '0',
       hasReviews: false
     };
   }
@@ -1000,20 +1003,20 @@ class PozitronApp {
         origPriceHtml = `<span class="original-price">${this.formatPrice(origUSD, origTRY)}</span>`;
       }
 
-      // Dynamic Review Rating & Count from Real Pilot Comments
+      // Dynamic Review Rating & Count from Real Pilot Comments: ONLY display if real reviews exist!
       const reviewStats = this.getProductReviewStats(p.id, name);
-      const ratingVal = reviewStats.hasReviews ? reviewStats.rating : (p.rating || '5.0');
-      const countVal = reviewStats.hasReviews ? reviewStats.count : (p.review_count || 0);
-
-      const ratingRowHtml = `
-        <div class="card-rating-row" style="display:flex; align-items:center; gap:6px; margin: 3px 0 5px 0; font-size:0.80rem;">
-          <div style="display:flex; align-items:center; gap:2px; color:#f59e0b;">
-            <span style="font-size:0.88rem;">★</span>
-            <strong style="color:var(--text-primary); font-size:0.82rem;">${ratingVal}</strong>
+      let ratingRowHtml = '';
+      if (reviewStats.hasReviews && reviewStats.count > 0) {
+        ratingRowHtml = `
+          <div class="card-rating-row" style="display:flex; align-items:center; gap:6px; margin: 3px 0 5px 0; font-size:0.80rem;">
+            <div style="display:flex; align-items:center; gap:2px; color:#f59e0b;">
+              <span style="font-size:0.88rem;">★</span>
+              <strong style="color:var(--text-primary); font-size:0.82rem;">${reviewStats.rating}</strong>
+            </div>
+            <span style="color:var(--text-muted); font-size:0.75rem;">(${reviewStats.count} ${lang === 'tr' ? 'Yorum' : 'Reviews'})</span>
           </div>
-          <span style="color:var(--text-muted); font-size:0.75rem;">(${countVal > 0 ? `${countVal} ${lang === 'tr' ? 'Yorum' : 'Reviews'}` : (lang === 'tr' ? 'Yeni Ürün' : 'New')})</span>
-        </div>
-      `;
+        `;
+      }
 
       // Specs chips
       let specsHtml = '';
@@ -2725,8 +2728,16 @@ class PozitronApp {
       }
 
       const modalStats = this.getProductReviewStats(p.id, name);
-      const modalRating = modalStats.hasReviews ? modalStats.rating : (p.rating || '5.0');
-      const modalCount = modalStats.hasReviews ? modalStats.count : (p.review_count || 0);
+      let modalRatingRowHtml = '';
+      if (modalStats.hasReviews && modalStats.count > 0) {
+        modalRatingRowHtml = `
+          <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; margin: -2px 0 2px 0;">
+            <div style="color:#f59e0b; font-size:0.95rem; letter-spacing:1px;">★</div>
+            <strong style="color:var(--text-primary); font-size:0.88rem;">${modalStats.rating}</strong>
+            <span style="color:var(--text-muted); font-size:0.80rem;">(${modalStats.count} ${lang === 'tr' ? 'Doğrulanmış Pilot Değerlendirmesi' : 'Verified Pilot Reviews'})</span>
+          </div>
+        `;
+      }
 
       body.innerHTML = `
         <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap: 32px; align-items:start;">
@@ -2740,12 +2751,7 @@ class PozitronApp {
             <div style="font-size:0.8rem; font-weight:700; color:var(--brand-primary); text-transform:uppercase; letter-spacing:0.5px;">${p.brand} • SKU: ${p.sku || p.id}</div>
             <h2 style="font-size:1.35rem; font-weight:800; line-height:1.3; color:var(--text-primary); margin:0;">${name}</h2>
             
-            <!-- Real Dynamic Reviews Rating & Pilot Count -->
-            <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; margin: -2px 0 2px 0;">
-              <div style="color:#f59e0b; font-size:0.95rem; letter-spacing:1px;">★</div>
-              <strong style="color:var(--text-primary); font-size:0.88rem;">${modalRating}</strong>
-              <span style="color:var(--text-muted); font-size:0.80rem;">(${modalCount > 0 ? `${modalCount} ${lang === 'tr' ? 'Doğrulanmış Pilot Değerlendirmesi' : 'Verified Pilot Reviews'}` : (lang === 'tr' ? 'İlk değerlendirmeyi sen yaz' : 'Be the first to review')})</span>
-            </div>
+            ${modalRatingRowHtml}
 
             <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem;">
               ${!isOutOfStock ? `
