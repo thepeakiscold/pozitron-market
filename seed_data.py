@@ -316,87 +316,32 @@ ITEM_CONFIGS = [
     }
 ]
 
-CATEGORY_PHOTOS = {
-    "motors": [
-        "/assets/products/motor.png",
-        "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80"
-    ],
-    "esc": [
-        "/assets/products/esc.png",
-        "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1597733336794-12d05021d510?auto=format&fit=crop&w=600&q=80"
-    ],
-    "propellers": [
-        "/assets/products/prop.png",
-        "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1506947411487-a56738267384?auto=format&fit=crop&w=600&q=80"
-    ],
-    "converters": [
-        "/assets/products/bec.png",
-        "https://images.unsplash.com/photo-1555680202-c86f0e12f086?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1563770660941-20978e870e26?auto=format&fit=crop&w=600&q=80"
-    ],
-    "flight_controllers": [
-        "/assets/products/fc.png",
-        "https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=600&q=80"
-    ],
-    "cameras": [
-        "/assets/products/cam.png",
-        "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=600&q=80"
-    ],
-    "vtx": [
-        "/assets/products/vtx.png",
-        "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=600&q=80"
-    ],
-    "transmitters_receivers": [
-        "/assets/products/radio.png",
-        "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=600&q=80"
-    ],
-    "batteries_chargers": [
-        "/assets/products/lipo.png",
-        "https://images.unsplash.com/photo-1619725002198-6a689b72f41d?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=600&q=80"
-    ],
-    "frames": [
-        "/assets/products/frame.png",
-        "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1521405924368-64c5b84bec60?auto=format&fit=crop&w=600&q=80"
-    ],
-    "antennas": [
-        "/assets/products/antenna.png",
-        "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80"
-    ],
-    "gps_telemetry": [
-        "/assets/products/fc.png",
-        "https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1580894732444-8ecded7900cd?auto=format&fit=crop&w=600&q=80"
-    ],
-    "tools_accessories": [
-        "/assets/products/frame.png",
-        "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
-        "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=600&q=80"
-    ]
+CATEGORY_FALLBACKS = {
+    "motors": "./assets/products/motor.png",
+    "esc": "./assets/products/esc.png",
+    "propellers": "./assets/products/prop.png",
+    "converters": "./assets/products/bec.png",
+    "flight_controllers": "./assets/products/fc.png",
+    "cameras": "./assets/products/cam.png",
+    "vtx": "./assets/products/vtx.png",
+    "transmitters_receivers": "./assets/products/radio.png",
+    "batteries_chargers": "./assets/products/lipo.png",
+    "frames": "./assets/products/frame.png",
+    "antennas": "./assets/products/antenna.png",
+    "gps_telemetry": "./assets/products/fc.png",
+    "tools_accessories": "./assets/products/frame.png"
 }
 
-def get_product_images(cat_id, product_idx, brand):
-    photos = CATEGORY_PHOTOS.get(cat_id, CATEGORY_PHOTOS["motors"])
-    primary_idx = (product_idx - 1) % len(photos)
-    primary_url = photos[primary_idx]
-    
-    # Create gallery with 2-3 photos from same category
-    gallery = [primary_url]
-    for offset in [1, 2]:
-        sec_idx = (primary_idx + offset) % len(photos)
-        if photos[sec_idx] not in gallery:
-            gallery.append(photos[sec_idx])
+def get_product_images(cat_id, product_idx, brand, sku=None):
+    if sku:
+        sku_clean = sku.strip()
+        local_rel = f"./assets/products/{sku_clean}.jpg"
+        local_abs = os.path.join(os.path.dirname(__file__), "assets", "products", f"{sku_clean}.jpg")
+        if os.path.exists(local_abs):
+            return local_rel, [local_rel]
             
-    return primary_url, gallery
+    fallback = CATEGORY_FALLBACKS.get(cat_id, "./assets/products/motor.png")
+    return fallback, [fallback]
 
 def seed_database():
     init_db()
@@ -545,7 +490,7 @@ def seed_database():
             desc_en = f"The {brand} {base_model_name} {version_suffix} is engineered for peak drone performance. Featuring {spec_variant} with {selected_opt} specifications, {desc_en_core}. Built with aerospace-grade components for extreme durability, low noise, and maximum efficiency. Compatible with standard FPV drone stacks and power setups."
             desc_tr = f"{brand} {base_model_name} {version_suffix}, en yüksek drone performansı için tasarlanmıştır. {spec_variant} ve {selected_opt} özelliklerine sahip olup, {desc_tr_core}. Aşırı dayanıklılık, düşük gürültü ve maksimum verimlilik için havacılık sınıfı bileşenlerle üretilmiştir. Standart FPV drone montajları ve güç sistemleriyle tam uyumludur."
 
-            image_url, gallery = get_product_images(cat_id, product_idx, brand)
+            image_url, gallery = get_product_images(cat_id, product_idx, brand, sku)
 
             # Compatibility metadata (e.g. for Drone Builder Checker)
             compat = {
