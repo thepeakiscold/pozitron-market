@@ -63,12 +63,37 @@ class ContentGenerator:
             cursor = conn.cursor()
             
             if product_id:
-                cursor.execute("SELECT * FROM products WHERE id = ? OR slug = ?", (product_id, product_id))
+                cursor.execute("SELECT * FROM products WHERE id = ? OR slug = ? OR sku = ?", (product_id, product_id, product_id))
                 row = cursor.fetchone()
                 conn.close()
                 if row:
                     return dict(row)
             else:
+                # 1. Check if Lead Supervisor has highlighted_products with price/stock advantage
+                cursor.execute("SELECT directive_json FROM lead_supervisor_directives ORDER BY id DESC LIMIT 1")
+                dir_row = cursor.fetchone()
+                if dir_row and dir_row[0]:
+                    try:
+                        dir_data = json.loads(dir_row[0])
+                        hl_products = dir_data.get("instagram_directive", {}).get("highlighted_products", [])
+                        hl_skus = [p.get("sku") for p in hl_products if p.get("sku")]
+                        if hl_skus:
+                            placeholders = ','.join('?' for _ in hl_skus)
+                            recent_filter = ""
+                            params = list(hl_skus)
+                            if recent_ids:
+                                r_placeholders = ','.join('?' for _ in recent_ids)
+                                recent_filter = f" AND id NOT IN ({r_placeholders})"
+                                params.extend(recent_ids)
+                            cursor.execute(f"SELECT * FROM products WHERE sku IN ({placeholders}){recent_filter}", params)
+                            hl_rows = cursor.fetchall()
+                            if hl_rows:
+                                selected = random.choice(hl_rows)
+                                conn.close()
+                                return dict(selected)
+                    except Exception:
+                        pass
+
                 query = "SELECT * FROM products"
                 params = []
                 if recent_ids:

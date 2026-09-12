@@ -65,6 +65,16 @@
       border-bottom-color: #ff5722;
       background: rgba(255, 87, 34, 0.08);
     }
+    .bots-nav-tab.active-lead {
+      color: #38bdf8;
+      border-bottom-color: #38bdf8;
+      background: linear-gradient(180deg, rgba(56, 189, 248, 0.12) 0%, rgba(14, 165, 233, 0.02) 100%);
+    }
+    .btn-lead {
+      background: linear-gradient(135deg, #0284c7 0%, #6366f1 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+    }
     .bots-card {
       background: #0f172a;
       border: 1px solid #1e293b;
@@ -198,22 +208,28 @@
 
   <!-- Navigation Tabs Bar -->
   <div style="background:#0f172a; border-bottom:1px solid #1e293b; padding:0 28px;">
-    <div style="max-width:1400px; margin:0 auto; display:flex; gap:8px;">
-      <button type="button" class="bots-nav-tab active-ig" id="tab-btn-instagram" onclick="switchBotsTab('instagram')">
+    <div style="max-width:1400px; margin:0 auto; display:flex; gap:8px; overflow-x:auto;">
+      <button type="button" class="bots-nav-tab active-lead" id="tab-btn-orchestrator" onclick="switchBotsTab('orchestrator')">
+        <span style="font-size:1.15rem;">🏛️</span>
+        <span>Baş Orkestrasyon (Lead Supervisor &amp; 5 Alt Ajan)</span>
+        <span class="tag-badge" style="background:linear-gradient(135deg, #0284c7, #6366f1); color:#fff; font-size:0.68rem; margin-left:4px;">ANTIGRAVITY 2.0</span>
+      </button>
+
+      <button type="button" class="bots-nav-tab" id="tab-btn-instagram" onclick="switchBotsTab('instagram')">
         <span style="font-size:1.15rem;">📸</span>
-        <span>Instagram PR &amp; Türk Drone Topluluğu Robotu</span>
-        <span class="tag-badge" style="background:#e1306c; color:#fff; font-size:0.68rem; margin-left:4px;">10 TAKİP &amp; 10 YORUM</span>
+        <span>Instagram PR Robotu</span>
+        <span class="tag-badge" style="background:#e1306c; color:#fff; font-size:0.68rem; margin-left:4px;">SUBAGENT 1</span>
       </button>
 
       <button type="button" class="bots-nav-tab" id="tab-btn-reddit" onclick="switchBotsTab('reddit')">
         <span style="font-size:1.15rem;">🛸</span>
-        <span>Reddit Türk Drone Asistanı</span>
-        <span class="tag-badge" style="background:#ff4500; color:#fff; font-size:0.68rem; margin-left:4px;">TÜRK SUBREDDITLER</span>
+        <span>Reddit Drone Asistanı</span>
+        <span class="tag-badge" style="background:#ff4500; color:#fff; font-size:0.68rem; margin-left:4px;">SUBAGENT 2</span>
       </button>
 
       <button type="button" class="bots-nav-tab" id="tab-btn-daemon" onclick="switchBotsTab('daemon')">
         <span style="font-size:1.15rem;">⚙️</span>
-        <span>Arka Plan Servisi (Systemd Daemon)</span>
+        <span>Arka Plan Servisi (Systemd)</span>
       </button>
     </div>
   </div>
@@ -222,9 +238,210 @@
   <main style="max-width:1400px; margin:28px auto; padding:0 20px;">
 
     <!-- ===================================================================== -->
+    <!-- SECTION 0: LEAD SUPERVISOR & 5 SUBAGENTS ORCHESTRATION -->
+    <!-- ===================================================================== -->
+    <section id="pane-orchestrator" style="display:block;">
+      
+      <!-- Top Action & Lead Status Card -->
+      <div class="bots-card" style="margin-bottom:24px; background:linear-gradient(135deg, #0b1120 0%, #1e1b4b 50%, #0369a1 100%); border-color:#0284c7; box-shadow:0 0 30px rgba(2,132,199,0.2);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <span style="font-size:2rem;">🏛️</span>
+              <h2 style="font-size:1.4rem; font-weight:800; margin:0; color:#ffffff; font-family:'Plus Jakarta Sans', sans-serif;">
+                Baş Orkestrasyon Ajanı (Lead Supervisor) &amp; 5 Uzman Alt Ajan
+              </h2>
+              <span id="lead-status-pill" class="tag-badge" style="background:#0284c7; color:#ffffff;">ANTIGRAVITY 2.0 OTONOM</span>
+            </div>
+            <p style="font-size:0.9rem; color:#cbd5e1; margin:0 0 16px 0; max-width:920px; line-height:1.6;">
+              Pozitron Market'in teknik otoritesini, organik trafiğini, rekabetçi fiyatlandırmasını ve PR süreçlerini yöneten hiyerarşik yapay zeka mimarisi.
+              <strong>Her 2 saatte bir</strong> Subagent 3 (Telemetri) ve Subagent 5 (Fiyat/Arbitraj) girdilerini harmanlar, fiyat/stok avantajı bulunan donanımları tespit eder ve <strong>Subagent 1 (Instagram)</strong>, <strong>Subagent 2 (Reddit)</strong> ve <strong>Subagent 4 (Teknik SEO)</strong> için dinamik strateji direktifi üretir.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:16px; font-size:0.82rem; color:#94a3b8;">
+              <span>🆔 Aktif Döngü: <strong id="lead-cycle-id" class="code-chip" style="color:#38bdf8;">lead_cycle_loading...</strong></span>
+              <span>⏱️ Tarama Periyodu: <strong style="color:#f8fafc;">2 Saatte Bir</strong></span>
+              <span>⏳ Sonraki Otonom Döngü: <strong id="lead-countdown" style="color:#f59e0b; font-weight:800; font-family:monospace; font-size:0.95rem;">01:59:59</strong></span>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
+            <button type="button" class="btn-action btn-lead" onclick="runSupervisorCycle()" id="btn-run-lead-cycle">
+              <span>⚡ 2 Saatlik Orkestrasyon Döngüsünü Şimdi Çalıştır</span>
+            </button>
+            <button type="button" class="btn-action btn-secondary" onclick="loadOrchestratorData()">
+              <span>🔄 Verileri Yenile</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subagent 3: Telemetry & Performance Matrix (5 KPIs) -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:16px; margin-bottom:24px;">
+        
+        <!-- Instagram KPI -->
+        <div class="bots-card" style="background:#111827; border-color:#e1306c33;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.8rem; font-weight:700; color:#fda4af;">📸 SUBAGENT 1: INSTAGRAM</span>
+            <span class="tag-badge" style="background:#e1306c22; color:#fb7185;">CANLI API</span>
+          </div>
+          <div style="font-size:1.6rem; font-weight:800; color:#fff;" id="tel-ig-posts">0</div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">
+            Toplam Erişim: <strong id="tel-ig-reach" style="color:#f8fafc;">0</strong> &bull; Etkileşim: <strong id="tel-ig-eng" style="color:#38bdf8;">0.0%</strong>
+          </div>
+        </div>
+
+        <!-- Reddit KPI -->
+        <div class="bots-card" style="background:#111827; border-color:#ff450033;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.8rem; font-weight:700; color:#fdba74;">🛸 SUBAGENT 2: REDDIT</span>
+            <span class="tag-badge" style="background:#ff450022; color:#fb923c;">SIFIR SPAM</span>
+          </div>
+          <div style="font-size:1.6rem; font-weight:800; color:#fff;" id="tel-reddit-comments">0</div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">
+            Net Upvote: <strong id="tel-reddit-upvotes" style="color:#f8fafc;">0</strong> &bull; Link Tıklama: <strong id="tel-reddit-clicks" style="color:#38bdf8;">0</strong>
+          </div>
+        </div>
+
+        <!-- Price Intelligence KPI -->
+        <div class="bots-card" style="background:#111827; border-color:#10b98133;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.8rem; font-weight:700; color:#86efac;">🏷️ SUBAGENT 5: FİYAT &amp; ARBİTRAJ</span>
+            <span class="tag-badge" style="background:#10b98122; color:#34d399;">TR PAZARI</span>
+          </div>
+          <div style="font-size:1.6rem; font-weight:800; color:#10b981;" id="tel-price-advantages">0</div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">
+            Taranan Donanım: <strong id="tel-price-total" style="color:#f8fafc;">500 SKU</strong> &bull; Avantaj Oranı: <strong id="tel-price-pct" style="color:#10b981;">0%</strong>
+          </div>
+        </div>
+
+        <!-- SEO KPI -->
+        <div class="bots-card" style="background:#111827; border-color:#38bdf833;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.8rem; font-weight:700; color:#7dd3fc;">📝 SUBAGENT 4: TEKNİK SEO</span>
+            <span class="tag-badge" style="background:#38bdf822; color:#38bdf8;">REHBERLER</span>
+          </div>
+          <div style="font-size:1.6rem; font-weight:800; color:#fff;" id="tel-seo-articles">0</div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">
+            İndekslenen Terim: <strong id="tel-seo-kw-count" style="color:#f8fafc;">0</strong> &bull; İç Linkleme Aktif
+          </div>
+        </div>
+
+        <!-- Traffic KPI -->
+        <div class="bots-card" style="background:#111827; border-color:#818cf833;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.8rem; font-weight:700; color:#c7d2fe;">📈 TRAFİK VE DÖNÜŞÜM</span>
+            <span class="tag-badge" style="background:#818cf822; color:#a5b4fc;">TELEMETRİ</span>
+          </div>
+          <div style="font-size:1.6rem; font-weight:800; color:#fff;" id="tel-traffic-sessions">0</div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:4px;">
+            Yönlendirme Oturumu &bull; Hemen Çıkma: <strong id="tel-traffic-bounce" style="color:#38bdf8;">28%</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Active Directive Dynamic JSON Box -->
+      <div class="bots-card" style="margin-bottom:24px; background:#0b1120; border-color:#1e293b;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; cursor:pointer;" onclick="toggleDirectiveBox()">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.2rem;">📋</span>
+            <h3 style="font-size:1.1rem; font-weight:800; margin:0; color:#ffffff;">
+              Baş Ajan Aktif Strateji Direktifi (JSON Payload)
+            </h3>
+            <span class="tag-badge" style="background:#1e293b; color:#38bdf8; border:1px solid #0284c7;">5 AJANA ENJEKTE EDİLDİ</span>
+          </div>
+          <span id="directive-toggle-icon" style="color:#94a3b8; font-size:0.9rem;">▼ Göster / Gizle</span>
+        </div>
+        <div id="directive-json-container" style="background:#020617; padding:16px; border-radius:8px; border:1px solid #1e293b; overflow-x:auto;">
+          <pre id="directive-json-content" style="margin:0; font-family:'JetBrains Mono', monospace; font-size:0.82rem; color:#38bdf8; line-height:1.5;">Yükleniyor...</pre>
+        </div>
+      </div>
+
+      <!-- Subagent 5: Price Intelligence Matrix & Arbitrage Table -->
+      <div class="bots-card" style="margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.3rem;">🏷️</span>
+              <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#ffffff;">
+                Subagent 5: Türkiye Pazarı Fiyat &amp; Arbitraj İstihbarat Matrisi
+              </h3>
+            </div>
+            <div style="font-size:0.82rem; color:#94a3b8; margin-top:2px;">
+              Dronmarket, Robotistan, SAMM, Robolink, FPVTR gibi yerel satıcılar ile 500 Pozitron donanımının karşılaştırması
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <!-- Filters -->
+            <div style="display:flex; gap:6px; background:#0b1120; padding:4px; border-radius:8px; border:1px solid #1e293b;">
+              <button type="button" class="btn-secondary" style="padding:6px 12px; font-size:0.78rem; border-radius:6px;" onclick="filterPriceTable('ALL')">Tümü (500)</button>
+              <button type="button" class="btn-secondary" style="padding:6px 12px; font-size:0.78rem; border-radius:6px; color:#10b981;" onclick="filterPriceTable('CHEAPER')">Fiyat Avantajlı (CHEAPER)</button>
+              <button type="button" class="btn-secondary" style="padding:6px 12px; font-size:0.78rem; border-radius:6px; color:#f59e0b;" onclick="filterPriceTable('EXPENSIVE')">İnceleme (EXPENSIVE)</button>
+            </div>
+            <button type="button" class="btn-action btn-secondary" onclick="scanPriceIntelligence()">
+              <span>🔍 Yeniden Tara</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div style="overflow-x:auto; max-height:480px; overflow-y:auto; border:1px solid #1e293b; border-radius:8px;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;">
+            <thead style="background:#0b1120; position:sticky; top:0; z-index:10; border-bottom:1px solid #334155;">
+              <tr style="color:#94a3b8;">
+                <th style="padding:10px 14px;">SKU</th>
+                <th style="padding:10px 14px;">Ürün Adı</th>
+                <th style="padding:10px 14px;">Pozitron Fiyatı</th>
+                <th style="padding:10px 14px;">Piyasa Min</th>
+                <th style="padding:10px 14px;">Piyasa Ort.</th>
+                <th style="padding:10px 14px;">Fiyat Durumu</th>
+                <th style="padding:10px 14px;">Rakip Stok</th>
+                <th style="padding:10px 14px;">Strateji Bayrağı</th>
+              </tr>
+            </thead>
+            <tbody id="price-table-body">
+              <tr>
+                <td colspan="8" style="padding:20px; text-align:center; color:#94a3b8;">Fiyat istihbarat verileri yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Subagent 4: Technical Documentation & SEO Guides Gallery -->
+      <div class="bots-card" style="margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:18px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:1.3rem;">📝</span>
+              <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#ffffff;">
+                Subagent 4: Teknik Dokümantasyon &amp; SEO İç Linkleme Rehberleri
+              </h3>
+            </div>
+            <div style="font-size:0.82rem; color:#94a3b8; margin-top:2px;">
+              Pozitron Market teknik otoritesini artıran derinlemesine FPV/robotik mühendislik makaleleri
+            </div>
+          </div>
+
+          <button type="button" class="btn-action btn-lead" onclick="generateSeoArticle()">
+            <span>✍️ Yeni Teknik Rehber Üret (Gemini)</span>
+          </button>
+        </div>
+
+        <div id="seo-articles-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(380px, 1fr)); gap:16px;">
+          <div style="padding:20px; text-align:center; color:#94a3b8; border:1px dashed #334155; border-radius:8px;">
+            Rehberler yükleniyor...
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================================================================== -->
     <!-- SECTION 1: INSTAGRAM PR & TURKISH DRONE ENGAGEMENT -->
     <!-- ===================================================================== -->
-    <section id="pane-instagram">
+    <section id="pane-instagram" style="display:none;">
       
       <!-- Top Action & Info Bar -->
       <div class="bots-card" style="margin-bottom:24px; background:linear-gradient(135deg, #111827 0%, #1e1b4b 60%, #0f172a 100%); border-color:#312e81;">
@@ -628,32 +845,38 @@
     }
 
     function switchBotsTab(tabName) {
+      const paneOrch = document.getElementById('pane-orchestrator');
       const paneIg = document.getElementById('pane-instagram');
       const paneReddit = document.getElementById('pane-reddit');
       const paneDaemon = document.getElementById('pane-daemon');
 
+      const btnOrch = document.getElementById('tab-btn-orchestrator');
       const btnIg = document.getElementById('tab-btn-instagram');
       const btnReddit = document.getElementById('tab-btn-reddit');
       const btnDaemon = document.getElementById('tab-btn-daemon');
 
-      [btnIg, btnReddit, btnDaemon].forEach(b => {
+      [btnOrch, btnIg, btnReddit, btnDaemon].forEach(b => {
         if (b) {
-          b.classList.remove('active', 'active-ig', 'active-reddit');
+          b.classList.remove('active', 'active-lead', 'active-ig', 'active-reddit');
         }
       });
 
+      if (paneOrch) paneOrch.style.display = tabName === 'orchestrator' ? 'block' : 'none';
       if (paneIg) paneIg.style.display = tabName === 'instagram' ? 'block' : 'none';
       if (paneReddit) paneReddit.style.display = tabName === 'reddit' ? 'block' : 'none';
       if (paneDaemon) paneDaemon.style.display = tabName === 'daemon' ? 'block' : 'none';
 
-      if (tabName === 'instagram') {
-        btnIg.classList.add('active-ig');
+      if (tabName === 'orchestrator') {
+        if (btnOrch) btnOrch.classList.add('active-lead');
+        loadOrchestratorData();
+      } else if (tabName === 'instagram') {
+        if (btnIg) btnIg.classList.add('active-ig');
         loadInstagramData();
       } else if (tabName === 'reddit') {
-        btnReddit.classList.add('active-reddit');
+        if (btnReddit) btnReddit.classList.add('active-reddit');
         loadRedditData();
       } else if (tabName === 'daemon') {
-        btnDaemon.classList.add('active');
+        if (btnDaemon) btnDaemon.classList.add('active');
       }
     }
 
@@ -1240,9 +1463,290 @@
       }
     }
 
+    // =========================================================================
+    // HIERARCHICAL ORCHESTRATION & 5 SUBAGENTS CONTROLLER
+    // =========================================================================
+    let _leadCountdownInterval = null;
+    let _nextLeadTargetDate = null;
+    let _allPriceRows = [];
+    let _currentPriceFilter = 'ALL';
+
+    async function loadOrchestratorData() {
+      // 1. Supervisor Status & Active Directive
+      try {
+        const res = await fetch('/api/supervisor/status');
+        const data = await res.json();
+        
+        const cycleIdEl = document.getElementById('lead-cycle-id');
+        if (cycleIdEl) {
+          cycleIdEl.textContent = data.active_directive?.lead_cycle_id || 'Henüz Döngü Çalışmadı';
+        }
+
+        if (data.next_run_at) {
+          _nextLeadTargetDate = new Date(data.next_run_at);
+        }
+
+        renderDirectiveJson(data.active_directive);
+      } catch(e) {
+        console.error("Supervisor status load error:", e);
+      }
+
+      // 2. Subagent 3: Telemetry
+      try {
+        const tRes = await fetch('/api/telemetry/latest');
+        const tData = await tRes.json();
+        renderTelemetry(tData);
+      } catch(e) {
+        console.error("Telemetry load error:", e);
+      }
+
+      // 3. Subagent 5: Price Intelligence
+      try {
+        const pRes = await fetch('/api/price-intelligence?limit=200');
+        const pData = await pRes.json();
+        _allPriceRows = pData.report || [];
+        renderPriceTable(_allPriceRows);
+      } catch(e) {
+        console.error("Price intelligence load error:", e);
+      }
+
+      // 4. Subagent 4: SEO Articles
+      try {
+        const sRes = await fetch('/api/seo/articles');
+        const sData = await sRes.json();
+        renderSeoArticles(sData.articles || []);
+      } catch(e) {
+        console.error("SEO articles load error:", e);
+      }
+
+      startLeadCountdown();
+    }
+
+    function renderDirectiveJson(directive) {
+      const container = document.getElementById('directive-json-content');
+      if (!container) return;
+      if (!directive) {
+        container.textContent = "// Henüz bir direktif üretilmedi. '2 Saatlik Döngüyü Şimdi Çalıştır' butonuna tıklayınız.";
+        return;
+      }
+      container.textContent = JSON.stringify(directive, null, 2);
+    }
+
+    function toggleDirectiveBox() {
+      const el = document.getElementById('directive-json-container');
+      const icon = document.getElementById('directive-toggle-icon');
+      if (!el) return;
+      if (el.style.display === 'none') {
+        el.style.display = 'block';
+        if (icon) icon.textContent = '▼ Göster / Gizle';
+      } else {
+        el.style.display = 'none';
+        if (icon) icon.textContent = '▶ Göster / Gizle';
+      }
+    }
+
+    function renderTelemetry(t) {
+      if (!t) return;
+      // Instagram
+      const igPostsEl = document.getElementById('tel-ig-posts');
+      const igReachEl = document.getElementById('tel-ig-reach');
+      const igEngEl = document.getElementById('tel-ig-eng');
+      if (igPostsEl) igPostsEl.textContent = t.instagram?.posts_count ?? 0;
+      if (igReachEl) igReachEl.textContent = (t.instagram?.total_reach ?? 0).toLocaleString();
+      if (igEngEl) igEngEl.textContent = (t.instagram?.engagement_rate ?? 0) + '%';
+
+      // Reddit
+      const redComEl = document.getElementById('tel-reddit-comments');
+      const redUpEl = document.getElementById('tel-reddit-upvotes');
+      const redClEl = document.getElementById('tel-reddit-clicks');
+      if (redComEl) redComEl.textContent = t.reddit?.comments_count ?? 0;
+      if (redUpEl) redUpEl.textContent = t.reddit?.net_upvotes ?? 0;
+      if (redClEl) redClEl.textContent = (t.reddit?.link_clicks ?? 0).toLocaleString();
+
+      // Price Intelligence
+      const priceAdvEl = document.getElementById('tel-price-advantages');
+      const priceTotEl = document.getElementById('tel-price-total');
+      const pricePctEl = document.getElementById('tel-price-pct');
+      const advCount = t.price_intelligence?.price_advantage_count ?? 0;
+      const totCount = t.price_intelligence?.tracked_skus ?? 500;
+      if (priceAdvEl) priceAdvEl.textContent = advCount + ' Ürün';
+      if (priceTotEl) priceTotEl.textContent = totCount + ' SKU';
+      if (pricePctEl) pricePctEl.textContent = Math.round((advCount / (totCount || 1)) * 100) + '%';
+
+      // SEO
+      const seoArtEl = document.getElementById('tel-seo-articles');
+      const seoKwEl = document.getElementById('tel-seo-kw-count');
+      if (seoArtEl) seoArtEl.textContent = (t.seo?.articles_published ?? 0) + ' Rehber';
+      if (seoKwEl) seoKwEl.textContent = (t.seo?.indexed_keywords?.length ?? 0) + ' Terim';
+
+      // Traffic
+      const trSesEl = document.getElementById('tel-traffic-sessions');
+      const trBncEl = document.getElementById('tel-traffic-bounce');
+      if (trSesEl) trSesEl.textContent = (t.traffic?.referral_sessions ?? 0).toLocaleString();
+      if (trBncEl) trBncEl.textContent = Math.round((t.traffic?.bounce_rate ?? 0.28) * 100) + '%';
+    }
+
+    function renderPriceTable(rows) {
+      const tbody = document.getElementById('price-table-body');
+      if (!tbody) return;
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="padding:20px; text-align:center; color:#94a3b8;">Filtreye uygun ürün bulunamadı.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map(r => {
+        let statusBadge = '';
+        if (r.status === 'CHEAPER') {
+          statusBadge = '<span class="tag-badge" style="background:#065f46; color:#6ee7b7; border:1px solid #10b981;">⚡ CHEAPER (-%15)</span>';
+        } else if (r.status === 'EQUAL') {
+          statusBadge = '<span class="tag-badge" style="background:#1e293b; color:#93c5fd; border:1px solid #38bdf8;">EQUAL (±%3)</span>';
+        } else {
+          statusBadge = '<span class="tag-badge" style="background:#7c2d12; color:#fed7aa; border:1px solid #f97316;">EXPENSIVE</span>';
+        }
+
+        let stockBadge = r.competitor_stock 
+          ? '<span style="color:#94a3b8;">Stokta</span>'
+          : '<span class="tag-badge" style="background:#4c1d95; color:#e9d5ff; border:1px solid #8b5cf6;">🏆 Rakipte Tükendi</span>';
+
+        let actionBadge = r.status === 'CHEAPER'
+          ? '<span class="tag-badge" style="background:#047857; color:#fff;">PROMOTE 🚀</span>'
+          : '<span class="tag-badge" style="background:#334155; color:#cbd5e1;">REVIEW ⚙️</span>';
+
+        return `
+          <tr style="border-bottom:1px solid #1e293b; transition:background 0.15s;" onmouseover="this.style.background='#1e293b55'" onmouseout="this.style.background='transparent'">
+            <td style="padding:10px 14px; font-family:monospace; color:#38bdf8; font-weight:700;">${r.sku}</td>
+            <td style="padding:10px 14px; color:#f8fafc; font-weight:600; max-width:320px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${r.product_name}</td>
+            <td style="padding:10px 14px; color:#10b981; font-weight:800;">${r.pozitron_price_try.toLocaleString('tr-TR', {minimumFractionDigits:2})} ₺</td>
+            <td style="padding:10px 14px; color:#94a3b8;">${r.market_min_price_try.toLocaleString('tr-TR', {minimumFractionDigits:2})} ₺</td>
+            <td style="padding:10px 14px; color:#cbd5e1;">${r.market_avg_price_try.toLocaleString('tr-TR', {minimumFractionDigits:2})} ₺</td>
+            <td style="padding:10px 14px;">${statusBadge}</td>
+            <td style="padding:10px 14px;">${stockBadge}</td>
+            <td style="padding:10px 14px;">${actionBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterPriceTable(status) {
+      _currentPriceFilter = status;
+      if (status === 'ALL') {
+        renderPriceTable(_allPriceRows);
+      } else {
+        const filtered = _allPriceRows.filter(r => r.status === status);
+        renderPriceTable(filtered);
+      }
+    }
+
+    async function scanPriceIntelligence() {
+      showToast("🔍 Türkiye pazarı fiyat istihbaratı taranıyor...", "info");
+      try {
+        const res = await fetch('/api/price-intelligence/scan', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✅ ${data.count} donanım başarıyla karşılaştırıldı ve arbitraj raporu güncellendi!`, "success");
+          loadOrchestratorData();
+        } else {
+          showToast("Tarama hatası: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      }
+    }
+
+    function renderSeoArticles(articles) {
+      const container = document.getElementById('seo-articles-grid');
+      if (!container) return;
+      if (!articles || articles.length === 0) {
+        container.innerHTML = `<div style="padding:20px; text-align:center; color:#94a3b8; border:1px dashed #334155; border-radius:8px; grid-column:1/-1;">Kayıtlı teknik rehber bulunamadı.</div>`;
+        return;
+      }
+
+      container.innerHTML = articles.map(a => {
+        const linksCount = a.internal_links?.length || 0;
+        return `
+          <div class="bots-card" style="background:#0b1120; border:1px solid #1e293b; padding:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;">
+              <span class="tag-badge" style="background:#38bdf822; color:#38bdf8; border:1px solid #0284c7;">${a.component_focus}</span>
+              <span style="font-size:0.75rem; color:#64748b;">${a.created_at ? a.created_at.slice(0, 10) : ''}</span>
+            </div>
+            <h4 style="font-size:0.96rem; font-weight:800; color:#ffffff; margin:0 0 8px 0; line-height:1.4;">${a.title}</h4>
+            <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:12px;">
+              🎯 Anahtar Kelimeler: <span style="color:#cbd5e1;">${a.target_keywords || ''}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #1e293b; padding-top:12px;">
+              <span style="font-size:0.78rem; color:#10b981; font-weight:700;">🔗 ${linksCount} Pozitron Ürününe İç Link</span>
+              <button type="button" class="btn-secondary" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;" onclick="alert('Rehber Slug: ' + '${a.slug}')">Detay</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function generateSeoArticle() {
+      showToast("✍️ Gemini FPV Mühendisi ile derinlemesine teknik rehber üretiliyor...", "info");
+      try {
+        const res = await fetch('/api/seo/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            component_focus: "LiPo Batarya C-Rate & Güvenli Şarj/Depolama Protokolleri",
+            target_keywords: ["LiPo şarj protokolü", "1S-6S batarya güvenliği", "FPV LiPo seçimi", "Pozitron Market"]
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast("🎉 Yeni teknik rehber üretildi ve Pozitron ürünlerine iç linkleme yapıldı!", "success");
+          loadOrchestratorData();
+        } else {
+          showToast("Üretim hatası: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function runSupervisorCycle() {
+      const btn = document.getElementById('btn-run-lead-cycle');
+      if (btn) btn.disabled = true;
+      showToast("⚡ Baş Orkestrasyon Ajanı 2 saatlik döngüyü çalıştırıyor (Telemetri + Fiyat Arbitrajı + Direktif Üretimi)...", "info");
+      try {
+        const res = await fetch('/api/supervisor/run', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast("🎉 2 Saatlik Orkestrasyon Döngüsü Tamamlandı! Tüm alt ajanlar güncellendi.", "success");
+          loadOrchestratorData();
+        } else {
+          showToast("Döngü hatası: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function startLeadCountdown() {
+      if (_leadCountdownInterval) clearInterval(_leadCountdownInterval);
+      _leadCountdownInterval = setInterval(() => {
+        if (!_nextLeadTargetDate) return;
+        const now = new Date();
+        let diffMs = _nextLeadTargetDate - now;
+        if (diffMs <= 0) {
+          diffMs = 0;
+        }
+        const totalSec = Math.floor(diffMs / 1000);
+        const hours = Math.floor(totalSec / 3600);
+        const minutes = Math.floor((totalSec % 3600) / 60);
+        const seconds = totalSec % 60;
+        const fmt = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        const el = document.getElementById('lead-countdown');
+        if (el) el.textContent = fmt;
+      }, 1000);
+    }
+
     // Auto-initialize on page load
     document.addEventListener('DOMContentLoaded', () => {
-      loadInstagramData();
+      switchBotsTab('orchestrator');
     });
   </script>
 </body>

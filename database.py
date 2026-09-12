@@ -173,6 +173,74 @@ def init_db():
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', default_users)
 
+    # Lead Supervisor Configuration Table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS lead_supervisor_config (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            cycle_interval_hours INTEGER DEFAULT 2,
+            is_autonomous_enabled INTEGER DEFAULT 1,
+            last_run_at TEXT,
+            next_run_at TEXT,
+            updated_at TEXT
+        )
+    ''')
+    cursor.execute("SELECT count(*) FROM lead_supervisor_config WHERE id = 1")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute('''
+            INSERT INTO lead_supervisor_config (id, cycle_interval_hours, is_autonomous_enabled, updated_at)
+            VALUES (1, 2, 1, ?)
+        ''', (datetime.now().isoformat(),))
+
+    # Lead Supervisor Directives Table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS lead_supervisor_directives (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lead_cycle_id TEXT UNIQUE NOT NULL,
+            directive_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
+    # Telemetry History Table (Subagent 3)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS telemetry_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
+    # Price Intelligence Logs Table (Subagent 5)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS price_intelligence_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lead_cycle_id TEXT,
+            sku TEXT NOT NULL,
+            product_name TEXT NOT NULL,
+            pozitron_price_try REAL NOT NULL,
+            market_min_price_try REAL NOT NULL,
+            market_avg_price_try REAL NOT NULL,
+            status TEXT NOT NULL,
+            competitor_stock INTEGER DEFAULT 1,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
+    # Technical Documentation & SEO Articles Table (Subagent 4)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS seo_articles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug TEXT UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            component_focus TEXT NOT NULL,
+            target_keywords TEXT NOT NULL,
+            internal_links_json TEXT NOT NULL,
+            content_markdown TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
     conn.commit()
     conn.close()
     print("Database initialized successfully.")

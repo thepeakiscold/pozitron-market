@@ -20,6 +20,10 @@ from instagram_agent.chrome_session import extract_chrome_instagram_cookies
 from instagram_agent.engagement import InstagramEngagementEngine
 from reddit_agent.agent import RedditDroneAgent
 from reddit_agent.scheduler import RedditScheduler
+from orchestrator import (
+    LeadSupervisorAgent, SupervisorScheduler,
+    PriceIntelligenceAgent, TelemetryAgent, TechnicalSeoAgent
+)
 
 PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -35,6 +39,12 @@ reddit_drone_agent = RedditDroneAgent()
 reddit_drone_scheduler = RedditScheduler(reddit_drone_agent)
 if reddit_drone_agent.config.get('is_autonomous_enabled'):
     reddit_drone_scheduler.start()
+
+# Lead Supervisor Agent & 2-Hour Orchestration Scheduler
+lead_supervisor_agent = LeadSupervisorAgent()
+supervisor_scheduler = SupervisorScheduler(lead_supervisor_agent)
+if lead_supervisor_agent.get_status().get('is_autonomous_enabled'):
+    supervisor_scheduler.start()
 
 # Security Lockout Configuration: 3 failed attempts => 30-minute cooldown
 LOGIN_ATTEMPTS_LOCK = threading.Lock()
@@ -326,6 +336,22 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
+        # Telemetry ingestion endpoint (Subagent 3: http://localhost:8000/bots)
+        if path in ('/bots', '/bots.html', '/api/telemetry'):
+            content_length = int(self.headers.get('Content-Length', 0))
+            body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                data = json.loads(body_raw.decode('utf-8'))
+            except Exception:
+                data = {}
+            lead_supervisor_agent.telemetry_agent._save_to_db(data)
+            self.send_json(200, {
+                "success": True,
+                "message": "Telemetry payload received successfully",
+                "timestamp": data.get("timestamp")
+            })
+            return
+
         if path == '/api/upload-3d' or path == '/api/upload':
             try:
                 self.handle_file_upload(path)
@@ -351,6 +377,25 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
+        self.send_json(404, {"error": "Endpoint not found"})
+
+    def do_PUT(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        if path in ('/bots', '/bots.html', '/api/telemetry'):
+            content_length = int(self.headers.get('Content-Length', 0))
+            body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                data = json.loads(body_raw.decode('utf-8'))
+            except Exception:
+                data = {}
+            lead_supervisor_agent.telemetry_agent._save_to_db(data)
+            self.send_json(200, {
+                "success": True,
+                "message": "Telemetry payload received successfully (PUT)",
+                "timestamp": data.get("timestamp")
+            })
+            return
         self.send_json(404, {"error": "Endpoint not found"})
 
     def handle_file_upload(self, path):
@@ -503,6 +548,43 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     })
             except Exception as ex:
                 self.send_json(200, {"available": False, "error": str(ex)})
+            return
+
+        # Lead Supervisor Agent: Status
+        if path == '/api/supervisor/status':
+            self.send_json(200, lead_supervisor_agent.get_status())
+            return
+
+        # Lead Supervisor Agent: Active Directive
+        if path == '/api/supervisor/directive':
+            self.send_json(200, lead_supervisor_agent.current_directive or {})
+            return
+
+        # Lead Supervisor Agent: Directives History
+        if path == '/api/supervisor/directives':
+            limit = int(query.get('limit', [10])[0])
+            self.send_json(200, {"directives": lead_supervisor_agent.get_directives_history(limit=limit)})
+            return
+
+        # Subagent 3: Latest Telemetry
+        if path == '/api/telemetry/latest':
+            self.send_json(200, lead_supervisor_agent.telemetry_agent.get_latest_telemetry())
+            return
+
+        # Subagent 5: Price & Arbitrage Intelligence Report
+        if path == '/api/price-intelligence':
+            limit = int(query.get('limit', [50])[0])
+            status_filter = query.get('status', ['ALL'])[0]
+            report = lead_supervisor_agent.price_agent.get_latest_report(limit=limit, status_filter=status_filter)
+            summary = lead_supervisor_agent.price_agent.get_summary_stats()
+            self.send_json(200, {"report": report, "summary": summary})
+            return
+
+        # Subagent 4: Technical SEO Articles
+        if path == '/api/seo/articles':
+            limit = int(query.get('limit', [20])[0])
+            articles = lead_supervisor_agent.seo_agent.get_articles(limit=limit)
+            self.send_json(200, {"articles": articles})
             return
 
         conn = get_db()
@@ -1055,6 +1137,59 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             try:
                 res = reddit_drone_agent.enable_full_automation()
                 self.send_json(200, res)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Lead Supervisor: Trigger 2-Hour Orchestration Cycle Now
+        if path == '/api/supervisor/run':
+            try:
+                directive = lead_supervisor_agent.execute_cycle()
+                self.send_json(200, {"success": True, "directive": directive})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Lead Supervisor: Toggle Autonomous Mode
+        if path == '/api/supervisor/toggle':
+            try:
+                enabled = bool(data.get("enabled", True))
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute("UPDATE lead_supervisor_config SET is_autonomous_enabled = ?, updated_at = ? WHERE id = 1", (1 if enabled else 0, datetime.now().isoformat()))
+                conn.commit()
+                conn.close()
+                if enabled:
+                    supervisor_scheduler.start()
+                else:
+                    supervisor_scheduler.stop()
+                self.send_json(200, {"success": True, "is_autonomous_enabled": enabled})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 5: Trigger Price Intelligence Scan
+        if path == '/api/price-intelligence/scan':
+            try:
+                report = lead_supervisor_agent.price_agent.scan_market()
+                summary = lead_supervisor_agent.price_agent.get_summary_stats()
+                self.send_json(200, {"success": True, "count": len(report), "summary": summary})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 4: Generate Technical SEO Guide
+        if path == '/api/seo/generate':
+            try:
+                component_focus = data.get("component_focus")
+                target_keywords = data.get("target_keywords")
+                if isinstance(target_keywords, str):
+                    target_keywords = [k.strip() for k in target_keywords.split(",") if k.strip()]
+                article = lead_supervisor_agent.seo_agent.generate_article(
+                    component_focus=component_focus,
+                    target_keywords=target_keywords
+                )
+                self.send_json(201, {"success": True, "article": article})
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return

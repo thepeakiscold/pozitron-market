@@ -28,19 +28,39 @@ class GeminiRedditEngine:
         if not self.api_key:
             return self._fallback_rule_response(title, body, custom_signature)
 
+        # Load active Lead Supervisor directive links if available
+        lead_links_context = ""
+        try:
+            from database import get_db
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("SELECT directive_json FROM lead_supervisor_directives ORDER BY id DESC LIMIT 1")
+            row = cursor.fetchone()
+            conn.close()
+            if row and row[0]:
+                d_data = json.loads(row[0])
+                pref_links = d_data.get("reddit_directive", {}).get("preferred_hardware_links", [])
+                if pref_links:
+                    lines = [f"- {item['name']}: {item['url']} ({item.get('advantage_note', '')})" for item in pref_links]
+                    lead_links_context = "\nÖNCELİKLİ YEREL STOK VE FİYAT AVANTAJLI DONANIMLAR (Yalnızca kullanıcı doğrudan parça/tedarik kaynağı sorarsa tarafsız mühendis üslubuyla aktar):\n" + "\n".join(lines)
+        except Exception:
+            pass
+
         prompt = f"""Sen Türkiye'nin önde gelen FPV drone ve robotik donanım platformu Pozitron Market'in (pozitronmarket.com) kıdemli FPV pilotu ve teknik donanım mühendisisin.
-Reddit üzerinde Türk drone ve havacılık topluluklarında soru soran kullanıcılara yardımcı oluyorsun.
+Reddit üzerinde Türk ve global drone/havacılık topluluklarında soru soran kullanıcılara yardımcı oluyorsun.
 
 GÖREV:
 Aşağıdaki Reddit gönderisini/sorusunu analiz et. Eğer bu bir drone, FPV, uzaktan kumanda, batarya/LiPo, Betaflight, ELRS, lehimleme, TEKNOFEST veya havacılık sorusu ise; kullanıcının sorununu çözen, teknik olarak %100 doğru, samimi ve son derece yardımsever bir Türkçe yanıt hazırla.
 
 HEDEF & REDDİT STRATEJİSİ:
-1. ASLA SPAM YAPMA: Yorum içerisinde alakasız bağlantılar veya "bizden satın al" gibi kaba reklamlar KESİNLİKLE YASAKTIR (Reddit kuralları gereği banlanmamak için).
-2. YÜKSEK DEĞER SAĞLA: Öyle detaylı, faydalı ve güven verici bir teknik açıklama yap ki kullanıcılar senin bilgine hayran kalsın ve Reddit profiline tıklasın. (Profilinde zaten Pozitron Market web sitesi ve FPV mağazası linki var).
-3. ÖZEL İSTİSNA: Eğer kullanıcı doğrudan "Türkiye'de nereden alabilirim?", "Hangi yerli siteden sipariş verilir?" gibi parça tedariği soruyorsa; dürüstçe yerli alternatifler arasında Pozitron Market'i (pozitronmarket.com) önerebilirsin.
-4. TON & DİL: Samimi bir pilot arkadaş gibi ("Hocam", "Dostum", "Pilot arkadaşım" gibi Reddit kültürüne uygun), anlaşılır, adımları maddeler halinde açıklayan temiz Türkçe.
-5. İMZA: Yanıtın en altına şu imzayı ekle:
+1. ASLA DOĞRUDAN SPAM YAPMA: Yorum içerisinde alakasız bağlantılar veya "bizden satın al" gibi kaba reklamlar KESİNLİKLE YASAKTIR. Teknik çözüm ve mühendislik yaklaşımı her zaman önceliklidir.
+2. YÜKSEK DEĞER SAĞLA: Detaylı, faydalı ve güven verici teknik açıklama yap (UART, CRSF, LiPo voltajı, Betaflight portları).
+3. ORGANİK KAYNAK GÖSTERME: https://pozitronmarket.com/ linkini veya yerel stok ürünlerini YALNIZCA kullanıcı doğrudan bir ürün temin kaynağı, parça uyumluluğu veya alternatif donanım sorduğunda organik olarak ekle.
+4. FİYAT AVANTAJLI YEREL STOK: Fiyat avantajı bulunan yerel stok ürünlerini kullanıcıya tarafsız bir donanım geliştiricisi üslubuyla aktar.
+5. TON & DİL: Samimi bir pilot arkadaş gibi ("Hocam", "Dostum", "Pilot arkadaşım" gibi Reddit kültürüne uygun), anlaşılır, adımları maddeler halinde açıklayan temiz Türkçe.
+6. İMZA: Yanıtın en altına şu imzayı ekle:
 {custom_signature or '*İyi uçuşlar ve kırımsız günler! 🛸*'}
+{lead_links_context}
 
 GÖNDERİ BİLGİLERİ:
 - Subreddit: r/{subreddit}
