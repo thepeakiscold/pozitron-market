@@ -56,7 +56,6 @@ const i18nData = {
     in_stock: "Stokta Var",
     out_of_stock: "Tükendi",
     add_to_cart: "Sepete Ekle",
-    quick_view: "Hızlı Bakış",
     
     empty_title: "Aradığınız kriterlere uygun parça bulunamadı.",
     empty_desc: "Filtreleri sıfırlayarak veya farklı bir arama terimi deneyerek tüm drone parçalarına göz atabilirsiniz.",
@@ -270,7 +269,6 @@ const i18nData = {
     in_stock: "In Stock",
     out_of_stock: "Out of Stock",
     add_to_cart: "Add to Cart",
-    quick_view: "Quick View",
     
     empty_title: "No products matched your criteria.",
     empty_desc: "Try resetting your filters or using a different search query to explore our drone items.",

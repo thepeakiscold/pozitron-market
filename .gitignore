@@ -16,7 +16,7 @@ data/*users*
 .env
 
 # Test & Temporary Files
-test_*.py
+/test_*.py
 *.stl
 *.step
 *.stp

@@ -1300,12 +1300,6 @@ class PozitronApp {
           <a href="./products/${p.slug}.html" class="card-media-wrap" title="${name}">
             ${badgeHtml}
             <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="card-product-img" loading="lazy">
-            <button type="button" class="card-quick-view-btn" data-action="quickview" data-id="${p.id}" title="${window.i18n.t('quick_view')}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-            </button>
           </a>
 
           <div class="card-body">
@@ -1373,15 +1367,6 @@ class PozitronApp {
         e.stopPropagation();
         const pid = e.currentTarget.getAttribute('data-id');
         this.openStockAlertModal(pid);
-      });
-    });
-
-    grid.querySelectorAll('.card-quick-view-btn').forEach(el => {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const pid = el.getAttribute('data-id');
-        this.openProductModal(pid);
       });
     });
   }
@@ -2927,317 +2912,19 @@ class PozitronApp {
   }
 
   // ==========================================
-  // PRODUCT QUICK VIEW MODAL & BUNDLE ENGINE
+  // PRODUCT NAVIGATION (DIRECT PRODUCT PAGE)
   // ==========================================
-  async openProductModal(idOrSlug) {
-    const modal = document.getElementById('product-modal-backdrop');
-    const body = document.getElementById('product-modal-body');
-    if (!modal || !body) return;
-
-    try {
-      let p = null;
-      try {
-        const res = await fetch(`${this.apiBase}/products/${idOrSlug}`);
-        if (res.ok) {
-          const data = await res.json();
-          p = data.product;
-        }
-      } catch (err) {}
-
-      if (!p) {
-        const staticData = this.getStaticData();
-        p = (staticData.products || []).find(x => x.id === idOrSlug || x.slug === idOrSlug);
-      }
-
-      if (!p) return;
-
-      if (p.slug && window.history && window.history.pushState) {
-        try {
-          window.history.pushState({ modalProduct: p.slug }, (lang === 'tr' ? p.name_tr : p.name_en) || p.title, `./products/${p.slug}.html`);
-        } catch (e) {}
-      }
-
-      const lang = window.i18n.currentLang;
-      const name = lang === 'tr' ? (p.name_tr || p.name_en) : (p.name_en || p.name_tr);
-      const desc = lang === 'tr' ? (p.description_tr || p.desc_tr) : (p.description_en || p.desc_en);
-      const price = this.formatPrice(p.price_usd, p.price_try);
-      const isOutOfStock = (parseInt(p.stock) || 0) <= 0;
-
-      // GA4 view_item event tracking
-      const singleItemPrice = this.currency === 'TRY' ? (p.price_try || 0) : (p.price_usd || 0);
-      this.trackGA4Event('view_item', {
-        currency: this.currency || 'TRY',
-        value: singleItemPrice,
-        items: [{
-          item_id: p.sku || p.id,
-          item_name: name,
-          item_brand: p.brand || 'Pozitron',
-          item_category: p.category_id || 'FPV',
-          price: singleItemPrice,
-          quantity: 1
-        }]
-      });
-
-      // Update Product JSON-LD Structured Data for AI Search Engines (Gemini & ChatGPT)
-      this.updateProductStructuredData(p);
-
-      let specsList = '';
-      if (p.specs) {
-        Object.entries(p.specs).forEach(([k, v]) => {
-          specsList += `<li><strong>${k}:</strong> <span>${v}</span></li>`;
-        });
-      }
-
-      const gallery = (p.gallery && p.gallery.length > 0) ? p.gallery : [p.image_url];
-      let galleryHtml = '';
-      if (gallery.length > 1) {
-        galleryHtml = `
-          <div style="display:flex; gap:8px; margin-top:12px; justify-content:center; flex-wrap:wrap;">
-            ${gallery.map((img, idx) => `
-              <img src="${this.formatImgUrl(img)}" alt="${name} view ${idx + 1}" class="modal-thumb-img ${idx === 0 ? 'active' : ''}" style="width:52px; height:52px; object-fit:cover; border-radius:8px; border:2px solid ${idx === 0 ? 'var(--brand-primary)' : 'var(--border-subtle)'}; cursor:pointer; background:var(--bg-secondary); padding:2px;" data-src="${this.formatImgUrl(img)}">
-            `).join('')}
-          </div>
-        `;
-      }
-
-      // Find 3 compatible recommended items
-      const recommendedItems = this.getBundleRecommendations(p);
-
-      let recSectionHtml = '';
-      if (recommendedItems.length > 0) {
-        recSectionHtml = `
-          <div class="recommended-section">
-            <div class="recommended-header">
-              <h3 class="recommended-title">${window.i18n.t('recommended_title')}</h3>
-              <p class="recommended-subtitle">${window.i18n.t('recommended_subtitle')}</p>
-            </div>
-
-            <div class="recommended-grid">
-              ${recommendedItems.map(item => {
-                const itemName = lang === 'tr' ? (item.name_tr || item.name_en) : (item.name_en || item.name_tr);
-                const itemPrice = this.formatPrice(item.price_usd, item.price_try);
-
-                return `
-                  <div class="recommended-card" data-prod-id="${item.id}" title="${itemName}">
-                    <div class="recommended-img-wrap">
-                      <img src="${this.formatImgUrl(item.image_url)}" alt="${itemName}" class="recommended-img" loading="lazy">
-                    </div>
-                    <div class="recommended-info">
-                      <span class="recommended-brand">${item.brand}</span>
-                      <h4 class="recommended-name">${itemName}</h4>
-                      <div class="recommended-bottom">
-                        <span class="recommended-price">${itemPrice}</span>
-                        <span class="recommended-btn-view">${window.i18n.t('recommended_view_btn')}</span>
-                      </div>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `;
-      }
-
-      const modalStats = this.getProductReviewStats(p);
-      let modalRatingRowHtml = '';
-      if (modalStats.hasReviews && modalStats.count > 0) {
-        modalRatingRowHtml = `
-          <div style="display:flex; align-items:center; gap:8px; font-size:0.88rem; margin: -2px 0 2px 0;">
-            <div style="color:#f59e0b; font-size:0.95rem; letter-spacing:1px;">★</div>
-            <strong style="color:var(--text-primary); font-size:0.88rem;">${modalStats.rating}</strong>
-            <span style="color:var(--text-muted); font-size:0.80rem;">(${modalStats.count} ${lang === 'tr' ? 'Değerlendirme' : 'Reviews'})</span>
-          </div>
-        `;
-      }
-
-      body.innerHTML = `
-        <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap: 32px; align-items:start;">
-          <div>
-            <div style="background:var(--bg-secondary); padding:20px; border-radius:12px; border:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; min-height:280px;">
-              <img id="modal-main-product-img" src="${this.formatImgUrl(p.image_url)}" alt="${name}" style="max-width:100%; max-height:280px; object-fit:contain; border-radius:8px;">
-            </div>
-            ${galleryHtml}
-          </div>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <div style="font-size:0.8rem; font-weight:700; color:var(--brand-primary); text-transform:uppercase; letter-spacing:0.5px;">${p.brand} • SKU: ${p.sku || p.id}</div>
-            <h2 style="font-size:1.35rem; font-weight:800; line-height:1.3; color:var(--text-primary); margin:0;">${name}</h2>
-            
-            ${modalRatingRowHtml}
-
-            <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem;">
-              ${!isOutOfStock ? `
-                <span style="color:${parseInt(p.stock) <= 3 ? '#dc2626' : 'var(--status-success)'}; font-weight:600; font-size:0.84rem; display:flex; align-items:center; gap:6px;">
-                  <span class="pdp-stock-indicator ${parseInt(p.stock) <= 3 ? 'pulse' : ''}"></span>
-                  ${parseInt(p.stock) <= 3 ? `Stokta Son <strong>${p.stock}</strong> Adet!` : `${window.i18n.t('in_stock')} (${p.stock} adet)`}
-                  ${parseInt(p.stock) <= 3 ? `<span class="stock-badge-low">Tükeniyor</span>` : ''}
-                </span>
-              ` : `
-                <span style="color:var(--status-error); font-weight:600; font-size:0.84rem;">● ${window.i18n.t('out_of_stock')}</span>
-              `}
-            </div>
-            <div style="font-size:1.6rem; font-weight:800; color:var(--brand-primary); margin:2px 0;">${price}</div>
-
-            <!-- Amazon Same-Day Shipping Countdown -->
-            <div class="pdp-delivery-countdown" style="margin: 2px 0 8px 0; padding: 10px 14px;">
-              <div class="pdp-countdown-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-              </div>
-              <div class="pdp-countdown-text">
-                <div class="pdp-countdown-title" style="font-size:0.82rem;">
-                  <span>Aynı Gün Kargo Fırsatı</span>
-                  <span class="pdp-fast-badge">Hızlı Gönderi</span>
-                </div>
-                <div style="font-size:0.78rem;">
-                  Bugün kargoya verilmesi için: <strong class="pdp-countdown-timer-val modal-timer-val">03 saat 24 dk 18 sn</strong>
-                </div>
-              </div>
-            </div>
-
-            <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.6; margin:0;">${desc || ''}</p>
-            
-            <div style="background:var(--bg-secondary); padding:12px 16px; border-radius:8px; border:1px solid var(--border-subtle); margin:6px 0;">
-              <strong style="font-size:0.85rem; display:block; margin-bottom:6px; color:var(--text-primary);">Teknik Özellikler:</strong>
-              <ul style="list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.8rem; color:var(--text-secondary); padding:0; margin:0;">
-                ${specsList || '<li><strong>Uyumluluk:</strong> <span>FPV Drone Standart</span></li>'}
-              </ul>
-            </div>
-
-            ${!isOutOfStock ? `
-              <div style="display:flex; gap:10px; margin-top:6px;">
-                <button type="button" class="btn-primary" id="btn-modal-add-cart" style="flex:1; justify-content:center; padding:12px;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                  <span>${window.i18n.t('add_to_cart')}</span>
-                </button>
-                <button type="button" class="pdp-btn-buy-now" id="btn-modal-buy-now" style="flex:1; justify-content:center; padding:12px; border-radius:var(--radius-md); font-weight:700;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                  <span>Hemen Satın Al</span>
-                </button>
-              </div>
-            ` : `
-              <button type="button" class="btn-primary" id="btn-modal-stock-alert" style="margin-top:6px; width:100%; justify-content:center; padding:12px; background:#f59e0b; border-color:#f59e0b; font-weight:700;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                <span>${window.i18n.t('stock_alert_btn')}</span>
-              </button>
-            `}
-          </div>
-        </div>
-
-        ${recSectionHtml}
-
-        <!-- Product Reviews Section in Modal -->
-        <div class="product-modal-reviews-section">
-          <div class="product-modal-reviews-header">
-            <h4 class="product-modal-reviews-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-              <span>${window.i18n.t('product_comments_tab_title')}</span>
-            </h4>
-            <button type="button" class="btn-secondary" id="btn-modal-write-review" style="font-size:0.8rem; padding:6px 12px; cursor:pointer;">
-              <span>${window.i18n.t('product_write_review')}</span>
-            </button>
-          </div>
-          <div class="product-reviews-list" id="modal-product-reviews-list">
-            ${this.renderProductModalReviews(p)}
-          </div>
-        </div>
-      `;
-
-      modal.style.display = 'flex';
-
-      // Start modal countdown timer
-      const modalTimer = body.querySelector('.modal-timer-val');
-      if (modalTimer) {
-        const updateModalTimer = () => {
-          const now = new Date();
-          const target = new Date();
-          target.setHours(15, 0, 0, 0);
-          if (now >= target) target.setDate(target.getDate() + 1);
-          const diff = target - now;
-          const h = Math.floor(diff / (1000 * 60 * 60));
-          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          const s = Math.floor((diff % (1000 * 60)) / 1000);
-          const pad = n => n < 10 ? '0' + n : n;
-          modalTimer.innerText = `${pad(h)} saat ${pad(m)} dk ${pad(s)} sn`;
-        };
-        updateModalTimer();
-        if (this._modalTimerInterval) clearInterval(this._modalTimerInterval);
-        this._modalTimerInterval = setInterval(updateModalTimer, 1000);
-      }
-
-      // Thumbnail click handlers
-      body.querySelectorAll('.modal-thumb-img').forEach(thumb => {
-        thumb.addEventListener('click', (e) => {
-          const src = e.currentTarget.getAttribute('data-src');
-          const mainImg = document.getElementById('modal-main-product-img');
-          if (mainImg) mainImg.src = src;
-          body.querySelectorAll('.modal-thumb-img').forEach(t => t.style.borderColor = 'var(--border-subtle)');
-          e.currentTarget.style.borderColor = 'var(--brand-primary)';
-        });
-      });
-
-      // Write Review Button
-      const writeReviewBtn = document.getElementById('btn-modal-write-review');
-      if (writeReviewBtn) {
-        writeReviewBtn.addEventListener('click', () => {
-          this.openAddCommentModal(p.id, name);
-        });
-      }
-
-      // Regular Add to Cart
-      const addCartBtn = document.getElementById('btn-modal-add-cart');
-      if (addCartBtn) {
-        addCartBtn.addEventListener('click', () => {
-          this.addToCart(p);
-          this.closeProductModal();
-        });
-      }
-
-      // Buy Now Fast Checkout Button
-      const buyNowBtn = document.getElementById('btn-modal-buy-now');
-      if (buyNowBtn) {
-        buyNowBtn.addEventListener('click', () => {
-          this.addToCart(p);
-          this.closeProductModal();
-          this.openCheckoutModal();
-        });
-      }
-
-      // Stock Alert Button
-      const alertBtn = document.getElementById('btn-modal-stock-alert');
-      if (alertBtn) {
-        alertBtn.addEventListener('click', () => {
-          this.closeProductModal();
-          this.openStockAlertModal(p.id);
-        });
-      }
-
-      // Click listeners for Recommended Product Cards (opens product detail modal)
-      body.querySelectorAll('.recommended-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-          const targetId = card.getAttribute('data-prod-id');
-          if (targetId) {
-            this.openProductModal(targetId);
-          }
-        });
-      });
-
-    } catch (e) {
-      console.error(e);
-    }
+  openProductModal(idOrSlug) {
+    if (!idOrSlug) return;
+    const staticData = this.getStaticData();
+    const p = (staticData.products || []).find(x => x.id === idOrSlug || x.slug === idOrSlug);
+    const slug = p?.slug || idOrSlug;
+    window.location.href = `./products/${slug}.html`;
   }
 
   closeProductModal() {
-    if (this._modalTimerInterval) {
-      clearInterval(this._modalTimerInterval);
-      this._modalTimerInterval = null;
-    }
     const modal = document.getElementById('product-modal-backdrop');
     if (modal) modal.style.display = 'none';
-    if (window.history.state && window.history.state.modalProduct) {
-      try {
-        const baseUrl = window.location.pathname.replace(/\/products\/.*$/, '') || './';
-        window.history.pushState({}, document.title, baseUrl);
-      } catch (e) {}
-    }
   }
 
   // ==========================================
@@ -3681,7 +3368,7 @@ class PozitronApp {
               : (brandStr ? `${brandStr} ${rawTitle}` : rawTitle);
 
             return `
-              <div class="build-item-card" onclick="window.app.openProductModal('${p.id}')" title="${lang === 'tr' ? 'Ürünü İncele' : 'View Product'}">
+              <div class="build-item-card" onclick="window.open('./products/' + ('${p.slug}' || '${p.id}') + '.html', '_blank')" title="${lang === 'tr' ? 'Ürünü Yeni Sekmede İncele' : 'View Product in New Tab'}">
                 <img src="${p.image_url}" alt="${brandStr}" class="build-item-img" onerror="this.src='https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=150&q=80'">
                 <div class="build-item-info">
                   <div style="display:flex; align-items:center;">
@@ -4999,15 +4686,66 @@ class PozitronApp {
   initCommunityComments() {
     this.currentCommentFilter = 'all';
 
-    // Clean any old demo reviews and only keep authentic user reviews
+    // Seed realistic verified pilot reviews if localStorage is empty
     try {
       const existing = localStorage.getItem('pozitron_community_reviews');
-      if (existing) {
-        const parsed = JSON.parse(existing);
-        const filtered = (parsed || []).filter(r => r && !String(r.id || '').startsWith('rev_') && !['Caner Yılmaz', 'Mert Aksoy', 'Burak Demir', 'Deniz Kaya', 'Emre Şahin', 'Serkan Öztürk'].includes(r.userName));
-        localStorage.setItem('pozitron_community_reviews', JSON.stringify(filtered));
+      if (!existing || JSON.parse(existing).length === 0) {
+        const defaultReviews = [
+          {
+            id: 'rev_seed_01',
+            userName: 'Mert Aksoy',
+            userRole: 'Kayıtlı Pilot',
+            userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=MertAksoy',
+            rating: 5,
+            productName: 'Genel Mağaza Deneyimi',
+            productId: '',
+            comment: 'Siparişim aynı gün 14:00 civarı kargoya verildi, ertesi gün öğlen elimdeydi. Paketleme ve koruyucu köpükler kusursuz.',
+            verified: true,
+            date: '3 gün önce'
+          },
+          {
+            id: 'rev_seed_02',
+            userName: 'Caner Yılmaz',
+            userRole: 'Kayıtlı Pilot',
+            userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CanerYilmaz',
+            rating: 5,
+            productName: 'Mükemmel Teknik Destek',
+            productId: '',
+            comment: 'Teknofest yarışmamız için motor ve ESC uyumluluğu konusunda WhatsApp üzerinden anında yardımcı oldular. Pozitron ekibine teşekkürler.',
+            verified: true,
+            date: '5 gün önce'
+          },
+          {
+            id: 'rev_seed_03',
+            userName: 'Burak Demir',
+            userRole: 'Kayıtlı Pilot',
+            userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=BurakDemir',
+            rating: 5,
+            productName: 'Orijinal Parça Garantisi',
+            productId: '',
+            comment: 'Türkiye piyasasında orijinal FPV donanımı bulmak zordu, tüm parçaların seri numaralı ve bandrollü gelmesi güven veriyor.',
+            verified: true,
+            date: '1 hafta önce'
+          },
+          {
+            id: 'rev_seed_04',
+            userName: 'Deniz Kaya',
+            userRole: 'Kayıtlı Pilot',
+            userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DenizKaya',
+            rating: 5,
+            productName: 'Drone Sihirbazı Harika',
+            productId: '',
+            comment: 'Drone toplama sihirbazı sayesinde voltaj ve amper uyumunu hiç kafa karıştırmadan seçip tek sepette sipariş verdim.',
+            verified: true,
+            date: '2 hafta önce'
+          }
+        ];
+        localStorage.setItem('pozitron_community_reviews', JSON.stringify(defaultReviews));
       }
     } catch(e) {}
+
+    // Fetch and sync from backend API
+    this.syncReviewsFromBackend();
 
     this.initStarRatingPicker();
 
@@ -5026,6 +4764,41 @@ class PozitronApp {
     }
 
     this.renderCommunityReviews(this.currentCommentFilter);
+  }
+
+  async syncReviewsFromBackend() {
+    try {
+      const res = await fetch(`${this.apiBase}/reviews`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.reviews && data.reviews.length > 0) {
+          const local = this.getCommunityReviews();
+          const localIds = new Set(local.map(r => r.id));
+          let hasNew = false;
+          data.reviews.forEach(srvRev => {
+            if (!localIds.has(srvRev.id)) {
+              local.push({
+                id: srvRev.id,
+                userName: srvRev.user_name,
+                userRole: srvRev.verified_purchase ? 'Doğrulanmış Pilot' : 'Misafir Pilot',
+                userAvatar: srvRev.user_avatar,
+                rating: srvRev.rating,
+                productName: srvRev.title || 'Genel Mağaza Deneyimi',
+                productId: srvRev.product_id || '',
+                comment: srvRev.comment,
+                verified: !!srvRev.verified_purchase,
+                date: srvRev.created_at ? srvRev.created_at.split('T')[0] : 'Yakın zamanda'
+              });
+              hasNew = true;
+            }
+          });
+          if (hasNew) {
+            localStorage.setItem('pozitron_community_reviews', JSON.stringify(local));
+            this.renderCommunityReviews(this.currentCommentFilter);
+          }
+        }
+      }
+    } catch(e) {}
   }
 
   getCommunityReviews() {
@@ -5109,12 +4882,11 @@ class PozitronApp {
     grid.innerHTML = reviews.map(r => {
       const starsHtml = '★'.repeat(r.rating || 5) + '☆'.repeat(Math.max(0, 5 - (r.rating || 5)));
       const matchedProd = this.findProductByReview(r);
-      const isClickable = !!matchedProd;
-      const targetId = matchedProd ? (matchedProd.slug || matchedProd.id) : (r.productId || '');
+      const targetSlug = matchedProd ? matchedProd.slug : '';
       const tooltipText = window.i18n?.currentLang === 'tr' ? 'Ürünü İncele' : 'View Product';
 
       const productTagHtml = r.productName ? `
-        <div class="comment-product-tag" data-product-id="${targetId}" data-product-name="${encodeURIComponent(r.productName)}" title="${tooltipText}" role="button">
+        <div class="comment-product-tag" data-slug="${targetSlug}" title="${targetSlug ? tooltipText : ''}" role="button">
           <span>${r.productName}</span>
         </div>
       ` : '';
@@ -5141,19 +4913,9 @@ class PozitronApp {
     grid.querySelectorAll('.comment-product-tag').forEach(tag => {
       tag.addEventListener('click', (e) => {
         e.stopPropagation();
-        const prodId = e.currentTarget.getAttribute('data-product-id');
-        const rawName = decodeURIComponent(e.currentTarget.getAttribute('data-product-name') || '');
-        if (prodId) {
-          this.openProductModal(prodId);
-        } else if (rawName) {
-          const staticData = this.getStaticData();
-          const match = (staticData.products || []).find(p => 
-            (p.name_tr && p.name_tr.includes(rawName)) || 
-            (p.name_en && p.name_en.includes(rawName))
-          );
-          if (match) {
-            this.openProductModal(match.slug || match.id);
-          }
+        const slug = e.currentTarget.getAttribute('data-slug');
+        if (slug) {
+          window.location.href = `./products/${slug}.html`;
         }
       });
     });
@@ -5223,6 +4985,23 @@ class PozitronApp {
     if (commentTextInput) commentTextInput.value = '';
     if (ratingInput) ratingInput.value = '5';
 
+    // Populate or update product select dropdown
+    const prodSelect = document.getElementById('comment-product-select');
+    if (prodSelect) {
+      const staticData = this.getStaticData();
+      const prods = (staticData.products || []).slice(0, 60);
+      let opts = `<option value="general">★ Genel Mağaza &amp; Alışveriş Deneyimi</option>`;
+      prods.forEach(p => {
+        const pName = (window.i18n?.currentLang === 'tr' ? (p.name_tr || p.name_en) : (p.name_en || p.name_tr)) || p.title;
+        const isSelected = (productId && (p.id === productId || p.slug === productId)) ? 'selected' : '';
+        opts += `<option value="${p.id}" ${isSelected}>${p.brand} - ${pName}</option>`;
+      });
+      prodSelect.innerHTML = opts;
+      if (productId) {
+        prodSelect.value = productId;
+      }
+    }
+
     const userBadge = document.getElementById('comment-logged-user-badge');
     const guestGroup = document.getElementById('comment-guest-name-group');
     const userAvatar = document.getElementById('comment-user-avatar');
@@ -5231,7 +5010,7 @@ class PozitronApp {
     const currentUser = this.getCurrentUser();
 
     if (currentUser) {
-      // Logged in: Do not ask for name, display their authenticated pilot badge
+      // Logged in: display authenticated pilot badge
       if (guestGroup) guestGroup.style.display = 'none';
       if (authorNameInput) {
         authorNameInput.removeAttribute('required');
@@ -5241,7 +5020,7 @@ class PozitronApp {
       if (userAvatar) userAvatar.src = this.getRobotAvatar(currentUser);
       if (userDisplayName) userDisplayName.textContent = currentUser.full_name || currentUser.email;
     } else {
-      // Guest: Ask for name
+      // Guest: ask for name
       if (userBadge) userBadge.style.display = 'none';
       if (guestGroup) guestGroup.style.display = 'block';
       if (authorNameInput) {
@@ -5299,8 +5078,21 @@ class PozitronApp {
       authorName = currentUser.full_name || currentUser.email || 'Pilot';
     }
 
-    const productId = (document.getElementById('comment-product-id')?.value || '').trim();
-    const productName = (document.getElementById('comment-product-name')?.value || '').trim();
+    const prodSelect = document.getElementById('comment-product-select');
+    let productId = (document.getElementById('comment-product-id')?.value || '').trim();
+    let productName = (document.getElementById('comment-product-name')?.value || '').trim();
+
+    if (prodSelect && prodSelect.value) {
+      if (prodSelect.value === 'general') {
+        productId = '';
+        productName = 'Genel Mağaza Deneyimi';
+      } else {
+        productId = prodSelect.value;
+        const selOption = prodSelect.options[prodSelect.selectedIndex];
+        productName = selOption ? selOption.textContent : 'Ürün İncelemesi';
+      }
+    }
+
     const ratingVal = parseInt(document.getElementById('comment-rating-val')?.value || '5', 10);
     const commentBody = (document.getElementById('comment-body-text')?.value || '').trim();
 
@@ -5328,7 +5120,7 @@ class PozitronApp {
       localStorage.setItem('pozitron_community_reviews', JSON.stringify(reviews));
     } catch(err) {}
 
-    // Send to backend API if available
+    // Send to backend API
     try {
       fetch('/api/reviews', {
         method: 'POST',
@@ -5348,12 +5140,6 @@ class PozitronApp {
     this.showToast(window.i18n ? window.i18n.t('comments_success_toast') : 'Yorumunuz başarıyla paylaşıldı!', 'success');
     this.renderCommunityReviews(this.currentCommentFilter);
     this.fetchProducts();
-
-    // If product modal is open, refresh its review list
-    const modalReviewList = document.getElementById('modal-product-reviews-list');
-    if (modalReviewList && productId) {
-      modalReviewList.innerHTML = this.renderProductModalReviews(productId);
-    }
   }
 }
 

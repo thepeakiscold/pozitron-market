@@ -533,6 +533,10 @@
             <h2 class="comments-section-title" data-i18n="comments_section_title">Müşteri Değerlendirmeleri &amp; Pilot Yorumları</h2>
             <p class="comments-section-sub" data-i18n="comments_section_sub">Pozitron Market'ten alışveriş yapan FPV pilotları ve drone üreticilerinin gerçek deneyimleri.</p>
           </div>
+          <button type="button" class="btn-primary" id="btn-open-comment-modal" style="display:inline-flex; align-items:center; gap:8px; white-space:nowrap; padding:10px 18px; border-radius:10px; font-weight:700;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            <span data-i18n="comments_write_btn">Yorum / Deneyim Paylaş</span>
+          </button>
         </div>
 
         <!-- Comments Filter Tabs -->
@@ -706,16 +710,6 @@
           <span>Güvenli Ödemeye Geç</span>
         </button>
 
-      </div>
-    </div>
-  </div>
-
-  <!-- Product Quick View Modal -->
-  <div class="modal-backdrop" id="product-modal-backdrop" style="display:none;">
-    <div class="modal-card modal-product-detail" role="dialog" aria-modal="true">
-      <button type="button" class="modal-close-btn" id="close-product-modal">&times;</button>
-      <div class="modal-body" id="product-modal-body">
-        <!-- Dynamically populated product detail view -->
       </div>
     </div>
   </div>
@@ -1343,6 +1337,14 @@
         <div class="form-group" id="comment-guest-name-group" style="margin-bottom:16px;">
           <label class="form-label" for="comment-author-name" data-i18n="comments_field_name">Adınız &amp; Soyadınız *</label>
           <input type="text" id="comment-author-name" class="form-input" placeholder="Örn: Caner Yılmaz">
+        </div>
+
+        <!-- Product / Topic Selection Group -->
+        <div class="form-group" id="comment-product-select-group" style="margin-bottom:16px;">
+          <label class="form-label" for="comment-product-select">Değerlendirilen Konu / Ürün</label>
+          <select id="comment-product-select" class="form-input" style="cursor:pointer;">
+            <option value="general">★ Genel Mağaza &amp; Alışveriş Deneyimi</option>
+          </select>
         </div>
 
         <!-- Star Rating Picker -->

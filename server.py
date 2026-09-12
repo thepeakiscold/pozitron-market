@@ -14,9 +14,17 @@ import threading
 from datetime import datetime
 from database import get_db, hash_password
 from export_data import export_static_data
+from instagram_agent.agent import InstagramPRAgent
+from instagram_agent.scheduler import InstagramScheduler
 
 PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Instagram PR Agent & Scheduler Instance
+instagram_pr_agent = InstagramPRAgent()
+instagram_pr_scheduler = InstagramScheduler(instagram_pr_agent)
+if instagram_pr_agent.config.get('is_autonomous_enabled'):
+    instagram_pr_scheduler.start()
 
 # Security Lockout Configuration: 3 failed attempts => 30-minute cooldown
 LOGIN_ATTEMPTS_LOCK = threading.Lock()
@@ -154,6 +162,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             conn.commit()
             conn.close()
             self.send_json(200, {"success": True, "deleted_id": prod_id})
+            return
+
+        # Instagram PR: Delete post
+        if path.startswith('/api/instagram/posts/'):
+            post_id = path[len('/api/instagram/posts/'):]
+            success = instagram_pr_agent.delete_post(post_id)
+            conn.close()
+            self.send_json(200, {"success": success, "deleted_id": post_id})
             return
 
         conn.close()
@@ -360,6 +376,25 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         })
 
     def handle_api_get(self, path, query):
+        # Instagram PR: Status
+        if path == '/api/instagram/status':
+            self.send_json(200, instagram_pr_agent.get_status())
+            return
+
+        # Instagram PR: Safe Config
+        if path == '/api/instagram/config':
+            self.send_json(200, instagram_pr_agent.get_safe_config())
+            return
+
+        # Instagram PR: Posts List
+        if path == '/api/instagram/posts':
+            limit = int(query.get('limit', [50])[0])
+            offset = int(query.get('offset', [0])[0])
+            status = query.get('status', [None])[0]
+            posts = instagram_pr_agent.get_posts(limit=limit, offset=offset, status=status)
+            self.send_json(200, {"posts": posts})
+            return
+
         conn = get_db()
         cursor = conn.cursor()
 
@@ -698,10 +733,89 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"orders": orders})
             return
 
+        # 8. Reviews List: /api/reviews
+        if path == '/api/reviews':
+            try:
+                prod_id = query.get('product_id', [''])[0].strip()
+                filter_type = query.get('filter', ['all'])[0].strip()
+                limit = min(100, max(1, int(query.get('limit', [50])[0])))
+
+                where_clauses = ["1=1"]
+                params = []
+
+                if prod_id and prod_id != 'general':
+                    where_clauses.append("(product_id = ? OR product_id IN (SELECT id FROM products WHERE slug = ?))")
+                    params.extend([prod_id, prod_id])
+
+                if filter_type == '5star':
+                    where_clauses.append("rating >= 5")
+                elif filter_type == 'verified':
+                    where_clauses.append("verified_purchase = 1")
+
+                where_sql = " AND ".join(where_clauses)
+                cursor.execute(f"SELECT * FROM reviews WHERE {where_sql} ORDER BY created_at DESC LIMIT ?", params + [limit])
+                reviews = [dict(r) for r in cursor.fetchall()]
+
+                stats = None
+                if prod_id and prod_id != 'general':
+                    cursor.execute("SELECT AVG(rating), COUNT(*) FROM reviews WHERE (product_id = ? OR product_id IN (SELECT id FROM products WHERE slug = ?))", (prod_id, prod_id))
+                    avg_r, cnt_r = cursor.fetchone()
+                    stats = {
+                        "rating": round(avg_r, 1) if avg_r else 5.0,
+                        "count": cnt_r or 0
+                    }
+
+                self.send_json(200, {"reviews": reviews, "stats": stats})
+                return
+            finally:
+                conn.close()
+
         conn.close()
         self.send_json(404, {"error": "API route not found"})
 
     def handle_api_post(self, path, data):
+        # Instagram PR: Update Config
+        if path == '/api/instagram/config':
+            try:
+                updated = instagram_pr_agent.update_config(data)
+                self.send_json(200, {"success": True, "config": updated})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Generate Post Draft & 1080x1080 Image
+        if path == '/api/instagram/generate':
+            content_type = data.get('content_type')
+            product_id = data.get('product_id')
+            try:
+                post = instagram_pr_agent.generate_post(content_type=content_type, product_id=product_id)
+                self.send_json(200, {"success": True, "post": post})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Publish Post
+        if path == '/api/instagram/publish':
+            post_id = data.get('id')
+            try:
+                result = instagram_pr_agent.publish_post(post_id=post_id)
+                status_code = 200 if result.get('success') else 400
+                self.send_json(status_code, result)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Toggle Autonomous Scheduler
+        if path == '/api/instagram/toggle':
+            enabled = bool(data.get('enabled'))
+            instagram_pr_agent.update_config({'is_autonomous_enabled': 1 if enabled else 0})
+            if enabled:
+                instagram_pr_scheduler.start()
+            else:
+                instagram_pr_scheduler.stop()
+            self.send_json(200, {"success": True, "is_autonomous_enabled": enabled})
+            return
+
         conn = get_db()
         cursor = conn.cursor()
 
@@ -859,6 +973,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             code = data.get('code', '').strip().upper()
             subtotal_usd = float(data.get('subtotal_usd', 0))
             subtotal_try = float(data.get('subtotal_try', 0))
+            if subtotal_usd == 0 and subtotal_try > 0:
+                subtotal_usd = round(subtotal_try / 35.5, 2)
+            elif subtotal_try == 0 and subtotal_usd > 0:
+                subtotal_try = round(subtotal_usd * 35.5, 2)
 
             cursor.execute("SELECT * FROM coupons WHERE code = ? AND is_active = 1", (code,))
             coupon = cursor.fetchone()
@@ -869,7 +987,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             c_dict = dict(coupon)
-            if subtotal_usd < c_dict['min_order_usd']:
+            if subtotal_usd < c_dict['min_order_usd'] and subtotal_try < c_dict['min_order_try']:
                 self.send_json(400, {
                     "valid": False,
                     "error": f"Minimum order amount for this coupon is ${c_dict['min_order_usd']} / {c_dict['min_order_try']}₺."
@@ -989,7 +1107,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 coupon = cursor.fetchone()
                 if coupon:
                     c = dict(coupon)
-                    if subtotal_usd >= c['min_order_usd']:
+                    if subtotal_usd >= c['min_order_usd'] or subtotal_try >= c['min_order_try']:
                         if c['discount_type'] == 'percent':
                             discount_usd = round(subtotal_usd * (c['discount_value'] / 100.0), 2)
                             discount_try = round(subtotal_try * (c['discount_value'] / 100.0), 2)
@@ -1060,48 +1178,58 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # 6. Add Review
         if path == '/api/reviews':
-            product_id = data.get('product_id')
-            user_name = data.get('user_name', 'Anonymous Pilot')
-            rating = max(1, min(5, int(data.get('rating', 5))))
-            title = data.get('title', '')
-            comment = data.get('comment', '').strip()
+            try:
+                raw_prod_id = data.get('product_id')
+                user_name = data.get('user_name', 'Anonymous Pilot').strip() or 'Anonymous Pilot'
+                rating = max(1, min(5, int(data.get('rating', 5))))
+                title = data.get('title', '').strip()
+                comment = data.get('comment', '').strip()
 
-            if not product_id or not comment:
-                conn.close()
-                self.send_json(400, {"error": "Product ID and comment are required."})
+                if not comment:
+                    self.send_json(400, {"error": "Comment is required."})
+                    return
+
+                real_prod_id = None
+                if raw_prod_id and raw_prod_id != 'general':
+                    cursor.execute("SELECT id FROM products WHERE id = ? OR slug = ?", (raw_prod_id, raw_prod_id))
+                    m_row = cursor.fetchone()
+                    if m_row:
+                        real_prod_id = m_row[0]
+
+                rev_id = str(uuid.uuid4())
+                now_iso = datetime.now().isoformat()
+                avatar = data.get('user_avatar') or f"https://api.dicebear.com/7.x/bottts/svg?seed={urllib.parse.quote(user_name)}"
+
+                cursor.execute('''
+                    INSERT INTO reviews (id, product_id, user_name, user_avatar, rating, title, comment, verified_purchase, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+                ''', (rev_id, real_prod_id, user_name, avatar, rating, title, comment, now_iso))
+
+                # Recalculate product rating if review was for a product
+                if real_prod_id:
+                    cursor.execute("SELECT AVG(rating), COUNT(*) FROM reviews WHERE product_id = ?", (real_prod_id,))
+                    avg_r, count_r = cursor.fetchone()
+                    if avg_r is not None:
+                        cursor.execute("UPDATE products SET rating = ?, review_count = ? WHERE id = ?", (round(avg_r, 1), count_r, real_prod_id))
+
+                conn.commit()
+
+                self.send_json(201, {
+                    "success": True,
+                    "review": {
+                        "id": rev_id,
+                        "product_id": real_prod_id,
+                        "user_name": user_name,
+                        "user_avatar": avatar,
+                        "rating": rating,
+                        "title": title,
+                        "comment": comment,
+                        "created_at": now_iso
+                    }
+                })
                 return
-
-            rev_id = str(uuid.uuid4())
-            now_iso = datetime.now().isoformat()
-            avatar = f"https://api.dicebear.com/7.x/bottts/svg?seed={urllib.parse.quote(user_name)}"
-
-            cursor.execute('''
-                INSERT INTO reviews (id, product_id, user_name, user_avatar, rating, title, comment, verified_purchase, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
-            ''', (rev_id, product_id, user_name, avatar, rating, title, comment, now_iso))
-
-            # Recalculate product rating
-            cursor.execute("SELECT AVG(rating), COUNT(*) FROM reviews WHERE product_id = ?", (product_id,))
-            avg_r, count_r = cursor.fetchone()
-            cursor.execute("UPDATE products SET rating = ?, review_count = ? WHERE id = ?", (round(avg_r, 1), count_r, product_id))
-
-            conn.commit()
-            conn.close()
-
-            self.send_json(201, {
-                "success": True,
-                "review": {
-                    "id": rev_id,
-                    "product_id": product_id,
-                    "user_name": user_name,
-                    "user_avatar": avatar,
-                    "rating": rating,
-                    "title": title,
-                    "comment": comment,
-                    "created_at": now_iso
-                }
-            })
-            return
+            finally:
+                conn.close()
 
         # 7. Drone Compatibility Builder Checker
         if path == '/api/builder/check':
