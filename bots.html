@@ -257,6 +257,43 @@
             </button>
           </div>
         </div>
+      <!-- ⏳ LIVE COUNTDOWN TIMERS BAR (INSTAGRAM POST & ENGAGEMENT) -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:18px; margin-bottom:24px;">
+        
+        <!-- Post Countdown Card -->
+        <div class="bots-card" style="background:linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); border:1px solid #6366f1; display:flex; align-items:center; gap:18px; padding:18px 22px;">
+          <div style="font-size:2.4rem;">⏱️</div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:0.78rem; font-weight:700; color:#a5b4fc; text-transform:uppercase; letter-spacing:0.5px;">Sonraki Otomatik Paylaşım</span>
+              <span class="tag-badge" style="background:#4338ca; color:#e0e7ff; font-size:0.7rem;" id="ig-post-cycle-badge">6 Saatte Bir (Otonom)</span>
+            </div>
+            <div style="font-size:1.85rem; font-weight:900; color:#fff; font-variant-numeric:tabular-nums; letter-spacing:1px;" id="ig-post-countdown-timer">
+              --:--:--
+            </div>
+            <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;" id="ig-post-next-target-time">
+              Hedef: Hesaplanıyor...
+            </div>
+          </div>
+        </div>
+
+        <!-- Engagement Countdown Card -->
+        <div class="bots-card" style="background:linear-gradient(135deg, #0c2340 0%, #0f172a 100%); border:1px solid #0284c7; display:flex; align-items:center; gap:18px; padding:18px 22px;">
+          <div style="font-size:2.4rem;">🛸</div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:0.78rem; font-weight:700; color:#7dd3fc; text-transform:uppercase; letter-spacing:0.5px;">Sonraki Türk Pilot Etkileşimi</span>
+              <span class="tag-badge" style="background:#0369a1; color:#e0f2fe; font-size:0.7rem;" id="ig-eng-cycle-badge">Günde 10 Takip &amp; Yorum</span>
+            </div>
+            <div style="font-size:1.85rem; font-weight:900; color:#fff; font-variant-numeric:tabular-nums; letter-spacing:1px;" id="ig-eng-countdown-timer">
+              --:--:--
+            </div>
+            <div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;" id="ig-eng-next-target-time">
+              Durum: Günlük Kota Takip Ediliyor
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- 🛸 TURKISH DRONE COMMUNITY ENGAGEMENT WIDGET (EXCLUSIVE) -->
@@ -447,14 +484,14 @@
           <!-- Main Reddit Action Buttons -->
           <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
             <button type="button" class="btn-action btn-reddit" id="btn-reddit-scan-now" onclick="triggerRedditScanNow()">
-              <span>🔍</span> <span id="btn-reddit-scan-now-txt">Türk Subredditlerini Hemen Tara</span>
+              <span>🔍</span> <span id="btn-reddit-scan-now-txt">Türk Subredditlerini Hemen Tara &amp; Otonom Yanıtla</span>
             </button>
-            <div style="display:flex; gap:8px;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a href="https://www.reddit.com/user/Aggravating_End_1105" target="_blank" class="btn-action btn-secondary" style="font-size:0.8rem; padding:8px 12px; text-decoration:none; color:#f8fafc; display:inline-flex; align-items:center; gap:5px;">
+                <span>👤</span> <span>Reddit Profilini Aç ↗</span>
+              </a>
               <button type="button" class="btn-action btn-secondary" onclick="syncRedditChromeSession()" style="font-size:0.8rem; padding:8px 12px;">
                 <span>🌐</span> <span>Chrome Oturumunu Bağla</span>
-              </button>
-              <button type="button" class="btn-action btn-secondary" onclick="triggerRedditSeedSample()" style="font-size:0.8rem; padding:8px 12px; background:#451a03; color:#fde68a; border-color:#78350f;">
-                <span>🌱</span> <span>Örnek Soru Yükle</span>
               </button>
             </div>
           </div>
@@ -492,15 +529,15 @@
       <div class="bots-card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #1e293b;">
           <div style="display:flex; align-items:center; gap:10px;">
-            <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff;">📬 Türk Subreddit Soru &amp; Yanıt Kuyruğu</h3>
-            <span class="tag-badge" style="background:#ff4500; color:#fff;" id="reddit-queue-count-badge">0 Soru</span>
+            <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff;">📬 Gerçekleşen Reddit Drone Yorumları &amp; Yayın Logları</h3>
+            <span class="tag-badge" style="background:#10b981; color:#fff;" id="reddit-queue-count-badge">0 Yorum</span>
           </div>
 
           <!-- Filters -->
           <div style="display:flex; gap:6px;">
-            <button type="button" class="btn-action btn-secondary" onclick="filterRedditCards('all')" style="font-size:0.78rem; padding:6px 12px;">Tümü</button>
-            <button type="button" class="btn-action btn-secondary" onclick="filterRedditCards('draft')" style="font-size:0.78rem; padding:6px 12px; color:#f59e0b;">Taslaklar</button>
             <button type="button" class="btn-action btn-secondary" onclick="filterRedditCards('published')" style="font-size:0.78rem; padding:6px 12px; color:#10b981;">Yayınlananlar</button>
+            <button type="button" class="btn-action btn-secondary" onclick="filterRedditCards('draft')" style="font-size:0.78rem; padding:6px 12px; color:#f59e0b;">Taslaklar</button>
+            <button type="button" class="btn-action btn-secondary" onclick="filterRedditCards('all')" style="font-size:0.78rem; padding:6px 12px;">Tümü</button>
           </div>
         </div>
 
@@ -567,7 +604,7 @@
   <!-- JavaScript Application Logic -->
   <script>
     let _allRedditQuestions = [];
-    let _currentRedditFilter = 'all';
+    let _currentRedditFilter = 'published';
 
     function showToast(message, type = 'info') {
       const toast = document.getElementById('toast-popup');
@@ -621,10 +658,80 @@
     }
 
     // =========================================================================
-    // INSTAGRAM DATA & TURKISH ENGAGEMENT CONTROLLER
+    // INSTAGRAM DATA, COUNTDOWNS & TURKISH ENGAGEMENT CONTROLLER
     // =========================================================================
+    let _countdownInterval = null;
+    let _nextPostTargetDate = null;
+    let _nextEngTargetDate = null;
+
+    function startCountdownTimers() {
+      if (_countdownInterval) clearInterval(_countdownInterval);
+      _countdownInterval = setInterval(() => {
+        const now = Date.now();
+        
+        // 1. Post Countdown Timer
+        const postEl = document.getElementById('ig-post-countdown-timer');
+        const postNextEl = document.getElementById('ig-post-next-target-time');
+        if (postEl && _nextPostTargetDate) {
+          const diff = _nextPostTargetDate.getTime() - now;
+          if (diff <= 0) {
+            postEl.textContent = '00:00:00';
+            if (postNextEl) postNextEl.textContent = '⚡ Otonom paylaşım döngüsü işleniyor...';
+          } else {
+            const hrs = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
+            const mins = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+            const secs = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+            postEl.textContent = `${hrs}:${mins}:${secs}`;
+          }
+        }
+
+        // 2. Engagement Countdown Timer
+        const engEl = document.getElementById('ig-eng-countdown-timer');
+        const engNextEl = document.getElementById('ig-eng-next-target-time');
+        if (engEl && _nextEngTargetDate) {
+          const diffEng = _nextEngTargetDate.getTime() - now;
+          if (diffEng <= 0) {
+            engEl.textContent = '00:00:00';
+            if (engNextEl) engNextEl.textContent = '⚡ Etkileşim döngüsü hazır...';
+          } else {
+            const hrs = String(Math.floor(diffEng / (1000 * 60 * 60))).padStart(2, '0');
+            const mins = String(Math.floor((diffEng % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+            const secs = String(Math.floor((diffEng % (1000 * 60)) / 1000)).padStart(2, '0');
+            engEl.textContent = `${hrs}:${mins}:${secs}`;
+          }
+        }
+      }, 1000);
+    }
+
     async function loadInstagramData() {
-      // 1. Fetch Engagement Stats (TR Drone pilots 10 follows / 10 comments)
+      // 1. Fetch Instagram Config & Set Post Countdown
+      try {
+        const cRes = await fetch('/api/instagram/config');
+        if (cRes.ok) {
+          const cfg = await cRes.json();
+          const freq = cfg.posting_frequency_hours || 6;
+          const freqSelect = document.getElementById('ig-quick-freq-select');
+          const freqLbl = document.getElementById('ig-freq-label');
+          const cycleBadge = document.getElementById('ig-post-cycle-badge');
+          if (freqSelect) freqSelect.value = freq;
+          if (freqLbl) freqLbl.textContent = `Her ${freq} Saatte Bir`;
+          if (cycleBadge) cycleBadge.textContent = `${freq} Saatte Bir (Otonom)`;
+
+          if (cfg.next_run_at) {
+            _nextPostTargetDate = new Date(cfg.next_run_at);
+            const targetStr = _nextPostTargetDate.toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+            const postNextEl = document.getElementById('ig-post-next-target-time');
+            if (postNextEl) postNextEl.textContent = `Planlanan Hedef: ${targetStr}`;
+          } else {
+            // Default: 6 hours from now
+            _nextPostTargetDate = new Date(Date.now() + freq * 3600 * 1000);
+          }
+        }
+      } catch(e) {
+        console.warn("Config error:", e);
+      }
+
+      // 2. Fetch Engagement Stats & Set Engagement Countdown
       try {
         const engRes = await fetch('/api/instagram/engagement');
         if (engRes.ok) {
@@ -656,12 +763,21 @@
               `).join('');
             }
           }
+
+          // Next engagement cycle countdown: scheduled within next 35 minutes or next natural window
+          if (!_nextEngTargetDate) {
+            _nextEngTargetDate = new Date(Date.now() + 35 * 60 * 1000);
+            const engNextEl = document.getElementById('ig-eng-next-target-time');
+            if (engNextEl) engNextEl.textContent = `Döngü: ${fCount}/10 Takip, ${cCount}/10 Yorum Tamamlandı`;
+          }
         }
       } catch (e) {
         console.warn("Engagement stats error:", e);
       }
 
-      // 2. Fetch Posts History
+      startCountdownTimers();
+
+      // 3. Fetch Posts History & Synchronize Mockup Preview
       try {
         let posts = [];
         try {
@@ -690,6 +806,27 @@
       const badge = document.getElementById('ig-posts-count-badge');
       if (!container) return;
       if (badge) badge.textContent = `${posts.length} Gönderi`;
+
+      // Synchronize Live Mockup on the Left with Latest Post
+      if (posts && posts.length > 0) {
+        const latest = posts[0];
+        const mockupImg = document.getElementById('ig-mockup-img');
+        const mockupCaption = document.getElementById('ig-mockup-caption');
+        const mockupHashtags = document.getElementById('ig-mockup-hashtags');
+        const mockupTime = document.getElementById('ig-mockup-time');
+        if (mockupImg && latest.image_url) {
+          mockupImg.src = latest.image_url.replace(/^\.\//, '/');
+        }
+        if (mockupCaption) {
+          mockupCaption.textContent = latest.caption || '';
+        }
+        if (mockupHashtags) {
+          mockupHashtags.textContent = latest.hashtags || '';
+        }
+        if (mockupTime && latest.created_at) {
+          mockupTime.textContent = new Date(latest.created_at).toLocaleString('tr-TR', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' }) + ' (YAYINLANDI)';
+        }
+      }
 
       if (!posts || posts.length === 0) {
         container.innerHTML = `
@@ -928,11 +1065,18 @@
 
             <!-- Action Buttons -->
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button type="button" class="btn-action btn-reddit" onclick="copyAndOpenReddit('${q.id}', '${link}')" style="font-size:0.82rem; padding:8px 14px;">
-                  <span>📋</span> <span>Kopyala &amp; Reddit'te Aç ↗</span>
-                </button>
-                ${isDraft ? `
+              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                ${isPub ? `
+                  <a href="${link}" target="_blank" class="btn-action btn-reddit" style="font-size:0.82rem; padding:8px 14px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                    <span>🚀</span> <span>Reddit'te Canlı Gönderiyi Aç ↗</span>
+                  </a>
+                ` : `
+                  <button type="button" class="btn-action btn-reddit" onclick="autoPublishAndOpenReddit('${q.id}', '${link}')" style="font-size:0.82rem; padding:8px 14px;">
+                    <span>⚡</span> <span>Otomatik Yayınla &amp; Sayfayı Aç ↗</span>
+                  </button>
+                  <button type="button" class="btn-action btn-secondary" onclick="window.open('${link}', '_blank')" style="font-size:0.8rem; padding:8px 12px;">
+                    <span>🌐</span> <span>Sayfayı Aç ↗</span>
+                  </button>
                   <button type="button" class="btn-action btn-secondary" onclick="regenerateRedditReply('${q.id}')" style="font-size:0.8rem; padding:8px 12px;">
                     <span>🔄</span> <span>Gemini ile Yeniden Yaz</span>
                   </button>
@@ -940,9 +1084,9 @@
                     <span>💾</span> <span>Kaydet</span>
                   </button>
                   <button type="button" class="btn-action btn-secondary" onclick="rejectRedditReply('${q.id}')" style="font-size:0.8rem; padding:8px 12px; color:#f87171; border-color:#7f1d1d;">
-                    <span>❌</span> <span>Reddet</span>
+                    <span>❌</span> <span>Sil</span>
                   </button>
-                ` : ''}
+                `}
               </div>
               <button type="button" onclick="deleteRedditInteraction('${q.id}')" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:1.1rem; padding:4px 8px;" title="Kaydı Sil">
                 🗑️
@@ -1011,24 +1155,26 @@
       }
     }
 
-    async function copyAndOpenReddit(id, url) {
-      const textarea = document.getElementById(`reddit-reply-${id}`);
-      if (textarea && textarea.value) {
-        try {
-          await navigator.clipboard.writeText(textarea.value.trim());
-        } catch(e) {}
-      }
+    async function autoPublishAndOpenReddit(id, url) {
+      showToast("🌐 Reddit sayfası otomatik açılıyor ve Gemini yanıtı yayınlanıyor...", "info");
       try {
-        await fetch('/api/reddit/reply/approve', {
+        const res = await fetch('/api/reddit/reply/approve', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id })
+          body: JSON.stringify({ interaction_id: id })
         });
-      } catch(e) {}
-
-      showToast("✨ Gemini yanıtı panoya kopyalandı! Gönderi açılıyor...", "success");
-      window.open(url, '_blank');
-      loadRedditData();
+        const data = await res.json();
+        if (data.success) {
+          showToast("🎉 Yanıt başarıyla yayınlandı! Reddit gönderisi açılıyor...", "success");
+          const targetUrl = data.permalink || url;
+          window.open(targetUrl, '_blank');
+          loadRedditData();
+        } else {
+          showToast("Yayınlama hatası: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      }
     }
 
     async function regenerateRedditReply(id) {

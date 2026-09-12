@@ -200,7 +200,17 @@ class RedditClient:
                 return False
         else:
             # In general subreddits (r/Turkey, r/teknoloji, r/AskTurkey, etc.),
-            # MUST contain at least one CORE drone keyword with word boundary!
+            # 1. Filter out military / political news topics
+            political_or_military_excludes = [
+                "bayraktar", "tb2", "tb3", "akıncı", "akinci", "kızılelma", "kizilelma",
+                "anka", "aksungur", "ukrayna", "rusya", "israil", "gazze", "ordu", "tsk",
+                "savunma sanayii", "milli savunma", "şehit", "sehit", "savaş", "savas",
+                "harekat", "operasyon", "seçim", "secim", "hükümet", "hukumet"
+            ]
+            if any(term in full_text for term in political_or_military_excludes):
+                return False
+
+            # 2. MUST contain at least one CORE drone keyword with word boundary!
             has_core_keyword = False
             for ckw in self.CORE_DRONE_KEYWORDS:
                 pattern = r'\b' + re.escape(ckw) + r'\b'

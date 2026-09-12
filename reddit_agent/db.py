@@ -259,6 +259,9 @@ def get_interactions(limit: int = 50, offset: int = 0, status: str = None, subre
     if status and status != 'all':
         query += " AND status = ?"
         params.append(status)
+    elif not status:
+        # Default: exclude rejected items so only genuine published comments/drafts are loaded
+        query += " AND status != 'rejected'"
 
     if subreddit and subreddit != 'all':
         query += " AND subreddit = ?"

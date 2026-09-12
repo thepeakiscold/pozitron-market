@@ -988,7 +988,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/reddit/reply/approve':
             try:
                 data = json.loads(self.get_post_body())
-                interaction_id = data.get("interaction_id")
+                interaction_id = data.get("interaction_id") or data.get("id")
                 res = reddit_drone_agent.approve_reply(interaction_id)
                 self.send_json(200, res)
             except Exception as e:
@@ -999,7 +999,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/reddit/reply/reject':
             try:
                 data = json.loads(self.get_post_body())
-                interaction_id = data.get("interaction_id")
+                interaction_id = data.get("interaction_id") or data.get("id")
                 success = reddit_drone_agent.reject_reply(interaction_id)
                 self.send_json(200, {"success": success})
             except Exception as e:
@@ -1010,7 +1010,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/reddit/reply/edit':
             try:
                 data = json.loads(self.get_post_body())
-                interaction_id = data.get("interaction_id")
+                interaction_id = data.get("interaction_id") or data.get("id")
                 text = data.get("text", "")
                 success = reddit_drone_agent.edit_reply(interaction_id, text)
                 self.send_json(200, {"success": success})
@@ -1022,7 +1022,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/reddit/reply/generate':
             try:
                 data = json.loads(self.get_post_body())
-                interaction_id = data.get("interaction_id")
+                interaction_id = data.get("interaction_id") or data.get("id")
                 res = reddit_drone_agent.regenerate_reply(interaction_id)
                 self.send_json(200, res)
             except Exception as e:

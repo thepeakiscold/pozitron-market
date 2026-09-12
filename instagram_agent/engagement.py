@@ -23,7 +23,7 @@ TARGET_HASHTAGS = [
 TURKISH_CHARS = set('çğıöşüİĞŞÇÖÜ')
 TURKISH_KEYWORDS = [
     'türkiye', 'turkiye', 'turk', 'türk', 'turkey', 'teknofest', 'iha', 'siha',
-    'kırım', 'kirim', 'uçuş', 'ucus', 'havacılık', 'havacilik', 'pilot',
+    'kırım', 'kirim', 'uçuş', 'ucus', 'havacılık', 'havacilik',
     'pervane', 'batarya', 'kumanda', 'atölye', 'atolye', 'antrenman',
     'gökyüzü', 'gokyuzu', 'yarış', 'yaris', 'kadraj', 'lehim', 'lehimleme',
     'fırçasız', 'fircasiz', 'takım', 'takim', 'ekip', 'pozitron',
@@ -156,9 +156,15 @@ class InstagramEngagementEngine:
         # 3. Check for Turkish drone/location keywords
         has_tr_keyword = any(kw in combined for kw in TURKISH_KEYWORDS)
 
-        # 4. Check for Turkish username markers
+        # 4. Check for Turkish username markers (word boundary / explicit prefixes/suffixes)
         u_lower = username.lower()
-        has_tr_user = any(marker in u_lower for marker in ['tr', 'turk', 'turkey', 'iha', 'teknofest', 'havacilik', 'ucus', 'fpvturk'])
+        has_tr_prefix_or_suffix = (
+            u_lower.endswith(('_tr', '.tr')) or
+            u_lower.startswith('tr_') or
+            '_tr_' in u_lower or
+            '.tr.' in u_lower
+        )
+        has_tr_user = has_tr_prefix_or_suffix or any(marker in u_lower for marker in ['turk', 'turkey', 'iha', 'teknofest', 'havacilik', 'ucus', 'fpvturk'])
 
         return has_tr_char or has_tr_keyword or has_tr_user
 
