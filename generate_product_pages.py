@@ -3,7 +3,7 @@
 generate_product_pages.py
 Static Site Generator (SSG) for Pozitron Market (https://pozitronmarket.com)
 Generates 500 individual SEO-optimized HTML product pages with full Schema.org Product markup,
-OpenGraph tags, responsive layout, direct purchase links, and updates sitemap.xml.
+OpenGraph tags, responsive layout, dynamic direct purchase & cart functions, and updates sitemap.xml.
 """
 
 import json
@@ -33,12 +33,14 @@ def escape_str(s):
     return html.escape(str(s).strip(), quote=True)
 
 def generate_product_page(product, category, related_products):
+    p_id = product.get("id", "")
     slug = product.get("slug", "")
     sku = product.get("sku", "")
     name_tr = product.get("name_tr") or product.get("name_en") or "FPV Drone Parçası"
     name_en = product.get("name_en") or product.get("name_tr") or ""
     brand = product.get("brand", "Pozitron")
     price_try = product.get("price_try", 0.0)
+    price_usd = float(product.get("price_usd") or 0.0)
     original_price_try = product.get("original_price_try", price_try)
     stock = product.get("stock", 50)
     image_rel = product.get("image_url", "./assets/placeholder.png")
@@ -83,7 +85,7 @@ def generate_product_page(product, category, related_products):
         discount_pct = int(round(((original_price_try - price_try) / original_price_try) * 100))
 
     # WhatsApp order link pre-filled
-    wa_msg = f"Merhaba, Pozitron Market web sitenizdeki şu ürün hakkında bilgi almak ve sipariş vermek istiyorum:\n\n*Ürün:* {name_tr}\n*Kod:* {sku}\n*Fiyat:* {format_try(price_try)}\n*Link:* {canonical_url}"
+    wa_msg = f"Merhaba, Pozitron Market web sitenizdeki şu ürünü sipariş etmek istiyorum:\n\n*Ürün:* {name_tr}\n*Kod:* {sku}\n*Adet:* 1\n*Fiyat:* {format_try(price_try)}\n*Link:* {canonical_url}"
     import urllib.parse
     wa_url = f"https://wa.me/905442451118?text={urllib.parse.quote(wa_msg)}"
 
@@ -347,6 +349,11 @@ def generate_product_page(product, category, related_products):
       background: var(--brand-subtle);
       color: var(--brand-subtle-text);
     }}
+    .nav-pill-cart {{
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+    }}
 
     /* Main Container */
     .page-container {{
@@ -586,6 +593,31 @@ def generate_product_page(product, category, related_products):
       background: #20ba5a;
     }}
 
+    /* Toast Notification */
+    .cart-toast {{
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 14px 22px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }}
+    .cart-toast.visible {{
+      transform: translateY(0);
+      opacity: 1;
+    }}
+
     /* Specs & Tabs */
     .section-card {{
       background: var(--bg-card);
@@ -738,6 +770,10 @@ def generate_product_page(product, category, related_products):
         <a href="../#category={cat_id}" class="nav-pill nav-pill-home">
           {escape_str(cat_icon)} <span>{escape_str(cat_name_tr)}</span>
         </a>
+        <a href="../#cart" class="nav-pill nav-pill-cart">
+          🛒 <span>Sepet</span>
+          <span id="header-cart-badge" style="background:#0284c7; color:#ffffff; font-size:0.75rem; font-weight:800; padding:2px 7px; border-radius:9999px; margin-left:3px; display:none;">0</span>
+        </a>
       </nav>
     </div>
   </header>
@@ -793,14 +829,27 @@ def generate_product_page(product, category, related_products):
         </div>
 
         <div class="actions-box">
-          <a href="../#product={escape_str(slug)}" class="btn btn-buy">
-            🛒 Sepete Ekle & Hemen Satın Al
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:inline-flex; align-items:center; border:1px solid #cbd5e1; border-radius:var(--radius-md); background:#ffffff; overflow:hidden;">
+              <button type="button" onclick="changeQty(-1)" style="border:none; background:none; padding:12px 16px; cursor:pointer; font-size:1.1rem; font-weight:700; color:#475569;">−</button>
+              <input type="number" id="product-qty" value="1" min="1" max="99" style="width:46px; text-align:center; border:none; font-weight:700; font-size:1rem; outline:none;" readonly>
+              <button type="button" onclick="changeQty(1)" style="border:none; background:none; padding:12px 16px; cursor:pointer; font-size:1.1rem; font-weight:700; color:#475569;">+</button>
+            </div>
+            <button type="button" onclick="handleAddToCart(false)" class="btn btn-buy" style="flex:1;">
+              🛒 Sepete Ekle
+            </button>
+          </div>
+
+          <button type="button" onclick="handleAddToCart(true)" class="btn" style="background:#16a34a; color:#ffffff; box-shadow:0 4px 12px rgba(22,163,74,0.25);">
+            ⚡ Hemen Satın Al &amp; Ödemeye Geç
+          </button>
+
+          <a href="{wa_url}" id="product-wa-link" target="_blank" rel="noopener" class="btn btn-wa">
+            💬 WhatsApp ile Hızlı Sipariş / Destek
           </a>
+
           <a href="../drone-toplama-sihirbazi.html" class="btn btn-wizard">
             ⚡ Bu Parçayı Drone Sihirbazında Test Et
-          </a>
-          <a href="{wa_url}" target="_blank" rel="noopener" class="btn btn-wa">
-            💬 WhatsApp ile Hızlı Sipariş / Destek
           </a>
         </div>
       </div>
@@ -848,6 +897,97 @@ def generate_product_page(product, category, related_products):
     </div>
     <p>© {datetime.now().year} Pozitron Market - Türkiye'nin En Kapsamlı FPV Drone Donanım Pazarı.</p>
   </footer>
+
+  <script>
+    function getCart() {{
+      try {{ return JSON.parse(localStorage.getItem('pozitron_cart') || '[]'); }} catch(e) {{ return []; }}
+    }}
+    function saveCart(cart) {{
+      localStorage.setItem('pozitron_cart', JSON.stringify(cart));
+      updateHeaderCart();
+    }}
+    function updateHeaderCart() {{
+      const cart = getCart();
+      const count = cart.reduce((acc, it) => acc + (it.quantity || 1), 0);
+      const badge = document.getElementById('header-cart-badge');
+      if (badge) {{
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline-flex' : 'none';
+      }}
+    }}
+    function changeQty(delta) {{
+      const inp = document.getElementById('product-qty');
+      if (!inp) return;
+      let v = parseInt(inp.value, 10) || 1;
+      v = Math.max(1, Math.min(99, v + delta));
+      inp.value = v;
+      updateWaLink(v);
+    }}
+    function updateWaLink(qty) {{
+      const waLink = document.getElementById('product-wa-link');
+      if (!waLink) return;
+      const baseMsg = "Merhaba, Pozitron Market web sitenizdeki şu ürünü sipariş etmek istiyorum:\\n\\n*Ürün:* " + {json.dumps(name_tr)} + "\\n*Kod:* " + {json.dumps(sku)} + "\\n*Adet:* " + qty + "\\n*Link:* " + {json.dumps(canonical_url)};
+      waLink.href = "https://wa.me/905442451118?text=" + encodeURIComponent(baseMsg);
+    }}
+    function handleAddToCart(buyNow) {{
+      const qty = parseInt(document.getElementById('product-qty')?.value, 10) || 1;
+      const cart = getCart();
+      const existing = cart.find(x => x.id === {json.dumps(p_id)} || x.sku === {json.dumps(sku)});
+      if (existing) {{
+        existing.quantity += qty;
+      }} else {{
+        cart.push({{
+          id: {json.dumps(p_id)},
+          sku: {json.dumps(sku)},
+          name_en: {json.dumps(name_en)},
+          name_tr: {json.dumps(name_tr)},
+          brand: {json.dumps(brand)},
+          category_id: {json.dumps(cat_id)},
+          price_usd: {price_usd},
+          price_try: {float(price_try)},
+          image_url: {json.dumps(image_rel)},
+          quantity: qty
+        }});
+      }}
+      saveCart(cart);
+
+      // Track GA4 event
+      if (typeof gtag === 'function') {{
+        gtag('event', 'add_to_cart', {{
+          currency: 'TRY',
+          value: {float(price_try)} * qty,
+          items: [{{
+            item_id: {json.dumps(sku)},
+            item_name: {json.dumps(name_tr)},
+            item_brand: {json.dumps(brand)},
+            item_category: {json.dumps(cat_name_tr)},
+            price: {float(price_try)},
+            quantity: qty
+          }}]
+        }});
+      }}
+
+      if (buyNow) {{
+        window.location.href = '../#cart';
+      }} else {{
+        showToast("✅ " + qty + " adet " + {json.dumps(name_tr)} + " sepete eklendi!");
+      }}
+    }}
+    function showToast(msg) {{
+      const existing = document.querySelector('.cart-toast');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.className = 'cart-toast';
+      toast.innerHTML = msg + ' <a href="../#cart" style="color:#7dd3fc; margin-left:8px; font-weight:700; text-decoration:underline;">Sepete Git →</a>';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.classList.add('visible'), 20);
+      setTimeout(() => {{
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 350);
+      }}, 3500);
+    }}
+    window.addEventListener('DOMContentLoaded', updateHeaderCart);
+  </script>
 
 </body>
 </html>"""

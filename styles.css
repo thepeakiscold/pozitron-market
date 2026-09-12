@@ -1176,6 +1176,8 @@ img {
   overflow: hidden;
   border-bottom: 1px solid var(--border-subtle);
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
 
 .card-product-img {
@@ -1298,7 +1300,14 @@ img {
   transition: color 0.15s ease;
 }
 
-.card-title:hover {
+.card-title a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.15s ease;
+}
+
+.card-title:hover,
+.card-title a:hover {
   color: var(--brand-primary);
 }
 

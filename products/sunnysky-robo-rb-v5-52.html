@@ -208,6 +208,11 @@
       background: var(--brand-subtle);
       color: var(--brand-subtle-text);
     }
+    .nav-pill-cart {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+    }
 
     /* Main Container */
     .page-container {
@@ -447,6 +452,31 @@
       background: #20ba5a;
     }
 
+    /* Toast Notification */
+    .cart-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 14px 22px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .cart-toast.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
     /* Specs & Tabs */
     .section-card {
       background: var(--bg-card);
@@ -599,6 +629,10 @@
         <a href="../#category=motors" class="nav-pill nav-pill-home">
           ⚡ <span>Fırçasız Motorlar</span>
         </a>
+        <a href="../#cart" class="nav-pill nav-pill-cart">
+          🛒 <span>Sepet</span>
+          <span id="header-cart-badge" style="background:#0284c7; color:#ffffff; font-size:0.75rem; font-weight:800; padding:2px 7px; border-radius:9999px; margin-left:3px; display:none;">0</span>
+        </a>
       </nav>
     </div>
   </header>
@@ -654,14 +688,27 @@
         </div>
 
         <div class="actions-box">
-          <a href="../#product=sunnysky-robo-rb-v5-52" class="btn btn-buy">
-            🛒 Sepete Ekle & Hemen Satın Al
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="display:inline-flex; align-items:center; border:1px solid #cbd5e1; border-radius:var(--radius-md); background:#ffffff; overflow:hidden;">
+              <button type="button" onclick="changeQty(-1)" style="border:none; background:none; padding:12px 16px; cursor:pointer; font-size:1.1rem; font-weight:700; color:#475569;">−</button>
+              <input type="number" id="product-qty" value="1" min="1" max="99" style="width:46px; text-align:center; border:none; font-weight:700; font-size:1rem; outline:none;" readonly>
+              <button type="button" onclick="changeQty(1)" style="border:none; background:none; padding:12px 16px; cursor:pointer; font-size:1.1rem; font-weight:700; color:#475569;">+</button>
+            </div>
+            <button type="button" onclick="handleAddToCart(false)" class="btn btn-buy" style="flex:1;">
+              🛒 Sepete Ekle
+            </button>
+          </div>
+
+          <button type="button" onclick="handleAddToCart(true)" class="btn" style="background:#16a34a; color:#ffffff; box-shadow:0 4px 12px rgba(22,163,74,0.25);">
+            ⚡ Hemen Satın Al &amp; Ödemeye Geç
+          </button>
+
+          <a href="https://wa.me/905442451118?text=Merhaba%2C%20Pozitron%20Market%20web%20sitenizdeki%20%C5%9Fu%20%C3%BCr%C3%BCn%C3%BC%20sipari%C5%9F%20etmek%20istiyorum%3A%0A%0A%2A%C3%9Cr%C3%BCn%3A%2A%20Sunnysky%20ROBO%20RB%201202.5%20V5%20F%C4%B1r%C3%A7as%C4%B1z%20FPV%20Drone%20Motoru%20%2811500KV%29%0A%2AKod%3A%2A%20PZTR-MOT-0052%0A%2AAdet%3A%2A%201%0A%2AFiyat%3A%2A%20648%2C60%20%E2%82%BA%0A%2ALink%3A%2A%20https%3A//pozitronmarket.com/products/sunnysky-robo-rb-v5-52.html" id="product-wa-link" target="_blank" rel="noopener" class="btn btn-wa">
+            💬 WhatsApp ile Hızlı Sipariş / Destek
           </a>
+
           <a href="../drone-toplama-sihirbazi.html" class="btn btn-wizard">
             ⚡ Bu Parçayı Drone Sihirbazında Test Et
-          </a>
-          <a href="https://wa.me/905442451118?text=Merhaba%2C%20Pozitron%20Market%20web%20sitenizdeki%20%C5%9Fu%20%C3%BCr%C3%BCn%20hakk%C4%B1nda%20bilgi%20almak%20ve%20sipari%C5%9F%20vermek%20istiyorum%3A%0A%0A%2A%C3%9Cr%C3%BCn%3A%2A%20Sunnysky%20ROBO%20RB%201202.5%20V5%20F%C4%B1r%C3%A7as%C4%B1z%20FPV%20Drone%20Motoru%20%2811500KV%29%0A%2AKod%3A%2A%20PZTR-MOT-0052%0A%2AFiyat%3A%2A%20648%2C60%20%E2%82%BA%0A%2ALink%3A%2A%20https%3A//pozitronmarket.com/products/sunnysky-robo-rb-v5-52.html" target="_blank" rel="noopener" class="btn btn-wa">
-            💬 WhatsApp ile Hızlı Sipariş / Destek
           </a>
         </div>
       </div>
@@ -804,6 +851,97 @@
     </div>
     <p>© 2026 Pozitron Market - Türkiye'nin En Kapsamlı FPV Drone Donanım Pazarı.</p>
   </footer>
+
+  <script>
+    function getCart() {
+      try { return JSON.parse(localStorage.getItem('pozitron_cart') || '[]'); } catch(e) { return []; }
+    }
+    function saveCart(cart) {
+      localStorage.setItem('pozitron_cart', JSON.stringify(cart));
+      updateHeaderCart();
+    }
+    function updateHeaderCart() {
+      const cart = getCart();
+      const count = cart.reduce((acc, it) => acc + (it.quantity || 1), 0);
+      const badge = document.getElementById('header-cart-badge');
+      if (badge) {
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline-flex' : 'none';
+      }
+    }
+    function changeQty(delta) {
+      const inp = document.getElementById('product-qty');
+      if (!inp) return;
+      let v = parseInt(inp.value, 10) || 1;
+      v = Math.max(1, Math.min(99, v + delta));
+      inp.value = v;
+      updateWaLink(v);
+    }
+    function updateWaLink(qty) {
+      const waLink = document.getElementById('product-wa-link');
+      if (!waLink) return;
+      const baseMsg = "Merhaba, Pozitron Market web sitenizdeki şu ürünü sipariş etmek istiyorum:\n\n*Ürün:* " + "Sunnysky ROBO RB 1202.5 V5 F\u0131r\u00e7as\u0131z FPV Drone Motoru (11500KV)" + "\n*Kod:* " + "PZTR-MOT-0052" + "\n*Adet:* " + qty + "\n*Link:* " + "https://pozitronmarket.com/products/sunnysky-robo-rb-v5-52.html";
+      waLink.href = "https://wa.me/905442451118?text=" + encodeURIComponent(baseMsg);
+    }
+    function handleAddToCart(buyNow) {
+      const qty = parseInt(document.getElementById('product-qty')?.value, 10) || 1;
+      const cart = getCart();
+      const existing = cart.find(x => x.id === "83a5c82f-42d5-4b8b-8943-b38d59c0d607" || x.sku === "PZTR-MOT-0052");
+      if (existing) {
+        existing.quantity += qty;
+      } else {
+        cart.push({
+          id: "83a5c82f-42d5-4b8b-8943-b38d59c0d607",
+          sku: "PZTR-MOT-0052",
+          name_en: "Sunnysky ROBO RB V5 (11500KV)",
+          name_tr: "Sunnysky ROBO RB 1202.5 V5 F\u0131r\u00e7as\u0131z FPV Drone Motoru (11500KV)",
+          brand: "Sunnysky",
+          category_id: "motors",
+          price_usd: 13.8,
+          price_try: 648.6,
+          image_url: "./assets/products/PZTR-MOT-0052.jpg",
+          quantity: qty
+        });
+      }
+      saveCart(cart);
+
+      // Track GA4 event
+      if (typeof gtag === 'function') {
+        gtag('event', 'add_to_cart', {
+          currency: 'TRY',
+          value: 648.6 * qty,
+          items: [{
+            item_id: "PZTR-MOT-0052",
+            item_name: "Sunnysky ROBO RB 1202.5 V5 F\u0131r\u00e7as\u0131z FPV Drone Motoru (11500KV)",
+            item_brand: "Sunnysky",
+            item_category: "F\u0131r\u00e7as\u0131z Motorlar",
+            price: 648.6,
+            quantity: qty
+          }]
+        });
+      }
+
+      if (buyNow) {
+        window.location.href = '../#cart';
+      } else {
+        showToast("✅ " + qty + " adet " + "Sunnysky ROBO RB 1202.5 V5 F\u0131r\u00e7as\u0131z FPV Drone Motoru (11500KV)" + " sepete eklendi!");
+      }
+    }
+    function showToast(msg) {
+      const existing = document.querySelector('.cart-toast');
+      if (existing) existing.remove();
+      const toast = document.createElement('div');
+      toast.className = 'cart-toast';
+      toast.innerHTML = msg + ' <a href="../#cart" style="color:#7dd3fc; margin-left:8px; font-weight:700; text-decoration:underline;">Sepete Git →</a>';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.classList.add('visible'), 20);
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 350);
+      }, 3500);
+    }
+    window.addEventListener('DOMContentLoaded', updateHeaderCart);
+  </script>
 
 </body>
 </html>

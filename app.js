@@ -97,6 +97,14 @@ class PozitronApp {
       this.renderCommunityReviews(this.currentCommentFilter || 'all');
       this.updateDynamicSeoMeta();
     });
+
+    // 7. Handle browser back / forward navigation
+    window.addEventListener('popstate', (e) => {
+      const modal = document.getElementById('product-modal-backdrop');
+      if (modal && modal.style.display !== 'none') {
+        modal.style.display = 'none';
+      }
+    });
   }
 
   parseInitialUrlState() {
@@ -1118,16 +1126,16 @@ class PozitronApp {
 
       html += `
         <article class="product-card" data-id="${p.id}" data-slug="${p.slug}">
-          <div class="card-media-wrap" data-action="quickview" data-id="${p.id}" style="cursor:pointer;" title="${name}">
+          <a href="./products/${p.slug}.html" class="card-media-wrap" title="${name}">
             ${badgeHtml}
-            <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="card-product-img" loading="lazy" data-action="quickview" data-id="${p.id}" style="cursor:pointer;">
+            <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="card-product-img" loading="lazy">
             <button type="button" class="card-quick-view-btn" data-action="quickview" data-id="${p.id}" title="${window.i18n.t('quick_view')}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
             </button>
-          </div>
+          </a>
 
           <div class="card-body">
             <div class="card-brand-row">
@@ -1138,7 +1146,9 @@ class PozitronApp {
               </span>
             </div>
 
-            <h3 class="card-title" data-action="quickview" data-id="${p.id}">${name}</h3>
+            <h3 class="card-title">
+              <a href="./products/${p.slug}.html">${name}</a>
+            </h3>
 
             ${ratingRowHtml}
 
@@ -1177,6 +1187,7 @@ class PozitronApp {
     // Attach card event listeners
     grid.querySelectorAll('[data-action="add-to-cart"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         const pid = e.currentTarget.getAttribute('data-id');
         const prod = products.find(x => x.id === pid);
@@ -1186,15 +1197,18 @@ class PozitronApp {
 
     grid.querySelectorAll('[data-action="stock-alert"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
         const pid = e.currentTarget.getAttribute('data-id');
         this.openStockAlertModal(pid);
       });
     });
 
-    grid.querySelectorAll('[data-action="quickview"]').forEach(el => {
+    grid.querySelectorAll('.card-quick-view-btn').forEach(el => {
       el.addEventListener('click', (e) => {
-        const pid = e.currentTarget.getAttribute('data-id');
+        e.preventDefault();
+        e.stopPropagation();
+        const pid = el.getAttribute('data-id');
         this.openProductModal(pid);
       });
     });
@@ -1329,7 +1343,13 @@ class PozitronApp {
       item.addEventListener('click', (e) => {
         const pid = e.currentTarget.getAttribute('data-id');
         this.hideSuggestions();
-        this.openProductModal(pid);
+        const staticData = this.getStaticData();
+        const prod = (staticData.products || []).find(p => p.id === pid || p.slug === pid);
+        if (prod && prod.slug) {
+          window.location.href = `./products/${prod.slug}.html`;
+        } else {
+          this.openProductModal(pid);
+        }
       });
     });
 
@@ -2739,6 +2759,12 @@ class PozitronApp {
 
       if (!p) return;
 
+      if (p.slug && window.history && window.history.pushState) {
+        try {
+          window.history.pushState({ modalProduct: p.slug }, (lang === 'tr' ? p.name_tr : p.name_en) || p.title, `./products/${p.slug}.html`);
+        } catch (e) {}
+      }
+
       const lang = window.i18n.currentLang;
       const name = lang === 'tr' ? (p.name_tr || p.name_en) : (p.name_en || p.name_tr);
       const desc = lang === 'tr' ? (p.description_tr || p.desc_tr) : (p.description_en || p.desc_en);
@@ -2952,6 +2978,12 @@ class PozitronApp {
   closeProductModal() {
     const modal = document.getElementById('product-modal-backdrop');
     if (modal) modal.style.display = 'none';
+    if (window.history.state && window.history.state.modalProduct) {
+      try {
+        const baseUrl = window.location.pathname.replace(/\/products\/.*$/, '') || './';
+        window.history.pushState({}, document.title, baseUrl);
+      } catch (e) {}
+    }
   }
 
   // ==========================================
