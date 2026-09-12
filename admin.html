@@ -886,68 +886,290 @@
     <section id="tab-instagram" class="tab-content" style="display:none;">
       <div class="admin-card">
         
-        <!-- Section Header -->
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid #e2e8f0;">
+        <!-- Top Title & Toolbar -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid var(--border-subtle);">
           <div>
-            <h2 style="font-size:1.35rem; font-weight:800; color:#0f172a; margin:0 0 6px 0; display:flex; align-items:center; gap:8px;">
-              <span>🤖</span> <span>Otonom Instagram PR Ajanı &amp; İçerik Robotu</span>
-            </h2>
-            <p style="font-size:0.86rem; color:#64748b; margin:0; line-height:1.5;">
-              Pozitron Market'in 500 ürününü, Uyumluluk Sihirbazı'nı, 3D Baskı Studio'sunu ve teknik FPV içeriklerini 1080x1080 afişlerle Instagram'da otomatik paylaşır.
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <span style="font-size:1.6rem;">🤖</span>
+              <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-main); margin:0;">
+                Otonom Instagram PR Ajanı &amp; İçerik Robotu
+              </h2>
+              <span id="ig-status-pill" style="font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px; background:#f1f5f9; color:#475569;">YÜKLENİYOR...</span>
+            </div>
+            <p style="font-size:0.86rem; color:var(--text-muted); margin:0; max-width:850px; line-height:1.5;">
+              Pozitron Market'in 500 ürününü, Uyumluluk Sihirbazı'nı, 3D Baskı Studio'sunu ve teknik FPV rehberlerini <strong>Gemini 2.5 Flash</strong> özetleriyle 1080x1080 afiş kartları olarak <strong>@pozitronmarket</strong> hesabında otomatik yayınlar.
             </p>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" class="admin-btn-secondary" onclick="loadInstagramAgentView()" style="display:flex; align-items:center; gap:6px; font-size:0.84rem; padding:8px 14px;">
-              🔄 <span>Verileri Yenile</span>
+              <span>🔄</span> <span>Verileri Yenile</span>
             </button>
-            <button type="button" class="admin-btn-primary" onclick="triggerInstagramCycleNow()" id="btn-ig-quick-cycle" style="display:flex; align-items:center; gap:6px; font-size:0.84rem; padding:8px 16px; background:linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%); border:none; color:#fff; font-weight:700;">
-              ⚡ <span>Otonom Döngüyü Tetikle</span>
+            <button type="button" class="admin-btn-primary" onclick="triggerInstagramMainAction()" id="btn-ig-main-action" style="display:flex; align-items:center; gap:6px; font-size:0.84rem; padding:8px 16px; background:linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%); border:none; color:#fff; font-weight:700; box-shadow:0 4px 12px rgba(225,48,108,0.3);">
+              <span>⚡</span> <span id="btn-ig-main-action-txt">Bulutta Gönderi Paylaş</span>
             </button>
           </div>
         </div>
 
-        <!-- KPI & Status Cards Grid -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:28px;">
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-            <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:6px;">Robot Durumu</div>
-            <div id="ig-status-robot" style="font-size:1.15rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
-              <span style="color:#eab308;">●</span> Yükleniyor...
+        <!-- Operating Mode Toggle & Settings Bar -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:0.84rem; font-weight:700; color:#334155;">Çalışma Platformu:</span>
+            <div style="display:inline-flex; background:#e2e8f0; padding:4px; border-radius:8px; gap:4px;">
+              <button type="button" id="btn-ig-mode-cloud" onclick="setInstagramOperatingMode('cloud')" style="border:none; background:linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%); color:#fff; font-weight:700; font-size:0.8rem; padding:6px 16px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                <span>☁️</span> <span>GitHub Actions Bulut Modu (7/24 Otonom)</span>
+              </button>
+              <button type="button" id="btn-ig-mode-live" onclick="setInstagramOperatingMode('live')" style="border:none; background:transparent; color:#64748b; font-weight:700; font-size:0.8rem; padding:6px 16px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <span>⚡</span> <span>Canlı Sunucu Modu (Local / API)</span>
+              </button>
             </div>
-            <div id="ig-status-robot-sub" style="font-size:0.75rem; color:#64748b; margin-top:4px;">Arka plan planlayıcı</div>
           </div>
-
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-            <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:6px;">Çalışma Modu</div>
-            <div id="ig-status-mode" style="font-size:1.15rem; font-weight:800; color:#0284c7;">
-              🧪 Simülasyon (Test)
-            </div>
-            <div id="ig-status-mode-sub" style="font-size:0.75rem; color:#64748b; margin-top:4px;">Dry-Run Güvenli Mod</div>
-          </div>
-
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-            <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:6px;">Sıradaki Paylaşım</div>
-            <div id="ig-status-next" style="font-size:1.05rem; font-weight:800; color:#0f172a;">
-              --
-            </div>
-            <div id="ig-status-freq" style="font-size:0.75rem; color:#64748b; margin-top:4px;">12 saatte bir</div>
-          </div>
-
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-            <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:6px;">Toplam Gönderiler</div>
-            <div id="ig-status-counts" style="font-size:1.15rem; font-weight:800; color:#16a34a;">
-              0 Yayınlandı
-            </div>
-            <div id="ig-status-drafts" style="font-size:0.75rem; color:#64748b; margin-top:4px;">0 Taslak</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="admin-btn-secondary" onclick="openInstagramSettingsModal()" style="font-size:0.82rem; padding:7px 14px; display:flex; align-items:center; gap:6px; font-weight:600; border:1px solid #cbd5e1; background:#fff;">
+              <span>⚙️</span> <span>Bağlantı &amp; GitHub Ayarları</span>
+            </button>
           </div>
         </div>
 
-        <!-- 2-Column Content Studio & Mockup -->
-        <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:28px; margin-bottom:36px; align-items:start;" id="ig-studio-grid">
+        <!-- ========================================================= -->
+        <!-- VIEW A: GITHUB ACTIONS CLOUD CONTROLLER (SERVERLESS 7/24) -->
+        <!-- ========================================================= -->
+        <div id="ig-cloud-view">
+          <!-- Cloud Master Status Banner -->
+          <div style="background:linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #1e293b 100%); border:1px solid #312e81; border-radius:14px; padding:22px 24px; color:#fff; margin-bottom:24px; box-shadow:0 4px 14px rgba(15,23,42,0.15);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                  <span style="font-size:1.6rem; line-height:1;">🚀</span>
+                  <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff;">
+                    GitHub Actions Instagram Bulut Robotu (Serverless 7/24)
+                  </h3>
+                  <span id="ig-gh-run-status-badge" style="font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px; background:#334155; color:#94a3b8;">
+                    YÜKLENİYOR...
+                  </span>
+                </div>
+                <p style="font-size:0.84rem; color:#cbd5e1; margin:0 0 12px 0; max-width:800px; line-height:1.5;">
+                  Bilgisayarınızın veya yerel bir sunucunun açık olmasına <strong>asla gerek yoktur</strong>.
+                  GitHub Actions altyapısında Gemini 2.5 Flash ve Meta Graph API ile <strong>her 6 saatte bir (cron: 0 */6 * * *) 7/24 otonom</strong> içerik üretip paylaşır.
+                </p>
+                <div style="display:flex; flex-wrap:wrap; gap:16px; font-size:0.78rem; color:#94a3b8;">
+                  <span>📸 Hesap: <strong style="color:#f8fafc;">@pozitronmarket</strong> (ID: 17841430407836914)</span>
+                  <span>🧠 Yapay Zeka: <strong style="color:#f8fafc;">Gemini 2.5 Flash</strong> (Özet &amp; Metin)</span>
+                  <span>🎨 Format: <strong style="color:#f8fafc;">1080x1080 Afiş Kartı</strong></span>
+                  <span>⏱️ Son Çalışma: <strong id="ig-gh-last-run-time" style="color:#f8fafc;">Kontrol ediliyor...</strong></span>
+                  <span>🎯 Sonuç: <strong id="ig-gh-last-run-conclusion" style="color:#f8fafc;">-</strong></span>
+                </div>
+              </div>
+
+              <!-- Quick Cloud Actions -->
+              <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                <button type="button" class="admin-btn-primary" onclick="triggerInstagramWorkflow()" id="btn-ig-gh-trigger" style="background:linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%); border:none; padding:10px 18px; font-size:0.88rem; font-weight:800; display:flex; align-items:center; gap:8px; box-shadow:0 4px 12px rgba(225,48,108,0.35); cursor:pointer;">
+                  <span>⚡</span> <span id="btn-ig-gh-trigger-txt">Bulutta Instagram Postu Üret &amp; Paylaş</span>
+                </button>
+                <div style="display:flex; gap:8px;">
+                  <a href="https://github.com/thepeakiscold/pozitron-market/actions/workflows/instagram_agent.yml" target="_blank" rel="noopener noreferrer" style="font-size:0.78rem; color:#38bdf8; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:4px; padding:4px 8px; background:rgba(255,255,255,0.08); border-radius:6px;">
+                    <span>📜</span> <span>Canlı GitHub Logları ↗</span>
+                  </a>
+                  <button type="button" onclick="loadInstagramWorkflowStatus(true)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:0.78rem; padding:4px 8px; border-radius:6px; cursor:pointer;" title="Yenile">
+                    🔄 Yenile
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cloud KPI Cards Grid -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Toplam Gönderi Arşivi</span>
+              <div style="font-size:1.8rem; font-weight:800; color:#0284c7; margin:6px 0;" id="ig-gh-kpi-total">0</div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;">
+                data/instagram_posts.json içinde kayıtlı toplam gönderi.
+              </p>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Canlı Instagram Paylaşımları</span>
+              <div style="font-size:1.8rem; font-weight:800; color:#16a34a; margin:6px 0;" id="ig-gh-kpi-published">0</div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;">
+                @pozitronmarket hesabında canlı yayınlanan postlar.
+              </p>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Taslaklar / Hazır Afişler</span>
+              <div style="font-size:1.8rem; font-weight:800; color:#eab308; margin:6px 0;" id="ig-gh-kpi-drafts">0</div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;">
+                1080x1080 afişi çizilmiş, sıradaki yayına hazır taslaklar.
+              </p>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Otomatik Zamanlama (Cron)</span>
+              <div style="font-size:1.05rem; font-weight:800; color:#16a34a; margin:6px 0;">Her 6 Saatte Bir</div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;">
+                Günde 4 kez Meta Graph API üzerinden otonom yayın.
+              </p>
+            </div>
+          </div>
+
+          <!-- 2-Column Content Feed & Live Phone Mockup -->
+          <div style="display:grid; grid-template-columns:1.35fr 1fr; gap:28px; margin-bottom:36px; align-items:start;" id="ig-cloud-workspace-grid">
+            
+            <!-- LEFT: Posts Archive & Filter -->
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:22px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid #f1f5f9;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:1.2rem;">📋</span>
+                  <h3 style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:0;">
+                    Yayınlanan &amp; Hazırlanan Instagram Gönderileri
+                  </h3>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <button type="button" class="admin-btn-secondary btn-ig-filter active" data-filter="all" onclick="filterCloudInstagramPosts('all')" style="font-size:0.75rem; padding:4px 10px; font-weight:700;">Tümü</button>
+                  <button type="button" class="admin-btn-secondary btn-ig-filter" data-filter="published" onclick="filterCloudInstagramPosts('published')" style="font-size:0.75rem; padding:4px 10px; font-weight:700;">Yayınlananlar</button>
+                  <button type="button" class="admin-btn-secondary btn-ig-filter" data-filter="draft" onclick="filterCloudInstagramPosts('draft')" style="font-size:0.75rem; padding:4px 10px; font-weight:700;">Taslaklar</button>
+                </div>
+              </div>
+
+              <!-- Search Bar -->
+              <div style="margin-bottom:16px;">
+                <input type="text" id="ig-gh-post-search" class="admin-input" placeholder="Başlık, ürün adı veya hashtag ara..." oninput="filterCloudInstagramPosts()" style="width:100%; font-size:0.84rem; padding:8px 12px; box-sizing:border-box;">
+              </div>
+
+              <!-- Posts List Container -->
+              <div id="ig-cloud-posts-list" style="display:flex; flex-direction:column; gap:14px; max-height:850px; overflow-y:auto; padding-right:4px;">
+                <div style="text-align:center; padding:36px; color:#64748b;">
+                  <span style="font-size:1.6rem; display:block; margin-bottom:6px;">⏳</span>
+                  Gönderi kayıtları yükleniyor...
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT: Live Instagram Phone Mockup -->
+            <div style="position:sticky; top:20px;">
+              <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:24px; padding:16px; max-width:440px; margin:0 auto; box-shadow:0 12px 30px rgba(0,0,0,0.06);">
+                
+                <!-- Instagram Post Header -->
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 6px 12px 6px;">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); padding:2px; display:flex; align-items:center; justify-content:center;">
+                      <img src="./assets/favicon.svg" alt="Pozitron" style="width:34px; height:34px; border-radius:50%; background:#fff;">
+                    </div>
+                    <div>
+                      <div style="display:flex; align-items:center; gap:4px;">
+                        <span style="font-size:0.88rem; font-weight:800; color:#0f172a;">pozitronmarket</span>
+                        <span style="display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; background:#0284c7; border-radius:50%; color:#fff; font-size:0.6rem; font-weight:bold;">✓</span>
+                      </div>
+                      <div style="font-size:0.72rem; color:#64748b;">Pozitron Market · FPV Drone Ekosistemi</div>
+                    </div>
+                  </div>
+                  <div style="color:#64748b; font-weight:bold; cursor:pointer;">•••</div>
+                </div>
+
+                <!-- Instagram Visual Canvas Area (1:1 Square) -->
+                <div style="width:100%; aspect-ratio:1/1; background:#0b0f19; border-radius:12px; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; border:1px solid #1e293b;">
+                  <img id="ig-mockup-img" src="./assets/hero_drone.png" alt="Preview Banner" style="width:100%; height:100%; object-fit:cover; display:block;">
+                  <div id="ig-mockup-loader" style="display:none; position:absolute; inset:0; background:rgba(11,15,25,0.7); backdrop-filter:blur(4px); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; font-size:0.9rem; font-weight:700;">
+                    <div style="font-size:2rem; animation:spin 1s infinite linear;">⚡</div>
+                    <span style="margin-top:8px;">1080x1080 Afiş Tasarlanıyor...</span>
+                  </div>
+                </div>
+
+                <!-- Instagram Actions Bar -->
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 4px 6px 4px;">
+                  <div style="display:flex; gap:16px; font-size:1.35rem;">
+                    <span style="cursor:pointer;" title="Beğen">❤️</span>
+                    <span style="cursor:pointer;" title="Yorum">💬</span>
+                    <span style="cursor:pointer;" title="Paylaş">🚀</span>
+                  </div>
+                  <div style="font-size:1.35rem; cursor:pointer;" title="Kaydet">🔖</div>
+                </div>
+
+                <!-- Likes & Mockup Text -->
+                <div style="padding:0 4px;">
+                  <div style="font-size:0.82rem; font-weight:800; color:#0f172a; margin-bottom:6px;">1.428 beğenme</div>
+                  
+                  <div style="font-size:0.82rem; line-height:1.45; color:#1e293b; max-height:150px; overflow-y:auto; word-break:break-word;" id="ig-mockup-text-wrap">
+                    <span style="font-weight:800; color:#0f172a;">pozitronmarket</span>
+                    <span id="ig-mockup-caption">Pozitron Market FPV donanım pazarı hazır! 🛸</span>
+                    <div id="ig-mockup-hashtags" style="color:#0284c7; font-weight:600; margin-top:4px;">#fpv #pozitronmarket</div>
+                  </div>
+
+                  <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; margin-top:8px; margin-bottom:12px;" id="ig-mockup-time">12 DAKİKA ÖNCE</div>
+                </div>
+
+                <!-- Direct Action Buttons under Mockup -->
+                <div style="display:flex; flex-direction:column; gap:8px; padding:0 4px;">
+                  <a id="ig-mockup-open-ig" href="https://www.instagram.com/pozitronmarket/" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 12px; background:linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%); color:#fff; text-decoration:none; font-size:0.82rem; font-weight:700; border-radius:8px; box-shadow:0 2px 8px rgba(225,48,108,0.25);">
+                    <span>🔗</span> <span>Instagram'da Gönderiyi Aç ↗</span>
+                  </a>
+                  <a id="ig-mockup-open-full" href="./assets/hero_drone.png" target="_blank" rel="noopener noreferrer" class="admin-btn-secondary" style="display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 12px; font-size:0.8rem; font-weight:600; text-decoration:none;">
+                    <span>🖼️</span> <span>1080x1080 Tam Çözünürlükte İncele</span>
+                  </a>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- VIEW B: LOCAL / LIVE SERVER CONTROLLER                    -->
+        <!-- ========================================================= -->
+        <div id="ig-live-view" style="display:none;">
           
-          <!-- LEFT: Post Generator & Controls -->
-          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:22px;">
+          <!-- Offline Notice Banner -->
+          <div id="ig-live-offline-alert" style="display:none; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:14px 18px; margin-bottom:18px; color:#9a3412;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:1.5rem;">⚠️</span>
+              <div>
+                <strong style="font-size:0.88rem; display:block;">Canlı Backend API'ye Bağlanılamadı</strong>
+                <span style="font-size:0.78rem; line-height:1.4; display:block;">
+                  Pozitron canlı Python sunucusu şu an çevrimdışı. 
+                  Lokalde çalıştırmak için terminalden <code>python3 server.py</code> başlatabilir veya yukarıdan <strong>"☁️ GitHub Actions Bulut Modu"</strong>na geçerek sunucuya gerek kalmadan botu 7/24 yönetebilirsiniz.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI & Status Cards Grid (Local) -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:28px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:6px;">Robot Durumu</div>
+              <div id="ig-status-robot" style="font-size:1.15rem; font-weight:800; color:#0f172a; display:flex; align-items:center; gap:6px;">
+                <span style="color:#eab308;">●</span> Yükleniyor...
+              </div>
+              <div id="ig-status-robot-sub" style="font-size:0.75rem; color:#64748b; margin-top:4px;">Yerel planlayıcı</div>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:6px;">Çalışma Modu</div>
+              <div id="ig-status-mode" style="font-size:1.15rem; font-weight:800; color:#0284c7;">
+                🧪 Simülasyon (Test)
+              </div>
+              <div id="ig-status-mode-sub" style="font-size:0.75rem; color:#64748b; margin-top:4px;">Dry-Run Güvenli Mod</div>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:6px;">Sıradaki Paylaşım</div>
+              <div id="ig-status-next" style="font-size:1.05rem; font-weight:800; color:#0f172a;">
+                --
+              </div>
+              <div id="ig-status-freq" style="font-size:0.75rem; color:#64748b; margin-top:4px;">12 saatte bir</div>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <div style="font-size:0.75rem; text-transform:uppercase; font-weight:700; color:#64748b; letter-spacing:0.05em; margin-bottom:6px;">Toplam Gönderiler</div>
+              <div id="ig-status-counts" style="font-size:1.15rem; font-weight:800; color:#16a34a;">
+                0 Yayınlandı
+              </div>
+              <div id="ig-status-drafts" style="font-size:0.75rem; color:#64748b; margin-top:4px;">0 Taslak</div>
+            </div>
+          </div>
+
+          <!-- Local Generator Form -->
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:16px; padding:22px; margin-bottom:28px;">
             <h3 style="font-size:1.05rem; font-weight:800; color:#0f172a; margin-top:0; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-              <span>🎨</span> <span>İçerik Stüdyosu &amp; Gönderi Oluşturucu</span>
+              <span>🎨</span> <span>Lokal İçerik Stüdyosu &amp; Gönderi Oluşturucu</span>
             </h3>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
@@ -970,12 +1192,10 @@
               </div>
             </div>
 
-            <!-- Generate Preview Button -->
             <button type="button" class="admin-btn-secondary" id="btn-ig-generate" onclick="triggerInstagramGenerate()" style="width:100%; padding:10px; margin-bottom:18px; font-weight:700; display:flex; justify-content:center; align-items:center; gap:8px; background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd;">
               <span>✨</span> <span id="btn-ig-generate-txt">Yeni Gönderi &amp; 1080x1080 Görsel Üret</span>
             </button>
 
-            <!-- Editable Caption Area -->
             <div style="margin-bottom:14px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <label style="font-size:0.78rem; font-weight:700; color:#475569;">Gönderi Başlığı</label>
@@ -997,194 +1217,119 @@
               <input type="text" id="ig-input-hashtags" placeholder="#fpv #pozitronmarket ..." style="width:100%; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.82rem; color:#0284c7; box-sizing:border-box;" oninput="updateMockupFromInputs()">
             </div>
 
-            <!-- Publish Button -->
             <button type="button" class="admin-btn-primary" id="btn-ig-publish" onclick="triggerInstagramPublish()" style="width:100%; padding:12px; font-weight:800; font-size:0.95rem; display:flex; justify-content:center; align-items:center; gap:8px; background:linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%); border:none; box-shadow:0 4px 12px rgba(225,48,108,0.3);">
               <span>🚀</span> <span id="btn-ig-publish-txt">Instagram'da Hemen Yayınla</span>
             </button>
             <div id="ig-publish-result-msg" style="display:none; margin-top:10px; padding:10px; border-radius:8px; font-size:0.82rem; font-weight:600;"></div>
           </div>
 
-          <!-- RIGHT: Live Instagram Feed Phone Mockup -->
-          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:24px; padding:16px; max-width:440px; margin:0 auto; box-shadow:0 12px 30px rgba(0,0,0,0.06);">
-            
-            <!-- Instagram Post Header -->
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 6px 12px 6px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); padding:2px; display:flex; align-items:center; justify-content:center;">
-                  <img src="./assets/favicon.svg" alt="Pozitron" style="width:34px; height:34px; border-radius:50%; background:#fff;">
+          <!-- Agent Configuration & Meta API Settings (Local) -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:24px; margin-bottom:28px;">
+            <h3 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">⚙️ Yerel Ajan Ayarları &amp; API Entegrasyonu</h3>
+            <p style="font-size:0.82rem; color:#64748b; margin:0 0 16px 0;">Meta Graph API, otonom yayınlama sıklığı ve Chrome oturum köprüsü</p>
+
+            <!-- Chrome Session Auto-Detection Banner -->
+            <div id="ig-chrome-session-banner" style="background:#f0fdf4; border:1px solid #86efac; border-radius:12px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:40px; height:40px; border-radius:50%; background:#dcfce7; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+                  🌐
                 </div>
                 <div>
-                  <div style="display:flex; align-items:center; gap:4px;">
-                    <span style="font-size:0.88rem; font-weight:800; color:#0f172a;">pozitronmarket</span>
-                    <span style="display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; background:#0284c7; border-radius:50%; color:#fff; font-size:0.6rem; font-weight:bold;">✓</span>
+                  <div style="font-size:0.92rem; font-weight:800; color:#166534; display:flex; align-items:center; gap:6px;">
+                    <span>🟢 Chrome Instagram Oturumu Aktif</span>
+                    <span id="ig-chrome-user-badge" style="background:#bbf7d0; color:#14532d; padding:2px 8px; border-radius:9999px; font-size:0.75rem; font-weight:700;">Hesap Tespit Edildi</span>
                   </div>
-                  <div style="font-size:0.72rem; color:#64748b;">Pozitron Market · FPV Drone Ekosistemi</div>
+                  <div style="font-size:0.8rem; color:#15803d; margin-top:2px;" id="ig-chrome-session-desc">
+                    Google Chrome tarayıcınızdaki oturum tespit edildi. Hesap ID'sini ve oturum çerezlerini tek tıkla ajana bağlayabilirsiniz.
+                  </div>
                 </div>
               </div>
-              <div style="color:#64748b; font-weight:bold; cursor:pointer;">•••</div>
-            </div>
-
-            <!-- Instagram Visual Canvas Area (1:1 Square) -->
-            <div style="width:100%; aspect-ratio:1/1; background:#0b0f19; border-radius:12px; overflow:hidden; position:relative; display:flex; align-items:center; justify-content:center; border:1px solid #1e293b;">
-              <img id="ig-mockup-img" src="./assets/hero_drone.png" alt="Preview Banner" style="width:100%; height:100%; object-fit:cover; display:block;">
-              <div id="ig-mockup-loader" style="display:none; position:absolute; inset:0; background:rgba(11,15,25,0.7); backdrop-filter:blur(4px); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; font-size:0.9rem; font-weight:700;">
-                <div style="font-size:2rem; animation:spin 1s infinite linear;">⚡</div>
-                <span style="margin-top:8px;">1080x1080 Afiş Tasarlanıyor...</span>
+              <div style="display:flex; gap:8px;">
+                <button type="button" class="admin-btn-primary" onclick="syncInstagramFromChrome()" style="background:#16a34a; border:none; padding:8px 16px; font-size:0.84rem; font-weight:700; display:flex; align-items:center; gap:6px;">
+                  ⚡ <span>Chrome Hesabını Bağla</span>
+                </button>
               </div>
             </div>
 
-            <!-- Instagram Actions Bar -->
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 4px 6px 4px;">
-              <div style="display:flex; gap:16px; font-size:1.35rem;">
-                <span style="cursor:pointer;" title="Beğen">❤️</span>
-                <span style="cursor:pointer;" title="Yorum">💬</span>
-                <span style="cursor:pointer;" title="Paylaş">🚀</span>
-              </div>
-              <div style="font-size:1.35rem; cursor:pointer;" title="Kaydet">🔖</div>
-            </div>
-
-            <!-- Likes & Mockup Text -->
-            <div style="padding:0 4px;">
-              <div style="font-size:0.82rem; font-weight:800; color:#0f172a; margin-bottom:6px;">1.428 beğenme</div>
-              
-              <div style="font-size:0.82rem; line-height:1.45; color:#1e293b; max-height:140px; overflow-y:auto; word-break:break-word;" id="ig-mockup-text-wrap">
-                <span style="font-weight:800; color:#0f172a;">pozitronmarket</span>
-                <span id="ig-mockup-caption">Pozitron Market FPV donanım pazarı hazır! 🛸</span>
-                <div id="ig-mockup-hashtags" style="color:#0284c7; font-weight:600; margin-top:4px;">#fpv #pozitronmarket</div>
-              </div>
-
-              <div style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; margin-top:8px; margin-bottom:4px;" id="ig-mockup-time">12 DAKİKA ÖNCE</div>
-            </div>
-
-          </div>
-
-        </div>
-
-        <!-- Section 2: Agent Configuration & Meta API Settings -->
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:16px; padding:24px; margin-bottom:36px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
-            <div>
-              <h3 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">⚙️ Ajan Ayarları &amp; API Entegrasyonu</h3>
-              <p style="font-size:0.82rem; color:#64748b; margin:0;">Meta Graph API, otonom yayınlama sıklığı ve Chrome oturum köprüsü</p>
-            </div>
-          </div>
-
-          <!-- Chrome Session Auto-Detection Banner -->
-          <div id="ig-chrome-session-banner" style="background:#f0fdf4; border:1px solid #86efac; border-radius:12px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <div style="width:40px; height:40px; border-radius:50%; background:#dcfce7; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
-                🌐
-              </div>
-              <div>
-                <div style="font-size:0.92rem; font-weight:800; color:#166534; display:flex; align-items:center; gap:6px;">
-                  <span>🟢 Chrome Instagram Oturumu Aktif</span>
-                  <span id="ig-chrome-user-badge" style="background:#bbf7d0; color:#14532d; padding:2px 8px; border-radius:9999px; font-size:0.75rem; font-weight:700;">Hesap Tespit Edildi</span>
+            <form id="ig-config-form" onsubmit="handleSaveInstagramConfig(event)">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px; margin-bottom:20px;">
+                <div>
+                  <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Meta Graph API Erişim Belirteci (User/Page Token)</label>
+                  <input type="password" id="ig-cfg-token" placeholder="EAA..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
+                  <span style="font-size:0.72rem; color:#64748b;">Boş bırakıldığında simülasyon modunda çalışır.</span>
                 </div>
-                <div style="font-size:0.8rem; color:#15803d; margin-top:2px;" id="ig-chrome-session-desc">
-                  Google Chrome tarayıcınızdaki oturum tespit edildi. Hesap ID'sini ve oturum çerezlerini tek tıkla ajana bağlayabilirsiniz.
+                <div>
+                  <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Instagram İşletme / Creator Hesap ID (IG User ID)</label>
+                  <input type="text" id="ig-cfg-account-id" placeholder="17841400..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
+                  <span style="font-size:0.72rem; color:#64748b;">Facebook Sayfanıza bağlı Instagram Business hesap numarası.</span>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Google Gemini API Anahtarı (Opsiyonel)</label>
+                  <input type="password" id="ig-cfg-gemini-key" placeholder="AIzaSy..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
+                  <span style="font-size:0.72rem; color:#64748b;">Dinamik metinler için. Boşsa yerel kural motoru çalışır.</span>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Otonom Paylaşım Sıklığı</label>
+                  <select id="ig-cfg-freq" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; font-weight:600; box-sizing:border-box;">
+                    <option value="4">Her 4 Saatte Bir (Günde 6 Post)</option>
+                    <option value="6">Her 6 Saatte Bir (Günde 4 Post)</option>
+                    <option value="12">Her 12 Saatte Bir (Günde 2 Post)</option>
+                    <option value="24">Günde 1 Kez (Her 24 Saatte)</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Genel Görsel Erişim URL'si (Public Base URL)</label>
+                  <input type="text" id="ig-cfg-base-url" placeholder="https://pozitronmarket.com" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; flex-direction:column; justify-content:center; gap:8px;">
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; color:#0f172a; cursor:pointer;">
+                    <input type="checkbox" id="ig-cfg-dry-run" style="width:18px; height:18px;">
+                    <span>Simülasyon / Test Modu (Dry Run)</span>
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; color:#0f172a; cursor:pointer; margin-top:4px;">
+                    <input type="checkbox" id="ig-cfg-autonomous-enabled" style="width:18px; height:18px;">
+                    <span>Otonom Yayınlama Robotunu Aktif Et</span>
+                  </label>
                 </div>
               </div>
+              <div style="display:flex; justify-content:flex-end;">
+                <button type="submit" class="admin-btn-primary" style="padding:10px 24px; font-weight:700;">
+                  💾 Ayarları Kaydet
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Section 3: Published & Scheduled Posts History Table (Local) -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <h3 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin:0;">📋 Yerel Sunucu Gönderi Geçmişi</h3>
+              <span style="font-size:0.8rem; color:#64748b;" id="ig-table-count">0 kayıt</span>
             </div>
-            <div style="display:flex; gap:8px;">
-              <button type="button" class="admin-btn-primary" onclick="syncInstagramFromChrome()" style="background:#16a34a; border:none; padding:8px 16px; font-size:0.84rem; font-weight:700; display:flex; align-items:center; gap:6px;">
-                ⚡ <span>Chrome Hesabını Bağla</span>
-              </button>
-              <a href="https://developers.facebook.com/tools/explorer/" target="_blank" class="admin-btn-secondary" style="text-decoration:none; padding:8px 14px; font-size:0.84rem; font-weight:600; display:flex; align-items:center; gap:4px;" title="Chrome'da Meta Token Al">
-                🔑 <span>Meta Token Al ↗</span>
-              </a>
+
+            <div class="admin-table-wrap">
+              <table class="admin-table" id="ig-posts-table">
+                <thead>
+                  <tr>
+                    <th style="width:70px;">Görsel</th>
+                    <th>Konsept / Tip</th>
+                    <th>Başlık / Donanım</th>
+                    <th>Oluşturulma Tarihi</th>
+                    <th>Durum</th>
+                    <th>Instagram Detay</th>
+                    <th style="text-align:right;">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody id="ig-posts-table-body">
+                  <tr>
+                    <td colspan="7" style="text-align:center; padding:32px; color:#94a3b8;">Henüz gönderi kaydı bulunmuyor.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <form id="ig-config-form" onsubmit="handleSaveInstagramConfig(event)">
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px; margin-bottom:20px;">
-              
-              <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Meta Graph API Erişim Belirteci (User/Page Token)</label>
-                <input type="password" id="ig-cfg-token" placeholder="EAA..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
-                <span style="font-size:0.72rem; color:#64748b;">Boş bırakıldığında güvenli simülasyon modunda çalışır.</span>
-              </div>
-
-              <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Instagram İşletme / Creator Hesap ID (IG User ID)</label>
-                <input type="text" id="ig-cfg-account-id" placeholder="17841400..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
-                <span style="font-size:0.72rem; color:#64748b;">Facebook Sayfanıza bağlı Instagram Business hesap numarası.</span>
-              </div>
-
-              <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Google Gemini API Anahtarı (Opsiyonel)</label>
-                <input type="password" id="ig-cfg-gemini-key" placeholder="AIzaSy..." style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
-                <span style="font-size:0.72rem; color:#64748b;">Dinamik LLM metinleri için. Boşsa yerel kural motoru çalışır.</span>
-              </div>
-
-              <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Otonom Paylaşım Sıklığı</label>
-                <select id="ig-cfg-freq" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; font-weight:600; box-sizing:border-box;">
-                  <option value="4">Her 4 Saatte Bir (Günde 6 Post)</option>
-                  <option value="6">Her 6 Saatte Bir (Günde 4 Post)</option>
-                  <option value="12">Her 12 Saatte Bir (Günde 2 Post - Sabah / Akşam)</option>
-                  <option value="24">Günde 1 Kez (Her 24 Saatte)</option>
-                </select>
-                <span style="font-size:0.72rem; color:#64748b;">Planlayıcının yeni içerik yayınlama aralığı.</span>
-              </div>
-
-              <div>
-                <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:4px;">Genel Görsel Erişim URL'si (Public Base URL)</label>
-                <input type="text" id="ig-cfg-base-url" placeholder="https://pozitronmarket.com" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:0.85rem; box-sizing:border-box;">
-                <span style="font-size:0.72rem; color:#64748b;">Meta sunucularının afiş görselini çekebileceği genel alan adı.</span>
-              </div>
-
-              <div style="display:flex; flex-direction:column; justify-content:center; gap:8px;">
-                <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; color:#0f172a; cursor:pointer;">
-                  <input type="checkbox" id="ig-cfg-dry-run" style="width:18px; height:18px;">
-                  <span>Simülasyon / Test Modu (Dry Run)</span>
-                </label>
-                <span style="font-size:0.72rem; color:#64748b;">Açıkken Meta API'ye göndermez, görseli ve simülasyonu yerel kaydeder.</span>
-
-                <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:700; color:#0f172a; cursor:pointer; margin-top:4px;">
-                  <input type="checkbox" id="ig-cfg-autonomous-enabled" style="width:18px; height:18px;">
-                  <span>Otonom Yayınlama Robotunu Aktif Et</span>
-                </label>
-                <span style="font-size:0.72rem; color:#64748b;">Arka plan planlayıcısı belirlenen aralıklarla otomatik paylaşım yapar.</span>
-              </div>
-
-            </div>
-
-            <div style="display:flex; justify-content:flex-end;">
-              <button type="submit" class="admin-btn-primary" style="padding:10px 24px; font-weight:700;">
-                💾 Ayarları Kaydet
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Section 3: Published & Scheduled Posts History Table -->
-        <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-            <h3 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin:0;">📋 Gönderi Geçmişi &amp; Kuyruk</h3>
-            <span style="font-size:0.8rem; color:#64748b;" id="ig-table-count">0 kayıt</span>
-          </div>
-
-          <div class="admin-table-wrap">
-            <table class="admin-table" id="ig-posts-table">
-              <thead>
-                <tr>
-                  <th style="width:70px;">Görsel</th>
-                  <th>Konsept / Tip</th>
-                  <th>Başlık / Donanım</th>
-                  <th>Oluşturulma Tarihi</th>
-                  <th>Durum</th>
-                  <th>Instagram Detay</th>
-                  <th style="text-align:right;">İşlem</th>
-                </tr>
-              </thead>
-              <tbody id="ig-posts-table-body">
-                <tr>
-                  <td colspan="7" style="text-align:center; padding:32px; color:#94a3b8;">Henüz gönderi kaydı bulunmuyor.</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        </div> <!-- /#ig-live-view -->
 
       </div>
     </section>
@@ -1745,6 +1890,68 @@
 
         <div style="display:flex; justify-content:flex-end; gap:10px;">
           <button type="button" class="admin-btn-secondary" onclick="closeRedditSettingsModal()">Kapat</button>
+          <button type="submit" class="admin-btn-primary" style="background:#0f172a; border:none; color:#fff; font-weight:700;">💾 Ayarları Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Instagram & Cloud Settings Modal -->
+  <div class="modal-backdrop" id="instagram-settings-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:var(--radius-lg); width:95%; max-width:620px; max-height:90vh; overflow-y:auto; padding:28px; box-shadow:var(--shadow-lg);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.4rem;">⚙️</span>
+          <h3 style="font-size:1.2rem; font-weight:800; margin:0; color:#0f172a;">Instagram PR Ajanı Bulut &amp; Bağlantı Ayarları</h3>
+        </div>
+        <button type="button" onclick="closeInstagramSettingsModal()" style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer;">&times;</button>
+      </div>
+
+      <form id="instagram-cloud-settings-form" onsubmit="saveInstagramSettingsModal(event)">
+        
+        <!-- GitHub Personal Access Token -->
+        <div style="margin-bottom:20px;">
+          <label style="display:block; font-size:0.84rem; font-weight:700; color:#1e293b; margin-bottom:6px;">
+            🔑 GitHub Personal Access Token (PAT)
+          </label>
+          <div style="display:flex; gap:8px;">
+            <input type="password" id="cfg-ig-github-token" class="admin-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="flex:1; font-size:0.84rem;">
+            <button type="button" class="admin-btn-secondary" onclick="toggleIgTokenVisibility()" style="padding:8px 12px; font-size:0.8rem;">👁️</button>
+          </div>
+          <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0; line-height:1.45;">
+            Web sitesinden doğrudan <strong>"⚡ Bulutta Instagram Postu Üret &amp; Paylaş"</strong> butonuna bastığınızda GitHub Actions iş akışını tetiklemek için kullanılır.
+            Sadece tarayıcınızın yerel hafızasında (localStorage) saklanır, asla sunucuya iletilmez.
+            <br>
+            <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=Pozitron+Instagram+Agent+Controller" target="_blank" style="color:#e1306c; font-weight:700; text-decoration:none;">
+              Token oluşturmak için buraya tıklayın ↗ (repo &amp; workflow yetkisi seçin)
+            </a>
+          </p>
+        </div>
+
+        <!-- Instagram Business Account & Meta Info -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:20px;">
+          <strong style="font-size:0.82rem; color:#0f172a; display:block; margin-bottom:6px;">📸 Meta Graph API &amp; Hesap Bilgileri:</strong>
+          <div style="font-size:0.78rem; color:#475569; line-height:1.6;">
+            <div>• Instagram İşletme Hesabı: <strong style="color:#0f172a;">@pozitronmarket</strong> (ID: <code>17841430407836914</code>)</div>
+            <div>• Bağlı Facebook Sayfası: <strong style="color:#0f172a;">Pozitron Market</strong> (ID: <code>1360443310481750</code>)</div>
+            <div>• Yetkiler: <code>instagram_basic</code>, <code>instagram_content_publish</code>, <code>pages_show_list</code></div>
+          </div>
+        </div>
+
+        <!-- GitHub Secrets Info Banner -->
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:14px; margin-bottom:24px;">
+          <strong style="font-size:0.82rem; color:#166534; display:block; margin-bottom:4px;">☁️ GitHub Actions 7/24 Otonom Çalışma:</strong>
+          <p style="font-size:0.76rem; color:#15803d; margin:0; line-height:1.5;">
+            GitHub Actions'a <code>INSTAGRAM_ACCESS_TOKEN</code> ve <code>GEMINI_API_KEY</code> Secret'ları tanımlandığı için robot <strong>bilgisayarınız kapalı olsa bile her 6 saatte bir otonom olarak görsel üretip paylaşır</strong>.
+            <br>
+            <a href="https://github.com/thepeakiscold/pozitron-market/settings/secrets/actions" target="_blank" style="color:#166534; font-weight:700;">GitHub Secrets Ayarlarını Aç ↗</a>
+            &nbsp;|&nbsp;
+            <a href="https://github.com/thepeakiscold/pozitron-market/actions/workflows/instagram_agent.yml" target="_blank" style="color:#166534; font-weight:700;">instagram_agent.yml ↗</a>
+          </p>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="admin-btn-secondary" onclick="closeInstagramSettingsModal()">Kapat</button>
           <button type="submit" class="admin-btn-primary" style="background:#0f172a; border:none; color:#fff; font-weight:700;">💾 Ayarları Kaydet</button>
         </div>
       </form>
@@ -3635,41 +3842,533 @@
     }
 
     // =============================================================
-    // 🤖 TAB 8: INSTAGRAM PR AGENT CONTROLLER LOGIC
+    // 🤖 TAB 8: INSTAGRAM PR AGENT CONTROLLER LOGIC (DUAL-MODE)
     // =============================================================
     let _currentIgDraft = null;
     let _igProductsPopulated = false;
+    let _allCloudIgPosts = [];
+    let _currentIgFilter = 'all';
+    let _igGhStatusInterval = null;
+
+    function getInstagramOperatingMode() {
+      const saved = localStorage.getItem('pozitron_instagram_mode');
+      if (saved === 'live' || saved === 'cloud') return saved;
+      // Default to live on localhost, cloud on production pozitronmarket.com
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'live';
+      }
+      return 'cloud';
+    }
+
+    function setInstagramOperatingMode(mode) {
+      localStorage.setItem('pozitron_instagram_mode', mode);
+      
+      const btnCloud = document.getElementById('btn-ig-mode-cloud');
+      const btnLive = document.getElementById('btn-ig-mode-live');
+      const cloudView = document.getElementById('ig-cloud-view');
+      const liveView = document.getElementById('ig-live-view');
+      const mainBtnTxt = document.getElementById('btn-ig-main-action-txt');
+
+      if (mode === 'cloud') {
+        if (btnCloud) {
+          btnCloud.style.background = 'linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%)';
+          btnCloud.style.color = '#fff';
+          btnCloud.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        }
+        if (btnLive) {
+          btnLive.style.background = 'transparent';
+          btnLive.style.color = '#64748b';
+          btnLive.style.boxShadow = 'none';
+        }
+        if (cloudView) cloudView.style.display = 'block';
+        if (liveView) liveView.style.display = 'none';
+        if (mainBtnTxt) mainBtnTxt.textContent = 'Bulutta Gönderi Paylaş';
+      } else {
+        if (btnLive) {
+          btnLive.style.background = '#0284c7';
+          btnLive.style.color = '#fff';
+          btnLive.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        }
+        if (btnCloud) {
+          btnCloud.style.background = 'transparent';
+          btnCloud.style.color = '#64748b';
+          btnCloud.style.boxShadow = 'none';
+        }
+        if (cloudView) cloudView.style.display = 'none';
+        if (liveView) liveView.style.display = 'block';
+        if (mainBtnTxt) mainBtnTxt.textContent = 'Otonom Döngüyü Tetikle';
+      }
+
+      loadInstagramAgentView();
+    }
 
     async function loadInstagramAgentView() {
-      // 1. Populate products dropdown if needed
-      populateInstagramProductSelect();
+      const mode = getInstagramOperatingMode();
+      
+      // Sync buttons UI with active mode
+      const btnCloud = document.getElementById('btn-ig-mode-cloud');
+      const btnLive = document.getElementById('btn-ig-mode-live');
+      const cloudView = document.getElementById('ig-cloud-view');
+      const liveView = document.getElementById('ig-live-view');
+      const mainBtnTxt = document.getElementById('btn-ig-main-action-txt');
+
+      if (mode === 'cloud') {
+        if (btnCloud) {
+          btnCloud.style.background = 'linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%)';
+          btnCloud.style.color = '#fff';
+        }
+        if (btnLive) {
+          btnLive.style.background = 'transparent';
+          btnLive.style.color = '#64748b';
+        }
+        if (cloudView) cloudView.style.display = 'block';
+        if (liveView) liveView.style.display = 'none';
+        if (mainBtnTxt) mainBtnTxt.textContent = 'Bulutta Gönderi Paylaş';
+
+        // Load Cloud Mode Data
+        loadInstagramWorkflowStatus();
+        loadGitHubInstagramPosts();
+
+        if (!_igGhStatusInterval) {
+          _igGhStatusInterval = setInterval(() => {
+            if (getInstagramOperatingMode() === 'cloud') {
+              loadInstagramWorkflowStatus();
+            }
+          }, 20000);
+        }
+      } else {
+        if (btnLive) {
+          btnLive.style.background = '#0284c7';
+          btnLive.style.color = '#fff';
+        }
+        if (btnCloud) {
+          btnCloud.style.background = 'transparent';
+          btnCloud.style.color = '#64748b';
+        }
+        if (cloudView) cloudView.style.display = 'none';
+        if (liveView) liveView.style.display = 'block';
+        if (mainBtnTxt) mainBtnTxt.textContent = 'Otonom Döngüyü Tetikle';
+
+        populateInstagramProductSelect();
+        loadLiveInstagramBackend();
+      }
+    }
+
+    async function loadInstagramWorkflowStatus(manualToast = false) {
+      const badge = document.getElementById('ig-gh-run-status-badge');
+      const lastRunTime = document.getElementById('ig-gh-last-run-time');
+      const lastRunConclusion = document.getElementById('ig-gh-last-run-conclusion');
+      const pill = document.getElementById('ig-status-pill');
 
       try {
-        // 2. Fetch Status
+        const headers = { 'Accept': 'application/vnd.github+json' };
+        const token = localStorage.getItem('pozitron_github_token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('https://api.github.com/repos/thepeakiscold/pozitron-market/actions/workflows/instagram_agent.yml/runs?per_page=1', { headers });
+        if (!res.ok) {
+          if (res.status === 404) {
+            if (badge) badge.textContent = 'HAZIR / BEKLEMEDE';
+            if (pill) pill.textContent = '☁️ BULUTTA HAZIR';
+            return;
+          }
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const runs = data.workflow_runs || [];
+        if (runs.length === 0) {
+          if (badge) badge.textContent = 'YAYIN BEKLENİYOR';
+          if (pill) pill.textContent = '☁️ BULUT MODU';
+          return;
+        }
+
+        const latest = runs[0];
+        const status = latest.status || 'unknown';
+        const conclusion = latest.conclusion || '';
+        const runDate = new Date(latest.updated_at || latest.created_at);
+        const formattedDate = runDate.toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+
+        if (lastRunTime) lastRunTime.textContent = formattedDate;
+        if (lastRunConclusion) lastRunConclusion.textContent = (conclusion || status).toUpperCase();
+
+        if (status === 'in_progress' || status === 'queued') {
+          if (badge) {
+            badge.textContent = '⏳ ÇALIŞIYOR (GÖRSEL ÜRETİLİYOR)...';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#b45309';
+          }
+          if (pill) {
+            pill.textContent = '⏳ BULUTTA ÇALIŞIYOR';
+            pill.style.background = '#fef3c7';
+            pill.style.color = '#b45309';
+          }
+        } else if (conclusion === 'success') {
+          if (badge) {
+            badge.textContent = '✅ BAŞARILI (YAYINLANDI)';
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#15803d';
+          }
+          if (pill) {
+            pill.textContent = '🟢 BULUTTA AKTİF (7/24)';
+            pill.style.background = '#dcfce7';
+            pill.style.color = '#15803d';
+          }
+        } else if (conclusion === 'failure') {
+          if (badge) {
+            badge.textContent = '❌ BAŞARISIZ (KONTROL EDİN)';
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#991b1b';
+          }
+          if (pill) {
+            pill.textContent = '⚠️ HATA OLUŞTU';
+            pill.style.background = '#fee2e2';
+            pill.style.color = '#991b1b';
+          }
+        } else {
+          if (badge) badge.textContent = (conclusion || status).toUpperCase();
+        }
+
+        if (manualToast) {
+          showToast(`Instagram robotu bulut durumu: ${(conclusion || status).toUpperCase()}`, 'info');
+        }
+      } catch (err) {
+        console.warn("Instagram workflow fetch warning:", err);
+      }
+    }
+
+    async function triggerInstagramWorkflow() {
+      const token = localStorage.getItem('pozitron_github_token');
+      if (!token) {
+        showToast("Buluttan doğrudan tetiklemek için GitHub Token gereklidir. Açılan pencereden tokenınızı kaydedebilirsiniz.", "info");
+        openInstagramSettingsModal();
+        return;
+      }
+
+      const btn = document.getElementById('btn-ig-gh-trigger');
+      const btnTxt = document.getElementById('btn-ig-gh-trigger-txt');
+      if (btn && btnTxt) {
+        btn.disabled = true;
+        btnTxt.textContent = 'Bulutta Başlatılıyor...';
+      }
+
+      try {
+        const res = await fetch('https://api.github.com/repos/thepeakiscold/pozitron-market/actions/workflows/instagram_agent.yml/dispatches', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ ref: 'main' })
+        });
+
+        if (res.status === 204) {
+          showToast("🚀 Bulut Instagram robotu başarıyla tetiklendi! GitHub Actions görseli üretip Meta API'ye göndermeye başladı.", "success");
+          const badge = document.getElementById('ig-gh-run-status-badge');
+          if (badge) {
+            badge.textContent = '⏳ BAŞLATILDI...';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#b45309';
+          }
+          setTimeout(() => { loadInstagramWorkflowStatus(); }, 4000);
+          setTimeout(() => { loadGitHubInstagramPosts(); }, 12000);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          showToast(`Tetikleme hatası: ${errData.message || res.statusText}`, "error");
+        }
+      } catch (err) {
+        showToast(`Bağlantı hatası: ${err.message}`, "error");
+      } finally {
+        if (btn && btnTxt) {
+          btn.disabled = false;
+          btnTxt.textContent = "Bulutta Instagram Postu Üret & Paylaş";
+        }
+      }
+    }
+
+    function triggerInstagramMainAction() {
+      if (getInstagramOperatingMode() === 'cloud') {
+        triggerInstagramWorkflow();
+      } else {
+        triggerInstagramCycleNow();
+      }
+    }
+
+    async function loadGitHubInstagramPosts() {
+      const container = document.getElementById('ig-cloud-posts-list');
+      const totalEl = document.getElementById('ig-gh-kpi-total');
+      const pubEl = document.getElementById('ig-gh-kpi-published');
+      const draftEl = document.getElementById('ig-gh-kpi-drafts');
+
+      try {
+        let posts = [];
+        // 1. Try local relative path first (instant on GitHub Pages & localhost)
+        try {
+          const res = await fetch(`./data/instagram_posts.json?_t=${Date.now()}`);
+          if (res.ok) posts = await res.json();
+        } catch(e) {}
+
+        // 2. Fallback to raw GitHub CDN if needed
+        if (!posts || posts.length === 0) {
+          const rawUrl = `https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main/data/instagram_posts.json?_t=${Date.now()}`;
+          const resRaw = await fetch(rawUrl);
+          if (resRaw.ok) posts = await resRaw.json();
+        }
+
+        _allCloudIgPosts = Array.isArray(posts) ? posts : (posts.posts || []);
+
+        const pubCount = _allCloudIgPosts.filter(p => p.status === 'published').length;
+        const draftCount = _allCloudIgPosts.filter(p => p.status === 'draft').length;
+
+        if (totalEl) totalEl.textContent = _allCloudIgPosts.length;
+        if (pubEl) pubEl.textContent = pubCount;
+        if (draftEl) draftEl.textContent = draftCount;
+
+        renderCloudInstagramPosts();
+
+        // Auto-load latest post into phone mockup if mockup empty
+        if (!_currentIgDraft && _allCloudIgPosts.length > 0) {
+          const firstPub = _allCloudIgPosts.find(p => p.status === 'published') || _allCloudIgPosts[0];
+          loadCloudPostIntoMockup(firstPub.id, false);
+        }
+      } catch (err) {
+        console.warn("Could not load github instagram posts:", err);
+        if (container) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:32px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; color:#64748b;">
+              <span style="font-size:1.6rem; display:block; margin-bottom:6px;">📭</span>
+              <strong>Henüz kayıtlı gönderi bulunamadı.</strong>
+              <p style="font-size:0.78rem; margin:6px 0 0 0;">Yukarıdaki "Bulutta Instagram Postu Üret" butonuna basarak ilk gönderinizi hazırlayabilirsiniz.</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function filterCloudInstagramPosts(filter) {
+      if (filter) {
+        _currentIgFilter = filter;
+        document.querySelectorAll('.btn-ig-filter').forEach(b => {
+          b.classList.toggle('active', b.dataset.filter === filter);
+        });
+      }
+      renderCloudInstagramPosts();
+    }
+
+    function renderCloudInstagramPosts() {
+      const container = document.getElementById('ig-cloud-posts-list');
+      if (!container) return;
+
+      const q = (document.getElementById('ig-gh-post-search')?.value || '').toLowerCase().trim();
+
+      const filtered = _allCloudIgPosts.filter(p => {
+        if (_currentIgFilter !== 'all' && p.status !== _currentIgFilter) return false;
+        if (!q) return true;
+        const title = (p.title || '').toLowerCase();
+        const caption = (p.caption || '').toLowerCase();
+        const tags = (p.hashtags || '').toLowerCase();
+        return title.includes(q) || caption.includes(q) || tags.includes(q);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; color:#64748b;">
+            <span style="font-size:1.6rem; display:block; margin-bottom:6px;">🔍</span>
+            <strong>Aramanızla eşleşen gönderi bulunamadı.</strong>
+          </div>
+        `;
+        return;
+      }
+
+      const typeBadgeMap = {
+        'product_spotlight': { label: '🛸 Ürün Vitrini', bg: '#e0f2fe', color: '#0369a1' },
+        'tool_showcase': { label: '🛠️ Sihirbaz & 3D', bg: '#f3e8ff', color: '#7e22ce' },
+        'deal_drop': { label: '🔥 Kampanya', bg: '#fee2e2', color: '#b91c1c' },
+        'pilot_tip': { label: '💡 FPV Rehberi', bg: '#fef3c7', color: '#b45309' },
+        'review_highlight': { label: '⭐ Müşteri Yorumu', bg: '#ecfdf5', color: '#047857' }
+      };
+
+      let html = '';
+      filtered.forEach(p => {
+        let imgSrc = p.image_url ? p.image_url.replace(/^\.\//, './') : './assets/hero_drone.png';
+        const typeInfo = typeBadgeMap[p.content_type] || { label: p.content_type || 'Gönderi', bg: '#f1f5f9', color: '#475569' };
+        const isPublished = p.status === 'published';
+        const dateStr = p.created_at || p.published_at ? new Date(p.created_at || p.published_at).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : 'Arşiv';
+        const igLink = p.ig_permalink || (p.ig_media_id ? `https://www.instagram.com/p/${p.ig_media_id}/` : null);
+
+        html += `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; gap:16px; align-items:flex-start; transition:border-color 0.2s;" onmouseover="this.style.borderColor='#cbd5e1'" onmouseout="this.style.borderColor='#e2e8f0'">
+            <!-- Visual Card Thumbnail -->
+            <div style="width:100px; height:100px; flex-shrink:0; border-radius:10px; overflow:hidden; background:#0b0f19; border:1px solid #cbd5e1; position:relative; cursor:pointer;" onclick="loadCloudPostIntoMockup('${p.id}')" title="Önizlemeye Yükle">
+              <img src="${imgSrc}" alt="${p.title}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='./assets/hero_drone.png'">
+              <div style="position:absolute; inset:0; background:rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+                <span style="font-size:1.4rem;">👁️</span>
+              </div>
+            </div>
+
+            <!-- Content Details -->
+            <div style="flex:1; min-width:0;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px; background:${typeInfo.bg}; color:${typeInfo.color};">
+                    ${typeInfo.label}
+                  </span>
+                  <span style="font-size:0.74rem; color:#94a3b8;">• ${dateStr}</span>
+                </div>
+                <div>
+                  ${isPublished ? `
+                    <span style="background:#dcfce7; color:#15803d; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                      <span>✓</span> YAYINLANDI
+                    </span>
+                  ` : `
+                    <span style="background:#fef3c7; color:#b45309; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px;">
+                      📝 TASLAK / GÖRSEL HAZIR
+                    </span>
+                  `}
+                </div>
+              </div>
+
+              <h4 style="font-size:0.9rem; font-weight:800; color:#0f172a; margin:0 0 6px 0; line-height:1.4; word-break:break-word;">
+                ${p.title}
+              </h4>
+
+              <div style="font-size:0.78rem; color:#475569; line-height:1.45; margin-bottom:8px; max-height:48px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
+                ${p.caption || ''}
+              </div>
+
+              ${p.hashtags ? `
+                <div style="font-size:0.72rem; color:#0284c7; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:10px;">
+                  ${p.hashtags}
+                </div>
+              ` : ''}
+
+              <!-- Action Buttons -->
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button type="button" class="admin-btn-secondary" onclick="loadCloudPostIntoMockup('${p.id}')" style="font-size:0.76rem; padding:4px 10px; font-weight:700; display:flex; align-items:center; gap:4px;">
+                  <span>👁️</span> <span>Telefona Yükle &amp; İncele</span>
+                </button>
+                ${igLink ? `
+                  <a href="${igLink}" target="_blank" rel="noopener noreferrer" style="font-size:0.76rem; color:#e1306c; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px; padding:4px 8px; background:#fdf2f8; border:1px solid #fbcfe8; border-radius:6px;">
+                    <span>🔗</span> <span>Instagram'da Gör ↗</span>
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function loadCloudPostIntoMockup(postId, showToastMessage = true) {
+      const post = _allCloudIgPosts.find(p => p.id === postId);
+      if (!post) return;
+
+      _currentIgDraft = post;
+      
+      const mockupImg = document.getElementById('ig-mockup-img');
+      const mockupCaption = document.getElementById('ig-mockup-caption');
+      const mockupHashtags = document.getElementById('ig-mockup-hashtags');
+      const mockupTime = document.getElementById('ig-mockup-time');
+      const openIgBtn = document.getElementById('ig-mockup-open-ig');
+      const openFullBtn = document.getElementById('ig-mockup-open-full');
+
+      const imgSrc = post.image_url ? post.image_url.replace(/^\.\//, './') : './assets/hero_drone.png';
+
+      if (mockupImg) {
+        mockupImg.src = `${imgSrc}?t=${Date.now()}`;
+      }
+      if (mockupCaption) mockupCaption.textContent = " " + (post.caption || '');
+      if (mockupHashtags) mockupHashtags.textContent = post.hashtags || '';
+      
+      const dateStr = post.created_at || post.published_at ? new Date(post.created_at || post.published_at).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : 'ŞİMDİ';
+      if (mockupTime) mockupTime.textContent = dateStr.toUpperCase();
+
+      if (openIgBtn) {
+        openIgBtn.href = post.ig_permalink || 'https://www.instagram.com/pozitronmarket/';
+        openIgBtn.style.display = 'flex';
+      }
+      if (openFullBtn) {
+        openFullBtn.href = imgSrc;
+        openFullBtn.style.display = 'flex';
+      }
+
+      if (showToastMessage) {
+        showToast(`"${(post.title || '').slice(0, 32)}..." önizleme telefonuna yüklendi.`, 'info');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Instagram Settings Modal Handlers
+    // -------------------------------------------------------------
+    function openInstagramSettingsModal() {
+      const modal = document.getElementById('instagram-settings-modal');
+      const tokenInput = document.getElementById('cfg-ig-github-token');
+
+      if (tokenInput) tokenInput.value = localStorage.getItem('pozitron_github_token') || '';
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeInstagramSettingsModal() {
+      const modal = document.getElementById('instagram-settings-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function toggleIgTokenVisibility() {
+      const input = document.getElementById('cfg-ig-github-token');
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    }
+
+    function saveInstagramSettingsModal(e) {
+      e.preventDefault();
+      const token = document.getElementById('cfg-ig-github-token')?.value.trim() || '';
+
+      if (token) {
+        localStorage.setItem('pozitron_github_token', token);
+      } else {
+        localStorage.removeItem('pozitron_github_token');
+      }
+
+      showToast("✅ GitHub Token ayarı başarıyla yerel belleğe kaydedildi!", "success");
+      closeInstagramSettingsModal();
+      loadInstagramAgentView();
+    }
+
+    // -------------------------------------------------------------
+    // Live Server Mode Handlers (Local Python server.py)
+    // -------------------------------------------------------------
+    async function loadLiveInstagramBackend() {
+      const offlineAlert = document.getElementById('ig-live-offline-alert');
+
+      try {
         const statusRes = await fetch('/api/instagram/status');
         if (statusRes.ok) {
           const status = await statusRes.json();
           renderInstagramStatus(status);
+          if (offlineAlert) offlineAlert.style.display = 'none';
+        } else {
+          throw new Error(`HTTP ${statusRes.status}`);
         }
 
-        // 3. Fetch Config
         const configRes = await fetch('/api/instagram/config');
         if (configRes.ok) {
           const cfg = await configRes.json();
           renderInstagramConfig(cfg);
         }
 
-        // 4. Fetch Posts History
         const postsRes = await fetch('/api/instagram/posts?limit=30');
         if (postsRes.ok) {
           const postsData = await postsRes.json();
           renderInstagramPostsTable(postsData.posts || []);
         }
 
-        // 5. Check local Chrome Instagram session
         checkChromeInstagramSession();
       } catch (err) {
-        console.error("Instagram PR Agent fetch error:", err);
+        console.warn("Live Instagram Backend is offline:", err);
+        if (offlineAlert) offlineAlert.style.display = 'block';
       }
     }
 
@@ -3896,7 +4595,6 @@
         applyDraftToUI(_currentIgDraft);
         showToast("✨ Yeni Instagram gönderisi ve 1080x1080 afiş başarıyla üretildi!", "success");
 
-        // Refresh history
         loadInstagramAgentView();
       } catch (e) {
         showToast(`Hata: ${e.message}`, "error");
@@ -4076,7 +4774,6 @@
             _currentIgDraft = target;
             applyDraftToUI(target);
             showToast(`"${target.title.slice(0, 30)}..." önizleme paneline yüklendi.`, 'info');
-            window.scrollTo({ top: document.getElementById('ig-studio-grid').offsetTop - 80, behavior: 'smooth' });
           }
         }
       } catch(e) {
