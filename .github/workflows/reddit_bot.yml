@@ -1,0 +1,78 @@
+name: Pozitron Reddit Drone Bot (Online Runner)
+
+on:
+  schedule:
+    # Runs every 1 hour (at minute 0)
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      auto_publish:
+        description: 'Otomatik Yanitla ve Yayinla'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  run-reddit-bot:
+    name: Scan & Auto-Reply Drone Communities
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Google Chrome and Xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          if ! command -v google-chrome &> /dev/null; then
+            wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+            sudo apt-get install -y ./google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
+          fi
+          google-chrome --version
+
+      - name: Install Dependencies
+        run: |
+          npm install
+          pip install -r requirements.txt
+
+      - name: Run Reddit Drone Bot
+        env:
+          REDDIT_COOKIES_JSON: ${{ secrets.REDDIT_COOKIES_JSON }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CI: 'true'
+        run: |
+          echo "🛸 Pozitron Market Reddit Botu Calistiriliyor..."
+          xvfb-run --auto-servernum --server-args="-screen 0 1440x900x24" python3 reddit_bot.py --auto-scan
+
+      - name: Commit and Push Processed Questions History
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/reddit_history.json || true
+          if git diff --staged --quiet; then
+            echo "Yeni soru yok veya kayitlar guncel."
+          else
+            git commit -m "chore(reddit-bot): update processed questions history [skip ci]"
+            git push
+          fi

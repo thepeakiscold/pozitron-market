@@ -17,6 +17,8 @@ from export_data import export_static_data
 from instagram_agent.agent import InstagramPRAgent
 from instagram_agent.scheduler import InstagramScheduler
 from instagram_agent.chrome_session import extract_chrome_instagram_cookies
+from reddit_agent.agent import RedditDroneAgent
+from reddit_agent.scheduler import RedditScheduler
 
 PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,6 +28,12 @@ instagram_pr_agent = InstagramPRAgent()
 instagram_pr_scheduler = InstagramScheduler(instagram_pr_agent)
 if instagram_pr_agent.config.get('is_autonomous_enabled'):
     instagram_pr_scheduler.start()
+
+# Reddit Drone Agent & Scheduler Instance
+reddit_drone_agent = RedditDroneAgent()
+reddit_drone_scheduler = RedditScheduler(reddit_drone_agent)
+if reddit_drone_agent.config.get('is_autonomous_enabled'):
+    reddit_drone_scheduler.start()
 
 # Security Lockout Configuration: 3 failed attempts => 30-minute cooldown
 LOGIN_ATTEMPTS_LOCK = threading.Lock()
@@ -171,6 +179,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             success = instagram_pr_agent.delete_post(post_id)
             conn.close()
             self.send_json(200, {"success": success, "deleted_id": post_id})
+            return
+
+        # Reddit Drone Bot: Delete interaction
+        if path.startswith('/api/reddit/interactions/'):
+            interaction_id = path[len('/api/reddit/interactions/'):]
+            success = reddit_drone_agent.delete_reply(interaction_id)
+            conn.close()
+            self.send_json(200, {"success": success, "deleted_id": interaction_id})
             return
 
         conn.close()
@@ -406,6 +422,46 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "user_id": session_info['user_id'],
                         "sessionid_masked": session_info['sessionid_masked'],
                         "cookie_count": len(session_info.get('cookies', {}))
+                    })
+                else:
+                    self.send_json(200, {
+                        "available": False,
+                        "error": session_info.get('error')
+                    })
+            except Exception as ex:
+                self.send_json(200, {"available": False, "error": str(ex)})
+            return
+
+        # Reddit Drone Bot: Status
+        if path == '/api/reddit/status':
+            self.send_json(200, reddit_drone_agent.get_status())
+            return
+
+        # Reddit Drone Bot: Safe Config
+        if path == '/api/reddit/config':
+            self.send_json(200, reddit_drone_agent.get_safe_config())
+            return
+
+        # Reddit Drone Bot: Interactions / Replies List
+        if path == '/api/reddit/replies':
+            limit = int(query.get('limit', [50])[0])
+            offset = int(query.get('offset', [0])[0])
+            status = query.get('status', [None])[0]
+            subreddit = query.get('subreddit', [None])[0]
+            from reddit_agent.db import get_interactions
+            items = get_interactions(limit=limit, offset=offset, status=status, subreddit=subreddit)
+            self.send_json(200, {"interactions": items})
+            return
+
+        # Reddit Drone Bot: Check Chrome Session
+        if path == '/api/reddit/chrome-session':
+            try:
+                from reddit_agent.chrome_session import extract_chrome_reddit_session
+                session_info = extract_chrome_reddit_session()
+                if session_info.get('success'):
+                    self.send_json(200, {
+                        "available": True,
+                        "username": session_info['username']
                     })
                 else:
                     self.send_json(200, {
@@ -857,6 +913,105 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "success": False,
                         "error": session_info.get('error', 'Chrome oturumu okunamadı')
                     })
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Update Config
+        if path == '/api/reddit/config':
+            try:
+                updated = reddit_drone_agent.update_config(data)
+                self.send_json(200, {"success": True, "config": updated})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Manual Scan Trigger
+        if path == '/api/reddit/scan':
+            try:
+                res = reddit_drone_agent.scan_and_process(autonomous=False)
+                self.send_json(200, {"success": True, "result": res})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Seed Sample Questions
+        if path == '/api/reddit/seed':
+            try:
+                count = reddit_drone_agent.seed_sample_questions()
+                self.send_json(200, {"success": True, "count": count})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Approve and Publish Reply
+        if path == '/api/reddit/reply/approve':
+            interaction_id = data.get('id')
+            try:
+                res = reddit_drone_agent.approve_reply(interaction_id)
+                status_code = 200 if res.get('success') else 400
+                self.send_json(status_code, res)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Reject Reply
+        if path == '/api/reddit/reply/reject':
+            interaction_id = data.get('id')
+            try:
+                success = reddit_drone_agent.reject_reply(interaction_id)
+                self.send_json(200, {"success": success, "id": interaction_id})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Edit Reply
+        if path == '/api/reddit/reply/edit':
+            interaction_id = data.get('id')
+            text = data.get('text', '')
+            try:
+                success = reddit_drone_agent.edit_reply(interaction_id, text)
+                self.send_json(200, {"success": success, "id": interaction_id})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Regenerate with Gemini
+        if path == '/api/reddit/reply/generate':
+            interaction_id = data.get('id')
+            try:
+                res = reddit_drone_agent.regenerate_reply(interaction_id)
+                status_code = 200 if res.get('success') else 400
+                self.send_json(status_code, res)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Toggle Autonomous Mode
+        if path == '/api/reddit/toggle':
+            enabled = bool(data.get('enabled'))
+            reddit_drone_agent.update_config({'is_autonomous_enabled': 1 if enabled else 0})
+            if enabled:
+                reddit_drone_scheduler.start()
+            else:
+                reddit_drone_scheduler.stop()
+            self.send_json(200, {"success": True, "is_autonomous_enabled": enabled})
+            return
+
+        # Reddit Drone Bot: Sync Chrome Session
+        if path == '/api/reddit/chrome-session/sync':
+            try:
+                res = reddit_drone_agent.sync_chrome_session()
+                self.send_json(200, res)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Reddit Drone Bot: Enable Full Autopilot
+        if path == '/api/reddit/auto-pilot':
+            try:
+                res = reddit_drone_agent.enable_full_automation()
+                self.send_json(200, res)
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return
@@ -1629,7 +1784,7 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 def run_server():
     global PORT
-    ports_to_try = [int(os.environ.get('PORT', 8080)), 8080, 8000, 8081, 3000]
+    ports_to_try = [int(os.environ.get('PORT', 8000)), 8000, 8001, 8081, 3000]
     httpd = None
     for p in ports_to_try:
         try:

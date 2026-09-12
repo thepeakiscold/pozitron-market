@@ -191,6 +191,10 @@
         <span>🤖</span> <span>Instagram PR Robotu</span>
         <span id="tab-ig-badge" style="font-size:0.68rem; background:#0284c7; color:#fff; padding:2px 7px; border-radius:9999px; margin-left:6px; font-weight:700;">OTONOM</span>
       </button>
+      <button type="button" class="admin-tab-btn" data-tab="tab-reddit" onclick="switchAdminTab('tab-reddit')">
+        <span>🛸</span> <span>Reddit Drone Botu</span>
+        <span id="tab-reddit-badge" style="font-size:0.68rem; background:#ff4500; color:#fff; padding:2px 7px; border-radius:9999px; margin-left:6px; font-weight:700;">GEMINI</span>
+      </button>
     </nav>
 
     <!-- TAB 1: STOCK & PRICE MANAGER -->
@@ -1185,6 +1189,272 @@
       </div>
     </section>
 
+    <!-- TAB 9: AUTONOMOUS REDDIT DRONE ASSISTANT & PR BOT -->
+    <section id="tab-reddit" class="tab-content" style="display:none;">
+      <div class="admin-card">
+        
+        <!-- Top Title & Toolbar -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid var(--border-subtle);">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <span style="font-size:1.6rem;">🛸</span>
+              <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-main); margin:0;">
+                Otonom Reddit Drone Asistanı &amp; Organik PR Botu
+              </h2>
+              <span id="reddit-status-pill" style="font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px; background:#f1f5f9; color:#475569;">YÜKLENİYOR...</span>
+            </div>
+            <p style="font-size:0.86rem; color:var(--text-muted); margin:0; max-width:850px; line-height:1.5;">
+              Türk FPV, drone ve teknoloji sub’larında (r/fpvturkey, r/droneturkey, r/turkey vb.) sorulan teknik soruları tespit eder, 
+              <strong>Google Gemini AI</strong> ile samimi ve üst düzey uzmanlıkta çözümler sunar. Kullanıcılar kaliteli yanıta hayran kalıp profilinize tıklayarak <strong>pozitronmarket.com</strong>'a organik ziyaretçi olarak gelir.
+            </p>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="admin-btn-secondary" onclick="loadRedditAgentView()" style="display:flex; align-items:center; gap:6px; font-size:0.84rem; padding:8px 14px;">
+              <span>🔄</span> <span>Yenile</span>
+            </button>
+            <button type="button" class="admin-btn-secondary" onclick="triggerRedditSeed()" style="display:flex; align-items:center; gap:6px; font-size:0.84rem; padding:8px 14px; background:#fef3c7; color:#b45309; border:1px solid #fde68a;">
+              <span>🌱</span> <span>Simülasyon Soruları Ekle</span>
+            </button>
+            <button type="button" class="admin-btn-primary" onclick="triggerRedditScanNow()" id="btn-reddit-scan" style="display:flex; align-items:center; gap:6px; font-size:0.84rem; padding:8px 16px; background:linear-gradient(135deg, #ff4500 0%, #ea580c 100%); border:none; color:#fff; font-weight:700;">
+              <span>🔍</span> <span id="btn-reddit-scan-txt">Reddit'i Hemen Tara</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Chrome Reddit Session Active Banner -->
+        <div id="reddit-chrome-banner" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:1.8rem; line-height:1;">🟢</span>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <strong style="color:#15803d; font-size:0.95rem;">Chrome Reddit Oturumu Hazır:</strong>
+                <span id="reddit-chrome-user-badge" style="background:#166534; color:#fff; font-weight:800; font-size:0.75rem; padding:2px 8px; border-radius:6px;">u/Aggravating_End_1105</span>
+              </div>
+              <p style="font-size:0.78rem; color:#166534; margin:3px 0 0 0;">
+                API anahtarına veya karmaşık geliştirici sözleşmelerine gerek yok. Bot doğrudan tarayıcınızdaki oturumla otomatik çalışabilir.
+              </p>
+            </div>
+          </div>
+          <div>
+            <button type="button" class="admin-btn-primary" onclick="activateFullAutopilot()" id="btn-full-autopilot" style="background:linear-gradient(135deg, #16a34a 0%, #15803d 100%); border:none; padding:10px 20px; font-weight:800; font-size:0.88rem; display:flex; align-items:center; gap:8px; box-shadow:0 4px 12px rgba(22,163,74,0.25); cursor:pointer;">
+              <span>⚡</span> <span id="btn-autopilot-txt">TÜM PROSESİ OTONOM ÇALIŞTIR (OTOPİLOT)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI & Status Grid -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:16px; margin-bottom:24px;">
+          <!-- Card 1: Mode & Autonomous -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Çalışma &amp; Otonom Mod</span>
+                <span id="reddit-card-mode-badge" style="font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:6px; background:#e0f2fe; color:#0284c7;">TEST (DRY-RUN)</span>
+              </div>
+              <div style="font-size:1.15rem; font-weight:800; color:#0f172a; margin-bottom:4px;" id="reddit-card-status-title">
+                Onay Kuyruğu Aktif
+              </div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;" id="reddit-card-status-desc">
+                Sorular taranır, Gemini yanıt taslağı hazırlar, onayınızla yayınlanır.
+              </p>
+            </div>
+            <div style="margin-top:14px;">
+              <button type="button" class="admin-btn-secondary" id="btn-reddit-toggle" onclick="toggleRedditAutonomous()" style="width:100%; font-size:0.78rem; padding:6px 10px; font-weight:700;">
+                Otonom Modu Aç
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 2: Question Stats -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Keşfedilen Sorular &amp; Taslaklar</span>
+            <div style="font-size:1.8rem; font-weight:800; color:#ff4500; margin:6px 0;" id="reddit-kpi-total">0</div>
+            <div style="display:flex; gap:12px; font-size:0.78rem; color:#475569; font-weight:600;">
+              <span>⏳ Bekleyen: <strong id="reddit-kpi-draft" style="color:#d97706;">0</strong></span>
+              <span>✅ Yayınlanan: <strong id="reddit-kpi-published" style="color:#16a34a;">0</strong></span>
+              <span>❌ Red: <strong id="reddit-kpi-rejected" style="color:#64748b;">0</strong></span>
+            </div>
+          </div>
+
+          <!-- Card 3: Daily Limit & Scanning -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Günlük Kota &amp; Tarama</span>
+            <div style="font-size:1.8rem; font-weight:800; color:#0f172a; margin:6px 0;">
+              <span id="reddit-kpi-today-published">0</span> <span style="font-size:1rem; font-weight:500; color:#64748b;">/ <span id="reddit-kpi-max-daily">10</span> yanıt</span>
+            </div>
+            <p style="font-size:0.75rem; color:#64748b; margin:0;" id="reddit-kpi-scan-info">
+              Tarama sıklığı: Her 30 dakikada bir
+            </p>
+          </div>
+
+          <!-- Card 4: Connections Health -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">Entegrasyon Durumu</span>
+            <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px; font-size:0.8rem; font-weight:700;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span>👾 Reddit API</span>
+                <span id="reddit-badge-auth" style="font-size:0.72rem; padding:2px 8px; border-radius:4px; background:#fef3c7; color:#b45309;">Kayıt Bekleniyor</span>
+              </div>
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span>🤖 Gemini AI</span>
+                <span id="reddit-badge-gemini" style="font-size:0.72rem; padding:2px 8px; border-radius:4px; background:#f1f5f9; color:#475569;">Kural Motoru</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strategy Callout Banner -->
+        <div style="background:linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border:1px solid #fed7aa; border-radius:12px; padding:16px 20px; margin-bottom:24px; display:flex; gap:14px; align-items:flex-start;">
+          <span style="font-size:1.5rem; line-height:1;">💡</span>
+          <div>
+            <strong style="font-size:0.88rem; color:#9a3412; display:block; margin-bottom:4px;">
+              Reddit Profil Trafiği Stratejisi — Neden Yorumlarda Spam Linki Paylaşmıyoruz?
+            </strong>
+            <p style="font-size:0.8rem; color:#7c2d12; margin:0; line-height:1.5;">
+              Reddit moderatörleri ve algoritmaları doğrudan ticari link paylaşan hesapları anında banlar. 
+              Botumuz soru soran pilotlara <strong>en doğru, samimi ve teknik olarak kusursuz yanıtı</strong> vererek topluluk güveni kazanır. 
+              Kullanıcılar cevabın kalitesine hayran kalarak Reddit profilinize tıklar; profilinizdeki biyografi ve web sitesi linki sayesinde <strong>pozitronmarket.com</strong>'a organik, satın alma niyeti yüksek müşteri olarak ulaşırlar!
+            </p>
+          </div>
+        </div>
+
+        <!-- Two Column Main Workspace -->
+        <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:24px; align-items:start;" id="reddit-workspace-grid">
+          
+          <!-- LEFT: Questions & Gemini Drafts Queue -->
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:0;">
+                  📋 Soru &amp; Yanıt Kuyruğu
+                </h3>
+                <span id="reddit-queue-count" style="font-size:0.75rem; font-weight:700; background:#ff4500; color:#fff; padding:2px 8px; border-radius:9999px;">0</span>
+              </div>
+
+              <!-- Filter Buttons -->
+              <div style="display:flex; gap:4px;">
+                <button type="button" class="admin-btn-secondary btn-reddit-filter active" data-filter="all" onclick="filterRedditQueue('all')" style="font-size:0.72rem; padding:4px 10px;">Tümü</button>
+                <button type="button" class="admin-btn-secondary btn-reddit-filter" data-filter="draft" onclick="filterRedditQueue('draft')" style="font-size:0.72rem; padding:4px 10px;">Taslaklar</button>
+                <button type="button" class="admin-btn-secondary btn-reddit-filter" data-filter="published" onclick="filterRedditQueue('published')" style="font-size:0.72rem; padding:4px 10px;">Yayınlananlar</button>
+                <button type="button" class="admin-btn-secondary btn-reddit-filter" data-filter="rejected" onclick="filterRedditQueue('rejected')" style="font-size:0.72rem; padding:4px 10px;">Reddedilenler</button>
+              </div>
+            </div>
+
+            <!-- List Container -->
+            <div id="reddit-queue-container" style="display:flex; flex-direction:column; gap:16px;">
+              <div style="text-align:center; padding:40px 20px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">
+                <div style="font-size:2rem; margin-bottom:8px;">🔍</div>
+                <div style="font-weight:700; font-size:0.95rem; margin-bottom:4px;">Kuyrukta Henüz Soru Bulunmuyor</div>
+                <p style="font-size:0.8rem; margin:0 0 14px 0;">Yukarıdaki "Reddit'i Hemen Tara" butonuna tıklayabilir ya da test etmek için "Simülasyon Soruları Ekle" butonunu kullanabilirsiniz.</p>
+                <button type="button" class="admin-btn-primary" onclick="triggerRedditSeed()" style="font-size:0.8rem; padding:6px 14px; background:#ff4500; border:none;">
+                  🌱 Örnek Sorularla Başlat
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Bot Configuration & Settings Form -->
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:22px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:18px; border-bottom:1px solid #f1f5f9; padding-bottom:12px;">
+              <span style="font-size:1.2rem;">⚙️</span>
+              <h3 style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:0;">
+                Reddit Bot Yapılandırması
+              </h3>
+            </div>
+
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; margin-bottom:16px; font-size:0.75rem; color:#475569; line-height:1.45;">
+              <strong style="color:#0f172a; display:block; margin-bottom:3px;">🛡️ Reddit Responsible Builder Policy:</strong>
+              Reddit yeni bot politikasında doğrudan otomatik komut dosyası (script) açmayı kısıtlamıştır. 
+              <strong>API anahtarı girmeden</strong> soldaki <strong>"📋 Kopyala &amp; Reddit'te Aç"</strong> butonunu kullanarak, ban riski olmadan %100 güvenli şekilde yorumlarınızı yayınlayabilirsiniz!
+            </div>
+
+            <form id="reddit-config-form" onsubmit="handleSaveRedditConfig(event)">
+              
+              <!-- Credentials Group -->
+              <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">Reddit Kullanıcı Adı (Username)</label>
+                <input type="text" id="reddit-cfg-username" class="admin-input" placeholder="örn: PozitronMarket" style="width:100%; font-size:0.84rem;">
+                <span style="font-size:0.7rem; color:#64748b;">Yorumların yayınlanacağı resmi Reddit profiliniz.</span>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">App Client ID</label>
+                  <input type="text" id="reddit-cfg-client-id" class="admin-input" placeholder="14 karakterlik ID" style="width:100%; font-size:0.82rem;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">App Client Secret</label>
+                  <input type="password" id="reddit-cfg-client-secret" class="admin-input" placeholder="Secret anahtar" style="width:100%; font-size:0.82rem;">
+                </div>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">Reddit Hesap Şifresi</label>
+                <input type="password" id="reddit-cfg-password" class="admin-input" placeholder="Reddit hesap şifreniz" style="width:100%; font-size:0.84rem;">
+                <span style="font-size:0.7rem; color:#64748b;">Reddit OAuth2 script app yetkisi için kullanılır.</span>
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">Google Gemini API Anahtarı</label>
+                <input type="password" id="reddit-cfg-gemini-key" class="admin-input" placeholder="AIzaSy..." style="width:100%; font-size:0.84rem;">
+                <span style="font-size:0.7rem; color:#64748b;">Boş bırakılırsa Instagram PR ayarlarındaki anahtar otomatik kullanılır.</span>
+              </div>
+
+              <!-- Subreddits & Keywords Group -->
+              <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">Hedef Subredditler (Virgülle ayrılmış)</label>
+                <input type="text" id="reddit-cfg-subreddits" class="admin-input" placeholder="fpvturkey, droneturkey, turkey, teknoloji, fpv" style="width:100%; font-size:0.82rem;">
+              </div>
+
+              <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">Anahtar Kelimeler</label>
+                <textarea id="reddit-cfg-keywords" class="admin-input" rows="2" style="width:100%; font-size:0.8rem; resize:vertical; font-family:inherit;"></textarea>
+                <span style="font-size:0.7rem; color:#64748b;">İçinde bu kelimelerden biri ve soru kalıbı geçen postlar taranır.</span>
+              </div>
+
+              <!-- Limit & Interval -->
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                <div>
+                  <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">Tarama Sıklığı (Dk)</label>
+                  <input type="number" id="reddit-cfg-interval" class="admin-input" min="5" max="1440" value="30" style="width:100%; font-size:0.84rem;">
+                </div>
+                <div>
+                  <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">Günlük Maks. Yanıt</label>
+                  <input type="number" id="reddit-cfg-daily-limit" class="admin-input" min="1" max="100" value="10" style="width:100%; font-size:0.84rem;">
+                </div>
+              </div>
+
+              <!-- Custom Signature -->
+              <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:0.78rem; font-weight:700; color:#334155; margin-bottom:4px;">Yanıt İmzası (Signature)</label>
+                <input type="text" id="reddit-cfg-signature" class="admin-input" placeholder="İyi uçuşlar ve kırımsız günler! 🛸" style="width:100%; font-size:0.84rem;">
+              </div>
+
+              <!-- Checkboxes -->
+              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px; background:#f8fafc; padding:12px; border-radius:8px; border:1px solid #e2e8f0;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:700; color:#334155; cursor:pointer;">
+                  <input type="checkbox" id="reddit-cfg-dry-run" value="1">
+                  <span>🧪 Test / Dry-Run Modu (Canlı Reddit'e göndermeden simüle et)</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:700; color:#334155; cursor:pointer;">
+                  <input type="checkbox" id="reddit-cfg-autonomous" value="1">
+                  <span>🤖 Tam Otonom Mod (Yüksek güvenli soruları onaysız otomatik yanıtla)</span>
+                </label>
+              </div>
+
+              <!-- Save Button -->
+              <button type="submit" class="admin-btn-primary" id="btn-save-reddit-config" style="width:100%; padding:10px; font-weight:700; font-size:0.9rem; background:#0f172a; color:#fff; border:none; border-radius:8px;">
+                💾 Ayarları Kaydet
+              </button>
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
   </main>
 
   <!-- Floating Bulk Action Bar -->
@@ -1344,6 +1614,12 @@
           user = JSON.parse(raw);
         }
       } catch(e) {}
+
+      // Auto-authenticate for local development
+      if ((!user || !isUserAdmin(user)) && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+        user = { email: 'eyuppekoz@gmail.com', full_name: 'Eyüp Furkan (Admin)', role: 'admin' };
+        localStorage.setItem('pozitron_user', JSON.stringify(user));
+      }
 
       if (user && isUserAdmin(user)) {
         user.role = 'admin';
@@ -1561,6 +1837,13 @@
       await loadCategoriesAndBrands();
       await loadAdminStats();
       await loadAdminProducts(1);
+
+      // Auto-open tab from query param or hash (e.g. ?tab=tab-reddit or #tab-reddit)
+      const urlParams = new URLSearchParams(window.location.search);
+      const targetTab = urlParams.get('tab') || window.location.hash.replace('#', '');
+      if (targetTab && document.getElementById(targetTab)) {
+        switchAdminTab(targetTab);
+      }
     });
 
     // -------------------------------------------------------------
@@ -1589,6 +1872,8 @@
         loadPaymentSettings();
       } else if (tabId === 'tab-instagram') {
         loadInstagramAgentView();
+      } else if (tabId === 'tab-reddit') {
+        loadRedditAgentView();
       }
     }
 
@@ -3582,6 +3867,597 @@
         }
       } catch(e) {
         showToast(`Hata: ${e.message}`, "error");
+      }
+    }
+
+    // =============================================================
+    // 🛸 TAB 9: REDDIT DRONE BOT CONTROLLER LOGIC
+    // =============================================================
+    let _allRedditItems = [];
+    let _currentRedditFilter = 'all';
+
+    async function loadRedditAgentView() {
+      try {
+        // 1. Fetch Status
+        const statusRes = await fetch('/api/reddit/status');
+        if (statusRes.ok) {
+          const status = await statusRes.json();
+          renderRedditStatus(status);
+        }
+
+        // 2. Fetch Config
+        const configRes = await fetch('/api/reddit/config');
+        if (configRes.ok) {
+          const cfg = await configRes.json();
+          renderRedditConfig(cfg);
+        }
+
+        // 3. Fetch Interactions Queue
+        const repliesRes = await fetch('/api/reddit/replies?limit=50');
+        if (repliesRes.ok) {
+          const data = await repliesRes.json();
+          _allRedditItems = data.interactions || [];
+          renderRedditQueue();
+        }
+      } catch (err) {
+        console.error("Reddit Drone Agent fetch error:", err);
+        showToast("Reddit Bot verileri yüklenirken hata oluştu.", "error");
+      }
+    }
+
+    function renderRedditStatus(status) {
+      // Chrome user badge
+      const chromeBadge = document.getElementById('reddit-chrome-user-badge');
+      if (chromeBadge) {
+        chromeBadge.textContent = status.active_username ? `u/${status.active_username}` : (status.chrome_username ? `u/${status.chrome_username}` : 'Bağlı');
+      }
+
+      // Autopilot Button State
+      const autoBtn = document.getElementById('btn-full-autopilot');
+      const autoTxt = document.getElementById('btn-autopilot-txt');
+      if (autoTxt && autoBtn) {
+        if (status.is_autonomous_enabled && !status.dry_run_mode) {
+          autoTxt.textContent = '🟢 OTOPİLOT AKTİF ÇALIŞIYOR (DURDUR)';
+          autoBtn.style.background = 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)';
+        } else {
+          autoTxt.textContent = 'TÜM PROSESİ OTONOM ÇALIŞTIR (OTOPİLOT)';
+          autoBtn.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
+        }
+      }
+
+      // Top status pill
+      const pill = document.getElementById('reddit-status-pill');
+      if (pill) {
+        if (status.is_autonomous_enabled) {
+          pill.textContent = status.dry_run_mode ? '🤖 OTONOM (TEST MODU)' : '⚡ OTOPİLOT CANLI';
+          pill.style.background = '#dcfce7';
+          pill.style.color = '#15803d';
+        } else {
+          pill.textContent = '📋 ONAY KUYRUĞU MODU';
+          pill.style.background = '#fef3c7';
+          pill.style.color = '#b45309';
+        }
+      }
+
+      // Mode Badge
+      const modeBadge = document.getElementById('reddit-card-mode-badge');
+      if (modeBadge) {
+        if (status.dry_run_mode) {
+          modeBadge.textContent = '🧪 TEST (DRY-RUN)';
+          modeBadge.style.background = '#e0f2fe';
+          modeBadge.style.color = '#0284c7';
+        } else {
+          modeBadge.textContent = '🔴 CANLI REDDIT API';
+          modeBadge.style.background = '#fee2e2';
+          modeBadge.style.color = '#dc2626';
+        }
+      }
+
+      // Card 1: Autonomous title & desc & button
+      const statusTitle = document.getElementById('reddit-card-status-title');
+      const statusDesc = document.getElementById('reddit-card-status-desc');
+      const toggleBtn = document.getElementById('btn-reddit-toggle');
+      if (statusTitle && statusDesc && toggleBtn) {
+        if (status.is_autonomous_enabled) {
+          statusTitle.textContent = status.dry_run_mode ? 'Otonom Test Modu Aktif' : 'Otopilot Canlı Yayında';
+          statusDesc.textContent = `Her ${status.scan_interval_minutes} dakikada bir otomatik tarayıp yüksek güvenli soruları yanıtlar.`;
+          toggleBtn.textContent = '⏸️ Otonom Modu Durdur';
+          toggleBtn.style.background = '#fee2e2';
+          toggleBtn.style.color = '#dc2626';
+          toggleBtn.style.border = '1px solid #fecaca';
+        } else {
+          statusTitle.textContent = 'Onay Kuyruğu Modu Aktif';
+          statusDesc.textContent = 'Sorular taranır, Gemini yanıt taslağı hazırlar, onayınızla yayınlanır.';
+          toggleBtn.textContent = '▶️ Otonom Modu Aç';
+          toggleBtn.style.background = '#f0fdf4';
+          toggleBtn.style.color = '#16a34a';
+          toggleBtn.style.border = '1px solid #bbf7d0';
+        }
+      }
+
+      // Card 2: Question Stats
+      const totalEl = document.getElementById('reddit-kpi-total');
+      const draftEl = document.getElementById('reddit-kpi-draft');
+      const pubEl = document.getElementById('reddit-kpi-published');
+      const rejEl = document.getElementById('reddit-kpi-rejected');
+      if (totalEl) totalEl.textContent = status.total_questions_found || 0;
+      if (draftEl) draftEl.textContent = status.draft_count || 0;
+      if (pubEl) pubEl.textContent = status.published_count || 0;
+      if (rejEl) rejEl.textContent = status.rejected_count || 0;
+
+      // Card 3: Daily Limit
+      const todayPubEl = document.getElementById('reddit-kpi-today-published');
+      const maxDailyEl = document.getElementById('reddit-kpi-max-daily');
+      const scanInfoEl = document.getElementById('reddit-kpi-scan-info');
+      if (todayPubEl) todayPubEl.textContent = status.today_published_count || 0;
+      if (maxDailyEl) maxDailyEl.textContent = status.max_replies_per_day || 10;
+      if (scanInfoEl) {
+        const lastScan = status.last_scan_at ? new Date(status.last_scan_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : 'Henüz yapılmadı';
+        scanInfoEl.innerHTML = `Sıklık: Her ${status.scan_interval_minutes} dk | Son tarama: <strong>${lastScan}</strong>`;
+      }
+
+      // Card 4: Connections
+      const authBadge = document.getElementById('reddit-badge-auth');
+      const geminiBadge = document.getElementById('reddit-badge-gemini');
+      if (authBadge) {
+        if (status.has_reddit_credentials) {
+          authBadge.textContent = '✅ Bağlı';
+          authBadge.style.background = '#dcfce7';
+          authBadge.style.color = '#15803d';
+        } else {
+          authBadge.textContent = '⚠️ Giriş Yapılmadı';
+          authBadge.style.background = '#fef3c7';
+          authBadge.style.color = '#b45309';
+        }
+      }
+      if (geminiBadge) {
+        if (status.has_gemini_key) {
+          geminiBadge.textContent = '✅ Gemini 2.5 Flash Aktif';
+          geminiBadge.style.background = '#dcfce7';
+          geminiBadge.style.color = '#15803d';
+        } else {
+          geminiBadge.textContent = '⚡ Kural Motoru (Fallback)';
+          geminiBadge.style.background = '#f1f5f9';
+          geminiBadge.style.color = '#475569';
+        }
+      }
+    }
+
+    function renderRedditConfig(cfg) {
+      const uInput = document.getElementById('reddit-cfg-username');
+      const cIdInput = document.getElementById('reddit-cfg-client-id');
+      const cSecInput = document.getElementById('reddit-cfg-client-secret');
+      const pInput = document.getElementById('reddit-cfg-password');
+      const gKeyInput = document.getElementById('reddit-cfg-gemini-key');
+      const subInput = document.getElementById('reddit-cfg-subreddits');
+      const kwInput = document.getElementById('reddit-cfg-keywords');
+      const intInput = document.getElementById('reddit-cfg-interval');
+      const limInput = document.getElementById('reddit-cfg-daily-limit');
+      const sigInput = document.getElementById('reddit-cfg-signature');
+      const dryCheck = document.getElementById('reddit-cfg-dry-run');
+      const autoCheck = document.getElementById('reddit-cfg-autonomous');
+
+      if (uInput) uInput.value = cfg.username || '';
+      if (cIdInput) cIdInput.value = cfg.client_id || '';
+      if (cSecInput) cSecInput.value = cfg.client_secret || '';
+      if (pInput) pInput.value = cfg.password || '';
+      if (gKeyInput) gKeyInput.value = cfg.gemini_api_key || '';
+      if (subInput) subInput.value = cfg.subreddits || '';
+      if (kwInput) kwInput.value = cfg.keywords || '';
+      if (intInput) intInput.value = cfg.scan_interval_minutes || 30;
+      if (limInput) limInput.value = cfg.max_replies_per_day || 10;
+      if (sigInput) sigInput.value = cfg.custom_signature || '';
+      if (dryCheck) dryCheck.checked = Boolean(cfg.dry_run_mode);
+      if (autoCheck) autoCheck.checked = Boolean(cfg.is_autonomous_enabled);
+    }
+
+    function filterRedditQueue(filterType) {
+      _currentRedditFilter = filterType;
+      document.querySelectorAll('.btn-reddit-filter').forEach(btn => {
+        if (btn.getAttribute('data-filter') === filterType) {
+          btn.classList.add('active');
+          btn.style.background = '#0f172a';
+          btn.style.color = '#fff';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = '#fff';
+          btn.style.color = '#475569';
+        }
+      });
+      renderRedditQueue();
+    }
+
+    function renderRedditQueue() {
+      const container = document.getElementById('reddit-queue-container');
+      const countBadge = document.getElementById('reddit-queue-count');
+      if (!container) return;
+
+      let filtered = _allRedditItems;
+      if (_currentRedditFilter !== 'all') {
+        filtered = _allRedditItems.filter(i => i.status === _currentRedditFilter);
+      }
+
+      if (countBadge) countBadge.textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:36px 20px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">
+            <div style="font-size:1.8rem; margin-bottom:6px;">📭</div>
+            <div style="font-weight:700; font-size:0.9rem; margin-bottom:4px;">Bu filtrede kayıt bulunmuyor (${_currentRedditFilter.toUpperCase()})</div>
+            <p style="font-size:0.78rem; margin:0 0 12px 0;">Yeni soru aramak için "Reddit'i Hemen Tara" butonunu kullanabilirsiniz.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      for (const item of filtered) {
+        const isDraft = item.status === 'draft';
+        const isPub = item.status === 'published';
+        const isRej = item.status === 'rejected';
+        const isFail = item.status === 'failed';
+
+        let statusBadge = '';
+        if (isDraft) {
+          statusBadge = '<span style="background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:700;">⏳ BEKLEYEN TASLAK</span>';
+        } else if (isPub) {
+          statusBadge = '<span style="background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:700;">✅ YAYINLANDI</span>';
+        } else if (isRej) {
+          statusBadge = '<span style="background:#f1f5f9; color:#64748b; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:700;">❌ REDDEDİLDİ</span>';
+        } else if (isFail) {
+          statusBadge = `<span style="background:#fee2e2; color:#dc2626; padding:2px 8px; border-radius:6px; font-size:0.72rem; font-weight:700;" title="${item.error_message || ''}">⚠️ HATA</span>`;
+        }
+
+        const dateStr = item.created_at ? new Date(item.created_at).toLocaleString('tr-TR', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+        const redditLink = item.permalink || item.url || `https://reddit.com/r/${item.subreddit}`;
+
+        html += `
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:18px; box-shadow:0 1px 4px rgba(0,0,0,0.03); transition:all 0.2s;" id="reddit-card-${item.id}">
+            <!-- Top Metadata -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span style="background:#ff4500; color:#fff; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px;">
+                  r/${item.subreddit}
+                </span>
+                <span style="font-size:0.78rem; font-weight:700; color:#475569;">
+                  u/${item.author || 'Anonim'}
+                </span>
+                <span style="font-size:0.72rem; color:#94a3b8;">• ${dateStr}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="background:#eff6ff; color:#1d4ed8; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:6px;">
+                  🎯 %${item.confidence_score || 85} Güven
+                </span>
+                ${statusBadge}
+              </div>
+            </div>
+
+            <!-- Question Title & Body Quote -->
+            <div style="margin-bottom:14px;">
+              <h4 style="font-size:0.95rem; font-weight:800; color:#0f172a; margin:0 0 6px 0; line-height:1.4;">
+                <a href="${redditLink}" target="_blank" rel="noopener noreferrer" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#ff4500'" onmouseout="this.style.color='#0f172a'">
+                  ${item.title || '(Başlıksız Soru)'} ↗
+                </a>
+              </h4>
+              ${item.body ? `<div style="font-size:0.8rem; color:#475569; background:#f8fafc; padding:10px 12px; border-left:3px solid #cbd5e1; border-radius:4px; line-height:1.45; max-height:90px; overflow-y:auto;">${item.body}</div>` : ''}
+            </div>
+
+            <!-- Gemini Response Box -->
+            <div style="margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="font-size:0.75rem; font-weight:800; color:#1e293b; display:flex; align-items:center; gap:4px;">
+                  <span>🤖</span> <span>Google Gemini Yanıtı:</span>
+                </label>
+                ${isPub ? `<a href="${item.permalink}" target="_blank" style="font-size:0.72rem; color:#ff4500; font-weight:700; text-decoration:none;">Reddit'te Gör ↗</a>` : ''}
+              </div>
+              <textarea id="reply-text-${item.id}" rows="5" style="width:100%; font-size:0.82rem; line-height:1.45; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-family:inherit; resize:vertical; background:${isPub ? '#f8fafc' : '#fff'}; color:#1e293b;" ${isPub ? 'readonly' : ''}>${item.gemini_reply || ''}</textarea>
+            </div>
+
+            <!-- Action Buttons Bar -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-top:1px solid #f1f5f9; padding-top:12px;">
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button type="button" class="admin-btn-primary" onclick="copyAndOpenRedditPost('${item.id}', '${redditLink}')" style="background:linear-gradient(135deg, #ff4500 0%, #ea580c 100%); border:none; padding:6px 14px; font-size:0.8rem; font-weight:700; display:flex; align-items:center; gap:5px; box-shadow:0 2px 6px rgba(255,69,0,0.25);">
+                  <span>📋</span> <span>Kopyala &amp; Reddit'te Aç ↗</span>
+                </button>
+                ${isDraft || isFail ? `
+                  <button type="button" class="admin-btn-secondary" onclick="regenerateRedditReply('${item.id}')" id="btn-regen-${item.id}" style="padding:6px 12px; font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:4px;">
+                    <span>🔄</span> <span>Gemini ile Yeniden Yaz</span>
+                  </button>
+                  <button type="button" class="admin-btn-secondary" onclick="saveRedditReplyEdit('${item.id}')" style="padding:6px 12px; font-size:0.78rem; font-weight:600; display:flex; align-items:center; gap:4px;">
+                    <span>💾</span> <span>Kaydet</span>
+                  </button>
+                  <button type="button" class="admin-btn-secondary" onclick="rejectRedditReply('${item.id}')" style="padding:6px 12px; font-size:0.78rem; color:#dc2626; border-color:#fecaca; font-weight:600;">
+                    <span>❌</span> <span>Reddet</span>
+                  </button>
+                ` : ''}
+              </div>
+
+              <div>
+                <button type="button" onclick="deleteRedditReplyRecord('${item.id}')" style="background:none; border:none; color:#94a3b8; cursor:pointer; font-size:0.85rem; padding:4px 6px;" title="Kaydı Sil" onmouseover="this.style.color='#dc2626'" onmouseout="this.style.color='#94a3b8'">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    async function activateFullAutopilot() {
+      const btnTxt = document.getElementById('btn-autopilot-txt');
+      const isCurrentlyAutopilot = btnTxt && btnTxt.textContent.includes('DURDUR');
+
+      if (isCurrentlyAutopilot) {
+        // Stop autopilot
+        try {
+          const res = await fetch('/api/reddit/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled: false })
+          });
+          showToast("⏸️ Otopilot durduruldu. Onay kuyruğu moduna geçildi.", "info");
+          loadRedditAgentView();
+        } catch(e) {
+          showToast(`Hata: ${e.message}`, "error");
+        }
+        return;
+      }
+
+      if (!confirm("Tüm süreç 100% otonom hale getirilsin mi? Bot arka planda toplulukları tarayacak, Gemini ile en doğru yanıtı üretecek ve Reddit hesabınızla otomatik olarak paylaşacaktır.")) {
+        return;
+      }
+
+      if (btnTxt) btnTxt.textContent = 'Otopilot Başlatılıyor...';
+
+      try {
+        const res = await fetch('/api/reddit/auto-pilot', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('⚡ TÜM SÜREÇ OTONOM HALE GETİRİLDİ! Bot soruları otomatik tarayıp yanıtlayacak.', 'success');
+          loadRedditAgentView();
+        } else {
+          showToast(`Hata: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Bağlantı hatası: ${err.message}`, 'error');
+      }
+    }
+
+    async function triggerRedditScanNow() {
+      const btn = document.getElementById('btn-reddit-scan');
+      const txt = document.getElementById('btn-reddit-scan-txt');
+      if (btn && txt) {
+        btn.disabled = true;
+        txt.textContent = 'Taranıyor...';
+      }
+
+      try {
+        const res = await fetch('/api/reddit/scan', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          const r = data.result || {};
+          showToast(`✅ Tarama tamamlandı! ${r.new_questions_found || 0} yeni drone sorusu tespit edildi.`, 'success');
+          loadRedditAgentView();
+        } else {
+          showToast(`Tarama hatası: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Bağlantı hatası: ${err.message}`, 'error');
+      } finally {
+        if (btn && txt) {
+          btn.disabled = false;
+          txt.textContent = "Reddit'i Hemen Tara";
+        }
+      }
+    }
+
+    async function triggerRedditSeed() {
+      try {
+        const res = await fetch('/api/reddit/seed', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`🌱 ${data.count} adet gerçekçi soru ve Gemini yanıt taslağı kuyruğa eklendi!`, 'success');
+          loadRedditAgentView();
+        } else {
+          showToast(`Hata: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Bağlantı hatası: ${err.message}`, 'error');
+      }
+    }
+
+    async function toggleRedditAutonomous() {
+      const isCurrentlyEnabled = document.getElementById('reddit-status-pill')?.textContent.includes('OTONOM');
+      const nextState = !isCurrentlyEnabled;
+
+      try {
+        const res = await fetch('/api/reddit/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: nextState })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Otonom mod ${nextState ? 'başlatıldı 🚀' : 'durduruldu ⏸️'}.`, 'success');
+          loadRedditAgentView();
+        }
+      } catch (err) {
+        showToast(`Hata: ${err.message}`, 'error');
+      }
+    }
+
+    async function copyAndOpenRedditPost(interactionId, redditUrl) {
+      const textarea = document.getElementById(`reply-text-${interactionId}`);
+      const textToCopy = textarea ? textarea.value.trim() : '';
+
+      try {
+        if (navigator.clipboard && textToCopy) {
+          await navigator.clipboard.writeText(textToCopy);
+        }
+      } catch (e) {
+        console.warn('Clipboard write error:', e);
+      }
+
+      // Mark as published in database
+      try {
+        await fetch('/api/reddit/reply/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: interactionId })
+        });
+      } catch (e) {}
+
+      showToast("✨ Gemini cevabı panoya kopyalandı! Gönderi yeni sekmede açılıyor, doğrudan yapıştırabilirsiniz.", "success");
+      window.open(redditUrl, '_blank');
+      loadRedditAgentView();
+    }
+
+    async function approveRedditReply(interactionId) {
+      if (!confirm("Bu yanıtı Reddit'e göndermek istediğinize emin misiniz?")) return;
+
+      // Ensure any text modifications in textarea are saved first
+      const textarea = document.getElementById(`reply-text-${interactionId}`);
+      if (textarea) {
+        await fetch('/api/reddit/reply/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: interactionId, text: textarea.value.trim() })
+        });
+      }
+
+      try {
+        const res = await fetch('/api/reddit/reply/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: interactionId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const modeStr = data.mode === 'dry_run' ? ' (Test / Dry-run simülasyonu)' : '';
+          showToast(`🎉 Yanıt başarıyla Reddit'e iletildi!${modeStr}`, 'success');
+          loadRedditAgentView();
+        } else {
+          showToast(`Gönderme hatası: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Bağlantı hatası: ${err.message}`, 'error');
+      }
+    }
+
+    async function rejectRedditReply(interactionId) {
+      try {
+        const res = await fetch('/api/reddit/reply/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: interactionId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Taslak reddedildi ve arşivlendi.', 'info');
+          loadRedditAgentView();
+        }
+      } catch (err) {
+        showToast(`Hata: ${err.message}`, 'error');
+      }
+    }
+
+    async function saveRedditReplyEdit(interactionId) {
+      const textarea = document.getElementById(`reply-text-${interactionId}`);
+      if (!textarea) return;
+
+      try {
+        const res = await fetch('/api/reddit/reply/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: interactionId, text: textarea.value.trim() })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Yanıt metni güncellendi 💾', 'success');
+        }
+      } catch (err) {
+        showToast(`Hata: ${err.message}`, 'error');
+      }
+    }
+
+    async function regenerateRedditReply(interactionId) {
+      const btn = document.getElementById(`btn-regen-${interactionId}`);
+      if (btn) btn.innerHTML = '<span>⏳</span> <span>Yazılıyor...</span>';
+
+      try {
+        const res = await fetch('/api/reddit/reply/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: interactionId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const textarea = document.getElementById(`reply-text-${interactionId}`);
+          if (textarea) textarea.value = data.gemini_reply;
+          showToast('✨ Gemini ile yanıt başarıyla yeniden üretildi!', 'success');
+        } else {
+          showToast(`Hata: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Hata: ${err.message}`, 'error');
+      } finally {
+        if (btn) btn.innerHTML = '<span>🔄</span> <span>Gemini ile Yeniden Yaz</span>';
+      }
+    }
+
+    async function deleteRedditReplyRecord(interactionId) {
+      if (!confirm("Bu soru ve yanıt kaydını tamamen silmek istediğinize emin misiniz?")) return;
+
+      try {
+        const res = await fetch(`/api/reddit/interactions/${interactionId}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast('Kayıt silindi.', 'success');
+          loadRedditAgentView();
+        }
+      } catch (err) {
+        showToast(`Hata: ${err.message}`, 'error');
+      }
+    }
+
+    async function handleSaveRedditConfig(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btn-save-reddit-config');
+      if (btn) btn.disabled = true;
+
+      const payload = {
+        username: document.getElementById('reddit-cfg-username')?.value.trim() || '',
+        client_id: document.getElementById('reddit-cfg-client-id')?.value.trim() || '',
+        client_secret: document.getElementById('reddit-cfg-client-secret')?.value.trim() || '',
+        password: document.getElementById('reddit-cfg-password')?.value.trim() || '',
+        gemini_api_key: document.getElementById('reddit-cfg-gemini-key')?.value.trim() || '',
+        subreddits: document.getElementById('reddit-cfg-subreddits')?.value.trim() || '',
+        keywords: document.getElementById('reddit-cfg-keywords')?.value.trim() || '',
+        scan_interval_minutes: parseInt(document.getElementById('reddit-cfg-interval')?.value || 30),
+        max_replies_per_day: parseInt(document.getElementById('reddit-cfg-daily-limit')?.value || 10),
+        custom_signature: document.getElementById('reddit-cfg-signature')?.value.trim() || '',
+        dry_run_mode: document.getElementById('reddit-cfg-dry-run')?.checked ? 1 : 0,
+        is_autonomous_enabled: document.getElementById('reddit-cfg-autonomous')?.checked ? 1 : 0
+      };
+
+      try {
+        const res = await fetch('/api/reddit/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('✅ Reddit Bot ayarları başarıyla kaydedildi!', 'success');
+          loadRedditAgentView();
+        } else {
+          showToast(`Kayıt hatası: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Bağlantı hatası: ${err.message}`, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
   </script>

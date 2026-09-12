@@ -1,0 +1,28 @@
+{
+  "name": "pozitron",
+  "version": "1.0.0",
+  "description": "> **Bilingual (Türkçe & English)** • **500+ Premium Parça** • **Minimalist Aydınlık Tasarım** • **Drone Uyumluluk Motoru** • **Canlı Arama & 3D Secure Simülasyonu** • **GitHub Pages Uyumlu**",
+  "main": "app.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thepeakiscold/pozitron-market.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/thepeakiscold/pozitron-market/issues"
+  },
+  "homepage": "https://github.com/thepeakiscold/pozitron-market#readme",
+  "dependencies": {
+    "puppeteer-core": "^25.10.0"
+  }
+}
