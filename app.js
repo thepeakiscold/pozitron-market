@@ -1311,9 +1311,9 @@ class PozitronApp {
           <div class="card-body">
             <div class="card-brand-row">
               <span class="card-brand">${p.brand}</span>
-              <span class="card-stock-status ${p.stock > 0 ? '' : 'out-of-stock'}">
-                <span class="card-stock-dot ${p.stock > 0 ? '' : 'out-of-stock'}"></span>
-                <span>${p.stock > 0 ? window.i18n.t('in_stock') : window.i18n.t('out_of_stock')}</span>
+              <span class="card-stock-status ${p.stock > 0 ? (p.stock <= 3 ? 'low-stock' : '') : 'out-of-stock'}">
+                <span class="card-stock-dot ${p.stock > 0 ? (p.stock <= 3 ? 'pulse' : '') : 'out-of-stock'}"></span>
+                <span>${p.stock > 0 ? (p.stock <= 3 ? `Son ${p.stock} Adet!` : window.i18n.t('in_stock')) : window.i18n.t('out_of_stock')}</span>
               </span>
             </div>
 
@@ -1549,6 +1549,14 @@ class PozitronApp {
   // CART OPERATIONS
   // ==========================================
   addToCart(product, quantity = 1) {
+    if (typeof product === 'string') {
+      const found = (this.products || []).find(p => p.id === product || p.slug === product) || 
+                    (this.getStaticData().products || []).find(p => p.id === product || p.slug === product);
+      if (found) product = found;
+      else return;
+    }
+    if (!product || !product.id) return;
+
     const existing = this.cart.find(item => item.id === product.id);
     if (existing) {
       existing.quantity += quantity;
@@ -3058,12 +3066,33 @@ class PozitronApp {
 
             <div style="display:flex; align-items:center; gap:8px; font-size:0.9rem;">
               ${!isOutOfStock ? `
-                <span style="color:var(--status-success); font-weight:600; font-size:0.84rem;">● ${window.i18n.t('in_stock')} (${p.stock} adet)</span>
+                <span style="color:${parseInt(p.stock) <= 3 ? '#dc2626' : 'var(--status-success)'}; font-weight:600; font-size:0.84rem; display:flex; align-items:center; gap:6px;">
+                  <span class="pdp-stock-indicator ${parseInt(p.stock) <= 3 ? 'pulse' : ''}"></span>
+                  ${parseInt(p.stock) <= 3 ? `Stokta Son <strong>${p.stock}</strong> Adet!` : `${window.i18n.t('in_stock')} (${p.stock} adet)`}
+                  ${parseInt(p.stock) <= 3 ? `<span class="stock-badge-low">Tükeniyor</span>` : ''}
+                </span>
               ` : `
                 <span style="color:var(--status-error); font-weight:600; font-size:0.84rem;">● ${window.i18n.t('out_of_stock')}</span>
               `}
             </div>
-            <div style="font-size:1.6rem; font-weight:800; color:var(--brand-primary); margin:4px 0;">${price}</div>
+            <div style="font-size:1.6rem; font-weight:800; color:var(--brand-primary); margin:2px 0;">${price}</div>
+
+            <!-- Amazon Same-Day Shipping Countdown -->
+            <div class="pdp-delivery-countdown" style="margin: 2px 0 8px 0; padding: 10px 14px;">
+              <div class="pdp-countdown-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </div>
+              <div class="pdp-countdown-text">
+                <div class="pdp-countdown-title" style="font-size:0.82rem;">
+                  <span>Aynı Gün Kargo Fırsatı</span>
+                  <span class="pdp-fast-badge">Hızlı Gönderi</span>
+                </div>
+                <div style="font-size:0.78rem;">
+                  Bugün kargoya verilmesi için: <strong class="pdp-countdown-timer-val modal-timer-val">03 saat 24 dk 18 sn</strong>
+                </div>
+              </div>
+            </div>
+
             <p style="font-size:0.88rem; color:var(--text-secondary); line-height:1.6; margin:0;">${desc || ''}</p>
             
             <div style="background:var(--bg-secondary); padding:12px 16px; border-radius:8px; border:1px solid var(--border-subtle); margin:6px 0;">
@@ -3074,10 +3103,16 @@ class PozitronApp {
             </div>
 
             ${!isOutOfStock ? `
-              <button type="button" class="btn-primary" id="btn-modal-add-cart" style="margin-top:6px; width:100%; justify-content:center; padding:12px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-                <span>${window.i18n.t('add_to_cart')} (${price})</span>
-              </button>
+              <div style="display:flex; gap:10px; margin-top:6px;">
+                <button type="button" class="btn-primary" id="btn-modal-add-cart" style="flex:1; justify-content:center; padding:12px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+                  <span>${window.i18n.t('add_to_cart')}</span>
+                </button>
+                <button type="button" class="pdp-btn-buy-now" id="btn-modal-buy-now" style="flex:1; justify-content:center; padding:12px; border-radius:var(--radius-md); font-weight:700;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                  <span>Hemen Satın Al</span>
+                </button>
+              </div>
             ` : `
               <button type="button" class="btn-primary" id="btn-modal-stock-alert" style="margin-top:6px; width:100%; justify-content:center; padding:12px; background:#f59e0b; border-color:#f59e0b; font-weight:700;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -3108,6 +3143,26 @@ class PozitronApp {
 
       modal.style.display = 'flex';
 
+      // Start modal countdown timer
+      const modalTimer = body.querySelector('.modal-timer-val');
+      if (modalTimer) {
+        const updateModalTimer = () => {
+          const now = new Date();
+          const target = new Date();
+          target.setHours(15, 0, 0, 0);
+          if (now >= target) target.setDate(target.getDate() + 1);
+          const diff = target - now;
+          const h = Math.floor(diff / (1000 * 60 * 60));
+          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const s = Math.floor((diff % (1000 * 60)) / 1000);
+          const pad = n => n < 10 ? '0' + n : n;
+          modalTimer.innerText = `${pad(h)} saat ${pad(m)} dk ${pad(s)} sn`;
+        };
+        updateModalTimer();
+        if (this._modalTimerInterval) clearInterval(this._modalTimerInterval);
+        this._modalTimerInterval = setInterval(updateModalTimer, 1000);
+      }
+
       // Thumbnail click handlers
       body.querySelectorAll('.modal-thumb-img').forEach(thumb => {
         thumb.addEventListener('click', (e) => {
@@ -3136,6 +3191,16 @@ class PozitronApp {
         });
       }
 
+      // Buy Now Fast Checkout Button
+      const buyNowBtn = document.getElementById('btn-modal-buy-now');
+      if (buyNowBtn) {
+        buyNowBtn.addEventListener('click', () => {
+          this.addToCart(p);
+          this.closeProductModal();
+          this.openCheckoutModal();
+        });
+      }
+
       // Stock Alert Button
       const alertBtn = document.getElementById('btn-modal-stock-alert');
       if (alertBtn) {
@@ -3161,6 +3226,10 @@ class PozitronApp {
   }
 
   closeProductModal() {
+    if (this._modalTimerInterval) {
+      clearInterval(this._modalTimerInterval);
+      this._modalTimerInterval = null;
+    }
     const modal = document.getElementById('product-modal-backdrop');
     if (modal) modal.style.display = 'none';
     if (window.history.state && window.history.state.modalProduct) {
