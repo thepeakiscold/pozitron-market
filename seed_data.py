@@ -639,47 +639,33 @@ def seed_database():
     for cat_id, count in category_counts.items():
         cursor.execute("UPDATE categories SET item_count = ? WHERE id = ?", (count, cat_id))
 
-    # Seed Admin & Demo Users (Google Demo + Manual Demo)
-    print("Seeding demo users...")
+    # Seed Admin Users (Google OAuth Verified)
+    print("Seeding admin users...")
     demo_users = [
         (
-            str(uuid.uuid4()),
-            "eyup@pozitron.com",
-            hash_password("pozitron2026"),
-            "Eyüp Yılmaz",
-            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80",
-            "manual",
+            "usr_furkan_01",
+            "furkaniusprimes@gmail.com",
+            None,
+            "Eyüp Furkan Peköz",
+            "https://api.dicebear.com/7.x/bottts/svg?seed=furkaniusprimes",
+            "gmail",
             "admin",
             "+90 555 123 4567",
-            "Teknokent Ar-Ge Binası No: 42",
+            "Teknokent Ar-Ge Binasi No: 42",
             "Istanbul",
             "Turkey",
             now.isoformat()
         ),
         (
-            str(uuid.uuid4()),
-            "demo.pilot@gmail.com",
+            "usr_eyup_02",
+            "eyuppekoz@gmail.com",
             None,
-            "Alex FPV Pilot",
-            "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80",
+            "Eyüp Peköz",
+            "https://api.dicebear.com/7.x/bottts/svg?seed=eyuppekoz",
             "gmail",
-            "customer",
-            "+1 555 987 6543",
-            "742 Evergreen Terrace",
-            "San Francisco",
-            "United States",
-            now.isoformat()
-        ),
-        (
-            str(uuid.uuid4()),
-            "drone.tr@gmail.com",
-            None,
-            "Can Demir",
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-            "gmail",
-            "customer",
+            "admin",
             "+90 532 999 8877",
-            "Karaköy Rıhtım Cad. No: 15",
+            "Karakoy Rihtim Cad. No: 15",
             "Istanbul",
             "Turkey",
             now.isoformat()

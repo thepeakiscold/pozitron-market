@@ -27,7 +27,7 @@
     "icon": "🚀",
     "description_en": "High-current 4-in-1 and single ESCs with BLHeli_32, BLHeli_S, and AM32 firmware.",
     "description_tr": "BLHeli_32, BLHeli_S ve AM32 yazılımlı yüksek akım 4'ü 1 arada ve tekli ESC'ler.",
-    "item_count": 45
+    "item_count": 46
   },
   {
     "id": "batteries_chargers",
@@ -47,7 +47,7 @@
     "icon": "🧠",
     "description_en": "F405, F722, and H743 flight controllers supporting Betaflight, INAV, and ArduPilot.",
     "description_tr": "Betaflight, INAV ve ArduPilot destekli F405, F722 ve H743 uçuş kontrol kartları.",
-    "item_count": 40
+    "item_count": 41
   },
   {
     "id": "transmitters_receivers",
@@ -57,17 +57,7 @@
     "icon": "🎮",
     "description_en": "ExpressLRS 2.4GHz/915MHz and TBS Crossfire radios, micro receivers, and modules.",
     "description_tr": "ExpressLRS 2.4GHz/915MHz ve TBS Crossfire kumandalar, mikro alıcılar ve modüller.",
-    "item_count": 40
-  },
-  {
-    "id": "converters",
-    "slug": "power-converters-bec",
-    "name_en": "Power & Voltage Converters (BEC/PDB)",
-    "name_tr": "Güç ve Voltaj Dönüştürücüler (BEC/PDB)",
-    "icon": "🔋",
-    "description_en": "Step-down/step-up BEC voltage regulators, power distribution boards, and LC filters.",
-    "description_tr": "Voltaj düşürücü/yükseltici BEC regülatörleri, güç dağıtım kartları ve LC filtreleri.",
-    "item_count": 35
+    "item_count": 41
   },
   {
     "id": "cameras",
@@ -77,7 +67,7 @@
     "icon": "📷",
     "description_en": "Analog FPV cameras, DJI O3/O4 Air Units, Walksnail Avatar HD, and HDZero systems.",
     "description_tr": "Analog FPV kameralar, DJI O3/O4 Air Unit, Walksnail Avatar HD ve HDZero dijital sistemler.",
-    "item_count": 35
+    "item_count": 37
   },
   {
     "id": "frames",
@@ -87,6 +77,16 @@
     "icon": "🛸",
     "description_en": "Premium 3K carbon fiber freestyle, racing, cinewhoop, and long-range drone frames.",
     "description_tr": "Birinci sınıf 3K karbon fiber freestyle, yarış, cinewhoop ve uzun menzil drone gövdeleri.",
+    "item_count": 36
+  },
+  {
+    "id": "converters",
+    "slug": "power-converters-bec",
+    "name_en": "Power & Voltage Converters (BEC/PDB)",
+    "name_tr": "Güç ve Voltaj Dönüştürücüler (BEC/PDB)",
+    "icon": "🔋",
+    "description_en": "Step-down/step-up BEC voltage regulators, power distribution boards, and LC filters.",
+    "description_tr": "Voltaj düşürücü/yükseltici BEC regülatörleri, güç dağıtım kartları ve LC filtreleri.",
     "item_count": 35
   },
   {

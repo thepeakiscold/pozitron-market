@@ -1873,6 +1873,12 @@ class PozitronApp {
 
   initUserDatabase() {
     const DB_KEY = 'pozitron_users_db';
+    const FORBIDDEN_DEMOS = [
+      'test_pilot@example.com',
+      'demo.pilot@gmail.com',
+      'drone.tr@gmail.com',
+      'eyup@pozitron.com'
+    ];
     let users = [];
     try {
       users = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
@@ -1881,14 +1887,32 @@ class PozitronApp {
     }
 
     if (!Array.isArray(users)) {
-      localStorage.setItem(DB_KEY, JSON.stringify([]));
+      users = [];
+    } else {
+      users = users.filter(u => u && u.email && !FORBIDDEN_DEMOS.includes(u.email.toLowerCase().trim()));
     }
+    localStorage.setItem(DB_KEY, JSON.stringify(users));
+
+    // Also check current active user
+    try {
+      const cur = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
+      if (cur && cur.email && FORBIDDEN_DEMOS.includes(cur.email.toLowerCase().trim())) {
+        localStorage.removeItem('pozitron_user');
+      }
+    } catch(e) {}
   }
 
   getAllUsersFromDb() {
     this.initUserDatabase();
     try {
-      return JSON.parse(localStorage.getItem('pozitron_users_db') || '[]');
+      const FORBIDDEN_DEMOS = [
+        'test_pilot@example.com',
+        'demo.pilot@gmail.com',
+        'drone.tr@gmail.com',
+        'eyup@pozitron.com'
+      ];
+      const list = JSON.parse(localStorage.getItem('pozitron_users_db') || '[]');
+      return Array.isArray(list) ? list.filter(u => u && u.email && !FORBIDDEN_DEMOS.includes(u.email.toLowerCase().trim())) : [];
     } catch (e) {
       return [];
     }
@@ -5165,6 +5189,19 @@ window.handleCredentialResponse = function(response) {
     existing.provider = 'google';
     localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
   }
+
+  // Synchronize Google login directly with backend SQLite database
+  try {
+    fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: existing.email,
+        full_name: existing.full_name,
+        avatar_url: existing.avatar_url
+      })
+    }).catch(() => {});
+  } catch(e) {}
   
   existing.role = 'admin';
   window.app.loginWithUser(existing);
