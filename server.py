@@ -587,6 +587,209 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"articles": articles})
             return
 
+        # Pipeline Topology & Workflow Graph (n8n style architecture)
+        if path == '/api/pipeline/graph':
+            sup_status = lead_supervisor_agent.get_status()
+            ig_status = instagram_pr_agent.get_status()
+            rd_status = reddit_drone_agent.get_status()
+            tel = lead_supervisor_agent.telemetry_agent.get_latest_telemetry()
+            summary = lead_supervisor_agent.price_agent.get_summary_stats()
+
+            active_dir = sup_status.get("active_directive", {})
+            graph = {
+                "version": "2.0",
+                "engine": "Antigravity 2.0 Hierarchical Pipeline",
+                "last_cycle_at": sup_status.get("last_run_at"),
+                "next_cycle_at": sup_status.get("next_run_at"),
+                "columns": [
+                    {"id": 1, "name": "TETIKLEYICI", "desc": "Zamanlayici (Cron)"},
+                    {"id": 2, "name": "ISTIHBARAT & TELEMETRI", "desc": "Pazar & Performans Girdileri"},
+                    {"id": 3, "name": "BAS ORKESTRASYON", "desc": "Karar & Direktif Motoru"},
+                    {"id": 4, "name": "ICERIK & ETKILESIM", "desc": "Uzman Ajanlar"},
+                    {"id": 5, "name": "YAYIN KANALLARI", "desc": "Son Hedefler"}
+                ],
+                "nodes": [
+                    {
+                        "id": "trigger_cron_2h",
+                        "label": "2 Saatlik Zamanlayici",
+                        "tag": "[TRIGGER]",
+                        "column": 1,
+                        "type": "trigger",
+                        "category": "Zamanlayici (Cron)",
+                        "interval": "2 saat",
+                        "status": "active",
+                        "status_text": "Aktif (Tetikliyor)",
+                        "description": "Antigravity 2.0 periyodik cron tetikleyicisi",
+                        "triggers": ["subagent_5_price", "subagent_3_telemetry"],
+                        "payload_preview": {
+                            "trigger_type": "PERIODIC_CRON",
+                            "interval_hours": 2,
+                            "last_tick": sup_status.get("last_run_at"),
+                            "next_tick": sup_status.get("next_run_at")
+                        }
+                    },
+                    {
+                        "id": "subagent_5_price",
+                        "label": "Subagent 5: Fiyat & Rekabet",
+                        "tag": "[SUBAGENT 5]",
+                        "column": 2,
+                        "type": "agent",
+                        "category": "Istihbarat / Arbitraj",
+                        "status": "ready",
+                        "status_text": f"{summary.get('tracked_skus', 500)} SKU Taraniyor",
+                        "description": "Turkiye yerel pazar fiyatlarini kiyaslar, fiyat ve stok avantaji tespit eder",
+                        "inputs": ["trigger_cron_2h"],
+                        "triggers": ["lead_supervisor"],
+                        "payload_preview": {
+                            "tracked_skus": summary.get("tracked_skus", 500),
+                            "price_advantages": summary.get("price_advantage_count", 0),
+                            "competitor_out_of_stock": summary.get("competitor_out_of_stock_count", 0),
+                            "status": "SCAN_COMPLETE"
+                        }
+                    },
+                    {
+                        "id": "subagent_3_telemetry",
+                        "label": "Subagent 3: Telemetri Toplayici",
+                        "tag": "[SUBAGENT 3]",
+                        "column": 2,
+                        "type": "agent",
+                        "category": "Metrik / Telemetri",
+                        "status": "ready",
+                        "status_text": "Aktif Metrik Kaydi",
+                        "description": "Instagram, Reddit, SEO ve trafik verilerini derleyip orkestratore iletir",
+                        "inputs": ["trigger_cron_2h"],
+                        "triggers": ["lead_supervisor"],
+                        "payload_preview": tel
+                    },
+                    {
+                        "id": "lead_supervisor",
+                        "label": "Bas Orkestrasyon (Lead Supervisor)",
+                        "tag": "[SUPERVISOR]",
+                        "column": 3,
+                        "type": "supervisor",
+                        "category": "Karar & Direktif Motoru",
+                        "status": "running" if sup_status.get("is_autonomous_enabled") else "idle",
+                        "status_text": f"Dongu: {str(active_dir.get('lead_cycle_id', 'Aktif'))[:22]}",
+                        "description": "Istihbarat ve telemetriyi analiz eder, oncelikli urunleri belirler, dinamik direktif uretir",
+                        "inputs": ["subagent_5_price", "subagent_3_telemetry"],
+                        "triggers": ["subagent_1_instagram", "subagent_2_reddit", "subagent_4_seo"],
+                        "payload_preview": active_dir
+                    },
+                    {
+                        "id": "subagent_1_instagram",
+                        "label": "Subagent 1: Instagram PR",
+                        "tag": "[SUBAGENT 1]",
+                        "column": 4,
+                        "type": "worker",
+                        "category": "Icerik & Topluluk",
+                        "status": "running" if ig_status.get("is_autonomous_enabled") else "idle",
+                        "status_text": "Post & Etkilesim Plani",
+                        "description": "Fiyat avantajli urunleri teknik kanca ve muhendislik diliyle afis haline getirir",
+                        "inputs": ["lead_supervisor"],
+                        "triggers": ["output_instagram_api"],
+                        "payload_preview": active_dir.get("instagram_directive", {})
+                    },
+                    {
+                        "id": "subagent_2_reddit",
+                        "label": "Subagent 2: Reddit Etkilesim",
+                        "tag": "[SUBAGENT 2]",
+                        "column": 4,
+                        "type": "worker",
+                        "category": "Organik PR / Q&A",
+                        "status": "running" if rd_status.get("is_autonomous_enabled") else "idle",
+                        "status_text": "30 Dk Tarama • Sifir Spam",
+                        "description": "Topluluk sorularini Gemini 2.5 Flash ile yanitlar, organik kaynak gosterir",
+                        "inputs": ["lead_supervisor"],
+                        "triggers": ["output_reddit_api"],
+                        "payload_preview": active_dir.get("reddit_directive", {})
+                    },
+                    {
+                        "id": "subagent_4_seo",
+                        "label": "Subagent 4: SEO & Dokumantasyon",
+                        "tag": "[SUBAGENT 4]",
+                        "column": 4,
+                        "type": "worker",
+                        "category": "Icerik Otoritesi",
+                        "status": "ready",
+                        "status_text": f"{tel.get('seo', {}).get('articles_published', 0)} Rehber Yayinda",
+                        "description": "Derin muhendislik rehberleri uretir, Pozitron urunlerine ic linkleme yapar",
+                        "inputs": ["lead_supervisor"],
+                        "triggers": ["output_pozitron_web"],
+                        "payload_preview": active_dir.get("seo_content_directive", {})
+                    },
+                    {
+                        "id": "output_instagram_api",
+                        "label": "Instagram Graph API & @pozitronmarket",
+                        "tag": "[CHANNEL]",
+                        "column": 5,
+                        "type": "destination",
+                        "category": "Yayin Kanali",
+                        "status": "connected",
+                        "status_text": "Bagli (ID: 17841430407836914)",
+                        "description": "1080x1080 afis ve aciklama metnini yayinlar",
+                        "inputs": ["subagent_1_instagram"],
+                        "triggers": [],
+                        "payload_preview": {
+                            "channel": "Instagram Feed",
+                            "account": "@pozitronmarket",
+                            "status": "CONNECTED",
+                            "media_spec": "1080x1080 JPEG"
+                        }
+                    },
+                    {
+                        "id": "output_reddit_api",
+                        "label": "Reddit Web Oturumu (Chrome)",
+                        "tag": "[CHANNEL]",
+                        "column": 5,
+                        "type": "destination",
+                        "category": "Yayin Kanali",
+                        "status": "connected",
+                        "status_text": "Chrome Oturumu Aktif",
+                        "description": "Target subredditlerde kullanicilara teknik cozum sunar",
+                        "inputs": ["subagent_2_reddit"],
+                        "triggers": [],
+                        "payload_preview": {
+                            "channel": "Reddit Web Automation",
+                            "account": "u/Aggravating_End_1105",
+                            "status": "SESSION_ACTIVE",
+                            "subreddits": ["r/Turkey", "r/teknoloji", "r/bilim", "r/AskTurkey"]
+                        }
+                    },
+                    {
+                        "id": "output_pozitron_web",
+                        "label": "Pozitron Market Web & Blog",
+                        "tag": "[CHANNEL]",
+                        "column": 5,
+                        "type": "destination",
+                        "category": "Web Platformu",
+                        "status": "connected",
+                        "status_text": "pozitronmarket.com",
+                        "description": "Katalog ve teknik rehber sayfalari uzerinden organik trafik toplar",
+                        "inputs": ["subagent_4_seo"],
+                        "triggers": [],
+                        "payload_preview": {
+                            "platform": "https://pozitronmarket.com",
+                            "content_type": "Technical Guides & Internal Links",
+                            "status": "LIVE"
+                        }
+                    }
+                ],
+                "connections": [
+                    {"from": "trigger_cron_2h", "to": "subagent_5_price", "label": "Periyodik Tarama", "type": "trigger"},
+                    {"from": "trigger_cron_2h", "to": "subagent_3_telemetry", "label": "Telemetri Toplama", "type": "trigger"},
+                    {"from": "subagent_5_price", "to": "lead_supervisor", "label": "Fiyat Arbitraj Raporu", "type": "data"},
+                    {"from": "subagent_3_telemetry", "to": "lead_supervisor", "label": "Performans Metrikleri", "type": "data"},
+                    {"from": "lead_supervisor", "to": "subagent_1_instagram", "label": "instagram_directive", "type": "directive"},
+                    {"from": "lead_supervisor", "to": "subagent_2_reddit", "label": "reddit_directive", "type": "directive"},
+                    {"from": "lead_supervisor", "to": "subagent_4_seo", "label": "seo_directive", "type": "directive"},
+                    {"from": "subagent_1_instagram", "to": "output_instagram_api", "label": "Yayin & Etkilesim", "type": "publish"},
+                    {"from": "subagent_2_reddit", "to": "output_reddit_api", "label": "Otonom Yanit", "type": "publish"},
+                    {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "Ic Linkli Rehber", "type": "publish"}
+                ]
+            }
+            self.send_json(200, graph)
+            return
+
         conn = get_db()
         cursor = conn.cursor()
 
