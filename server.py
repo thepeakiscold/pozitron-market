@@ -243,10 +243,32 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(404, {"error": "Uploaded file not found"})
                 return
 
+        if path in ('/bots', '/bots.html'):
+            file_path = os.path.join(BASE_DIR, 'bots.html')
+            if os.path.exists(file_path):
+                with open(file_path, 'rb') as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Content-Length', str(len(content)))
+                self.end_headers()
+                self.wfile.write(content)
+                return
+
         # Serve frontend static files
         if path == '/' or path == '/index.html':
             self.path = '/index.html'
         return super().do_GET()
+
+    def do_HEAD(self):
+        parsed = urllib.parse.urlparse(self.path)
+        path = parsed.path
+        if path in ('/bots', '/bots.html'):
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.end_headers()
+            return
+        return super().do_HEAD()
 
     def handle_sitemap_xml(self):
         conn = get_db()

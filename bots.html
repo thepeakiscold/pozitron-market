@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pozitron Market - Otonom Robotlar Stüdyosu (Instagram &amp; Reddit)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260823_sec_v30">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: #0f172a;
+      --bg-card-hover: #1e293b;
+      --border-dark: #1e293b;
+      --border-glow: #38bdf8;
+      --accent-ig: #e1306c;
+      --accent-ig-grad: linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%);
+      --accent-reddit: #ff4500;
+      --accent-reddit-grad: linear-gradient(135deg, #ff4500 0%, #ea580c 100%);
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --text-glow: #f8fafc;
+    }
+    body.bots-body {
+      background: var(--bg-dark);
+      color: #f1f5f9;
+      font-family: 'Inter', -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .bots-nav-tab {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 12px 20px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .bots-nav-tab:hover {
+      color: #f8fafc;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .bots-nav-tab.active {
+      color: #38bdf8;
+      border-bottom-color: #38bdf8;
+      background: rgba(56, 189, 248, 0.06);
+    }
+    .bots-nav-tab.active-ig {
+      color: #f43f5e;
+      border-bottom-color: #f43f5e;
+      background: rgba(244, 63, 94, 0.08);
+    }
+    .bots-nav-tab.active-reddit {
+      color: #ff5722;
+      border-bottom-color: #ff5722;
+      background: rgba(255, 87, 34, 0.08);
+    }
+    .bots-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);
+    }
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .code-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: rgba(0,0,0,0.4);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #38bdf8;
+    }
+    .btn-action {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-action:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+    .btn-action:active {
+      transform: translateY(0);
+    }
+    .btn-action:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-ig {
+      background: var(--accent-ig-grad);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(225, 48, 108, 0.35);
+    }
+    .btn-reddit {
+      background: var(--accent-reddit-grad);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(255, 69, 0, 0.35);
+    }
+    .btn-secondary {
+      background: #1e293b;
+      color: #f1f5f9;
+      border: 1px solid #334155;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+    }
+    .toast-popup {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      display: none;
+      animation: slideUp 0.3s ease;
+      max-width: 420px;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bots-body">
+
+  <!-- Top Header Navigation -->
+  <header style="background:#0b1120; border-bottom:1px solid #1e293b; padding:16px 28px; position:sticky; top:0; z-index:100; backdrop-filter:blur(10px);">
+    <div style="max-width:1400px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+      
+      <!-- Brand & Title -->
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:42px; height:42px; border-radius:10px; background:linear-gradient(135deg, #0284c7 0%, #9333ea 100%); display:flex; align-items:center; justify-content:center; font-size:1.5rem; box-shadow:0 0 16px rgba(14,165,233,0.4);">
+          🤖
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <h1 style="font-size:1.25rem; font-weight:800; margin:0; color:#ffffff; font-family:'Plus Jakarta Sans', sans-serif; letter-spacing:-0.02em;">
+              POZİTRON OTONOM ROBOTLAR STÜDYOSU
+            </h1>
+            <span class="tag-badge" style="background:#1e293b; color:#38bdf8; border:1px solid #0284c7;">v3.0 DAEMON</span>
+          </div>
+          <div style="font-size:0.8rem; color:#94a3b8; margin-top:2px;">
+            Instagram PR İçerik Robotu &amp; Türk Drone Topluluğu Etkileşim Motoru &bull; Reddit Otonom Asistanı
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Server Badges & Links -->
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:6px; background:#0f172a; padding:6px 12px; border-radius:8px; border:1px solid #1e293b; font-size:0.8rem;">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 8px #10b981;"></span>
+          <span style="color:#cbd5e1; font-weight:600;">Lokal Sunucu:</span>
+          <span class="code-chip">http://localhost:8000</span>
+        </div>
+
+        <a href="/admin.html" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; color:#cbd5e1; background:#1e293b; padding:8px 14px; border-radius:8px; border:1px solid #334155; transition:all 0.2s;">
+          <span>🛍️</span> <span>Market Admin Paneli</span>
+        </a>
+
+        <a href="/" target="_blank" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.1); padding:8px 14px; border-radius:8px; border:1px solid rgba(56,189,248,0.3); transition:all 0.2s;">
+          <span>🌐</span> <span>Mağaza ↗</span>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Navigation Tabs Bar -->
+  <div style="background:#0f172a; border-bottom:1px solid #1e293b; padding:0 28px;">
+    <div style="max-width:1400px; margin:0 auto; display:flex; gap:8px;">
+      <button type="button" class="bots-nav-tab active-ig" id="tab-btn-instagram" onclick="switchBotsTab('instagram')">
+        <span style="font-size:1.15rem;">📸</span>
+        <span>Instagram PR &amp; Türk Drone Topluluğu Robotu</span>
+        <span class="tag-badge" style="background:#e1306c; color:#fff; font-size:0.68rem; margin-left:4px;">10 TAKİP &amp; 10 YORUM</span>
+      </button>
+
+      <button type="button" class="bots-nav-tab" id="tab-btn-reddit" onclick="switchBotsTab('reddit')">
+        <span style="font-size:1.15rem;">🛸</span>
+        <span>Reddit Türk Drone Asistanı</span>
+        <span class="tag-badge" style="background:#ff4500; color:#fff; font-size:0.68rem; margin-left:4px;">TÜRK SUBREDDITLER</span>
+      </button>
+
+      <button type="button" class="bots-nav-tab" id="tab-btn-daemon" onclick="switchBotsTab('daemon')">
+        <span style="font-size:1.15rem;">⚙️</span>
+        <span>Arka Plan Servisi (Systemd Daemon)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Container -->
+  <main style="max-width:1400px; margin:28px auto; padding:0 20px;">
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 1: INSTAGRAM PR & TURKISH DRONE ENGAGEMENT -->
+    <!-- ===================================================================== -->
+    <section id="pane-instagram">
+      
+      <!-- Top Action & Info Bar -->
+      <div class="bots-card" style="margin-bottom:24px; background:linear-gradient(135deg, #111827 0%, #1e1b4b 60%, #0f172a 100%); border-color:#312e81;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <span style="font-size:1.8rem;">🚀</span>
+              <h2 style="font-size:1.35rem; font-weight:800; margin:0; color:#ffffff;">
+                Otonom Instagram PR &amp; Türk Drone Topluluğu Robotu
+              </h2>
+              <span id="ig-status-pill" class="tag-badge" style="background:#166534; color:#dcfce7;">LOKAL / BULUT HAZIR</span>
+            </div>
+            <p style="font-size:0.88rem; color:#cbd5e1; margin:0 0 14px 0; max-width:850px; line-height:1.6;">
+              Pozitron Market'in 500 ürününü, Uyumluluk Sihirbazı'nı, 3D Baskı Studio'sunu ve teknik FPV rehberlerini <strong>Google Gemini 2.5 Flash</strong> özetleriyle 1080x1080 afiş kartları olarak <strong>@pozitronmarket</strong> hesabında otonom yayınlar.
+              Ayrıca <strong>günde 10 Türk drone pilotuna</strong> takip ve motive edici kırımsız uçuş yorumları atar.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.8rem; color:#94a3b8;">
+              <span>📸 Hesap: <strong style="color:#f8fafc;">@pozitronmarket</strong> (ID: 17841430407836914)</span>
+              <span>🧠 Yapay Zeka: <strong style="color:#f8fafc;">Gemini 2.5 Flash</strong></span>
+              <span>🎯 Kitle Filtresi: <strong style="color:#38bdf8;">🇹🇷 Yalnızca Türk Drone Pilotları &amp; Teknofest</strong></span>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
+            <button type="button" class="btn-action btn-ig" onclick="triggerDirectPublishNow()" id="btn-ig-direct-publish">
+              <span>⚡</span> <span>Yeni Gönderi Üret &amp; Anında Paylaş</span>
+            </button>
+            <button type="button" class="btn-action btn-secondary" onclick="loadInstagramData()" style="font-size:0.82rem; padding:8px 14px;">
+              <span>🔄</span> <span>Verileri Yenile</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🛸 TURKISH DRONE COMMUNITY ENGAGEMENT WIDGET (EXCLUSIVE) -->
+      <div class="bots-card" style="margin-bottom:24px; background:linear-gradient(135deg, #0b1329 0%, #1e1b4b 50%, #0f172a 100%); border:1px solid #4338ca; box-shadow:0 8px 30px rgba(67,56,202,0.15);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08);">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <span style="font-size:1.6rem;">🛸</span>
+              <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff;">
+                Türk Drone Topluluğu Etkileşim &amp; Destek Motoru
+              </h3>
+              <span class="tag-badge" style="background:#0284c7; color:#fff;">🇹🇷 TR-ONLY FİLTRELİ</span>
+            </div>
+            <p style="font-size:0.84rem; color:#cbd5e1; margin:0; max-width:850px; line-height:1.5;">
+              Sitemiz sadece Türkiye'de hizmet verdiği için yabancı hesaplar elenir; yalnızca Türkçe FPV/drone terimleri kullanan, Teknofest takımları ve yerli drone pilotları taranır. Güvenli aralıklarla (8-16 sn) <strong>günde 10 takip ve 10 samimi kırımsız uçuş yorumu</strong> atılır.
+            </p>
+          </div>
+
+          <button type="button" class="btn-action" id="btn-run-tr-engagement" onclick="runTurkishDroneEngagement()" style="background:linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color:#fff; padding:10px 18px; font-weight:700; box-shadow:0 4px 12px rgba(37,99,235,0.3);">
+            <span>🚀</span> <span id="btn-run-tr-engagement-txt">Türk Pilotlara Etkileşim Başlat (10 Takip &amp; 10 Yorum)</span>
+          </button>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:20px;">
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px;">
+            <div style="font-size:0.76rem; color:#94a3b8; font-weight:600; margin-bottom:4px;">BUGÜNKÜ TAKİP KOTASI</div>
+            <div style="font-size:1.6rem; font-weight:800; color:#38bdf8;" id="ig-eng-today-follows">0 / 10</div>
+            <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Hedef: Günlük 10 pilot</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px;">
+            <div style="font-size:0.76rem; color:#94a3b8; font-weight:600; margin-bottom:4px;">BUGÜNKÜ YORUM KOTASI</div>
+            <div style="font-size:1.6rem; font-weight:800; color:#ec4899;" id="ig-eng-today-comments">0 / 10</div>
+            <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Hedef: Günlük 10 destek yorumu</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px;">
+            <div style="font-size:0.76rem; color:#94a3b8; font-weight:600; margin-bottom:4px;">HEDEF TR ETİKETLERİ</div>
+            <div style="font-size:0.8rem; color:#f1f5f9; font-weight:700; line-height:1.4;">
+              #fpvturkey #droneturkey #turkeyfpv #teknofest #teknofestiha #turkdrone
+            </div>
+            <div style="font-size:0.72rem; color:#10b981; margin-top:2px;">✓ Yabancı kelimeler elenir</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px;">
+            <div style="font-size:0.76rem; color:#94a3b8; font-weight:600; margin-bottom:4px;">SON ETKİLEŞİM</div>
+            <div style="font-size:1.1rem; font-weight:800; color:#f8fafc;" id="ig-eng-last-time">Kayıt yok</div>
+            <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Doğal insan gecikmeli (8-16s)</div>
+          </div>
+        </div>
+
+        <!-- Recent Turkish Pilots Interaction History -->
+        <div id="ig-eng-history-box" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:0.82rem; font-weight:700; color:#cbd5e1;">Son Etkileşimde Bulunulan Türk Pilotlar:</span>
+            <span id="ig-eng-history-count" style="font-size:0.74rem; color:#94a3b8;">0 pilot</span>
+          </div>
+          <div id="ig-eng-recent-items" style="display:flex; flex-wrap:wrap; gap:8px; max-height:110px; overflow-y:auto;">
+            <span style="color:#64748b; font-size:0.8rem;">Henüz kayıt yok. Yukarıdaki butona tıklayarak etkileşimi başlatabilirsiniz.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Layout: Preview Mockup + Post History -->
+      <div style="display:grid; grid-template-columns:minmax(320px, 420px) 1fr; gap:24px; align-items:start;">
+        
+        <!-- Column 1: Live Post Preview & Frequency Controller -->
+        <div class="bots-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="font-size:1.05rem; font-weight:800; margin:0; color:#fff;">📱 Canlı Gönderi Mockup</h3>
+            <span class="tag-badge" style="background:#334155; color:#94a3b8;" id="ig-mockup-mode-badge">1080x1080</span>
+          </div>
+
+          <!-- Frequency Selector -->
+          <div style="background:#1e293b; border:1px solid #334155; border-radius:10px; padding:14px; margin-bottom:18px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <label style="font-size:0.8rem; font-weight:700; color:#f1f5f9;">Otonom Paylaşım Sıklığı:</label>
+              <span id="ig-freq-label" style="font-size:0.8rem; font-weight:800; color:#38bdf8;">Her 6 Saatte Bir</span>
+            </div>
+            <select id="ig-quick-freq-select" onchange="changeInstagramPostingFrequency(this.value)" style="width:100%; background:#0f172a; border:1px solid #475569; color:#fff; padding:8px 12px; border-radius:6px; font-size:0.84rem; font-weight:600;">
+              <option value="1">Her 1 Saatte Bir (Günde 24 Post)</option>
+              <option value="2">Her 2 Saatte Bir (Günde 12 Post)</option>
+              <option value="4">Her 4 Saatte Bir (Günde 6 Post)</option>
+              <option value="6" selected>Her 6 Saatte Bir (Günde 4 Post - Tavsiye Edilen)</option>
+              <option value="12">Her 12 Saatte Bir (Günde 2 Post)</option>
+              <option value="24">Günde 1 Kez (Her 24 Saatte)</option>
+            </select>
+          </div>
+
+          <!-- Instagram Card Preview -->
+          <div style="background:#000; border:1px solid #334155; border-radius:14px; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,0.6);">
+            <!-- Mockup Header -->
+            <div style="padding:10px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #262626;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <div style="width:32px; height:32px; border-radius:50%; background:linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); padding:2px;">
+                  <img src="./assets/favicon.svg" alt="" style="width:100%; height:100%; border-radius:50%; background:#000;">
+                </div>
+                <div>
+                  <div style="font-weight:700; font-size:0.82rem; color:#fff;">pozitronmarket</div>
+                  <div style="font-size:0.7rem; color:#a8a8a8;">Türkiye'nin FPV Merkezi</div>
+                </div>
+              </div>
+              <span style="color:#a8a8a8; font-size:1.2rem;">•••</span>
+            </div>
+
+            <!-- Mockup Image -->
+            <div style="position:relative; width:100%; aspect-ratio:1/1; background:#111; display:flex; align-items:center; justify-content:center;">
+              <img id="ig-mockup-img" src="./assets/hero_drone.png" alt="Afiş" style="width:100%; height:100%; object-fit:cover;">
+            </div>
+
+            <!-- Mockup Caption & Footer -->
+            <div style="padding:12px 14px; font-size:0.8rem; line-height:1.45; color:#f1f5f9;">
+              <div style="display:flex; gap:14px; margin-bottom:8px; font-size:1.2rem;">
+                <span>❤️</span> <span>💬</span> <span>✈️</span>
+              </div>
+              <div>
+                <strong style="color:#fff;">pozitronmarket</strong>
+                <span id="ig-mockup-caption" style="color:#e2e8f0; margin-left:4px;">Gemini 2.5 Flash ile otomatik üretilen FPV afiş kartı ve teknik açıklama.</span>
+              </div>
+              <div id="ig-mockup-hashtags" style="color:#38bdf8; font-size:0.75rem; margin-top:6px;">
+                #fpvturkey #droneturkey #pozitronmarket #teknofest
+              </div>
+              <div id="ig-mockup-time" style="font-size:0.68rem; color:#64748b; margin-top:8px;">
+                ŞİMDİ (CANLI ÖNİZLEME)
+              </div>
+            </div>
+          </div>
+
+          <!-- Direct Trigger Button -->
+          <button type="button" class="btn-action btn-ig" onclick="triggerDirectPublishNow()" style="width:100%; margin-top:16px; justify-content:center;">
+            <span>⚡</span> <span>Taslaksız Doğrudan Üret &amp; Paylaş</span>
+          </button>
+        </div>
+
+        <!-- Column 2: Published Posts Feed & Settings Modal -->
+        <div class="bots-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+            <div>
+              <h3 style="font-size:1.1rem; font-weight:800; margin:0; color:#fff;">📋 Gönderi Akışı &amp; Paylaşım Geçmişi</h3>
+              <div style="font-size:0.78rem; color:#94a3b8; margin-top:2px;">Instagram'da yayınlanan tüm afişler ve Meta API kayıtları</div>
+            </div>
+            <span class="tag-badge" style="background:#1e293b; color:#cbd5e1;" id="ig-posts-count-badge">0 gönderi</span>
+          </div>
+
+          <div id="ig-posts-container" style="display:flex; flex-direction:column; gap:14px; max-height:680px; overflow-y:auto; padding-right:6px;">
+            <div style="text-align:center; padding:40px; color:#64748b;">
+              Gönderiler yükleniyor...
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 2: REDDIT TURKISH DRONE ASSISTANT -->
+    <!-- ===================================================================== -->
+    <section id="pane-reddit" style="display:none;">
+      
+      <!-- Reddit Top Action & Status Banner -->
+      <div class="bots-card" style="margin-bottom:24px; background:linear-gradient(135deg, #180d07 0%, #2a1205 60%, #0f172a 100%); border-color:#7c2d12;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <span style="font-size:1.8rem;">🛸</span>
+              <h2 style="font-size:1.35rem; font-weight:800; margin:0; color:#ffffff;">
+                Otonom Reddit Drone Asistanı &amp; PR Robotu
+              </h2>
+              <span id="reddit-status-pill" class="tag-badge" style="background:#ea580c; color:#fff;">TÜRK SUBREDDITLER AKTİF</span>
+            </div>
+            <p style="font-size:0.88rem; color:#fed7aa; margin:0 0 14px 0; max-width:850px; line-height:1.6;">
+              Türk FPV, drone ve teknoloji topluluklarında (<strong>r/Turkey</strong>, <strong>r/teknoloji</strong>, <strong>r/bilim</strong>, <strong>r/AskTurkey</strong>, <strong>r/droneturkey</strong>, <strong>r/fpvturkey</strong>) sorulan teknik soruları tarar. 
+              <strong>Google Gemini AI</strong> ile samimi, motive edici ve teknik olarak %100 doğru Türkçe çözümler sunar.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+              <span style="font-size:0.78rem; color:#fdba74; font-weight:700;">Hedef Sub’lar:</span>
+              <span class="tag-badge" style="background:#ff4500; color:#fff;">r/Turkey</span>
+              <span class="tag-badge" style="background:#ff4500; color:#fff;">r/teknoloji</span>
+              <span class="tag-badge" style="background:#ff4500; color:#fff;">r/bilim</span>
+              <span class="tag-badge" style="background:#ff4500; color:#fff;">r/AskTurkey</span>
+              <span class="tag-badge" style="background:#ea580c; color:#fff;">r/droneturkey</span>
+              <span class="tag-badge" style="background:#ea580c; color:#fff;">r/fpvturkey</span>
+            </div>
+          </div>
+
+          <!-- Main Reddit Action Buttons -->
+          <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
+            <button type="button" class="btn-action btn-reddit" id="btn-reddit-scan-now" onclick="triggerRedditScanNow()">
+              <span>🔍</span> <span id="btn-reddit-scan-now-txt">Türk Subredditlerini Hemen Tara</span>
+            </button>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn-action btn-secondary" onclick="syncRedditChromeSession()" style="font-size:0.8rem; padding:8px 12px;">
+                <span>🌐</span> <span>Chrome Oturumunu Bağla</span>
+              </button>
+              <button type="button" class="btn-action btn-secondary" onclick="triggerRedditSeedSample()" style="font-size:0.8rem; padding:8px 12px; background:#451a03; color:#fde68a; border-color:#78350f;">
+                <span>🌱</span> <span>Örnek Soru Yükle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reddit Status & Metric Cards -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
+        <div class="bots-card" style="padding:18px;">
+          <div style="font-size:0.78rem; color:#94a3b8; font-weight:600; margin-bottom:4px;">BULUNAN TOPLAM SORU</div>
+          <div style="font-size:1.8rem; font-weight:800; color:#fff;" id="reddit-kpi-total">0</div>
+          <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Türk topluluklarından filtrelendi</div>
+        </div>
+
+        <div class="bots-card" style="padding:18px;">
+          <div style="font-size:0.78rem; color:#94a3b8; font-weight:600; margin-bottom:4px;">ONAY BEKLEYEN TASLAKLAR</div>
+          <div style="font-size:1.8rem; font-weight:800; color:#f59e0b;" id="reddit-kpi-draft">0</div>
+          <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Gemini yanıtı hazır</div>
+        </div>
+
+        <div class="bots-card" style="padding:18px;">
+          <div style="font-size:0.78rem; color:#94a3b8; font-weight:600; margin-bottom:4px;">REDDIT'TE YANITLANAN</div>
+          <div style="font-size:1.8rem; font-weight:800; color:#10b981;" id="reddit-kpi-published">0</div>
+          <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Başarıyla yayınlananlar</div>
+        </div>
+
+        <div class="bots-card" style="padding:18px;">
+          <div style="font-size:0.78rem; color:#94a3b8; font-weight:600; margin-bottom:4px;">BUGÜNKÜ YANIT KOTASI</div>
+          <div style="font-size:1.8rem; font-weight:800; color:#38bdf8;" id="reddit-kpi-today-limit">0 / 10</div>
+          <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Maksimum 10 yanıt / gün</div>
+        </div>
+      </div>
+
+      <!-- Reddit Questions Feed & Queue -->
+      <div class="bots-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #1e293b;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff;">📬 Türk Subreddit Soru &amp; Yanıt Kuyruğu</h3>
+            <span class="tag-badge" style="background:#ff4500; color:#fff;" id="reddit-queue-count-badge">0 Soru</span>
+          </div>
+
+          <!-- Filters -->
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn-action btn-secondary" onclick="filterRedditCards('all')" style="font-size:0.78rem; padding:6px 12px;">Tümü</button>
+            <button type="button" class="btn-action btn-secondary" onclick="filterRedditCards('draft')" style="font-size:0.78rem; padding:6px 12px; color:#f59e0b;">Taslaklar</button>
+            <button type="button" class="btn-action btn-secondary" onclick="filterRedditCards('published')" style="font-size:0.78rem; padding:6px 12px; color:#10b981;">Yayınlananlar</button>
+          </div>
+        </div>
+
+        <!-- Questions Feed -->
+        <div id="reddit-feed-container" style="display:flex; flex-direction:column; gap:18px;">
+          <div style="text-align:center; padding:48px; color:#64748b;">
+            Reddit soruları yükleniyor...
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 3: SYSTEM DAEMON SERVICE INFO -->
+    <!-- ===================================================================== -->
+    <section id="pane-daemon" style="display:none;">
+      <div class="bots-card" style="margin-bottom:24px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <span style="font-size:2rem;">⚙️</span>
+          <div>
+            <h2 style="font-size:1.25rem; font-weight:800; margin:0; color:#fff;">
+              Pozitron Arka Plan Servisi (Systemd Daemon)
+            </h2>
+            <div style="font-size:0.84rem; color:#94a3b8; margin-top:2px;">
+              Bilgisayarınızı yeniden başlatsanız bile <span class="code-chip">http://localhost:3050</span> gibi arka planda otomatik açılır.
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#0a0f1d; border:1px solid #1e293b; border-radius:10px; padding:18px; margin-bottom:20px; font-family:'JetBrains Mono', monospace; font-size:0.85rem; line-height:1.6; color:#cbd5e1;">
+          <div style="color:#10b981; font-weight:700; margin-bottom:8px;">● pozitron-server.service - Pozitron Market &amp; Autonomous Agent Daemon</div>
+          <div>Loaded: loaded (/home/eyup/.config/systemd/user/pozitron-server.service; enabled; vendor preset: enabled)</div>
+          <div>Active: <span style="color:#10b981; font-weight:700;">active (running)</span></div>
+          <div>Port: 8000 &bull; Process: python3 /home/eyup/Pozitron/server.py</div>
+          <div style="margin-top:8px; color:#64748b;"># Yönetim Komutları:</div>
+          <div style="color:#38bdf8;">systemctl --user status pozitron-server.service</div>
+          <div style="color:#38bdf8;">systemctl --user restart pozitron-server.service</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+          <div style="background:#1e293b; border-radius:10px; padding:16px;">
+            <div style="font-weight:700; font-size:0.9rem; color:#fff; margin-bottom:6px;">🔄 Otomatik Başlangıç</div>
+            <p style="font-size:0.8rem; color:#94a3b8; margin:0; line-height:1.5;">
+              Sistem `systemctl --user enable` ile yapılandırılmıştır. Bilgisayarınızı açtığınız anda Instagram içerik planlayıcısı, Türk drone etkileşim döngüsü ve Reddit botu arka planda kendiliğinden çalışır.
+            </p>
+          </div>
+
+          <div style="background:#1e293b; border-radius:10px; padding:16px;">
+            <div style="font-weight:700; font-size:0.9rem; color:#fff; margin-bottom:6px;">🛡️ Ayrılmış GUI Paneli</div>
+            <p style="font-size:0.8rem; color:#94a3b8; margin:0; line-height:1.5;">
+              Market e-ticaret yönetim paneli ile robot kontrol merkezi birbirinden ayrılmıştır. Tüm robotik ve PR operasyonları bu özel ekrandan yönetilir.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification Popup -->
+  <div id="toast-popup" class="toast-popup"></div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    let _allRedditQuestions = [];
+    let _currentRedditFilter = 'all';
+
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast-popup');
+      if (!toast) return;
+      toast.textContent = message;
+      if (type === 'success') {
+        toast.style.background = '#065f46';
+        toast.style.color = '#d1fae5';
+        toast.style.border = '1px solid #10b981';
+      } else if (type === 'error') {
+        toast.style.background = '#7f1d1d';
+        toast.style.color = '#fecaca';
+        toast.style.border = '1px solid #ef4444';
+      } else {
+        toast.style.background = '#1e293b';
+        toast.style.color = '#f1f5f9';
+        toast.style.border = '1px solid #38bdf8';
+      }
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 4000);
+    }
+
+    function switchBotsTab(tabName) {
+      const paneIg = document.getElementById('pane-instagram');
+      const paneReddit = document.getElementById('pane-reddit');
+      const paneDaemon = document.getElementById('pane-daemon');
+
+      const btnIg = document.getElementById('tab-btn-instagram');
+      const btnReddit = document.getElementById('tab-btn-reddit');
+      const btnDaemon = document.getElementById('tab-btn-daemon');
+
+      [btnIg, btnReddit, btnDaemon].forEach(b => {
+        if (b) {
+          b.classList.remove('active', 'active-ig', 'active-reddit');
+        }
+      });
+
+      if (paneIg) paneIg.style.display = tabName === 'instagram' ? 'block' : 'none';
+      if (paneReddit) paneReddit.style.display = tabName === 'reddit' ? 'block' : 'none';
+      if (paneDaemon) paneDaemon.style.display = tabName === 'daemon' ? 'block' : 'none';
+
+      if (tabName === 'instagram') {
+        btnIg.classList.add('active-ig');
+        loadInstagramData();
+      } else if (tabName === 'reddit') {
+        btnReddit.classList.add('active-reddit');
+        loadRedditData();
+      } else if (tabName === 'daemon') {
+        btnDaemon.classList.add('active');
+      }
+    }
+
+    // =========================================================================
+    // INSTAGRAM DATA & TURKISH ENGAGEMENT CONTROLLER
+    // =========================================================================
+    async function loadInstagramData() {
+      // 1. Fetch Engagement Stats (TR Drone pilots 10 follows / 10 comments)
+      try {
+        const engRes = await fetch('/api/instagram/engagement');
+        if (engRes.ok) {
+          const eng = await engRes.json();
+          const fCount = eng.today_follows_count || 0;
+          const cCount = eng.today_comments_count || 0;
+          const fEl = document.getElementById('ig-eng-today-follows');
+          const cEl = document.getElementById('ig-eng-today-comments');
+          if (fEl) fEl.textContent = `${fCount} / 10`;
+          if (cEl) cEl.textContent = `${cCount} / 10`;
+
+          const histCount = document.getElementById('ig-eng-history-count');
+          const recentItems = document.getElementById('ig-eng-recent-items');
+          const history = eng.history || [];
+          if (histCount) histCount.textContent = `${history.length} işlem`;
+
+          if (history.length > 0) {
+            const last = history[history.length - 1];
+            const lastEl = document.getElementById('ig-eng-last-time');
+            if (lastEl && last.timestamp) {
+              lastEl.textContent = new Date(last.timestamp).toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+            }
+            if (recentItems) {
+              recentItems.innerHTML = history.slice(-8).reverse().map(h => `
+                <span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:4px 10px; font-size:0.78rem; color:#cbd5e1; display:inline-flex; align-items:center; gap:5px;">
+                  <span>${h.type === 'follow' ? '👤 Takip: ' : '💬 Destek Yorumu: '}</span>
+                  <strong style="color:#38bdf8;">@${h.username}</strong>
+                </span>
+              `).join('');
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Engagement stats error:", e);
+      }
+
+      // 2. Fetch Posts History
+      try {
+        let posts = [];
+        try {
+          const pRes = await fetch('/api/instagram/posts?limit=30');
+          if (pRes.ok) {
+            const pData = await pRes.json();
+            posts = pData.posts || [];
+          }
+        } catch(e) {}
+
+        if (posts.length === 0) {
+          try {
+            const localRes = await fetch('./data/instagram_posts.json?_t=' + Date.now());
+            if (localRes.ok) posts = await localRes.json();
+          } catch(e) {}
+        }
+
+        renderInstagramPostsList(posts);
+      } catch(e) {
+        console.warn("Posts error:", e);
+      }
+    }
+
+    function renderInstagramPostsList(posts) {
+      const container = document.getElementById('ig-posts-container');
+      const badge = document.getElementById('ig-posts-count-badge');
+      if (!container) return;
+      if (badge) badge.textContent = `${posts.length} Gönderi`;
+
+      if (!posts || posts.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:40px; color:#64748b; background:rgba(255,255,255,0.02); border-radius:10px; border:1px dashed #334155;">
+            Henüz kayıtlı gönderi bulunmuyor. "Yeni Gönderi Üret &amp; Anında Paylaş" butonu ile ilk gönderinizi yayınlayabilirsiniz.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = posts.map(p => {
+        const imgSrc = p.image_url ? p.image_url.replace(/^\.\//, '/') : './assets/hero_drone.png';
+        const dateStr = p.created_at ? new Date(p.created_at).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+        const isPub = p.status === 'published';
+        return `
+          <div style="background:#1e293b; border:1px solid #334155; border-radius:10px; padding:14px; display:flex; gap:16px; align-items:center;">
+            <a href="${imgSrc}" target="_blank">
+              <img src="${imgSrc}" alt="" style="width:68px; height:68px; object-fit:cover; border-radius:8px; border:1px solid #475569;">
+            </a>
+            <div style="flex:1; min-width:0;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
+                <h4 style="font-size:0.92rem; font-weight:800; color:#fff; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  ${p.title || 'FPV Donanım Paylaşımı'}
+                </h4>
+                <span class="tag-badge" style="background:${isPub ? '#065f46' : '#78350f'}; color:${isPub ? '#6ee7b7' : '#fde68a'}; font-size:0.7rem;">
+                  ${isPub ? '✓ YAYINLANDI' : 'TASLAK'}
+                </span>
+              </div>
+              <p style="font-size:0.78rem; color:#94a3b8; margin:0 0 6px 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                ${p.caption || ''}
+              </p>
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.74rem; color:#64748b;">
+                <span>${dateStr}</span>
+                ${p.ig_permalink ? `
+                  <a href="${p.ig_permalink}" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:700;">
+                    Instagram'da Görüntüle ↗
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function triggerDirectPublishNow() {
+      const btn = document.getElementById('btn-ig-direct-publish');
+      if (btn) btn.disabled = true;
+      showToast("⚡ Gemini 2.5 Flash ile yeni FPV gönderisi ve 1080x1080 afiş üretilip Instagram'a aktarılıyor...", "info");
+
+      try {
+        const res = await fetch('/api/instagram/direct-publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast("🎉 Gönderi başarıyla Instagram'da yayınlandı!", "success");
+          if (data.post) {
+            const mockupImg = document.getElementById('ig-mockup-img');
+            const mockupCaption = document.getElementById('ig-mockup-caption');
+            const mockupHashtags = document.getElementById('ig-mockup-hashtags');
+            if (mockupImg && data.post.image_url) mockupImg.src = data.post.image_url + '?t=' + Date.now();
+            if (mockupCaption) mockupCaption.textContent = " " + (data.post.caption || '');
+            if (mockupHashtags) mockupHashtags.textContent = data.post.hashtags || '';
+          }
+          loadInstagramData();
+        } else {
+          showToast(`Hata: ${data.error || 'Yayınlama başarısız'}`, "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function changeInstagramPostingFrequency(hours) {
+      try {
+        const res = await fetch('/api/instagram/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ posting_frequency_hours: parseInt(hours, 10) })
+        });
+        if (res.ok) {
+          const lbl = document.getElementById('ig-freq-label');
+          if (lbl) lbl.textContent = `Her ${hours} Saatte Bir`;
+          showToast(`✅ Paylaşım sıklığı güncellendi: Her ${hours} saatte bir post üretilecek.`, "success");
+        }
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function runTurkishDroneEngagement() {
+      const btn = document.getElementById('btn-run-tr-engagement');
+      const txt = document.getElementById('btn-run-tr-engagement-txt');
+      if (btn && txt) {
+        btn.disabled = true;
+        txt.textContent = '🛸 Türk Pilotlar Taranıyor & Yorum Yapılıyor...';
+      }
+
+      showToast("🛸 Türk drone topluluğu pilotları taranıyor (Günde 10 Takip & 10 Yorum)...", "info");
+
+      try {
+        const res = await fetch('/api/instagram/engage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_count: 10 })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✅ Türk drone topluluğu etkileşimi tamamlandı! +${data.new_follows || 0} takip, +${data.new_comments || 0} yorum yapıldı.`, "success");
+          loadInstagramData();
+        } else {
+          showToast(`Etkileşim uyarısı: ${data.error || 'İşlem tamamlanamadı'}`, "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn && txt) {
+          btn.disabled = false;
+          txt.textContent = 'Türk Pilotlara Etkileşim Başlat (10 Takip & 10 Yorum)';
+        }
+      }
+    }
+
+    // =========================================================================
+    // REDDIT TURKISH DRONE ASSISTANT CONTROLLER
+    // =========================================================================
+    async function loadRedditData() {
+      // 1. Status
+      try {
+        const sRes = await fetch('/api/reddit/status');
+        if (sRes.ok) {
+          const status = await sRes.json();
+          document.getElementById('reddit-kpi-total').textContent = status.total_questions_found || 0;
+          document.getElementById('reddit-kpi-draft').textContent = status.draft_count || 0;
+          document.getElementById('reddit-kpi-published').textContent = status.published_count || 0;
+          document.getElementById('reddit-kpi-today-limit').textContent = `${status.today_published_count || 0} / ${status.max_replies_per_day || 10}`;
+        }
+      } catch(e) {
+        console.warn("Reddit status fetch error:", e);
+      }
+
+      // 2. Interactions Queue
+      try {
+        const rRes = await fetch('/api/reddit/replies?limit=60');
+        if (rRes.ok) {
+          const data = await rRes.json();
+          _allRedditQuestions = data.interactions || [];
+          renderRedditCards();
+        }
+      } catch(e) {
+        console.warn("Reddit queue fetch error:", e);
+      }
+    }
+
+    function filterRedditCards(filter) {
+      _currentRedditFilter = filter;
+      renderRedditCards();
+    }
+
+    function renderRedditCards() {
+      const container = document.getElementById('reddit-feed-container');
+      const countBadge = document.getElementById('reddit-queue-count-badge');
+      if (!container) return;
+
+      let list = _allRedditQuestions;
+      if (_currentRedditFilter !== 'all') {
+        list = list.filter(item => item.status === _currentRedditFilter);
+      }
+      if (countBadge) countBadge.textContent = `${list.length} Soru`;
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:48px; color:#64748b; background:rgba(255,255,255,0.02); border-radius:10px; border:1px dashed #334155;">
+            Bu filtrede soru kaydı bulunmuyor. "Türk Subredditlerini Hemen Tara" butonuyla tarama başlatabilirsiniz.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(q => {
+        const isDraft = q.status === 'draft';
+        const isPub = q.status === 'published';
+        const isRej = q.status === 'rejected';
+        const dateStr = q.created_at ? new Date(q.created_at).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+        const link = q.permalink || q.url || `https://reddit.com/r/${q.subreddit}`;
+
+        return `
+          <div style="background:#1e293b; border:1px solid #334155; border-radius:12px; padding:20px; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
+            <!-- Top Metadata -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="tag-badge" style="background:#ff4500; color:#fff;">r/${q.subreddit}</span>
+                <span style="font-size:0.82rem; font-weight:700; color:#cbd5e1;">u/${q.author || 'Pilot'}</span>
+                <span style="font-size:0.74rem; color:#64748b;">• ${dateStr}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="tag-badge" style="background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">
+                  🎯 %${q.confidence_score || 85} Güven
+                </span>
+                <span class="tag-badge" style="background:${isPub ? '#065f46' : (isDraft ? '#78350f' : '#334155')}; color:${isPub ? '#6ee7b7' : (isDraft ? '#fde68a' : '#cbd5e1')};">
+                  ${isPub ? '✓ YAYINLANDI' : (isDraft ? '⏳ TASLAK' : 'REDDEDİLDİ')}
+                </span>
+              </div>
+            </div>
+
+            <!-- Question Title & Body -->
+            <h4 style="font-size:1rem; font-weight:800; color:#fff; margin:0 0 8px 0; line-height:1.4;">
+              <a href="${link}" target="_blank" style="color:#fff; text-decoration:none;">${q.title || 'Drone Sorusu'} ↗</a>
+            </h4>
+            ${q.body ? `<div style="font-size:0.82rem; color:#94a3b8; background:#0f172a; border-left:3px solid #38bdf8; padding:10px 14px; border-radius:4px; margin-bottom:14px; line-height:1.5; max-height:90px; overflow-y:auto;">${q.body}</div>` : ''}
+
+            <!-- Gemini Generated Reply -->
+            <div style="margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label style="font-size:0.78rem; font-weight:800; color:#38bdf8;">🤖 Google Gemini 2.5 Flash Yanıtı:</label>
+                ${isPub ? `<a href="${link}" target="_blank" style="font-size:0.74rem; color:#ff4500; font-weight:700; text-decoration:none;">Reddit'te Gör ↗</a>` : ''}
+              </div>
+              <textarea id="reddit-reply-${q.id}" rows="5" style="width:100%; box-sizing:border-box; background:#0f172a; border:1px solid #334155; color:#f1f5f9; padding:12px; border-radius:8px; font-size:0.84rem; line-height:1.5; font-family:inherit; resize:vertical;" ${isPub ? 'readonly' : ''}>${q.gemini_reply || ''}</textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:12px;">
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="btn-action btn-reddit" onclick="copyAndOpenReddit('${q.id}', '${link}')" style="font-size:0.82rem; padding:8px 14px;">
+                  <span>📋</span> <span>Kopyala &amp; Reddit'te Aç ↗</span>
+                </button>
+                ${isDraft ? `
+                  <button type="button" class="btn-action btn-secondary" onclick="regenerateRedditReply('${q.id}')" style="font-size:0.8rem; padding:8px 12px;">
+                    <span>🔄</span> <span>Gemini ile Yeniden Yaz</span>
+                  </button>
+                  <button type="button" class="btn-action btn-secondary" onclick="saveRedditReplyEdit('${q.id}')" style="font-size:0.8rem; padding:8px 12px;">
+                    <span>💾</span> <span>Kaydet</span>
+                  </button>
+                  <button type="button" class="btn-action btn-secondary" onclick="rejectRedditReply('${q.id}')" style="font-size:0.8rem; padding:8px 12px; color:#f87171; border-color:#7f1d1d;">
+                    <span>❌</span> <span>Reddet</span>
+                  </button>
+                ` : ''}
+              </div>
+              <button type="button" onclick="deleteRedditInteraction('${q.id}')" style="background:none; border:none; color:#64748b; cursor:pointer; font-size:1.1rem; padding:4px 8px;" title="Kaydı Sil">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function triggerRedditScanNow() {
+      const btn = document.getElementById('btn-reddit-scan-now');
+      const txt = document.getElementById('btn-reddit-scan-now-txt');
+      if (btn && txt) {
+        btn.disabled = true;
+        txt.textContent = 'Türk Sub’lar Taranıyor...';
+      }
+      showToast("🔍 r/Turkey, r/teknoloji, r/bilim, r/AskTurkey taranıyor...", "info");
+
+      try {
+        const res = await fetch('/api/reddit/scan', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          const r = data.result || {};
+          showToast(`✅ Tarama tamamlandı! ${r.new_questions_found || 0} yeni soru tespit edildi.`, "success");
+          loadRedditData();
+        } else {
+          showToast("Tarama uyarısı: " + (data.error || 'Sonuç alınamadı'), "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn && txt) {
+          btn.disabled = false;
+          txt.textContent = 'Türk Subredditlerini Hemen Tara';
+        }
+      }
+    }
+
+    async function syncRedditChromeSession() {
+      showToast("🌐 Google Chrome'daki aktif Reddit oturumu taranıyor...", "info");
+      try {
+        const res = await fetch('/api/reddit/sync-chrome', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✅ ${data.message || 'Chrome Reddit hesabı başarıyla bağlandı!'}`, "success");
+          loadRedditData();
+        } else {
+          showToast("Oturum bulunamadı: " + (data.error || ''), "error");
+        }
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function triggerRedditSeedSample() {
+      try {
+        const res = await fetch('/api/reddit/seed', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast("🌱 Gerçekçi Türk drone soruları ve Gemini yanıtları kuyruğa eklendi!", "success");
+          loadRedditData();
+        }
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function copyAndOpenReddit(id, url) {
+      const textarea = document.getElementById(`reddit-reply-${id}`);
+      if (textarea && textarea.value) {
+        try {
+          await navigator.clipboard.writeText(textarea.value.trim());
+        } catch(e) {}
+      }
+      try {
+        await fetch('/api/reddit/reply/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+      } catch(e) {}
+
+      showToast("✨ Gemini yanıtı panoya kopyalandı! Gönderi açılıyor...", "success");
+      window.open(url, '_blank');
+      loadRedditData();
+    }
+
+    async function regenerateRedditReply(id) {
+      showToast("⏳ Gemini ile yeniden yazılıyor...", "info");
+      try {
+        const res = await fetch('/api/reddit/reply/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const textarea = document.getElementById(`reddit-reply-${id}`);
+          if (textarea) textarea.value = data.gemini_reply || '';
+          showToast("✨ Yeni yanıt oluşturuldu!", "success");
+        }
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function saveRedditReplyEdit(id) {
+      const textarea = document.getElementById(`reddit-reply-${id}`);
+      if (!textarea) return;
+      try {
+        const res = await fetch('/api/reddit/reply/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, text: textarea.value.trim() })
+        });
+        if (res.ok) showToast("💾 Yanıt metni kaydedildi.", "success");
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function rejectRedditReply(id) {
+      try {
+        const res = await fetch('/api/reddit/reply/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          showToast("Taslak reddedildi ve arşivlendi.", "info");
+          loadRedditData();
+        }
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function deleteRedditInteraction(id) {
+      if (!confirm("Bu soruyu silmek istediğinize emin misiniz?")) return;
+      try {
+        const res = await fetch(`/api/reddit/interactions/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showToast("Soru kaydı silindi.", "success");
+          loadRedditData();
+        }
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    // Auto-initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadInstagramData();
+    });
+  </script>
+</body>
+</html>

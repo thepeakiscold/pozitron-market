@@ -12,12 +12,28 @@ CONFIG_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 TARGET_HASHTAGS = [
     'fpvturkey',
     'droneturkey',
-    'fpv',
-    'fpvdrone',
+    'turkeyfpv',
     'teknofest',
     'teknofestiha',
-    'fpvfreestyle',
-    'fpvracing'
+    'fpvtürkiye',
+    'dronetürkiye',
+    'turkdrone'
+]
+
+TURKISH_CHARS = set('çğıöşüİĞŞÇÖÜ')
+TURKISH_KEYWORDS = [
+    'türkiye', 'turkiye', 'turk', 'türk', 'turkey', 'teknofest', 'iha', 'siha',
+    'kırım', 'kirim', 'uçuş', 'ucus', 'havacılık', 'havacilik', 'pilot',
+    'pervane', 'batarya', 'kumanda', 'atölye', 'atolye', 'antrenman',
+    'gökyüzü', 'gokyuzu', 'yarış', 'yaris', 'kadraj', 'lehim', 'lehimleme',
+    'fırçasız', 'fircasiz', 'takım', 'takim', 'ekip', 'pozitron',
+    'istanbul', 'ankara', 'izmir', 'bursa', 'antalya', 'adana', 'konya',
+    'kocaeli', 'eskisehir', 'eskişehir', 'trabzon', 'gaziantep', 'samsun', 'kayseri'
+]
+
+NON_TURKISH_REJECT_WORDS = [
+    'gracias', 'vuelo', 'piloto', 'obrigado', 'voo', 'merci', 'spasibo',
+    'bonjour', 'danke', 'amigo', 'hola', 'hermoso', 'bienvenido'
 ]
 
 FPV_WARM_COMMENTS = [
@@ -121,6 +137,30 @@ class InstagramEngagementEngine:
                 json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception as e:
             print(f"Interactions save error: {e}")
+
+    def is_turkish_drone_profile(self, username: str, caption: str = '') -> bool:
+        """
+        Validates whether a user / post belongs to the Turkish drone & FPV community.
+        Only Turkish pilots, TEKNOFEST UAV teams, and domestic hobbyists are engaged.
+        """
+        combined = f"{username} {caption}".lower()
+
+        # 1. Reject foreign language posts (Spanish, Portuguese, Russian, French, etc.)
+        for bad_word in NON_TURKISH_REJECT_WORDS:
+            if bad_word in combined:
+                return False
+
+        # 2. Check for Turkish unique characters (ç, ğ, ı, ö, ş, ü)
+        has_tr_char = any(ch in combined for ch in TURKISH_CHARS)
+
+        # 3. Check for Turkish drone/location keywords
+        has_tr_keyword = any(kw in combined for kw in TURKISH_KEYWORDS)
+
+        # 4. Check for Turkish username markers
+        u_lower = username.lower()
+        has_tr_user = any(marker in u_lower for marker in ['tr', 'turk', 'turkey', 'iha', 'teknofest', 'havacilik', 'ucus', 'fpvturk'])
+
+        return has_tr_char or has_tr_keyword or has_tr_user
 
     def generate_friendly_comment(self, username: str, caption: str = '') -> str:
         """Generates a warm, supportive FPV comment (via Gemini or curated pool)."""
@@ -285,6 +325,10 @@ Kurallar:
                 if u_id == my_user_id or u_name.lower() in ('pozitronmarket', 'thepeakiscold'):
                     continue
                 if c.get('is_private'):
+                    continue
+
+                # Strictly verify Turkish drone community profile
+                if not self.is_turkish_drone_profile(u_name, c.get('caption', '')):
                     continue
 
                 did_something = False

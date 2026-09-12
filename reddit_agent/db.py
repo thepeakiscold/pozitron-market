@@ -25,7 +25,7 @@ def init_reddit_tables():
             password TEXT,
             user_agent TEXT DEFAULT 'python:pozitron.drone.assistant:v1.0 (by /u/PozitronMarket)',
             gemini_api_key TEXT,
-            subreddits TEXT DEFAULT 'fpvturkey, droneturkey, turkey, teknoloji, fpv, drones',
+            subreddits TEXT DEFAULT 'Turkey, teknoloji, bilim, AskTurkey, fpvturkey, droneturkey',
             keywords TEXT DEFAULT 'drone, fpv, quadcopter, betafpv, dji, kumanda, lehim, motor, esc, vtx, gözlük, batarya, lipo, teknofest, betaflight, inav, elrs, crossfire, shg, pervane, frame, uçuş, alıcı, verici',
             is_autonomous_enabled INTEGER DEFAULT 0,
             dry_run_mode INTEGER DEFAULT 1,
@@ -53,7 +53,7 @@ def init_reddit_tables():
                 1, '', '', '', '',
                 'python:pozitron.drone.assistant:v1.0 (by /u/PozitronMarket)',
                 '',
-                'fpvturkey, droneturkey, turkey, teknoloji, fpv, drones',
+                'Turkey, teknoloji, bilim, AskTurkey, fpvturkey, droneturkey',
                 'drone, fpv, quadcopter, betafpv, dji, kumanda, lehim, motor, esc, vtx, gözlük, batarya, lipo, teknofest, betaflight, inav, elrs, crossfire, shg, pervane, frame, uçuş, alıcı, verici',
                 0, 1, 30, 10, 85, 'İyi uçuşlar ve kırımsız günler! 🛸',
                 NULL, NULL, ?

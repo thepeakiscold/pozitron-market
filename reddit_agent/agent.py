@@ -187,7 +187,7 @@ class RedditDroneAgent:
         generates Gemini answer drafts, and posts if autonomous is enabled.
         """
         self.reload_config()
-        subreddits_str = self.config.get("subreddits", "fpvturkey, droneturkey, turkey, teknoloji, fpv, drones")
+        subreddits_str = self.config.get("subreddits", "Turkey, teknoloji, bilim, AskTurkey, fpvturkey, droneturkey")
         subreddits = [s.strip() for s in subreddits_str.split(",") if s.strip()]
 
         keywords_str = self.config.get("keywords", "")
