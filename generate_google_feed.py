@@ -17,7 +17,7 @@ def generate_feeds():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT id, sku, name_tr, name_en, category_id, brand, price_try, original_price_try, stock, image_url, description_tr, description_en
+        SELECT id, slug, sku, name_tr, name_en, category_id, brand, price_try, original_price_try, stock, image_url, description_tr, description_en
         FROM products
         ORDER BY id ASC
     ''')
@@ -44,7 +44,7 @@ def generate_feeds():
     tsv_headers = ['id', 'title', 'description', 'link', 'image_link', 'availability', 'price', 'brand', 'condition', 'google_product_category', 'mpn']
 
     for p in products:
-        p_id, sku, name_tr, name_en, cat_id, brand, price_try, orig_price_try, stock, img_url, desc_tr, desc_en = p
+        p_id, slug, sku, name_tr, name_en, cat_id, brand, price_try, orig_price_try, stock, img_url, desc_tr, desc_en = p
         
         # Absolute Image URL
         if img_url.startswith('./'):
@@ -56,7 +56,7 @@ def generate_feeds():
         else:
             full_img_url = img_url
 
-        prod_link = f"{BASE_URL}/#prod-{p_id}"
+        prod_link = f"{BASE_URL}/products/{slug}.html" if slug else f"{BASE_URL}/#prod-{p_id}"
         title = (name_tr or name_en or 'FPV Drone Parçası').strip()
         description = (desc_tr or desc_en or f"{brand} {title} yüksek performanslı FPV drone bileşeni.").strip()
         availability = 'in_stock' if int(stock) > 0 else 'out_of_stock'

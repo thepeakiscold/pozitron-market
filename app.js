@@ -80,7 +80,8 @@ class PozitronApp {
     this.updateUserUI();
     this.updateCartUI();
 
-    // 4. Parse URL Hash on Load (e.g. #category=motors or #q=speedybee)
+    // 4. Parse URL Query & Hash on Load (e.g. #category=motors, #builder, #build=..., or ?build=...)
+    this.parseInitialUrlState();
     this.handleHashChange();
 
     // 5. Initial Product Fetch & Comments System
@@ -96,6 +97,22 @@ class PozitronApp {
       this.renderCommunityReviews(this.currentCommentFilter || 'all');
       this.updateDynamicSeoMeta();
     });
+  }
+
+  parseInitialUrlState() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('build')) {
+        setTimeout(() => this.loadSharedBuild(urlParams.get('build')), 300);
+      } else if (urlParams.has('product')) {
+        const prod = urlParams.get('product');
+        setTimeout(() => this.openProductModal(prod), 300);
+      } else if (urlParams.has('builder')) {
+        setTimeout(() => this.openBuilderModal(), 300);
+      }
+    } catch (e) {
+      console.warn('URL param parse error:', e);
+    }
   }
 
   handleHashChange() {
@@ -117,6 +134,11 @@ class PozitronApp {
       this.openProductModal(prodSlug);
     } else if (hash === 'builder') {
       this.openBuilderModal();
+    } else if (hash.startsWith('build=')) {
+      const buildData = hash.substring(6);
+      this.loadSharedBuild(buildData);
+    } else if (hash === '3d-studio') {
+      this.open3DStudioModal();
     }
   }
 
@@ -3392,18 +3414,108 @@ class PozitronApp {
         </div>
 
         <!-- Actions -->
-        <div class="build-actions-bar">
-          <button type="button" class="btn-add-entire-build" onclick="window.app.addAllBuildItemsToCart()">
+        <div class="build-actions-bar" style="display:flex; flex-wrap:wrap; gap:10px;">
+          <button type="button" class="btn-add-entire-build" onclick="window.app.addAllBuildItemsToCart()" style="flex:2; min-width:220px;">
             <span>🛒</span>
             <span>${lang === 'tr' ? 'Tüm Parçaları Tek Tıkla Sepete Ekle' : 'Add Entire Package to Cart'}</span>
           </button>
-          <button type="button" class="btn-rebuild-action" onclick="window.app.resetBuildResult()">
+          <button type="button" class="btn-share-build-wa" onclick="window.app.shareBuildWhatsApp()" style="flex:1; min-width:170px; padding:14px; background:#25d366; color:#ffffff; font-weight:800; border-radius:var(--radius-md); border:none; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; font-size:0.92rem; box-shadow:0 4px 12px rgba(37,211,102,0.3); transition:all 0.15s ease;">
+            <span>💬</span>
+            <span>${lang === 'tr' ? 'WhatsApp ile Gönder' : 'Share on WhatsApp'}</span>
+          </button>
+          <button type="button" class="btn-share-build-link" onclick="window.app.shareBuildLink()" style="flex:1; min-width:170px; padding:14px; background:#0284c7; color:#ffffff; font-weight:800; border-radius:var(--radius-md); border:none; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; font-size:0.92rem; box-shadow:0 4px 12px rgba(2,132,199,0.3); transition:all 0.15s ease;">
+            <span>🔗</span>
+            <span>${lang === 'tr' ? 'Paketi Paylaş / Kopyala' : 'Copy Share Link'}</span>
+          </button>
+          <button type="button" class="btn-rebuild-action" onclick="window.app.resetBuildResult()" style="flex:1; min-width:140px;">
             <span>🔄</span>
-            <span>${lang === 'tr' ? 'Ayarları Değiştir' : 'Change Specs'}</span>
+            <span>${lang === 'tr' ? 'Yeniden Hesapla' : 'Recalculate'}</span>
           </button>
         </div>
       </div>
     `;
+  }
+
+  shareBuildLink() {
+    const b = this.currentGeneratedBuild;
+    if (!b || !b.items || b.items.length === 0) return;
+
+    const ids = b.items.map(it => `${it.product.id}:${it.qty}`).join(',');
+    const shareUrl = `${window.location.origin}/#build=${encodeURIComponent(ids)}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        const lang = window.i18n.currentLang;
+        this.showToast(lang === 'tr' 
+          ? '🔗 Drone paketi bağlantısı panoya kopyalandı! Arkadaşlarınız veya takımınızla paylaşabilirsiniz.' 
+          : '🔗 Drone build link copied to clipboard! You can share it with your team or friends.');
+      }).catch(() => {
+        prompt('Drone Paketi Paylaşım Bağlantısı:', shareUrl);
+      });
+    } else {
+      prompt('Drone Paketi Paylaşım Bağlantısı:', shareUrl);
+    }
+  }
+
+  shareBuildWhatsApp() {
+    const b = this.currentGeneratedBuild;
+    if (!b || !b.items || b.items.length === 0) return;
+
+    const lang = window.i18n.currentLang;
+    const ids = b.items.map(it => `${it.product.id}:${it.qty}`).join(',');
+    const shareUrl = `${window.location.origin}/#build=${encodeURIComponent(ids)}`;
+    const formattedTotal = this.formatPrice(b.totalPrice / (this.usdRate || 47.0), b.totalPrice);
+
+    const itemsText = b.items.map((it, idx) => {
+      const name = (lang === 'tr' ? it.product.name_tr : it.product.name_en) || it.product.title;
+      return `${idx + 1}. ${name} (${it.qty} Adet)`;
+    }).join('\n');
+
+    const msg = `⚡ Pozitron Market Drone Toplama Sihirbazı ile hazırladığım FPV Drone Paketi:\n\n📦 Parça Listesi (${b.items.length} Parça):\n${itemsText}\n\n💰 Toplam Tutar: ${formattedTotal}\n\nUyumlu parçaları ve uyumluluk raporunu incelemek için:\n${shareUrl}`;
+
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  loadSharedBuild(buildParam) {
+    if (!buildParam) return;
+    try {
+      const staticData = this.getStaticData();
+      const allProducts = (staticData && staticData.products && staticData.products.length) ? staticData.products : this.products;
+      if (!allProducts || allProducts.length === 0) return;
+
+      const pairs = decodeURIComponent(buildParam).split(',');
+      const validItems = [];
+      let totalPrice = 0;
+
+      pairs.forEach(pair => {
+        const [pId, qtyStr] = pair.split(':');
+        const qty = parseInt(qtyStr, 10) || 1;
+        const prod = allProducts.find(p => p.id === pId || p.slug === pId);
+        if (prod) {
+          const unitTRY = Number(prod.price_try) || (Number(prod.price_usd) * (this.usdRate || 47.0)) || 0;
+          totalPrice += unitTRY * qty;
+          validItems.push({ product: prod, qty });
+        }
+      });
+
+      if (validItems.length > 0) {
+        this.currentGeneratedBuild = {
+          style: 'freestyle',
+          video: 'digital',
+          targetBudget: Math.ceil(totalPrice),
+          totalPrice,
+          items: validItems,
+          generatedAt: new Date().toISOString()
+        };
+        this.openBuilderModal('auto');
+        const lang = window.i18n.currentLang;
+        this.showToast(lang === 'tr' 
+          ? `📦 Paylaşılan ${validItems.length} parçalık drone paketi başarıyla yüklendi!` 
+          : `📦 Shared ${validItems.length}-piece drone package loaded successfully!`);
+      }
+    } catch (err) {
+      console.warn('Failed to load shared build:', err);
+    }
   }
 
   addAllBuildItemsToCart() {
