@@ -1061,7 +1061,33 @@
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
             <div>
               <h3 style="font-size:1.1rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">⚙️ Ajan Ayarları &amp; API Entegrasyonu</h3>
-              <p style="font-size:0.82rem; color:#64748b; margin:0;">Meta Graph API, otonom yayınlama sıklığı ve opsiyonel Gemini AI anahtarı</p>
+              <p style="font-size:0.82rem; color:#64748b; margin:0;">Meta Graph API, otonom yayınlama sıklığı ve Chrome oturum köprüsü</p>
+            </div>
+          </div>
+
+          <!-- Chrome Session Auto-Detection Banner -->
+          <div id="ig-chrome-session-banner" style="background:#f0fdf4; border:1px solid #86efac; border-radius:12px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:40px; height:40px; border-radius:50%; background:#dcfce7; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+                🌐
+              </div>
+              <div>
+                <div style="font-size:0.92rem; font-weight:800; color:#166534; display:flex; align-items:center; gap:6px;">
+                  <span>🟢 Chrome Instagram Oturumu Aktif</span>
+                  <span id="ig-chrome-user-badge" style="background:#bbf7d0; color:#14532d; padding:2px 8px; border-radius:9999px; font-size:0.75rem; font-weight:700;">Hesap Tespit Edildi</span>
+                </div>
+                <div style="font-size:0.8rem; color:#15803d; margin-top:2px;" id="ig-chrome-session-desc">
+                  Google Chrome tarayıcınızdaki oturum tespit edildi. Hesap ID'sini ve oturum çerezlerini tek tıkla ajana bağlayabilirsiniz.
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="admin-btn-primary" onclick="syncInstagramFromChrome()" style="background:#16a34a; border:none; padding:8px 16px; font-size:0.84rem; font-weight:700; display:flex; align-items:center; gap:6px;">
+                ⚡ <span>Chrome Hesabını Bağla</span>
+              </button>
+              <a href="https://developers.facebook.com/tools/explorer/" target="_blank" class="admin-btn-secondary" style="text-decoration:none; padding:8px 14px; font-size:0.84rem; font-weight:600; display:flex; align-items:center; gap:4px;" title="Chrome'da Meta Token Al">
+                🔑 <span>Meta Token Al ↗</span>
+              </a>
             </div>
           </div>
 
@@ -3125,8 +3151,48 @@
           const postsData = await postsRes.json();
           renderInstagramPostsTable(postsData.posts || []);
         }
+
+        // 5. Check local Chrome Instagram session
+        checkChromeInstagramSession();
       } catch (err) {
         console.error("Instagram PR Agent fetch error:", err);
+      }
+    }
+
+    async function checkChromeInstagramSession() {
+      try {
+        const res = await fetch('/api/instagram/chrome-session');
+        if (res.ok) {
+          const data = await res.json();
+          const banner = document.getElementById('ig-chrome-session-banner');
+          const badge = document.getElementById('ig-chrome-user-badge');
+          const desc = document.getElementById('ig-chrome-session-desc');
+          if (banner && badge) {
+            if (data.available) {
+              banner.style.display = 'flex';
+              badge.textContent = `Kullanıcı ID: ${data.user_id}`;
+              if (desc) desc.textContent = `Google Chrome tarayıcınızda aktif oturum tespit edildi (${data.sessionid_masked}). Tek tıkla ajana bağlayabilirsiniz.`;
+            } else {
+              banner.style.display = 'none';
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    async function syncInstagramFromChrome() {
+      showToast("⏳ Chrome oturumu senkronize ediliyor...", "info");
+      try {
+        const res = await fetch('/api/instagram/chrome-session/sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`✅ ${data.message}`, "success");
+          loadInstagramAgentView();
+        } else {
+          showToast(`Hata: ${data.error}`, "error");
+        }
+      } catch (err) {
+        showToast(`Bağlantı hatası: ${err.message}`, "error");
       }
     }
 

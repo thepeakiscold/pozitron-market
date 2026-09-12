@@ -16,6 +16,7 @@ from database import get_db, hash_password
 from export_data import export_static_data
 from instagram_agent.agent import InstagramPRAgent
 from instagram_agent.scheduler import InstagramScheduler
+from instagram_agent.chrome_session import extract_chrome_instagram_cookies
 
 PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -393,6 +394,26 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             status = query.get('status', [None])[0]
             posts = instagram_pr_agent.get_posts(limit=limit, offset=offset, status=status)
             self.send_json(200, {"posts": posts})
+            return
+
+        # Instagram PR: Detect Chrome Session
+        if path == '/api/instagram/chrome-session':
+            try:
+                session_info = extract_chrome_instagram_cookies()
+                if session_info.get('success'):
+                    self.send_json(200, {
+                        "available": True,
+                        "user_id": session_info['user_id'],
+                        "sessionid_masked": session_info['sessionid_masked'],
+                        "cookie_count": len(session_info.get('cookies', {}))
+                    })
+                else:
+                    self.send_json(200, {
+                        "available": False,
+                        "error": session_info.get('error')
+                    })
+            except Exception as ex:
+                self.send_json(200, {"available": False, "error": str(ex)})
             return
 
         conn = get_db()
@@ -814,6 +835,30 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 instagram_pr_scheduler.stop()
             self.send_json(200, {"success": True, "is_autonomous_enabled": enabled})
+            return
+
+        # Instagram PR: Sync from Chrome Session
+        if path == '/api/instagram/chrome-session/sync':
+            try:
+                session_info = extract_chrome_instagram_cookies()
+                if session_info.get('success'):
+                    # Save user_id into config
+                    updated = instagram_pr_agent.update_config({
+                        'instagram_account_id': session_info['user_id']
+                    })
+                    self.send_json(200, {
+                        "success": True,
+                        "user_id": session_info['user_id'],
+                        "config": updated,
+                        "message": f"Chrome Instagram hesabı (ID: {session_info['user_id']}) başarıyla ajana bağlandı!"
+                    })
+                else:
+                    self.send_json(400, {
+                        "success": False,
+                        "error": session_info.get('error', 'Chrome oturumu okunamadı')
+                    })
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
             return
 
         conn = get_db()

@@ -321,13 +321,13 @@
         <div class="pdp-bundle-plus-separator">+</div>
           <div class="pdp-bundle-item" data-bundle-idx="1">
             <div class="pdp-bundle-thumb-wrap">
-              <img src="../assets/products/PZTR-TRA-0299.jpg" alt="TBS (Team BlackSheep) Pocket  Controller V2 FPV Drone Kumandası (Removable Stick Ends)" loading="lazy" onerror="this.src='../assets/hero_drone.png'">
+              <img src="../assets/products/PZTR-TRA-0308.jpg" alt="BetaFPV SuperD ELRS 2.4GHz Diversity V3 FPV Kumanda Alıcısı (Dual T-Antenna)" loading="lazy" onerror="this.src='../assets/hero_drone.png'">
             </div>
             <label class="pdp-bundle-check-label">
-              <input type="checkbox" checked data-price="2840.68" data-sku="PZTR-TRA-0299" data-id="a3a8ba04-3a94-4a7e-aea8-769acc7e07d8" data-name="TBS (Team BlackSheep) Pocket  Controller V2 FPV Drone Kumandası (Removable Stick Ends)" data-img="./assets/products/PZTR-TRA-0299.jpg" onchange="updateBundleTotal()">
+              <input type="checkbox" checked data-price="1040.58" data-sku="PZTR-TRA-0308" data-id="1a18791a-5fc7-4937-82e5-28abd9ff055e" data-name="BetaFPV SuperD ELRS 2.4GHz Diversity V3 FPV Kumanda Alıcısı (Dual T-Antenna)" data-img="./assets/products/PZTR-TRA-0308.jpg" onchange="updateBundleTotal()">
               <div>
-                <div class="pdp-bundle-item-name">TBS (Team BlackSheep) Pocket  Controller V2 FPV Drone Kumandası (Removable Stick Ends) </div>
-                <div class="pdp-bundle-item-price">2.840,68 ₺</div>
+                <div class="pdp-bundle-item-name">BetaFPV SuperD ELRS 2.4GHz Diversity V3 FPV Kumanda Alıcısı (Dual T-Antenna) </div>
+                <div class="pdp-bundle-item-price">1.040,58 ₺</div>
               </div>
             </label>
           </div>
@@ -348,7 +348,7 @@
         </div>
         <div class="pdp-bundle-cta-box">
           <span class="pdp-bundle-total-label">Paket Toplam Fiyatı:</span>
-          <div class="pdp-bundle-total-price" id="bundle-total-price-val">6.201,65 ₺</div>
+          <div class="pdp-bundle-total-price" id="bundle-total-price-val">4.401,55 ₺</div>
           <span class="pdp-bundle-savings-tag">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
             <span>Uyumlu Donanım Paketi</span>
@@ -492,8 +492,8 @@
     <div class="pdp-card" id="pdp-reviews-section">
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border-subtle);">
         <div>
-          <h2 class="pdp-card-title" style="margin-bottom:4px;">Müşteri Değerlendirmeleri &amp; Pilot Deneyimleri</h2>
-          <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Doğrulanmış FPV pilotlarının bu ürün hakkındaki gerçek saha deneyimleri.</p>
+          <h2 class="pdp-card-title" style="margin-bottom:4px;">Müşteri Değerlendirmeleri</h2>
+          <p style="color:var(--text-muted); font-size:0.88rem; margin:0;">Bu ürün hakkındaki kullanıcı deneyimleri ve değerlendirmeleri.</p>
         </div>
         <button type="button" class="btn-primary" onclick="openProductReviewModal()" style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer; background:var(--brand-primary); color:#fff; border:none;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -931,13 +931,11 @@
       const newRev = {
         id: 'rev_' + Date.now().toString(36),
         userName: name,
-        userRole: 'Doğrulanmış Pilot',
         userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=' + encodeURIComponent(name),
         rating: rating,
         productName: "HOTA M6D Dual Smart Charger 500W PRO Ak\u0131ll\u0131 Dengeleyici LiPo \u015earj Cihaz\u0131 (USB Fast Charge)",
         productId: "547256e8-0f05-4ca5-a8e4-32913a6c27ed",
         comment: comment,
-        verified: true,
         date: 'Az önce'
       };
 
@@ -966,33 +964,41 @@
       renderPdpReviews();
     }
 
-    function renderPdpReviews() {
+    async function renderPdpReviews() {
       const listEl = document.getElementById('pdp-reviews-list');
       if (!listEl) return;
 
       let reviews = [];
       try {
-        const stored = JSON.parse(localStorage.getItem('pozitron_community_reviews') || '[]');
-        reviews = stored.filter(r => r && (r.productId === "547256e8-0f05-4ca5-a8e4-32913a6c27ed" || (r.productName && r.productName.includes("HOTA"))));
+        const res = await fetch('/api/reviews?product_id=' + encodeURIComponent("547256e8-0f05-4ca5-a8e4-32913a6c27ed"));
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.reviews && data.reviews.length > 0) {
+            reviews = data.reviews.map(r => ({
+              userName: r.user_name,
+              userAvatar: r.user_avatar,
+              rating: r.rating,
+              comment: r.comment,
+              date: r.created_at ? r.created_at.split('T')[0] : 'Yakın zamanda'
+            }));
+          }
+        }
       } catch(e) {}
 
       if (reviews.length === 0) {
-        reviews = [
-          {
-            userName: 'Serkan Öztürk',
-            userRole: 'Doğrulanmış FPV Pilotu',
-            rating: 5,
-            comment: "HOTA kalitesi kendini hemen belli ediyor. Orijinal kutusunda, eksiksiz aksesuarlar\u0131yla geldi. Montaj ve lehimleme \u00e7ok rahat oldu, sahada m\u00fckemmel performans veriyor.",
-            date: '1 hafta önce'
-          },
-          {
-            userName: 'Emre Şahin',
-            userRole: 'Yarış Pilotu',
-            rating: 5,
-            comment: "Teknofest serbest g\u00f6rev u\u00e7u\u015flar\u0131nda test ettik. Is\u0131nma ve dayan\u0131kl\u0131l\u0131k konusunda hi\u00e7bir sorun ya\u015fatmad\u0131, kesinlikle tavsiye ederim.",
-            date: '2 hafta önce'
-          }
-        ];
+        try {
+          const stored = JSON.parse(localStorage.getItem('pozitron_community_reviews') || '[]');
+          reviews = stored.filter(r => r && (r.productId === "547256e8-0f05-4ca5-a8e4-32913a6c27ed"));
+        } catch(e) {}
+      }
+
+      if (reviews.length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align:center; padding:32px 16px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; color:#64748b; font-size:0.88rem;">
+            Bu ürün için henüz bir değerlendirme yapılmamış. İlk yorumu siz yazın!
+          </div>
+        `;
+        return;
       }
 
       listEl.innerHTML = reviews.map(r => `
@@ -1000,11 +1006,10 @@
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
               <div style="width:36px; height:36px; border-radius:50%; background:#e0f2fe; color:#0284c7; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:0.9rem;">
-                ${r.userName ? r.userName.charAt(0).toUpperCase() : 'P'}
+                ${r.userName ? r.userName.charAt(0).toUpperCase() : 'M'}
               </div>
               <div>
-                <strong style="font-size:0.92rem; color:#0f172a; display:block;">${r.userName || 'FPV Pilotu'}</strong>
-                <span style="font-size:0.75rem; color:#16a34a; font-weight:700;">● ${r.userRole || 'Doğrulanmış Alıcı'}</span>
+                <strong style="font-size:0.92rem; color:#0f172a; display:block;">${r.userName || 'Müşteri'}</strong>
               </div>
             </div>
             <div style="text-align:right;">

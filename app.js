@@ -4694,7 +4694,6 @@ class PozitronApp {
           {
             id: 'rev_seed_01',
             userName: 'Mert Aksoy',
-            userRole: 'Kayıtlı Pilot',
             userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=MertAksoy',
             rating: 5,
             productName: 'Genel Mağaza Deneyimi',
@@ -4706,7 +4705,6 @@ class PozitronApp {
           {
             id: 'rev_seed_02',
             userName: 'Caner Yılmaz',
-            userRole: 'Kayıtlı Pilot',
             userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CanerYilmaz',
             rating: 5,
             productName: 'Mükemmel Teknik Destek',
@@ -4718,7 +4716,6 @@ class PozitronApp {
           {
             id: 'rev_seed_03',
             userName: 'Burak Demir',
-            userRole: 'Kayıtlı Pilot',
             userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=BurakDemir',
             rating: 5,
             productName: 'Orijinal Parça Garantisi',
@@ -4730,7 +4727,6 @@ class PozitronApp {
           {
             id: 'rev_seed_04',
             userName: 'Deniz Kaya',
-            userRole: 'Kayıtlı Pilot',
             userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DenizKaya',
             rating: 5,
             productName: 'Drone Sihirbazı Harika',
@@ -4780,7 +4776,6 @@ class PozitronApp {
               local.push({
                 id: srvRev.id,
                 userName: srvRev.user_name,
-                userRole: srvRev.verified_purchase ? 'Doğrulanmış Pilot' : 'Misafir Pilot',
                 userAvatar: srvRev.user_avatar,
                 rating: srvRev.rating,
                 productName: srvRev.title || 'Genel Mağaza Deneyimi',
@@ -5104,7 +5099,6 @@ class PozitronApp {
     const newComment = {
       id: 'rev_' + Date.now().toString(36),
       userName: authorName,
-      userRole: currentUser ? 'Kayıtlı Pilot' : 'Misafir Pilot',
       userAvatar: currentUser ? this.getRobotAvatar(currentUser) : `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(authorName)}`,
       rating: ratingVal,
       productName: productName || (window.i18n ? window.i18n.t('comments_field_product_general') : 'Genel Mağaza Deneyimi'),

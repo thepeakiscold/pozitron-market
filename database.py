@@ -203,7 +203,7 @@ def init_db():
     cursor.execute("SELECT count(*) FROM users")
     if cursor.fetchone()[0] == 0:
         default_users = [
-            ('usr_pilot_01', 'pilot@drone.com', hash_password('password123'), 'Pozitron Test Pilot', 'https://api.dicebear.com/7.x/bottts/svg?seed=TestPilot', 'manual', 'customer', '05551234567', 'Atatürk Cad. No:12', 'İstanbul', 'Turkey', datetime.now().isoformat()),
+            ('usr_pilot_01', 'pilot@drone.com', hash_password('password123'), 'Pozitron Pilot', 'https://api.dicebear.com/7.x/bottts/svg?seed=PozitronPilot', 'manual', 'customer', '05551234567', 'Atatürk Cad. No:12', 'İstanbul', 'Turkey', datetime.now().isoformat()),
             ('usr_ahmet_02', 'ahmet@pozitron.market', hash_password('password123'), 'Ahmet Yılmaz', 'https://api.dicebear.com/7.x/bottts/svg?seed=AhmetYilmaz', 'manual', 'customer', '05329876543', 'Bağdat Cad. No:44', 'İstanbul', 'Turkey', datetime.now().isoformat())
         ]
         cursor.executemany('''
