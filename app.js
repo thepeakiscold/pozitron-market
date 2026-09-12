@@ -4686,57 +4686,15 @@ class PozitronApp {
   initCommunityComments() {
     this.currentCommentFilter = 'all';
 
-    // Seed realistic verified pilot reviews if localStorage is empty
+    // Clean any legacy test/seed reviews from localStorage
     try {
       const existing = localStorage.getItem('pozitron_community_reviews');
-      if (!existing || JSON.parse(existing).length === 0) {
-        const defaultReviews = [
-          {
-            id: 'rev_seed_01',
-            userName: 'Mert Aksoy',
-            userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=MertAksoy',
-            rating: 5,
-            productName: 'Genel Mağaza Deneyimi',
-            productId: '',
-            comment: 'Siparişim aynı gün 14:00 civarı kargoya verildi, ertesi gün öğlen elimdeydi. Paketleme ve koruyucu köpükler kusursuz.',
-            verified: true,
-            date: '3 gün önce'
-          },
-          {
-            id: 'rev_seed_02',
-            userName: 'Caner Yılmaz',
-            userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=CanerYilmaz',
-            rating: 5,
-            productName: 'Mükemmel Teknik Destek',
-            productId: '',
-            comment: 'Teknofest yarışmamız için motor ve ESC uyumluluğu konusunda WhatsApp üzerinden anında yardımcı oldular. Pozitron ekibine teşekkürler.',
-            verified: true,
-            date: '5 gün önce'
-          },
-          {
-            id: 'rev_seed_03',
-            userName: 'Burak Demir',
-            userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=BurakDemir',
-            rating: 5,
-            productName: 'Orijinal Parça Garantisi',
-            productId: '',
-            comment: 'Türkiye piyasasında orijinal FPV donanımı bulmak zordu, tüm parçaların seri numaralı ve bandrollü gelmesi güven veriyor.',
-            verified: true,
-            date: '1 hafta önce'
-          },
-          {
-            id: 'rev_seed_04',
-            userName: 'Deniz Kaya',
-            userAvatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=DenizKaya',
-            rating: 5,
-            productName: 'Drone Sihirbazı Harika',
-            productId: '',
-            comment: 'Drone toplama sihirbazı sayesinde voltaj ve amper uyumunu hiç kafa karıştırmadan seçip tek sepette sipariş verdim.',
-            verified: true,
-            date: '2 hafta önce'
-          }
-        ];
-        localStorage.setItem('pozitron_community_reviews', JSON.stringify(defaultReviews));
+      if (existing) {
+        const parsed = JSON.parse(existing);
+        if (Array.isArray(parsed)) {
+          const cleaned = parsed.filter(r => r && !String(r.id || '').startsWith('rev_seed_'));
+          localStorage.setItem('pozitron_community_reviews', JSON.stringify(cleaned));
+        }
       }
     } catch(e) {}
 

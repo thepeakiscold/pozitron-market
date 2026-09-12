@@ -171,7 +171,6 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertEqual(code, 200)
         self.assertIn('reviews', data)
         self.assertIsInstance(data['reviews'], list)
-        self.assertGreaterEqual(len(data['reviews']), 1)
 
     def test_post_general_store_review(self):
         payload = {

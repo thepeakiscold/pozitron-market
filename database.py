@@ -133,44 +133,6 @@ def init_db():
         )
     ''')
 
-    # Seed default verified pilot reviews if empty
-    cursor.execute("SELECT count(*) FROM reviews")
-    if cursor.fetchone()[0] == 0:
-        default_reviews = [
-            (
-                'rev_seed_01', None, 'Mert Aksoy',
-                'https://api.dicebear.com/7.x/bottts/svg?seed=MertAksoy', 5,
-                'Genel Mağaza Deneyimi',
-                'Siparişim aynı gün 14:00 civarı kargoya verildi, ertesi gün öğlen elimdeydi. Paketleme ve koruyucu köpükler kusursuz.',
-                1, '2026-03-01T10:30:00'
-            ),
-            (
-                'rev_seed_02', None, 'Caner Yılmaz',
-                'https://api.dicebear.com/7.x/bottts/svg?seed=CanerYilmaz', 5,
-                'Mükemmel Teknik Destek',
-                'Teknofest yarışmamız için motor ve ESC uyumluluğu konusunda WhatsApp üzerinden anında yardımcı oldular. Pozitron ekibine teşekkürler.',
-                1, '2026-03-02T14:15:00'
-            ),
-            (
-                'rev_seed_03', None, 'Burak Demir',
-                'https://api.dicebear.com/7.x/bottts/svg?seed=BurakDemir', 5,
-                'Orijinal Parça Garantisi',
-                'Türkiye piyasasında orijinal FPV donanımı bulmak zordu, tüm parçaların seri numaralı ve bandrollü gelmesi güven veriyor.',
-                1, '2026-03-03T16:45:00'
-            ),
-            (
-                'rev_seed_04', None, 'Deniz Kaya',
-                'https://api.dicebear.com/7.x/bottts/svg?seed=DenizKaya', 5,
-                'Drone Sihirbazı Harika',
-                'Drone toplama sihirbazı sayesinde voltaj ve amper uyumunu hiç kafa karıştırmadan seçip tek sepette sipariş verdim.',
-                1, '2026-03-04T11:20:00'
-            )
-        ]
-        cursor.executemany('''
-            INSERT INTO reviews (id, product_id, user_name, user_avatar, rating, title, comment, verified_purchase, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', default_reviews)
-
     # Coupons Table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS coupons (
