@@ -86,6 +86,11 @@
       border-bottom-color: #ea580c;
       background: rgba(234, 88, 12, 0.06);
     }
+    .bots-nav-tab.active-trend {
+      color: #c084fc;
+      border-bottom-color: #a855f7;
+      background: rgba(168, 85, 247, 0.08);
+    }
 
     /* Cards & Panels */
     .bots-card {
@@ -434,7 +439,12 @@
 
       <button type="button" class="bots-nav-tab" id="tab-btn-orchestrator" onclick="switchBotsTab('orchestrator')">
         <span class="tag-badge" style="background:#0284c7; color:#fff;">[SUPERVISOR]</span>
-        <span>Bas Orkestrasyon &amp; 5 Alt Ajan</span>
+        <span>Bas Orkestrasyon &amp; 6 Alt Ajan (Antigravity 2.0)</span>
+      </button>
+
+      <button type="button" class="bots-nav-tab" id="tab-btn-trendhunter" onclick="switchBotsTab('trendhunter')">
+        <span class="tag-badge" style="background:#7c3aed; color:#fff;">[SUBAGENT 6]</span>
+        <span>Kuresel Trend &amp; Urun Avcisi</span>
       </button>
 
       <button type="button" class="bots-nav-tab" id="tab-btn-instagram" onclick="switchBotsTab('instagram')">
@@ -634,8 +644,69 @@
         </div>
       </div>
 
-      <!-- Subagent 3: Telemetry & Performance Matrix (5 KPIs) -->
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:24px;">
+      <!-- 12-Hour Autonomous Evolution & Self-Optimization Panel -->
+      <div class="bots-card" style="margin-bottom:24px; background:linear-gradient(135deg, #0b1329 0%, #170d2b 100%); border-color:#7c3aed;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <span class="tag-badge" style="background:#7c3aed; color:#ffffff;">[EVRIM 12H]</span>
+              <h3 style="font-size:1.18rem; font-weight:800; margin:0; color:#ffffff;">
+                12-Saatlik Otonom Stratejik Evrim &amp; Oz-Iyilestirme Paneli
+              </h3>
+              <span id="evo-mode-badge" class="tag-badge" style="background:#4c1d95; color:#e9d5ff; border:1px solid #8b5cf6;">[MOD: AGGRESSIVE_EXPANSION]</span>
+              <span class="tag-badge" style="background:#1e1b4b; color:#a78bfa; border:1px solid #6366f1;">MODEL: Gemini 3.8 Flash</span>
+            </div>
+            <p style="font-size:0.84rem; color:#cbd5e1; margin:0; max-width:960px; line-height:1.5;">
+              Lead Supervisor her 12 saatte bir alt ajan telemetrilerini (Instagram erisimi, Reddit soru cozumleri, arbitraj marjlari, global talep) analiz eder.
+              Pozitron Market'i Turkiye'nin 1 numarali drone platformu yapmak uzere paylasim sikligini, etkilesim kotalarini ve katalog donanimlarini otonom olarak sertlestirir.
+            </p>
+          </div>
+          <button type="button" class="btn-action" style="background:#7c3aed; color:#fff; border:none; padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer; font-size:0.84rem;" onclick="runSupervisorEvolution()" id="btn-run-evolution">
+            <span>[SIMDI EVRIM DONGUSUNU CALISTIR] (Gemini 3.8 Flash)</span>
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:18px;">
+          <!-- Diagnostics & Adjustments -->
+          <div style="background:#070b14; border:1px solid #2e1065; border-radius:8px; padding:14px;">
+            <div style="font-size:0.75rem; font-weight:800; color:#c084fc; margin-bottom:8px; letter-spacing:0.5px;">
+              [TESPIT EDILEN DARBOGAZLAR &amp; GEREKCELER]
+            </div>
+            <ul id="evo-bottlenecks-list" style="margin:0; padding-left:18px; font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
+              <li>Alt ajan telemetrileri analiz ediliyor...</li>
+            </ul>
+          </div>
+
+          <!-- Applied Strategic Changes -->
+          <div style="background:#070b14; border:1px solid #2e1065; border-radius:8px; padding:14px;">
+            <div style="font-size:0.75rem; font-weight:800; color:#34d399; margin-bottom:8px; letter-spacing:0.5px;">
+              [UYGULANAN OTONOM PARAMETRE DEGISIKLIKLERI]
+            </div>
+            <ul id="evo-adjustments-list" style="margin:0; padding-left:18px; font-size:0.8rem; color:#cbd5e1; line-height:1.6;">
+              <li>Parametre guncellemeleri yukleniyor...</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Gemini 3.8 Flash Strategic Reasoning -->
+        <div style="background:#050811; border:1px solid #1e293b; border-radius:8px; padding:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.75rem; font-weight:800; color:#38bdf8;">
+              [GEMINI 3.8 FLASH STRATEJIK AKIL YURUTME &amp; PAZAR HAKIMIYETI VIZYONU]:
+            </span>
+            <div style="font-size:0.72rem; color:#94a3b8;">
+              Son Evrim: <strong id="evo-last-run" style="color:#f8fafc;">-</strong> &bull;
+              Gelecek Evrim: <strong id="evo-countdown" style="color:#f59e0b; font-family:monospace;">11:59:59</strong>
+            </div>
+          </div>
+          <div id="evo-reasoning-content" style="font-size:0.82rem; color:#e2e8f0; line-height:1.6; white-space:pre-line; max-height:220px; overflow-y:auto; padding-right:8px;">
+            Stratejik akil yurutme yukleniyor...
+          </div>
+        </div>
+      </div>
+
+      <!-- Subagent 3: Telemetry & Performance Matrix (6 KPIs) -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:24px;">
         
         <!-- Instagram KPI -->
         <div class="bots-card" style="background:#0d1527; border-color:#e11d4833;">
@@ -694,6 +765,18 @@
           <div style="font-size:1.6rem; font-weight:800; color:#fff;" id="tel-traffic-sessions">0</div>
           <div style="font-size:0.78rem; color:#94a3b8; margin-top:4px;">
             Yonlendirme Oturumu &bull; Hemen Cikma: <strong id="tel-traffic-bounce" style="color:#38bdf8;">28%</strong>
+          </div>
+        </div>
+
+        <!-- Subagent 6: Trend Hunter KPI -->
+        <div class="bots-card" style="background:#0d1527; border-color:#a855f733;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#d8b4fe;">[SUBAGENT 6] KURESEL TREND</span>
+            <span class="tag-badge" style="background:#a855f722; color:#c084fc;">DONANIM AVCISI</span>
+          </div>
+          <div style="font-size:1.6rem; font-weight:800; color:#c084fc;" id="tel-trend-count">0</div>
+          <div style="font-size:0.78rem; color:#94a3b8; margin-top:4px;">
+            Bekleyen: <strong id="tel-trend-pending" style="color:#f8fafc;">0</strong> &bull; Eklenen: <strong id="tel-trend-approved" style="color:#10b981;">0</strong>
           </div>
         </div>
 
@@ -1165,6 +1248,113 @@
       </div>
     </section>
 
+    <!-- ===================================================================== -->
+    <!-- SECTION 5: SUBAGENT 6 - GLOBAL TREND HUNTER & SOURCING AGENT          -->
+    <!-- ===================================================================== -->
+    <section id="pane-trendhunter" style="display:none;">
+      
+      <!-- Top Action & Overview Card -->
+      <div class="bots-card" style="margin-bottom:24px; background:linear-gradient(135deg, #0b1329 0%, #160d2b 100%); border-color:#8b5cf6;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:20px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <span class="tag-badge" style="background:#7c3aed; color:#ffffff;">[SUBAGENT 6]</span>
+              <h2 style="font-size:1.35rem; font-weight:800; margin:0; color:#ffffff; font-family:'Plus Jakarta Sans', sans-serif;">
+                Kuresel Trend &amp; Urun Avcisi (Global Trend Hunter &amp; Sourcing)
+              </h2>
+              <span class="tag-badge" style="background:#4c1d95; color:#d8b4fe; border:1px solid #7c3aed;">ANTIGRAVITY 2.0</span>
+            </div>
+            <p style="font-size:0.86rem; color:#cbd5e1; margin:0 0 14px 0; max-width:940px; line-height:1.6;">
+              Dunya genelinde (Joshua Bardwell, Rotor Riot, Oscar Liang, TBS, Caddx, DJI, RadioMaster, SpeedyBee) yuksek talep goren yeni cikan FPV donanimlarini otonom tarar.
+              Pozitron Market'in mevcut 500 urunluk katalogunda bulunmayanlari ayiklar, Turkiye yerel pazar fiyatlarini referans alarak <strong>rekabetci USD ve TRY fiyat</strong> belirler ve Lead Supervisor onayina sunar.
+              Onaylanan urunler mevcut Pozitron veritabani semasiyla aninda satisa acilir.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:16px; font-size:0.8rem; color:#94a3b8;">
+              <span>TAKIP EDILEN KURESEL MERKEZLER: <strong style="color:#f8fafc;">Rotor Riot &bull; GetFPV &bull; BetaFPV &bull; Caddx</strong></span>
+              <span>FIYAT POLATIKASI: <strong style="color:#34d399;">Turkiye Pazarindan %8-%12 Daha Uygun</strong></span>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+            <button type="button" class="btn-action" style="background:#7c3aed; color:#fff; border:none; padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer;" onclick="scanGlobalTrends()" id="btn-scan-trends">
+              <span>[TARA] Kuresel Trend Donanimlarini Tara</span>
+            </button>
+            <button type="button" class="btn-action btn-secondary" onclick="loadTrendHunterData()">
+              <span>[YENILE] Onerileri Guncelle</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trend Hunter Metrics Matrix -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:24px;">
+        <div class="bots-card" style="background:#0d1527; border-color:#8b5cf633;">
+          <div style="font-size:0.75rem; font-weight:700; color:#d8b4fe; margin-bottom:6px;">[DONANIM] KESFEDILEN TREND</div>
+          <div style="font-size:1.6rem; font-weight:800; color:#c084fc;" id="th-stat-total">0</div>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Kuresel pazar analiz havuzu</div>
+        </div>
+
+        <div class="bots-card" style="background:#0d1527; border-color:#f59e0b33;">
+          <div style="font-size:0.75rem; font-weight:700; color:#fde68a; margin-bottom:6px;">[ONAY] BEKLEYEN ONERILER</div>
+          <div style="font-size:1.6rem; font-weight:800; color:#f59e0b;" id="th-stat-pending">0</div>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Supervisor veya operator onayi bekliyor</div>
+        </div>
+
+        <div class="bots-card" style="background:#0d1527; border-color:#10b98133;">
+          <div style="font-size:0.75rem; font-weight:700; color:#86efac; margin-bottom:6px;">[KATALOG] EKLENEN DONANIMLAR</div>
+          <div style="font-size:1.6rem; font-weight:800; color:#10b981;" id="th-stat-approved">0</div>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Magazada aktif satisa acildi</div>
+        </div>
+
+        <div class="bots-card" style="background:#0d1527; border-color:#0284c733;">
+          <div style="font-size:0.75rem; font-weight:700; color:#7dd3fc; margin-bottom:6px;">[ARBITRAJ] FIYAT AVANTAJI</div>
+          <div style="font-size:1.6rem; font-weight:800; color:#38bdf8;">%10-%15</div>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">Turkiye yerel perakendecilere kiyasla</div>
+        </div>
+      </div>
+
+      <!-- Pending Trend Proposals (Action Grid) -->
+      <div class="bots-card" style="margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; padding-bottom:12px; border-bottom:1px solid #1e293b;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag-badge" style="background:#f59e0b; color:#fff;">[BEKLEYEN TALEPLER]</span>
+            <h3 style="font-size:1.05rem; font-weight:800; margin:0; color:#fff;">
+              Lead Supervisor Onayina Sunulan Kuresel Donanim Onerileri
+            </h3>
+          </div>
+          <div style="font-size:0.78rem; color:#94a3b8;">
+            * Trend skoru 95 ve uzeri olan urunler 12 saatlik otonom evrimde otomatik onaylanabilir.
+          </div>
+        </div>
+
+        <div id="trend-proposals-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:16px;">
+          <div style="text-align:center; padding:36px; color:#64748b; grid-column:1/-1;">
+            Trend onerileri yukleniyor...
+          </div>
+        </div>
+      </div>
+
+      <!-- Already Approved & Ingested Products -->
+      <div class="bots-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #1e293b;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag-badge" style="background:#10b981; color:#fff;">[KATALOGDA CANLI]</span>
+            <h3 style="font-size:1.05rem; font-weight:800; margin:0; color:#fff;">
+              Subagent 6 Tarafindan Pozitron Kataloğuna Eklenen Trend Urunler
+            </h3>
+          </div>
+          <span id="trend-approved-count-badge" class="tag-badge" style="background:#064e3b; color:#a7f3d0;">0 Urun</span>
+        </div>
+
+        <div id="trend-approved-list" style="display:flex; flex-direction:column; gap:10px;">
+          <div style="text-align:center; padding:24px; color:#64748b;">
+            Henuz onaylanmis urun bulunmuyor.
+          </div>
+        </div>
+      </div>
+
+    </section>
+
   </main>
 
   <!-- Toast Notification Popup -->
@@ -1201,22 +1391,25 @@
     function switchBotsTab(tabName) {
       const panePipeline = document.getElementById('pane-pipeline');
       const paneOrch = document.getElementById('pane-orchestrator');
+      const paneTrend = document.getElementById('pane-trendhunter');
       const paneIg = document.getElementById('pane-instagram');
       const paneReddit = document.getElementById('pane-reddit');
       const paneDaemon = document.getElementById('pane-daemon');
 
       const btnPipeline = document.getElementById('tab-btn-pipeline');
       const btnOrch = document.getElementById('tab-btn-orchestrator');
+      const btnTrend = document.getElementById('tab-btn-trendhunter');
       const btnIg = document.getElementById('tab-btn-instagram');
       const btnReddit = document.getElementById('tab-btn-reddit');
       const btnDaemon = document.getElementById('tab-btn-daemon');
 
-      [btnPipeline, btnOrch, btnIg, btnReddit, btnDaemon].forEach(b => {
-        if (b) b.classList.remove('active', 'active-pipeline', 'active-lead', 'active-ig', 'active-reddit');
+      [btnPipeline, btnOrch, btnTrend, btnIg, btnReddit, btnDaemon].forEach(b => {
+        if (b) b.classList.remove('active', 'active-pipeline', 'active-lead', 'active-trend', 'active-ig', 'active-reddit');
       });
 
       if (panePipeline) panePipeline.style.display = tabName === 'pipeline' ? 'block' : 'none';
       if (paneOrch) paneOrch.style.display = tabName === 'orchestrator' ? 'block' : 'none';
+      if (paneTrend) paneTrend.style.display = tabName === 'trendhunter' ? 'block' : 'none';
       if (paneIg) paneIg.style.display = tabName === 'instagram' ? 'block' : 'none';
       if (paneReddit) paneReddit.style.display = tabName === 'reddit' ? 'block' : 'none';
       if (paneDaemon) paneDaemon.style.display = tabName === 'daemon' ? 'block' : 'none';
@@ -1227,6 +1420,9 @@
       } else if (tabName === 'orchestrator') {
         if (btnOrch) btnOrch.classList.add('active-lead');
         loadOrchestratorData();
+      } else if (tabName === 'trendhunter') {
+        if (btnTrend) btnTrend.classList.add('active-trend');
+        loadTrendHunterData();
       } else if (tabName === 'instagram') {
         if (btnIg) btnIg.classList.add('active-ig');
         loadInstagramData();
@@ -1277,6 +1473,7 @@
 
         let topColor = '#38bdf8';
         if (node.type === 'trigger') topColor = '#10b981';
+        else if (node.id && node.id.includes('trend')) topColor = '#a855f7';
         else if (node.type === 'agent') topColor = '#6366f1';
         else if (node.type === 'supervisor') topColor = '#0284c7';
         else if (node.type === 'worker') {
@@ -2078,6 +2275,9 @@
         console.error("SEO articles load error:", e);
       }
 
+      // 5. 12-Hour Autonomous Evolution Data
+      loadEvolutionData();
+
       startLeadCountdown();
     }
 
@@ -2138,6 +2338,20 @@
       const trBncEl = document.getElementById('tel-traffic-bounce');
       if (trSesEl) trSesEl.textContent = (t.traffic?.referral_sessions ?? 0).toLocaleString();
       if (trBncEl) trBncEl.textContent = Math.round((t.traffic?.bounce_rate ?? 0.28) * 100) + '%';
+
+      // Subagent 6: Trend Hunter KPI
+      fetch('/api/trend-hunter/proposals?limit=100')
+        .then(r => r.json())
+        .then(thData => {
+          const props = thData.proposals || [];
+          const thTot = document.getElementById('tel-trend-count');
+          const thPend = document.getElementById('tel-trend-pending');
+          const thAppr = document.getElementById('tel-trend-approved');
+          if (thTot) thTot.textContent = props.length + ' Donanim';
+          if (thPend) thPend.textContent = props.filter(p => p.status === 'PENDING_APPROVAL').length;
+          if (thAppr) thAppr.textContent = props.filter(p => p.status === 'APPROVED').length;
+        })
+        .catch(e => console.error("Trend KPI error:", e));
     }
 
     function renderPriceTable(rows) {
@@ -2301,6 +2515,291 @@
         const el = document.getElementById('lead-countdown');
         if (el) el.textContent = fmt;
       }, 1000);
+    }
+
+    // =========================================================================
+    // 12-HOUR AUTONOMOUS EVOLUTION CONTROLLER (GOOGLE ANTIGRAVITY 2.0)
+    // =========================================================================
+    let _nextEvolutionTargetDate = null;
+    let _evolutionCountdownInterval = null;
+
+    async function loadEvolutionData() {
+      try {
+        const res = await fetch('/api/supervisor/evolution');
+        const data = await res.json();
+
+        const badge = document.getElementById('evo-mode-badge');
+        if (badge) {
+          badge.textContent = `[MOD: ${data.active_growth_mode || 'AGGRESSIVE_EXPANSION'}]`;
+        }
+
+        const lastRunEl = document.getElementById('evo-last-run');
+        if (lastRunEl) {
+          lastRunEl.textContent = data.last_evolution_at ? data.last_evolution_at.slice(0, 19).replace('T', ' ') : 'Henuz Calismadi';
+        }
+
+        if (data.next_evolution_at) {
+          _nextEvolutionTargetDate = new Date(data.next_evolution_at);
+          startEvolutionCountdown();
+        }
+
+        const latestLog = data.evolution_logs && data.evolution_logs.length > 0 ? data.evolution_logs[0] : null;
+        if (latestLog) {
+          // Bottlenecks list
+          const bList = document.getElementById('evo-bottlenecks-list');
+          if (bList && latestLog.diagnosed_bottlenecks) {
+            bList.innerHTML = latestLog.diagnosed_bottlenecks.map(b => `<li style="margin-bottom:4px;">${b}</li>`).join('') || '<li>Darbogaz tespit edilmedi.</li>';
+          }
+
+          // Adjustments list
+          const aList = document.getElementById('evo-adjustments-list');
+          if (aList && latestLog.strategic_adjustments) {
+            aList.innerHTML = latestLog.strategic_adjustments.map(a => `<li style="margin-bottom:4px;">${a}</li>`).join('') || '<li>Stratejik ayarlar guncel.</li>';
+          }
+
+          // Reasoning content
+          const rBox = document.getElementById('evo-reasoning-content');
+          if (rBox) {
+            rBox.textContent = latestLog.ai_reasoning || 'Stratejik akil yurutme hazir.';
+          }
+        }
+      } catch (e) {
+        console.error("Evolution data load error:", e);
+      }
+    }
+
+    function startEvolutionCountdown() {
+      if (_evolutionCountdownInterval) clearInterval(_evolutionCountdownInterval);
+      _evolutionCountdownInterval = setInterval(() => {
+        const cdEl = document.getElementById('evo-countdown');
+        if (!cdEl || !_nextEvolutionTargetDate) return;
+        const diff = _nextEvolutionTargetDate.getTime() - Date.now();
+        if (diff <= 0) {
+          cdEl.textContent = "EVRIM ZAMANI (OTONOM CALISIYOR)";
+          return;
+        }
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        cdEl.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    async function runSupervisorEvolution() {
+      showToast("Antigravity 2.0 Lead Supervisor (gemini-3.8-flash) ile 12 saatlik evrim analizi baslatiliyor...", "info");
+      const btn = document.getElementById('btn-run-evolution');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/supervisor/evolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.success) {
+          const approvedCount = data.evolution?.metrics?.approved_new_trend_products || 0;
+          showToast(`12 Saatlik otonom evrim basariyla tamamlandi! (${approvedCount} yeni trend donanim onaylandi)`, "success");
+          loadEvolutionData();
+          loadOrchestratorData();
+          loadPipelineGraph();
+        } else {
+          showToast("Evrim calistirma hatasi: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch (e) {
+        showToast("Baglanti hatasi: " + e.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // =========================================================================
+    // SUBAGENT 6: GLOBAL TREND HUNTER CONTROLLER
+    // =========================================================================
+    async function loadTrendHunterData() {
+      try {
+        const res = await fetch('/api/trend-hunter/proposals?limit=100');
+        const data = await res.json();
+        const proposals = data.proposals || [];
+
+        const pending = proposals.filter(p => p.status === 'PENDING_APPROVAL');
+        const approved = proposals.filter(p => p.status === 'APPROVED');
+
+        const statTot = document.getElementById('th-stat-total');
+        const statPend = document.getElementById('th-stat-pending');
+        const statAppr = document.getElementById('th-stat-approved');
+        if (statTot) statTot.textContent = proposals.length;
+        if (statPend) statPend.textContent = pending.length;
+        if (statAppr) statAppr.textContent = approved.length;
+
+        const apprBadge = document.getElementById('trend-approved-count-badge');
+        if (apprBadge) apprBadge.textContent = `${approved.length} Urun`;
+
+        // Render Pending Grid
+        const grid = document.getElementById('trend-proposals-grid');
+        if (grid) {
+          if (pending.length === 0) {
+            grid.innerHTML = '<div style="text-align:center; padding:36px; color:#64748b; grid-column:1/-1;">Bekleyen trend onerisi bulunmuyor. Yeni donanim kesfetmek icin \'[TARA]\' butonuna tiklayiniz.</div>';
+          } else {
+            grid.innerHTML = pending.map(p => {
+              return `
+                <div class="bots-card" style="background:#070b14; border:1px solid #7c3aed44; padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
+                  <div>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;">
+                      <span class="tag-badge" style="background:#7c3aed22; color:#c084fc; border:1px solid #7c3aed;">
+                        SKOR: ${p.trend_score}/100
+                      </span>
+                      <span class="tag-badge" style="background:#1e293b; color:#94a3b8;">${p.category_id}</span>
+                    </div>
+
+                    <div style="display:flex; gap:14px; margin-bottom:12px;">
+                      <img src="${p.image_url}" alt="${p.name_en}" style="width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid #1e293b; flex-shrink:0;">
+                      <div>
+                        <div style="font-size:0.75rem; color:#a78bfa; font-weight:700;">${p.brand}</div>
+                        <h4 style="font-size:0.95rem; font-weight:800; color:#fff; margin:2px 0 4px 0; line-height:1.3;">${p.name_tr}</h4>
+                        <div style="font-size:0.75rem; color:#64748b;">${p.name_en}</div>
+                      </div>
+                    </div>
+
+                    <div style="background:#020617; border:1px solid #1e293b; border-radius:6px; padding:10px; margin-bottom:12px; font-size:0.78rem;">
+                      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span style="color:#94a3b8;">Global Fiyat:</span>
+                        <strong style="color:#f8fafc;">$${p.price_usd}</strong>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <span style="color:#94a3b8;">Pozitron Satis Fiyati:</span>
+                        <strong style="color:#10b981; font-size:0.9rem;">${p.price_try} TL</strong>
+                      </div>
+                      <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:#38bdf8; border-top:1px dashed #1e293b; padding-top:4px;">
+                        <span>Pilot Avantaji (TR Referans):</span>
+                        <strong>%10-%15 Yerel Fiyat Ustunlugu</strong>
+                      </div>
+                    </div>
+
+                    <p style="font-size:0.78rem; color:#94a3b8; line-height:1.5; margin:0 0 12px 0;">
+                      ${p.trend_reason}
+                    </p>
+                    <div style="font-size:0.7rem; color:#64748b; margin-bottom:14px;">
+                      Kaynak: <span style="color:#cbd5e1;">${p.global_source}</span>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; gap:8px; border-top:1px solid #1e293b; padding-top:12px;">
+                    <button type="button" class="btn-action" style="flex:1; background:#10b981; color:#fff; border:none; padding:8px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;" onclick="approveTrendProposal('${p.id}')">
+                      <span>[ONAYLA &amp; MAGAZAYA EKLE]</span>
+                    </button>
+                    <button type="button" class="btn-action btn-secondary" style="background:#1e293b; color:#f43f5e; border:1px solid #7f1d1d; padding:8px 12px; border-radius:6px; font-size:0.78rem;" onclick="rejectTrendProposal('${p.id}')">
+                      <span>[REDDET]</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        }
+
+        // Render Approved List
+        const list = document.getElementById('trend-approved-list');
+        if (list) {
+          if (approved.length === 0) {
+            list.innerHTML = '<div style="text-align:center; padding:24px; color:#64748b;">Henuz onaylanmis urun bulunmuyor.</div>';
+          } else {
+            list.innerHTML = approved.map(p => {
+              return `
+                <div style="background:#070b14; border:1px solid #065f46; border-radius:8px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <img src="${p.image_url}" alt="${p.name_en}" style="width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #1e293b;">
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="tag-badge" style="background:#064e3b; color:#6ee7b7;">[EKLENDI]</span>
+                        <strong style="color:#ffffff; font-size:0.88rem;">${p.name_tr}</strong>
+                      </div>
+                      <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
+                        Marka: <span style="color:#cbd5e1;">${p.brand}</span> &bull; Kategori: <span style="color:#cbd5e1;">${p.category_id}</span> &bull; Satis: <span style="color:#10b981; font-weight:700;">${p.price_try} TL</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:0.72rem; color:#64748b;">${p.approved_at ? p.approved_at.slice(0, 19).replace('T', ' ') : ''}</span>
+                    <a href="https://pozitronmarket.com/" target="_blank" class="code-chip" style="color:#38bdf8; text-decoration:none; padding:4px 8px;">
+                      [MAGAZADA GOR &rarr;]
+                    </a>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        }
+
+      } catch (e) {
+        console.error("Trend hunter load error:", e);
+      }
+    }
+
+    async function scanGlobalTrends() {
+      showToast("Subagent 6 dunya genelindeki en populer FPV donanimlarini tariyor...", "info");
+      const btn = document.getElementById('btn-scan-trends');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/trend-hunter/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 4 })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Kuresel tarama tamamlandi! ${data.new_trends_found} yeni trend donanim onerisi eklendi.`, "success");
+          loadTrendHunterData();
+          loadPipelineGraph();
+        } else {
+          showToast("Tarama hatasi: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch (e) {
+        showToast("Baglanti hatasi: " + e.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function approveTrendProposal(id) {
+      showToast("Trend donanimi onaylaniyor ve Pozitron Market kataloguna ekleniyor...", "info");
+      try {
+        const res = await fetch('/api/trend-hunter/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ proposal_id: id, evaluator: "OPERATOR_ADMIN" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Urun basariyla eklendi! SKU: ${data.sku} (${data.price_try} TL)`, "success");
+          loadTrendHunterData();
+          loadOrchestratorData();
+          loadPipelineGraph();
+        } else {
+          showToast("Onaylama hatasi: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch (e) {
+        showToast("Baglanti hatasi: " + e.message, "error");
+      }
+    }
+
+    async function rejectTrendProposal(id) {
+      try {
+        const res = await fetch('/api/trend-hunter/reject', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ proposal_id: id, reason: "Operator tarafindan reddedildi" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast("Oneri listeden kaldirildi.", "info");
+          loadTrendHunterData();
+        } else {
+          showToast("Islem hatasi: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch (e) {
+        showToast("Baglanti hatasi: " + e.message, "error");
+      }
     }
 
     // Auto-initialize on page load

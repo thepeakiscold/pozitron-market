@@ -11,6 +11,12 @@ class TestRedditAutonomousBot(unittest.TestCase):
             "motor", "esc", "vtx", "gözlük", "batarya", "lipo", "teknofest",
             "betaflight", "inav", "elrs", "crossfire", "uçuş", "alıcı", "verici"
         ]
+        from database import get_db
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM reddit_interactions WHERE reddit_id LIKE 't3_drone_test_%'")
+        conn.commit()
+        conn.close()
 
     def test_false_positive_prevention_in_general_subreddits(self):
         """Ensure general subreddits only match posts with core drone keywords and question intent."""

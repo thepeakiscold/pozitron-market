@@ -126,7 +126,7 @@ Bu rehberde bahsi geçen sistemlerle %100 test edilmiş ve Türkiye stoklarında
 
 {links_md}
 
-> 💡 **Teknik İpucu:** Tüm donanım uyumluluk sorularınız ve özel lehimleme destek talepleriniz için [Pozitron Drone Toplama Sihirbazı](https://pozitronmarket.com/drone-toplama-sihirbazi.html) aracımızı kullanabilirsiniz.
+> [IPUCU] **Teknik Ipuclari:** Tum donanim uyumluluk sorulariniz ve ozel lehimleme destek talepleriniz icin [Pozitron Drone Toplama Sihirbazi](https://pozitronmarket.com/drone-toplama-sihirbazi.html) aracimizi kullanabilirsiniz.
 
 ---
 

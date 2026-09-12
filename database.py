@@ -181,15 +181,31 @@ def init_db():
             is_autonomous_enabled INTEGER DEFAULT 1,
             last_run_at TEXT,
             next_run_at TEXT,
+            last_evolution_at TEXT,
+            next_evolution_at TEXT,
+            active_growth_mode TEXT DEFAULT 'AGGRESSIVE_EXPANSION',
+            model_code TEXT DEFAULT 'gemini-3.8-flash',
             updated_at TEXT
         )
     ''')
     cursor.execute("SELECT count(*) FROM lead_supervisor_config WHERE id = 1")
     if cursor.fetchone()[0] == 0:
         cursor.execute('''
-            INSERT INTO lead_supervisor_config (id, cycle_interval_hours, is_autonomous_enabled, updated_at)
-            VALUES (1, 2, 1, ?)
+            INSERT INTO lead_supervisor_config (id, cycle_interval_hours, is_autonomous_enabled, active_growth_mode, model_code, updated_at)
+            VALUES (1, 2, 1, 'AGGRESSIVE_EXPANSION', 'gemini-3.8-flash', ?)
         ''', (datetime.now().isoformat(),))
+
+    # Migration: Ensure evolution columns exist on lead_supervisor_config
+    cursor.execute("PRAGMA table_info(lead_supervisor_config)")
+    existing_cols = [col[1] for col in cursor.fetchall()]
+    if 'last_evolution_at' not in existing_cols:
+        cursor.execute("ALTER TABLE lead_supervisor_config ADD COLUMN last_evolution_at TEXT")
+    if 'next_evolution_at' not in existing_cols:
+        cursor.execute("ALTER TABLE lead_supervisor_config ADD COLUMN next_evolution_at TEXT")
+    if 'active_growth_mode' not in existing_cols:
+        cursor.execute("ALTER TABLE lead_supervisor_config ADD COLUMN active_growth_mode TEXT DEFAULT 'AGGRESSIVE_EXPANSION'")
+    if 'model_code' not in existing_cols:
+        cursor.execute("ALTER TABLE lead_supervisor_config ADD COLUMN model_code TEXT DEFAULT 'gemini-3.8-flash'")
 
     # Lead Supervisor Directives Table
     cursor.execute('''
@@ -198,6 +214,46 @@ def init_db():
             lead_cycle_id TEXT UNIQUE NOT NULL,
             directive_json TEXT NOT NULL,
             created_at TEXT NOT NULL
+        )
+    ''')
+
+    # Lead Supervisor 12-Hour Evolution & Self-Optimization Logs
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS lead_evolution_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            evolution_cycle_id TEXT UNIQUE NOT NULL,
+            timestamp TEXT NOT NULL,
+            growth_mode TEXT NOT NULL,
+            metrics_analyzed TEXT NOT NULL,
+            diagnosed_bottlenecks TEXT NOT NULL,
+            strategic_adjustments TEXT NOT NULL,
+            ai_reasoning TEXT NOT NULL,
+            applied_changes TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
+    # Global Product Trend Proposals Table (Subagent 6)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS global_trend_proposals (
+            id TEXT PRIMARY KEY,
+            name_en TEXT NOT NULL,
+            name_tr TEXT NOT NULL,
+            category_id TEXT NOT NULL,
+            brand TEXT NOT NULL,
+            price_usd REAL NOT NULL,
+            price_try REAL NOT NULL,
+            specs_json TEXT NOT NULL,
+            tags_json TEXT NOT NULL,
+            image_url TEXT NOT NULL,
+            trend_score INTEGER NOT NULL,
+            trend_reason TEXT NOT NULL,
+            global_source TEXT NOT NULL,
+            status TEXT DEFAULT 'PENDING_APPROVAL',
+            supervisor_evaluation TEXT,
+            added_product_id TEXT,
+            created_at TEXT NOT NULL,
+            approved_at TEXT
         )
     ''')
 

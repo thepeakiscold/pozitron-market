@@ -566,6 +566,28 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"directives": lead_supervisor_agent.get_directives_history(limit=limit)})
             return
 
+        # Lead Supervisor Agent: 12-Hour Evolution Logs & Growth Status
+        if path == '/api/supervisor/evolution':
+            limit = int(query.get('limit', [10])[0])
+            status = lead_supervisor_agent.get_status()
+            history = lead_supervisor_agent.get_evolution_history(limit=limit)
+            self.send_json(200, {
+                "active_growth_mode": status.get("active_growth_mode", "AGGRESSIVE_EXPANSION"),
+                "model_code": status.get("model_code", "gemini-3.8-flash"),
+                "last_evolution_at": status.get("last_evolution_at"),
+                "next_evolution_at": status.get("next_evolution_at"),
+                "evolution_logs": history
+            })
+            return
+
+        # Subagent 6: Global Product Trend Proposals
+        if path == '/api/trend-hunter/proposals':
+            status_filter = query.get('status', [None])[0]
+            limit = int(query.get('limit', [20])[0])
+            proposals = lead_supervisor_agent.trend_agent.get_proposals(status=status_filter, limit=limit)
+            self.send_json(200, {"proposals": proposals, "count": len(proposals)})
+            return
+
         # Subagent 3: Latest Telemetry
         if path == '/api/telemetry/latest':
             self.send_json(200, lead_supervisor_agent.telemetry_agent.get_latest_telemetry())
@@ -594,6 +616,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             rd_status = reddit_drone_agent.get_status()
             tel = lead_supervisor_agent.telemetry_agent.get_latest_telemetry()
             summary = lead_supervisor_agent.price_agent.get_summary_stats()
+            trend_props = lead_supervisor_agent.trend_agent.get_proposals(limit=100)
 
             active_dir = sup_status.get("active_directive", {})
             graph = {
@@ -620,7 +643,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "status": "active",
                         "status_text": "Aktif (Tetikliyor)",
                         "description": "Antigravity 2.0 periyodik cron tetikleyicisi",
-                        "triggers": ["subagent_5_price", "subagent_3_telemetry"],
+                        "triggers": ["subagent_5_price", "subagent_3_telemetry", "subagent_6_trend"],
                         "payload_preview": {
                             "trigger_type": "PERIODIC_CRON",
                             "interval_hours": 2,
@@ -662,6 +685,24 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "payload_preview": tel
                     },
                     {
+                        "id": "subagent_6_trend",
+                        "label": "Subagent 6: Kuresel Trend & Urun Avcisi",
+                        "tag": "[SUBAGENT 6]",
+                        "column": 2,
+                        "type": "agent",
+                        "category": "Trend & Urun Kesfi",
+                        "status": "ready",
+                        "status_text": f"{len(trend_props)} Trend Takipte",
+                        "description": "Dunya genelindeki populer donanimlari tarar, yerel fiyat kiyaslamasiyla supervisora sunar",
+                        "inputs": ["trigger_cron_2h"],
+                        "triggers": ["lead_supervisor"],
+                        "payload_preview": {
+                            "total_proposals": len(trend_props),
+                            "pending_approval": len([p for p in trend_props if p.get("status") == "PENDING_APPROVAL"]),
+                            "approved_count": len([p for p in trend_props if p.get("status") == "APPROVED"])
+                        }
+                    },
+                    {
                         "id": "lead_supervisor",
                         "label": "Bas Orkestrasyon (Lead Supervisor)",
                         "tag": "[SUPERVISOR]",
@@ -669,10 +710,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "type": "supervisor",
                         "category": "Karar & Direktif Motoru",
                         "status": "running" if sup_status.get("is_autonomous_enabled") else "idle",
-                        "status_text": f"Dongu: {str(active_dir.get('lead_cycle_id', 'Aktif'))[:22]}",
-                        "description": "Istihbarat ve telemetriyi analiz eder, oncelikli urunleri belirler, dinamik direktif uretir",
-                        "inputs": ["subagent_5_price", "subagent_3_telemetry"],
-                        "triggers": ["subagent_1_instagram", "subagent_2_reddit", "subagent_4_seo"],
+                        "status_text": f"Model: gemini-3.8-flash • Mod: {sup_status.get('active_growth_mode', 'AGGRESSIVE_EXPANSION')}",
+                        "description": "Google Antigravity 2.0 (gemini-3.8-flash): Istihbarat ve telemetriyi analiz eder, 12h evrimle sistemi optimize eder, magazaya trend urun ekler",
+                        "inputs": ["subagent_5_price", "subagent_3_telemetry", "subagent_6_trend"],
+                        "triggers": ["subagent_1_instagram", "subagent_2_reddit", "subagent_4_seo", "output_pozitron_web"],
                         "payload_preview": active_dir
                     },
                     {
@@ -765,7 +806,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "status": "connected",
                         "status_text": "pozitronmarket.com",
                         "description": "Katalog ve teknik rehber sayfalari uzerinden organik trafik toplar",
-                        "inputs": ["subagent_4_seo"],
+                        "inputs": ["subagent_4_seo", "lead_supervisor"],
                         "triggers": [],
                         "payload_preview": {
                             "platform": "https://pozitronmarket.com",
@@ -777,11 +818,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "connections": [
                     {"from": "trigger_cron_2h", "to": "subagent_5_price", "label": "Periyodik Tarama", "type": "trigger"},
                     {"from": "trigger_cron_2h", "to": "subagent_3_telemetry", "label": "Telemetri Toplama", "type": "trigger"},
+                    {"from": "trigger_cron_2h", "to": "subagent_6_trend", "label": "Global Trend Taramasi", "type": "trigger"},
                     {"from": "subagent_5_price", "to": "lead_supervisor", "label": "Fiyat Arbitraj Raporu", "type": "data"},
                     {"from": "subagent_3_telemetry", "to": "lead_supervisor", "label": "Performans Metrikleri", "type": "data"},
+                    {"from": "subagent_6_trend", "to": "lead_supervisor", "label": "Yeni Urun Onerileri", "type": "data"},
                     {"from": "lead_supervisor", "to": "subagent_1_instagram", "label": "instagram_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_2_reddit", "label": "reddit_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_4_seo", "label": "seo_directive", "type": "directive"},
+                    {"from": "lead_supervisor", "to": "output_pozitron_web", "label": "Katalog Enjeksiyonu", "type": "publish"},
                     {"from": "subagent_1_instagram", "to": "output_instagram_api", "label": "Yayin & Etkilesim", "type": "publish"},
                     {"from": "subagent_2_reddit", "to": "output_reddit_api", "label": "Otonom Yanit", "type": "publish"},
                     {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "Ic Linkli Rehber", "type": "publish"}
@@ -1353,6 +1397,54 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
+        # Lead Supervisor: Trigger 12-Hour Autonomous Evolution & Self-Optimization
+        if path == '/api/supervisor/evolve':
+            try:
+                evolution = lead_supervisor_agent.evolve_strategy_cycle()
+                self.send_json(200, {"success": True, "evolution": evolution})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 6: Scan Global Product Trends
+        if path == '/api/trend-hunter/scan':
+            try:
+                limit = int(data.get("limit", 5))
+                added = lead_supervisor_agent.trend_agent.scan_global_trends(limit=limit)
+                proposals = lead_supervisor_agent.trend_agent.get_proposals(limit=20)
+                self.send_json(200, {"success": True, "new_trends_found": len(added), "proposals": proposals})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 6: Approve Trend Proposal & Add to Catalog
+        if path == '/api/trend-hunter/approve':
+            try:
+                proposal_id = data.get("proposal_id")
+                if not proposal_id:
+                    self.send_json(400, {"error": "proposal_id is required"})
+                    return
+                evaluator = data.get("evaluator", "OPERATOR_ADMIN")
+                res = lead_supervisor_agent.trend_agent.approve_and_add_product(proposal_id, evaluator=evaluator)
+                self.send_json(200, res)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 6: Reject Trend Proposal
+        if path == '/api/trend-hunter/reject':
+            try:
+                proposal_id = data.get("proposal_id")
+                if not proposal_id:
+                    self.send_json(400, {"error": "proposal_id is required"})
+                    return
+                reason = data.get("reason", "Operator rejected")
+                res = lead_supervisor_agent.trend_agent.reject_proposal(proposal_id, reason=reason)
+                self.send_json(200, res)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
         # Lead Supervisor: Toggle Autonomous Mode
         if path == '/api/supervisor/toggle':
             try:
@@ -1460,7 +1552,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             if is_locked:
                 conn.close()
                 self.send_json(429, {
-                    "error": f"🛡️ Güvenlik Koruması: 3 kez hatalı deneme yapıldığı için bu hesap kilitlendi! Lütfen {rem_min} dakika sonra tekrar deneyiniz.",
+                    "error": f"[GUVENLIK KORUMASI] 3 kez hatali deneme yapildigi icin bu hesap kilitlendi! Lutfen {rem_min} dakika sonra tekrar deneyiniz.",
                     "locked": True,
                     "remaining_seconds": rem_sec,
                     "remaining_minutes": rem_min
@@ -1476,14 +1568,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 
                 if is_now_locked:
                     self.send_json(429, {
-                        "error": "🛡️ 3 kez hatalı giriş yapıldı! Güvenlik nedeniyle hesabınız 30 dakika süreyle kilitlenmiştir.",
+                        "error": "[GUVENLIK KORUMASI] 3 kez hatali giris yapildi! Guvenlik nedeniyle hesabiniz 30 dakika sureyle kilitlenmistir.",
                         "locked": True,
                         "remaining_seconds": rem_sec,
                         "remaining_minutes": rem_min
                     })
                 else:
                     self.send_json(401, {
-                        "error": f"❌ Hatalı şifre veya e-posta! Kalan deneme hakkınız: {left}",
+                        "error": f"[HATA] Hatali sifre veya e-posta! Kalan deneme hakkiniz: {left}",
                         "attempts_left": left,
                         "locked": False
                     })
