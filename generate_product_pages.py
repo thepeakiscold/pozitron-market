@@ -41,74 +41,6 @@ COMPLEMENTARY_CATEGORIES = {
     "accessories_hardware": ["tools_supplies", "frames", "motors"]
 }
 
-CATEGORY_QA = {
-    "motors": [
-        ("Bu motor hangi ESC amper değeri ve pervane boyutları ile en verimli çalışır?",
-         "45A - 55A BLHeli_32 veya AM32 ESC'ler ile ve 5 inç (örneğin 5143 / 5146) pervanelerle mükemmel itiş gücü ve düşük termal ısınma sunar."),
-        ("Kutu içeriğinde montaj vidaları ve pervane somunu var mı?",
-         "Evet, standart 3mm ve 4mm karbon fiber frame kollarına uygun M3 montaj vidaları ile M5 flanşlı kilitli pervane somunu paket içerisinde gelir."),
-        ("Teknofest ve uluslararası yarış standartlarına uygun mudur?",
-         "Evet, Teknofest Savaşan İHA ve Serbest Görev İHA yarışma şartnamelerine ve uluslararası FPV federasyon standartlarına tam uyumludur.")
-    ],
-    "esc": [
-        ("Bu ESC hangi donanım protokollerini (DShot, PWM) destekliyor?",
-         "DShot300, DShot600 ve DShot1200 protokollerini yerel olarak destekler. Bi-directional DShot ile RPM filtrelemeyi etkinleştirebilirsiniz."),
-        ("Kutuya XT60 güç kablosu ve kapasitör dahil mi?",
-         "Evet, yüksek kaliteli Low ESR 35V/50V filtre kapasitörü, 12AWG saf silikon XT60 güç kablosu ve montaj grommetleri kutuya dahildir."),
-        ("Aşırı akım ve aşırı ısınma koruması var mı?",
-         "Evet, yerleşik donanımsal akım sensörü ve termal koruma devresi sayesinde aşırı yük durumunda otomatik koruma devreye girer.")
-    ],
-    "flight_controllers": [
-        ("Bu kart Betaflight ve INAV ile uyumlu mu?",
-         "Evet, kart en güncel Betaflight 4.5+ ve INAV hedefleriyle tam uyumludur; USB üzerinden kolayca firmware güncellemesi yapılabilir."),
-        ("DJI O3 Air Unit veya Walksnail dijital HD sistemler için doğrudan soket var mı?",
-         "Evet, dahili 9V/10V 2A regüle BEC ve JST-SH soket çıkışı sayesinde lehim yapmadan dijital video sistemlerine doğrudan bağlanabilir."),
-        ("Kartın gyro sensörü titreşimlerden nasıl izole edilmiştir?",
-         "Dahili ICM42688P / BMI270 gyro sensörü silikon sönümleyici montaj grommetleri ile şasi titreşimlerinden izole edilerek temiz uçuş verisi sağlar.")
-    ],
-    "vtx": [
-        ("Çıkış gücü ayarlanabilir mi ve kumandadan kanal değiştirilebilir mi?",
-         "Evet, PIT Mode'dan başlayarak 25mW, 200mW ve 800mW/1000mW kademelerinde ayarlanabilir. SmartAudio veya IRC Tramp üzerinden kumanda ve OSD ile yönetilebilir."),
-        ("Antensiz çalıştırılırsa verici zarar görür mü?",
-         "Dahili termal koruma devresi bulunmakla birlikte, RF çıkış transistörlerinin sağlığı için tüm FPV video vericilerin anten takılı olmadan çalıştırılmaması şiddetle önerilir."),
-        ("Kutu içeriğinde montaj anteni ve bağlantı kabloları mevcut mu?",
-         "Evet, esnek silikon kablo demeti, RF pigtail kablosu ve montaj vidaları paket içeriğinde eksiksiz yer almaktadır.")
-    ],
-    "cameras": [
-        ("Kamera düşük ışıkta ve gece uçuşlarında nasıl performans gösterir?",
-         "Gelişmiş Starvis / Starlight sensörü sayesinde 0.0001 Lux seviyesine kadar düşük ışıkta net görüntü verir; gündüz ve gece modları arasında otomatik geçiş yapar."),
-        ("FOV görüş açısı ve lens değiştirilebilir mi?",
-         "Standart 165° geniş görüş açısına sahip M12 lens ile gelir ve ihtiyaç halinde farklı odak uzaklığına sahip M12 lenslerle değiştirilebilir."),
-        ("Kamera montaj boyutu nedir (Micro / Nano)?",
-         "Standart 19x19mm Micro boyuttadır, kutu içeriğindeki dönüştürücü braket ile 14x14mm Nano yuvalara da uyarlanabilir.")
-    ],
-    "propellers": [
-        ("Pervaneler kırılmaya karşı ne kadar dayanıklıdır?",
-         "Havacılık sınıfı saf polikarbonat (PC) malzemeden üretilmiştir; sert çarpmalarda kırılmak yerine esneyerek motor milini korur."),
-        ("Bu pervaneler kaç inç ve kaç palli?",
-         "Optimize edilmiş 3 palli aerodinamik profiliyle ani gaz tepkilerinde yüksek itiş ve sessiz uçuş karakteri sağlar."),
-        ("Pervane seti kaç adet içerir?",
-         "1 paket içerisinde 2 adet Saat Yönü (CW) ve 2 adet Saat Yönünün Tersi (CCW) olmak üzere tam 1 set (4 adet) pervane bulunur.")
-    ],
-    "batteries_chargers": [
-        ("Bataryanın sürekli deşarj (C) oranı gerçek değer mi?",
-         "Evet, yüksek kaliteli grafen hücre yapısı ile anlık yüksek akım taleplerinde voltaj çökmesi yaşamadan kararlı güç iletir."),
-        ("Şarj cihazı hangi pil kimyalarını destekler?",
-         "LiPo, LiHV, LiFe, Li-Ion ve NiMH pillerin tamamını destekler; dahili balans devresi ve hücre voltaj izleme özellikleri mevcuttur."),
-        ("Depolama (Storage) modu bulunuyor mu?",
-         "Evet, hücreleri güvenli 3.80V-3.85V seviyesine otomatik getiren deşarj ve şarj algoritmaları yerleşiktir.")
-    ]
-}
-
-DEFAULT_QA = [
-    ("Bu parçanın teslimat ve kargolanma süresi nedir?",
-     "Hafta içi saat 15:00'e kadar verilen tüm siparişler aynı gün özenle paketlenip anlaşmalı hızlı kargo ile sevk edilir."),
-    ("Ürün montajında teknik destek alabilir miyim?",
-     "Evet, Pozitron Market teknik destek hattımız ve WhatsApp kanalımız üzerinden montaj ve bağlantı şemaları konusunda uzman mühendislerimizden destek alabilirsiniz."),
-    ("Sipariş sonrası iade veya değişim koşulları nelerdir?",
-     "Kullanılmamış ve orijinal ambalajı zarar görmemiş ürünlerde 14 gün koşulsuz iade ve değişim hakkınız bulunmaktadır.")
-]
-
 def format_try(amount):
     try:
         val = float(amount)
@@ -195,9 +127,10 @@ def generate_product_page(product, category, related_products, all_products, by_
         has_discount = True
         discount_pct = int(round(((original_price_try - price_try) / original_price_try) * 100))
 
-    # Low Stock Urgency Calculation
-    stock_qty = 2 + (abs(hash(sku)) % 5)  # 2, 3, 4, 5, or 6
-    is_low_stock = stock_qty <= 3
+    # Real Stock Status from Database
+    real_stock = int(product.get("stock", 0))
+    is_in_stock = real_stock > 0
+    is_low_stock = 0 < real_stock <= 3
 
     # WhatsApp order link pre-filled
     wa_msg = f"Merhaba, Pozitron Market web sitenizdeki şu ürünü sipariş etmek istiyorum:\n\nÜrün: {name_tr}\nKod: {sku}\nAdet: 1\nFiyat: {format_try(price_try)}\nLink: {canonical_url}"
@@ -337,10 +270,15 @@ def generate_product_page(product, category, related_products, all_products, by_
                 elif row_type == "price":
                     cell_content = f'<div class="pdp-compare-price">{format_try(c_price)}</div>'
                 elif row_type == "rating":
-                    cell_content = f"""
-                      <div style="color:#f59e0b; font-size:0.88rem; font-weight:700;">★ {c_rating}</div>
-                      <div style="font-size:0.75rem; color:var(--text-muted);">({c_reviews} pilot)</div>
-                    """
+                    c_rev = int(c_prod.get("review_count", 0) or 0)
+                    c_rat = float(c_prod.get("rating", 0.0) or 0.0)
+                    if c_rev > 0 and c_rat > 0:
+                        cell_content = f"""
+                          <div style="color:#f59e0b; font-size:0.88rem; font-weight:700;">★ {c_rat:.1f}</div>
+                          <div style="font-size:0.75rem; color:var(--text-muted);">({c_rev} pilot)</div>
+                        """
+                    else:
+                        cell_content = '<span style="font-size:0.82rem; color:var(--text-muted);">-</span>'
                 elif row_type == "brand":
                     cell_content = f'<strong>{escape_str(c_brand)}</strong>'
                 elif row_type == "voltage":
@@ -380,54 +318,6 @@ def generate_product_page(product, category, related_products, all_products, by_
           </div>
         </div>
         """
-
-    # 3. Customer Technical Q&A Section
-    qa_list = CATEGORY_QA.get(cat_id, DEFAULT_QA)
-    qa_items_html = ""
-    for q_text, a_text in qa_list:
-        qa_items_html += f"""
-          <div class="pdp-qa-item">
-            <div class="pdp-qa-question-row">
-              <span class="pdp-qa-badge-q">S</span>
-              <span class="pdp-qa-question-text">{escape_str(q_text)}</span>
-            </div>
-            <div class="pdp-qa-answer-row">
-              <span class="pdp-qa-badge-a">C</span>
-              <div>
-                <div class="pdp-qa-answer-text">{escape_str(a_text)}</div>
-                <div class="pdp-qa-author">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                  <span>Pozitron Market Doğrulanmış Teknik Ekip Yanıtı</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        """
-
-    qa_section_html = f"""
-    <div class="pdp-card pdp-qa-section">
-      <div class="pdp-qa-header-row">
-        <h2 class="pdp-card-title" style="margin-bottom:0;">Müşteri Soru &amp; Cevapları</h2>
-        <div class="pdp-qa-search-wrap">
-          <svg class="pdp-qa-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" class="pdp-qa-search-input" id="qa-search-input" placeholder="Bu ürün hakkında soru veya anahtar kelime ara..." oninput="filterQA(this.value)">
-        </div>
-      </div>
-      <div class="pdp-qa-list" id="pdp-qa-container">
-        {qa_items_html}
-      </div>
-      <div class="pdp-qa-ask-box">
-        <div class="pdp-qa-ask-text">
-          <strong>Aklınıza takılan başka bir soru mu var?</strong>
-          <span>Uzman FPV teknisyenlerimiz ve mühendislerimiz 30 dakika içinde yanıtlasın.</span>
-        </div>
-        <button type="button" class="pdp-btn-ask-question" onclick="openAskQuestionModal()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-          <span>Teknik Soru Sor</span>
-        </button>
-      </div>
-    </div>
-    """
 
     # Related products HTML
     related_html = ""
@@ -697,10 +587,10 @@ def generate_product_page(product, category, related_products, all_products, by_
           </div>
         </div>
 
-        <!-- Amazon Feature 2: Stock Status & Low-Stock Urgency Indicator -->
+        <!-- Stock Status -->
         <div class="pdp-stock-row {'low-stock' if is_low_stock else ''}">
-          <span class="pdp-stock-indicator {'pulse' if is_low_stock else ''}"></span>
-          {f'<span>Stokta Son <strong>{stock_qty}</strong> Adet Kaldı!</span> <span class="stock-badge-low">Tükeniyor</span>' if is_low_stock else f'<span>Stokta Var ({stock_qty} Adet)</span>'}
+          <span class="pdp-stock-indicator {'pulse' if is_low_stock else ('out-of-stock' if not is_in_stock else '')}"></span>
+          {f'<span>Stokta Son <strong>{real_stock}</strong> Adet Kaldı!</span> <span class="stock-badge-low">Tükeniyor</span>' if is_low_stock else (f'<span>Stokta Var</span>' if is_in_stock else '<span>Tükendi / Stokta Yok</span>')}
         </div>
 
         <!-- Purchase Actions Box -->
@@ -778,8 +668,6 @@ def generate_product_page(product, category, related_products, all_products, by_
       </div>
     </div>
 
-    <!-- Amazon Feature 6: Customer Technical Q&A Section -->
-    {qa_section_html}
 
     <!-- Related Products Card -->
     {f'''
@@ -1049,24 +937,6 @@ def generate_product_page(product, category, related_products, all_products, by_
       setInterval(update, 1000);
     }}
 
-    // Q&A Search Filter
-    function filterQA(query) {{
-      const q = (query || '').toLowerCase().trim();
-      const items = document.querySelectorAll('.pdp-qa-item');
-      items.forEach(item => {{
-        const text = item.innerText.toLowerCase();
-        item.style.display = text.includes(q) ? 'flex' : 'none';
-      }});
-    }}
-
-    function openAskQuestionModal() {{
-      const q = prompt("Pozitron Market teknik uzmanına sormak istediğiniz soruyu yazın:");
-      if (q && q.trim().length > 5) {{
-        showToast("Sorunuz iletildi! Uzman mühendislerimiz en kısa sürede yanıtlayacaktır.");
-      }} else if (q) {{
-        showToast("Lütfen daha detaylı bir soru yazın.");
-      }}
-    }}
 
     function showToast(msg) {{
       const existing = document.querySelector('.pdp-toast');
