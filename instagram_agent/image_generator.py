@@ -28,6 +28,48 @@ def get_font(size: int, bold: bool = False):
                 pass
     return ImageFont.load_default()
 
+def clean_canvas_text(text: str) -> str:
+    """Removes unsupported unicode emojis that render as missing boxes on Linux fonts."""
+    if not text:
+        return ""
+    replacements = {
+        '⚡': ' ', '🛸': ' ', '📝': ' ', '📦': ' ', '🎯': ' ',
+        '🔥': ' ', '🛡️': ' ', '🛠️': ' ', '🔋': ' ', '⏱️': ' ',
+        '✅': ' ', '🏷️': ' ', '⭐': '★', '💬': ' ', '👉': ' ',
+        '👈': ' ', '👆': ' ', '👇': ' ', '₺': 'TL', '🦾': ' ',
+        '💥': ' ', '🚀': ' ', '⚙️': ' ', '🔗': ' '
+    }
+    for em, sym in replacements.items():
+        text = text.replace(em, sym)
+    import re
+    text = re.sub(r'[\U00010000-\U0010ffff]', '', text)
+    return " ".join(text.split())
+
+def _load_product_image(local_path: str):
+    """Loads product image with AVIF and ffmpeg fallback."""
+    if not os.path.exists(local_path):
+        return None
+    try:
+        import pillow_avif
+    except Exception:
+        pass
+    try:
+        return Image.open(local_path).convert('RGBA')
+    except Exception:
+        pass
+    # Fallback via ffmpeg
+    try:
+        import subprocess
+        tmp_png = f"/tmp/pztr_prod_{os.getpid()}.png"
+        res = subprocess.run(['ffmpeg', '-i', local_path, tmp_png, '-y', '-loglevel', 'quiet'], timeout=6)
+        if res.returncode == 0 and os.path.exists(tmp_png):
+            im = Image.open(tmp_png).convert('RGBA')
+            os.remove(tmp_png)
+            return im
+    except Exception:
+        pass
+    return None
+
 class ImageGenerator:
     def __init__(self, width: int = 1080, height: int = 1080):
         self.width = width
@@ -52,10 +94,11 @@ class ImageGenerator:
         self._draw_header(draw, content_type)
 
         # Center Content Area
+        visual_summary = post_data.get('visual_summary') or {}
         if content_type in ('product_spotlight', 'review_highlight') and prod:
-            self._draw_product_card(img, draw, prod)
+            self._draw_product_card(img, draw, prod, visual_summary)
         else:
-            self._draw_tool_or_tip_card(img, draw, post_data)
+            self._draw_tool_or_tip_card(img, draw, post_data, visual_summary)
 
         # Bottom CTA Footer Bar
         self._draw_footer(draw)
@@ -99,190 +142,187 @@ class ImageGenerator:
     def _draw_header(self, draw: ImageDraw.Draw, content_type: str):
         # Pozitron Pill
         draw.rounded_rectangle([(60, 50), (370, 105)], radius=12, fill=(15, 23, 42), outline=(30, 41, 59), width=2)
-        # Logo text
+        
+        # Cyber Lightning bolt vector icon
+        bolt = [(80, 80), (88, 62), (83, 74), (94, 74), (82, 95), (86, 81)]
+        draw.polygon(bolt, fill=(56, 189, 248))
+        
         font_logo = get_font(28, bold=True)
-        draw.text((78, 62), "⚡ POZITRON", fill=(248, 250, 252), font=font_logo)
+        draw.text((102, 62), "POZITRON", fill=(248, 250, 252), font=font_logo)
         draw.text((254, 62), ".MARKET", fill=(2, 132, 199), font=font_logo)
 
         # Right-side Category Tag
         type_labels = {
-            'product_spotlight': '🛸 PRO FPV DONANIM',
-            'tool_showcase': '🛠️ ONLİNE DRONE ARAÇLARI',
-            'deal_drop': '🔥 HAFTANIN KAMPANYASI',
-            'pilot_tip': '💡 FPV PİLOT AKADEMİSİ',
-            'review_highlight': '⭐ DOĞRULANMIŞ PİLOT YORUMU'
+            'product_spotlight': 'PRO FPV DONANIM',
+            'tool_showcase': 'ONLINE DRONE ARACLARI',
+            'deal_drop': 'HAFTANIN KAMPANYASI',
+            'pilot_tip': 'FPV PILOT AKADEMISI',
+            'review_highlight': 'DOGRULANMIS PILOT YORUMU'
         }
-        tag_text = type_labels.get(content_type, '🛸 FPV DONANIM')
+        tag_text = type_labels.get(content_type, 'PRO FPV DONANIM')
         font_tag = get_font(20, bold=True)
         draw.rounded_rectangle([(self.width - 390, 50), (self.width - 60, 105)], radius=12, fill=(2, 132, 199, 50), outline=(2, 132, 199), width=2)
         draw.text((self.width - 370, 66), tag_text, fill=(56, 189, 248), font=font_tag)
 
-    def _draw_product_card(self, img: Image, draw: ImageDraw.Draw, prod: dict):
+    def _draw_product_card(self, img: Image, draw: ImageDraw.Draw, prod: dict, visual_summary: dict = None):
+        if visual_summary is None:
+            visual_summary = {}
+
         # Outer Card
-        card_box = [(60, 135), (self.width - 60, 930)]
+        card_box = [(60, 130), (self.width - 60, 935)]
         draw.rounded_rectangle(card_box, radius=24, fill=(15, 23, 42), outline=(30, 58, 95), width=2)
 
         # Inner Product Photo Container
-        photo_box = [(90, 160), (self.width - 90, 640)]
+        photo_box = [(90, 150), (self.width - 90, 545)]
         draw.rounded_rectangle(photo_box, radius=18, fill=(248, 250, 252))
 
         # Brand Badge inside photo
-        brand = prod.get('brand', 'Pozitron')
+        brand = clean_canvas_text(prod.get('brand', 'Pozitron'))
         font_brand = get_font(22, bold=True)
-        draw.rounded_rectangle([(110, 180), (110 + len(brand) * 16 + 40, 226)], radius=8, fill=(15, 23, 42))
-        draw.text((125, 190), brand.upper(), fill=(255, 255, 255), font=font_brand)
+        draw.rounded_rectangle([(110, 168), (110 + len(brand) * 16 + 40, 214)], radius=8, fill=(15, 23, 42))
+        draw.text((125, 178), brand.upper(), fill=(255, 255, 255), font=font_brand)
 
         # Discount Badge if available
         discount = prod.get('discount_pct', 0)
         if discount and discount > 0:
             font_disc = get_font(22, bold=True)
             disc_w = 170
-            draw.rounded_rectangle([(self.width - 110 - disc_w, 180), (self.width - 110, 226)], radius=8, fill=(220, 38, 38))
-            draw.text((self.width - 110 - disc_w + 14, 190), f"-%{discount} İNDİRİM", fill=(255, 255, 255), font=font_disc)
+            draw.rounded_rectangle([(self.width - 110 - disc_w, 168), (self.width - 110, 214)], radius=8, fill=(220, 38, 38))
+            draw.text((self.width - 110 - disc_w + 14, 178), f"-%{discount} INDIRIM", fill=(255, 255, 255), font=font_disc)
 
         # Load & Paste Product Image
         img_url = prod.get('image_url', '')
         if img_url:
             clean_rel_path = img_url.lstrip('./').replace('/', os.sep)
             local_prod_img_path = os.path.join(BASE_DIR, clean_rel_path)
-            if os.path.exists(local_prod_img_path):
+            prod_img = _load_product_image(local_prod_img_path)
+            if prod_img:
                 try:
-                    import warnings
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore")
-                        prod_img = Image.open(local_prod_img_path).convert('RGBA')
-                        # Fit within 750x420
-                        max_w, max_h = 740, 420
-                        prod_img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
-                        # Center
-                        paste_x = int(90 + (photo_box[1][0] - 90 - prod_img.width) / 2)
-                        paste_y = int(170 + (photo_box[1][1] - 170 - prod_img.height) / 2)
-                        img.paste(prod_img, (paste_x, paste_y), prod_img)
+                    max_w, max_h = 720, 370
+                    prod_img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+                    paste_x = int(90 + (photo_box[1][0] - 90 - prod_img.width) / 2)
+                    paste_y = int(150 + (photo_box[1][1] - 150 - prod_img.height) / 2)
+                    img.paste(prod_img, (paste_x, paste_y), prod_img)
                 except Exception:
                     pass
 
         # Product Name
-        name = prod.get('name_tr') or prod.get('name_en', 'Pozitron FPV Component')
-        font_title = get_font(34, bold=True)
-        # Wrap if title is too long
+        name = clean_canvas_text(prod.get('name_tr') or prod.get('name_en', 'Pozitron FPV Component'))
+        font_title = get_font(32, bold=True)
         if len(name) > 42:
             title_line1 = name[:40] + "..."
         else:
             title_line1 = name
-        draw.text((95, 665), title_line1, fill=(255, 255, 255), font=font_title)
+        draw.text((95, 560), title_line1, fill=(255, 255, 255), font=font_title)
 
-        # Technical Feature Pills
-        specs = {}
-        try:
-            import json
-            specs = json.loads(prod.get('specs_json', '{}'))
-        except Exception:
-            specs = {}
+        # Visual Summary of Post Text (Gemini AI Summary Points)
+        points = visual_summary.get('key_points', [])
+        if not points:
+            points = [
+                f"Orijinal {brand} Guvencesi & Dayanikli Govde",
+                "Yuksek Hassasiyet & Yaris / Freestyle Uyumlulugu"
+            ]
 
-        pills = []
-        for k, v in list(specs.items())[:3]:
-            val_str = str(v)[:14]
-            pills.append(f"{k}: {val_str}")
-        if not pills:
-            pills = ["Garantili Orijinal", "Yüksek Performans", "FPV Standart"]
+        # Draw Visual Summary Box
+        summary_box = [(90, 610), (self.width - 90, 780)]
+        draw.rounded_rectangle(summary_box, radius=14, fill=(20, 29, 45), outline=(30, 58, 95), width=2)
+        
+        # Summary Header
+        font_hdr = get_font(18, bold=True)
+        draw.text((115, 622), "• GONDERI OZETI & ONE CIKAN NOKTALAR", fill=(56, 189, 248), font=font_hdr)
+        draw.line([(115, 646), (self.width - 115, 646)], fill=(30, 41, 59), width=1)
 
-        pill_x = 95
-        font_pill = get_font(18, bold=False)
-        for pill_text in pills:
-            pill_w = len(pill_text) * 10 + 26
-            draw.rounded_rectangle([(pill_x, 725), (pill_x + pill_w, 765)], radius=6, fill=(30, 41, 59), outline=(51, 65, 85), width=1)
-            draw.text((pill_x + 12, 734), pill_text, fill=(203, 213, 225), font=font_pill)
-            pill_x += pill_w + 12
+        font_pt = get_font(21, bold=True)
+        y_pt = 658
+        for pt in points[:3]:
+            clean_pt = clean_canvas_text(pt)
+            draw.text((115, y_pt), f"•  {clean_pt[:48]}", fill=(241, 245, 249), font=font_pt)
+            y_pt += 36
 
-        # Price Area
+        # Price Area (Bottom Left)
         price_try = prod.get('price_try', 0.0)
         price_usd = prod.get('price_usd', 0.0)
-        font_price = get_font(44, bold=True)
-        draw.text((95, 810), f"{price_try:,.2f} ₺", fill=(34, 197, 94), font=font_price)
+        font_price = get_font(42, bold=True)
+        draw.text((95, 805), f"{price_try:,.2f} TL", fill=(34, 197, 94), font=font_price)
 
-        font_usd = get_font(24, bold=True)
-        draw.text((95, 870), f"(${price_usd:.2f} USD)", fill=(148, 163, 184), font=font_usd)
+        font_usd = get_font(22, bold=True)
+        draw.text((95, 860), f"(${price_usd:.2f} USD)", fill=(148, 163, 184), font=font_usd)
 
-        # Stock / Delivery Badge Right
-        draw.rounded_rectangle([(self.width - 390, 825), (self.width - 95, 885)], radius=12, fill=(2, 132, 199))
+        # Stock / Delivery Badge (Bottom Right)
+        draw.rounded_rectangle([(self.width - 390, 818), (self.width - 95, 878)], radius=12, fill=(2, 132, 199))
         font_btn = get_font(22, bold=True)
-        draw.text((self.width - 370, 842), "⚡ AYNI GÜN HIZLI KARGO", fill=(255, 255, 255), font=font_btn)
+        draw.text((self.width - 370, 835), "AYNI GUN HIZLI KARGO", fill=(255, 255, 255), font=font_btn)
 
-    def _draw_tool_or_tip_card(self, img: Image, draw: ImageDraw.Draw, post_data: dict):
-        card_box = [(60, 135), (self.width - 60, 930)]
+    def _draw_tool_or_tip_card(self, img: Image, draw: ImageDraw.Draw, post_data: dict, visual_summary: dict = None):
+        if visual_summary is None:
+            visual_summary = post_data.get('visual_summary') or {}
+
+        card_box = [(60, 130), (self.width - 60, 935)]
         draw.rounded_rectangle(card_box, radius=24, fill=(15, 23, 42), outline=(30, 58, 95), width=2)
 
-        tool_info = post_data.get('tool_info', {})
-        badge_text = tool_info.get('badge', 'POZITRON ÖZEL')
-        headline = tool_info.get('headline', post_data.get('title', 'FPV REHBERİ'))
-        subhead = tool_info.get('subhead', 'Pozitron Market Uzman Ekibi')
+        badge_text = clean_canvas_text(visual_summary.get('badge') or 'POZITRON REHBERI')
+        headline = clean_canvas_text(visual_summary.get('headline') or post_data.get('title', 'FPV REHBERI'))
+        subhead = clean_canvas_text(visual_summary.get('subhead') or 'Pozitron Market Uzman Ekibi')
 
         # Badge
         font_b = get_font(24, bold=True)
-        draw.rounded_rectangle([(100, 180), (100 + len(badge_text) * 16 + 40, 236)], radius=10, fill=(2, 132, 199))
-        draw.text((120, 194), badge_text, fill=(255, 255, 255), font=font_b)
+        badge_w = len(badge_text) * 15 + 40
+        draw.rounded_rectangle([(95, 165), (95 + badge_w, 218)], radius=10, fill=(2, 132, 199))
+        draw.text((115, 178), badge_text, fill=(255, 255, 255), font=font_b)
 
         # Big Headline
-        font_hl = get_font(46, bold=True)
+        font_hl = get_font(44, bold=True)
         lines = self._wrap_text(headline, 28)
-        y = 270
+        y = 245
         for l in lines[:2]:
-            draw.text((100, y), l, fill=(255, 255, 255), font=font_hl)
-            y += 58
+            draw.text((95, y), l, fill=(255, 255, 255), font=font_hl)
+            y += 54
 
         # Subhead
-        font_sub = get_font(28, bold=False)
+        font_sub = get_font(26, bold=False)
         sub_lines = self._wrap_text(subhead, 44)
         for sl in sub_lines[:2]:
-            draw.text((100, y + 10), sl, fill=(148, 163, 184), font=font_sub)
-            y += 42
+            draw.text((95, y + 6), sl, fill=(148, 163, 184), font=font_sub)
+            y += 38
 
-        # Illustrative Box / Graphic Mockup in Center
-        y_box = y + 30
-        box_rect = [(100, y_box), (self.width - 100, 770)]
-        draw.rounded_rectangle(box_rect, radius=16, fill=(30, 41, 59), outline=(51, 65, 85), width=2)
+        # Center Visual Summary Box
+        y_box = y + 25
+        box_rect = [(95, y_box), (self.width - 95, 785)]
+        draw.rounded_rectangle(box_rect, radius=18, fill=(24, 33, 47), outline=(30, 58, 95), width=2)
 
-        # Feature highlights inside box
-        content_type = post_data.get('content_type')
-        items = []
-        if content_type == 'tool_showcase':
+        # Header inside Box
+        font_box_hdr = get_font(20, bold=True)
+        draw.text((125, y_box + 20), "• GONDERI OZETI & ONEMLI NOKTALAR", fill=(56, 189, 248), font=font_box_hdr)
+        draw.line([(125, y_box + 50), (self.width - 125, y_box + 50)], fill=(30, 41, 59), width=1)
+
+        # Feature highlights inside box (Visual summary points)
+        items = visual_summary.get('key_points', [])
+        if not items:
             items = [
-                "✅ Motor KV ve 4S / 6S Pil Voltajını Anında Eşleştir",
-                "✅ ESC Amper Sınırını Otomatik Hesapla & Doğrula",
-                "✅ Tek Tıkla Parça Listesini WhatsApp / Link Olarak Paylaş",
-                "✅ %100 Ücretsiz Mühendislik & Uyumluluk Aracı"
-            ]
-        elif content_type == 'deal_drop':
-            code = tool_info.get('coupon_code', 'POZITRON10')
-            items = [
-                f"🏷️ Aktif Kupon Kodu: {code}",
-                "🎁 Sepette Anında İndirim",
-                "📦 Tüm Motor, ESC, FC ve Parçalarda Geçerli",
-                "⏱️ Stoklarla Sınırlı Süper Fırsat"
-            ]
-        else: # pilot_tip
-            items = [
-                "⚡ Motor ve ESC Yanmalarını Engelleyen Doğru Kombinasyon",
-                "🔋 LiPo Pil Ömrünü 3 Kat Uzatan Şarj Kuralları",
-                "🛠️ Titreşimsiz HD Görüntü İçin PID & Filtre İpuçları",
-                "🚀 Pozitron FPV Topluluğuna Katılın!"
+                "Motor, ESC ve Pil Uyumlulugunu Kolayca Eslestirin",
+                "Pozitron Market Guvencesiyle En Dogru FPV Parcalari",
+                "Orijinal Urun ve Hizli Teknik Destek"
             ]
 
-        font_item = get_font(26, bold=True)
-        item_y = y_box + 40
-        for it in items:
-            draw.text((130, item_y), it, fill=(241, 245, 249), font=font_item)
-            item_y += 65
+        font_item = get_font(24, bold=True)
+        item_y = y_box + 70
+        for it in items[:4]:
+            clean_it = clean_canvas_text(it)
+            draw.text((125, item_y), f"•  {clean_it[:46]}", fill=(241, 245, 249), font=font_item)
+            item_y += 54
 
         # Call to Action Button
-        draw.rounded_rectangle([(100, 810), (self.width - 100, 885)], radius=14, fill=(2, 132, 199))
-        font_action = get_font(30, bold=True)
-        draw.text((self.width // 2 - 270, 832), "👉 PROFİLDEKİ LİNKTEN HEMEN DENE 👈", fill=(255, 255, 255), font=font_action)
+        cta_text = clean_canvas_text(visual_summary.get('cta', '> PROFILDEKI LINKTEN HEMEN KESFET <'))
+        draw.rounded_rectangle([(95, 818), (self.width - 95, 888)], radius=14, fill=(2, 132, 199))
+        font_action = get_font(28, bold=True)
+        btn_w = len(cta_text) * 15
+        btn_x = max(115, (self.width - btn_w) // 2)
+        draw.text((btn_x, 836), cta_text, fill=(255, 255, 255), font=font_action)
 
     def _draw_footer(self, draw: ImageDraw.Draw):
         # Footer text
         font_foot = get_font(20, bold=True)
-        foot_text = "🌐 pozitronmarket.com   |   📱 @pozitronmarket   |   ⚡ Türkiye'nin FPV Donanım Pazarı"
+        foot_text = "pozitronmarket.com   |   @pozitronmarket   |   Turkiye'nin FPV Donanim Pazari"
         draw.text((140, 995), foot_text, fill=(100, 116, 139), font=font_foot)
 
     def _wrap_text(self, text: str, max_chars: int) -> list:

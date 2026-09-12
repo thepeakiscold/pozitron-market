@@ -1222,6 +1222,152 @@
           </div>
         </div>
 
+        <!-- Operating Mode Toggle & Settings Bar -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:14px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:0.84rem; font-weight:700; color:#334155;">Çalışma Platformu:</span>
+            <div style="display:inline-flex; background:#e2e8f0; padding:4px; border-radius:8px; gap:4px;">
+              <button type="button" id="btn-mode-cloud" onclick="setRedditOperatingMode('cloud')" style="border:none; background:#ff4500; color:#fff; font-weight:700; font-size:0.8rem; padding:6px 16px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+                <span>☁️</span> <span>GitHub Actions Bulut Modu (7/24 Otonom)</span>
+              </button>
+              <button type="button" id="btn-mode-live" onclick="setRedditOperatingMode('live')" style="border:none; background:transparent; color:#64748b; font-weight:700; font-size:0.8rem; padding:6px 16px; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                <span>⚡</span> <span>Canlı Sunucu Modu (Local / API)</span>
+              </button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="admin-btn-secondary" onclick="openRedditSettingsModal()" style="font-size:0.82rem; padding:7px 14px; display:flex; align-items:center; gap:6px; font-weight:600; border:1px solid #cbd5e1; background:#fff;">
+              <span>⚙️</span> <span>Bağlantı &amp; GitHub Ayarları</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- VIEW A: GITHUB ACTIONS CLOUD CONTROLLER (SERVERLESS 7/24) -->
+        <!-- ========================================================= -->
+        <div id="reddit-cloud-view">
+          <!-- Cloud Master Status Banner -->
+          <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius:14px; padding:22px 24px; color:#fff; margin-bottom:24px; box-shadow:0 4px 14px rgba(15,23,42,0.12);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                  <span style="font-size:1.6rem; line-height:1;">🚀</span>
+                  <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff;">
+                    GitHub Actions Bulut Robotu (Serverless)
+                  </h3>
+                  <span id="gh-run-status-badge" style="font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px; background:#334155; color:#94a3b8;">
+                    YÜKLENİYOR...
+                  </span>
+                </div>
+                <p style="font-size:0.84rem; color:#cbd5e1; margin:0 0 12px 0; max-width:800px; line-height:1.5;">
+                  Bilgisayarınızın veya yerel bir sunucunun açık olmasına <strong>asla gerek yoktur</strong>.
+                  GitHub Actions altyapısında Chrome ve Gemini motoruyla her saat başı <strong>(cron: 0 * * * *) 7/24 otonom</strong> çalışır.
+                </p>
+                <div style="display:flex; flex-wrap:wrap; gap:16px; font-size:0.78rem; color:#94a3b8;">
+                  <span>🤖 Hesap: <strong style="color:#f8fafc;">u/Aggravating_End_1105</strong></span>
+                  <span>🧠 Yapay Zeka: <strong style="color:#f8fafc;">Gemini 2.5 Flash</strong></span>
+                  <span>⏱️ Son Çalışma: <strong id="gh-last-run-time" style="color:#f8fafc;">Kontrol ediliyor...</strong></span>
+                  <span>🎯 Sonuç: <strong id="gh-last-run-conclusion" style="color:#f8fafc;">-</strong></span>
+                </div>
+              </div>
+
+              <!-- Quick Cloud Actions -->
+              <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                <button type="button" class="admin-btn-primary" onclick="triggerGitHubWorkflow()" id="btn-gh-trigger" style="background:linear-gradient(135deg, #ff4500 0%, #ea580c 100%); border:none; padding:10px 18px; font-size:0.88rem; font-weight:800; display:flex; align-items:center; gap:8px; box-shadow:0 4px 12px rgba(255,69,0,0.3); cursor:pointer;">
+                  <span>⚡</span> <span id="btn-gh-trigger-txt">Bulutta Reddit'i Hemen Tara &amp; Yanıtla</span>
+                </button>
+                <div style="display:flex; gap:8px;">
+                  <a href="https://github.com/thepeakiscold/pozitron-market/actions/workflows/reddit_bot.yml" target="_blank" rel="noopener noreferrer" style="font-size:0.78rem; color:#38bdf8; font-weight:700; text-decoration:none; display:flex; align-items:center; gap:4px; padding:4px 8px; background:rgba(255,255,255,0.08); border-radius:6px;">
+                    <span>📜</span> <span>Canlı GitHub Logları ↗</span>
+                  </a>
+                  <button type="button" onclick="loadGitHubWorkflowStatus(true)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:0.78rem; padding:4px 8px; border-radius:6px; cursor:pointer;" title="Yenile">
+                    🔄 Yenile
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cloud KPI Cards -->
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:16px; margin-bottom:24px;">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Arşivlenen Yanıtlar</span>
+              <div style="font-size:1.8rem; font-weight:800; color:#ff4500; margin:6px 0;" id="gh-kpi-total-replies">0</div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;">
+                data/reddit_history.json üzerinde kayıtlı ve yayınlanmış sorular.
+              </p>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Hedef Subredditler</span>
+              <div style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:6px 0;">5 Topluluk</div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;">
+                r/fpvturkey, r/droneturkey, r/turkey, r/teknoloji, r/fpv
+              </p>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Otomatik Zamanlama (Cron)</span>
+              <div style="font-size:1.05rem; font-weight:800; color:#16a34a; margin:6px 0;">Her Saat Başı</div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;">
+                Günde 24 kez arka planda otonom tarama ve yanıtlama.
+              </p>
+            </div>
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Reddit Kimlik Koruması</span>
+              <div style="font-size:1.05rem; font-weight:800; color:#0284c7; margin:6px 0;">Gizli Çerez Doğrulama</div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;">
+                GitHub Secrets (REDDIT_COOKIES_JSON) ile %100 güvenli oturum.
+              </p>
+            </div>
+          </div>
+
+          <!-- Answered Questions History Card -->
+          <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:22px; box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; border-bottom:1px solid #f1f5f9; padding-bottom:14px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.3rem;">📋</span>
+                <div>
+                  <h3 style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:0;">
+                    Bulutta Yanıtlanan &amp; Arşivlenen Reddit Soruları
+                  </h3>
+                  <span style="font-size:0.76rem; color:#64748b;">Doğrudan repository'deki <code>data/reddit_history.json</code> dosyasından okunur.</span>
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input type="text" id="gh-history-search" class="admin-input" placeholder="Sorularda veya yanıtlarda ara..." oninput="filterGitHubHistory()" style="font-size:0.8rem; padding:6px 12px; width:220px;">
+                <button type="button" class="admin-btn-secondary" onclick="loadGitHubRedditHistory()" style="font-size:0.8rem; padding:6px 12px;">
+                  🔄 Yenile
+                </button>
+              </div>
+            </div>
+
+            <!-- Questions History List -->
+            <div id="gh-history-container" style="display:flex; flex-direction:column; gap:14px;">
+              <div style="text-align:center; padding:36px; color:#64748b;">
+                <span style="font-size:1.6rem; display:block; margin-bottom:6px;">⏳</span>
+                Arşivlenmiş sorular yükleniyor...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- VIEW B: LOCAL / LIVE SERVER CONTROLLER                    -->
+        <!-- ========================================================= -->
+        <div id="reddit-live-view" style="display:none;">
+          <!-- Offline Notice Banner -->
+          <div id="reddit-live-offline-alert" style="display:none; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:14px 18px; margin-bottom:18px; color:#9a3412;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:1.5rem;">⚠️</span>
+              <div>
+                <strong style="font-size:0.88rem; display:block;">Canlı Backend API'ye Bağlanılamadı</strong>
+                <span style="font-size:0.78rem; line-height:1.4; display:block;">
+                  Pozitron canlı Python sunucusu şu an çevrimdışı. 
+                  Lokalde çalıştırmak için terminalden <code>python3 reddit_server.py</code> başlatabilir veya yukarıdan <strong>"☁️ GitHub Actions Bulut Modu"</strong>na geçerek sunucuya gerek kalmadan botu 7/24 yönetebilirsiniz.
+                </span>
+              </div>
+            </div>
+          </div>
+
         <!-- Chrome Reddit Session Active Banner -->
         <div id="reddit-chrome-banner" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
           <div style="display:flex; align-items:center; gap:12px;">
@@ -1451,6 +1597,7 @@
           </div>
 
         </div>
+        </div> <!-- /#reddit-live-view -->
 
       </div>
     </section>
@@ -1543,6 +1690,67 @@
     </div>
   </div>
 
+  <!-- Reddit & Cloud Settings Modal -->
+  <div class="modal-backdrop" id="reddit-settings-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:var(--radius-lg); width:95%; max-width:620px; max-height:90vh; overflow-y:auto; padding:28px; box-shadow:var(--shadow-lg);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:1.4rem;">⚙️</span>
+          <h3 style="font-size:1.2rem; font-weight:800; margin:0; color:#0f172a;">Reddit Bot Bulut &amp; Bağlantı Ayarları</h3>
+        </div>
+        <button type="button" onclick="closeRedditSettingsModal()" style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer;">&times;</button>
+      </div>
+
+      <form id="reddit-cloud-settings-form" onsubmit="saveRedditSettingsModal(event)">
+        
+        <!-- GitHub Personal Access Token -->
+        <div style="margin-bottom:20px;">
+          <label style="display:block; font-size:0.84rem; font-weight:700; color:#1e293b; margin-bottom:6px;">
+            🔑 GitHub Personal Access Token (PAT)
+          </label>
+          <div style="display:flex; gap:8px;">
+            <input type="password" id="cfg-github-token" class="admin-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="flex:1; font-size:0.84rem;">
+            <button type="button" class="admin-btn-secondary" onclick="toggleTokenVisibility()" style="padding:8px 12px; font-size:0.8rem;">👁️</button>
+          </div>
+          <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0; line-height:1.45;">
+            Web sitesinden doğrudan <strong>"🚀 Bulutta Reddit'i Hemen Tara"</strong> butonuna bastığınızda GitHub Actions iş akışını tetiklemek için kullanılır. 
+            Sadece tarayıcınızın yerel hafızasında (localStorage) saklanır, asla sunucuya iletilmez.
+            <br>
+            <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=Pozitron+Reddit+Bot+Controller" target="_blank" style="color:#ff4500; font-weight:700; text-decoration:none;">
+              Token oluşturmak için buraya tıklayın ↗ (repo &amp; workflow yetkisi seçin)
+            </a>
+          </p>
+        </div>
+
+        <!-- Custom Backend API URL -->
+        <div style="margin-bottom:20px;">
+          <label style="display:block; font-size:0.84rem; font-weight:700; color:#1e293b; margin-bottom:6px;">
+            🌐 Özel Canlı Backend API URL (Opsiyonel)
+          </label>
+          <input type="text" id="cfg-api-base-url" class="admin-input" placeholder="http://localhost:8000 veya https://..." style="width:100%; font-size:0.84rem;">
+          <p style="font-size:0.75rem; color:#64748b; margin:6px 0 0 0; line-height:1.45;">
+            Lokalde <code>python3 reddit_server.py</code> çalıştırıyorsanız <code>http://localhost:8000</code> yazın. Cloud sunucunuz varsa (Render/Railway vb.) HTTPS adresini girin.
+          </p>
+        </div>
+
+        <!-- Reddit Secret Session Info -->
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px; margin-bottom:24px;">
+          <strong style="font-size:0.82rem; color:#0f172a; display:block; margin-bottom:4px;">☁️ GitHub Actions 7/24 Otonom Çalışma:</strong>
+          <p style="font-size:0.76rem; color:#475569; margin:0; line-height:1.5;">
+            GitHub Actions'a <code>REDDIT_COOKIES_JSON</code> ve <code>GEMINI_API_KEY</code> Secret'ları tanımlandığı için bot <strong>bilgisayarınız kapalı olsa bile saat başı otonom olarak çalışır</strong>.
+            <br>
+            GitHub İş Akışı: <a href="https://github.com/thepeakiscold/pozitron-market/actions/workflows/reddit_bot.yml" target="_blank" style="color:#ff4500; font-weight:700;">reddit_bot.yml ↗</a>
+          </p>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="admin-btn-secondary" onclick="closeRedditSettingsModal()">Kapat</button>
+          <button type="submit" class="admin-btn-primary" style="background:#0f172a; border:none; color:#fff; font-weight:700;">💾 Ayarları Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   </div> <!-- /#admin-app -->
 
   <!-- Toast Container -->
@@ -1553,6 +1761,27 @@
     /**
      * Pozitron Admin Dashboard Engine (Protected by Auth Guard)
      */
+    // Dynamic API Base URL Support for Cloud & Local Backend
+    function getApiBaseUrl() {
+      const saved = localStorage.getItem('pozitron_api_base');
+      if (saved) return saved.replace(/\/+$/, '');
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return '';
+      }
+      return 'http://localhost:8000';
+    }
+
+    const _originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+      if (typeof url === 'string' && url.startsWith('/api/')) {
+        const base = getApiBaseUrl();
+        if (base) {
+          url = base + url;
+        }
+      }
+      return _originalFetch.call(this, url, options);
+    };
+
     let currentPage = 1;
     let totalPages = 1;
     let selectedProductIds = new Set();
@@ -3875,15 +4104,81 @@
     // =============================================================
     let _allRedditItems = [];
     let _currentRedditFilter = 'all';
+    let _allGitHubHistoryItems = [];
+    let _ghStatusInterval = null;
+
+    function getRedditOperatingMode() {
+      const saved = localStorage.getItem('pozitron_reddit_mode');
+      if (saved === 'live' || saved === 'cloud') return saved;
+      // Default to live on localhost, cloud on production pozitronmarket.com
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'live';
+      }
+      return 'cloud';
+    }
+
+    function setRedditOperatingMode(mode) {
+      localStorage.setItem('pozitron_reddit_mode', mode);
+      const btnCloud = document.getElementById('btn-mode-cloud');
+      const btnLive = document.getElementById('btn-mode-live');
+      const cloudView = document.getElementById('reddit-cloud-view');
+      const liveView = document.getElementById('reddit-live-view');
+      const pill = document.getElementById('reddit-status-pill');
+
+      if (mode === 'cloud') {
+        if (btnCloud) {
+          btnCloud.style.background = '#ff4500';
+          btnCloud.style.color = '#fff';
+          btnCloud.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        }
+        if (btnLive) {
+          btnLive.style.background = 'transparent';
+          btnLive.style.color = '#64748b';
+          btnLive.style.boxShadow = 'none';
+        }
+        if (cloudView) cloudView.style.display = 'block';
+        if (liveView) liveView.style.display = 'none';
+        if (pill) {
+          pill.textContent = '☁️ GITHUB CLOUD 7/24';
+          pill.style.background = '#e0f2fe';
+          pill.style.color = '#0284c7';
+        }
+        loadGitHubWorkflowStatus();
+        loadGitHubRedditHistory();
+      } else {
+        if (btnLive) {
+          btnLive.style.background = '#0284c7';
+          btnLive.style.color = '#fff';
+          btnLive.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        }
+        if (btnCloud) {
+          btnCloud.style.background = 'transparent';
+          btnCloud.style.color = '#64748b';
+          btnCloud.style.boxShadow = 'none';
+        }
+        if (liveView) liveView.style.display = 'block';
+        if (cloudView) cloudView.style.display = 'none';
+        loadLiveServerView();
+      }
+    }
 
     async function loadRedditAgentView() {
+      const mode = getRedditOperatingMode();
+      setRedditOperatingMode(mode);
+    }
+
+    async function loadLiveServerView() {
+      const offlineAlert = document.getElementById('reddit-live-offline-alert');
+      const chromeBanner = document.getElementById('reddit-chrome-banner');
+
       try {
         // 1. Fetch Status
         const statusRes = await fetch('/api/reddit/status');
-        if (statusRes.ok) {
-          const status = await statusRes.json();
-          renderRedditStatus(status);
-        }
+        if (!statusRes.ok) throw new Error(`HTTP ${statusRes.status}`);
+        const status = await statusRes.json();
+        renderRedditStatus(status);
+        if (offlineAlert) offlineAlert.style.display = 'none';
+        if (chromeBanner) chromeBanner.style.display = 'flex';
 
         // 2. Fetch Config
         const configRes = await fetch('/api/reddit/config');
@@ -3900,9 +4195,301 @@
           renderRedditQueue();
         }
       } catch (err) {
-        console.error("Reddit Drone Agent fetch error:", err);
-        showToast("Reddit Bot verileri yüklenirken hata oluştu.", "error");
+        console.warn("Reddit Live Backend offline or unreachable:", err);
+        if (offlineAlert) offlineAlert.style.display = 'block';
+        if (chromeBanner) chromeBanner.style.display = 'none';
+        const pill = document.getElementById('reddit-status-pill');
+        if (pill) {
+          pill.textContent = '⚠️ SUNUCU ÇEVRİMDIŞI';
+          pill.style.background = '#fef3c7';
+          pill.style.color = '#b45309';
+        }
       }
+    }
+
+    // -------------------------------------------------------------
+    // GitHub Actions Cloud Controller Handlers
+    // -------------------------------------------------------------
+    async function loadGitHubWorkflowStatus(manualToast = false) {
+      const badge = document.getElementById('gh-run-status-badge');
+      const timeEl = document.getElementById('gh-last-run-time');
+      const concEl = document.getElementById('gh-last-run-conclusion');
+
+      try {
+        const token = localStorage.getItem('pozitron_github_token');
+        const headers = { 'Accept': 'application/vnd.github+json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch('https://api.github.com/repos/thepeakiscold/pozitron-market/actions/workflows/reddit_bot.yml/runs?per_page=3', { headers });
+        if (!res.ok) {
+          if (badge) {
+            badge.textContent = 'HAZIR (YETKİSİZ)';
+            badge.style.background = '#334155';
+            badge.style.color = '#94a3b8';
+          }
+          return;
+        }
+
+        const data = await res.json();
+        const runs = data.workflow_runs || [];
+        if (runs.length === 0) {
+          if (badge) badge.textContent = 'HENÜZ ÇALIŞTIRILMADI';
+          if (timeEl) timeEl.textContent = 'Kayıt yok';
+          if (concEl) concEl.textContent = '-';
+          return;
+        }
+
+        const latest = runs[0];
+        const status = latest.status;
+        const conclusion = latest.conclusion;
+        const dateStr = new Date(latest.created_at).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+
+        if (timeEl) timeEl.textContent = `${dateStr} (${latest.event})`;
+
+        if (status === 'in_progress') {
+          if (badge) {
+            badge.textContent = '⏳ ÇALIŞIYOR (TARANIYOR...)';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#b45309';
+          }
+          if (concEl) concEl.innerHTML = '<span style="color:#eab308;">İşleniyor 🏃</span>';
+          if (!_ghStatusInterval) {
+            _ghStatusInterval = setTimeout(() => { _ghStatusInterval = null; loadGitHubWorkflowStatus(); }, 8000);
+          }
+        } else if (status === 'queued') {
+          if (badge) {
+            badge.textContent = '⏳ SIRAYA ALINDI';
+            badge.style.background = '#e0e7ff';
+            badge.style.color = '#4338ca';
+          }
+          if (concEl) concEl.innerHTML = '<span style="color:#818cf8;">Kuyrukta</span>';
+        } else if (conclusion === 'success') {
+          if (badge) {
+            badge.textContent = '✅ BAŞARILI (AKTİF)';
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#15803d';
+          }
+          if (concEl) concEl.innerHTML = '<span style="color:#22c55e;">Başarılı Tamamlandı ✨</span>';
+        } else if (conclusion === 'failure') {
+          if (badge) {
+            badge.textContent = '❌ SON ÇALIŞMA HATALI';
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#dc2626';
+          }
+          if (concEl) concEl.innerHTML = '<span style="color:#ef4444;">Hata Aldı (Logları İnceleyin)</span>';
+        } else {
+          if (badge) badge.textContent = (conclusion || status || 'BİLİNMİYOR').toUpperCase();
+        }
+
+        if (manualToast) {
+          showToast(`GitHub Actions durumu güncellendi: ${status.toUpperCase()} (${conclusion || 'çalışıyor'})`, 'info');
+        }
+      } catch (e) {
+        console.warn("GitHub workflow fetch error:", e);
+      }
+    }
+
+    async function triggerGitHubWorkflow() {
+      const token = localStorage.getItem('pozitron_github_token');
+      if (!token) {
+        showToast("Buluttan doğrudan tetiklemek için GitHub Token gereklidir. Açılan pencereden tokenınızı kaydedebilirsiniz.", "info");
+        openRedditSettingsModal();
+        return;
+      }
+
+      const btn = document.getElementById('btn-gh-trigger');
+      const txt = document.getElementById('btn-gh-trigger-txt');
+      if (btn && txt) {
+        btn.disabled = true;
+        txt.textContent = 'Bulutta Başlatılıyor...';
+      }
+
+      try {
+        const res = await fetch('https://api.github.com/repos/thepeakiscold/pozitron-market/actions/workflows/reddit_bot.yml/dispatches', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ ref: 'main' })
+        });
+
+        if (res.status === 204) {
+          showToast("🚀 Bulut botu başarıyla tetiklendi! GitHub Actions Reddit'i tarayıp yanıtlamaya başladı.", "success");
+          const badge = document.getElementById('gh-run-status-badge');
+          if (badge) {
+            badge.textContent = '⏳ BAŞLATILDI...';
+            badge.style.background = '#fef3c7';
+            badge.style.color = '#b45309';
+          }
+          setTimeout(() => { loadGitHubWorkflowStatus(); }, 4000);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          showToast(`Tetikleme hatası: ${errData.message || res.statusText}`, "error");
+        }
+      } catch (err) {
+        showToast(`Bağlantı hatası: ${err.message}`, "error");
+      } finally {
+        if (btn && txt) {
+          btn.disabled = false;
+          txt.textContent = "Bulutta Reddit'i Hemen Tara & Yanıtla";
+        }
+      }
+    }
+
+    async function loadGitHubRedditHistory() {
+      const container = document.getElementById('gh-history-container');
+      const totalEl = document.getElementById('gh-kpi-total-replies');
+
+      try {
+        const rawUrl = `https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main/data/reddit_history.json?_t=${Date.now()}`;
+        const res = await fetch(rawUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const history = await res.json();
+        _allGitHubHistoryItems = Array.isArray(history) ? history : (history.history || []);
+
+        if (totalEl) totalEl.textContent = _allGitHubHistoryItems.length;
+        renderGitHubHistoryCards(_allGitHubHistoryItems);
+      } catch (e) {
+        console.warn("Could not load github reddit history:", e);
+        if (container) {
+          container.innerHTML = `
+            <div style="text-align:center; padding:32px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; color:#64748b;">
+              <span style="font-size:1.6rem; display:block; margin-bottom:6px;">📭</span>
+              <strong>Henüz arşivlenmiş soru bulunmuyor veya dosya güncelleniyor.</strong>
+              <p style="font-size:0.78rem; margin:6px 0 0 0;">Yukarıdaki "Bulutta Reddit'i Hemen Tara" butonuyla ilk taramayı başlatabilirsiniz.</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function renderGitHubHistoryCards(items) {
+      const container = document.getElementById('gh-history-container');
+      if (!container) return;
+
+      if (!items || items.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:32px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; color:#64748b;">
+            <span style="font-size:1.6rem; display:block; margin-bottom:6px;">📭</span>
+            <strong>Eşleşen soru kaydı bulunamadı.</strong>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      for (const item of items) {
+        const subreddit = item.subreddit || 'droneturkey';
+        const title = item.title || item.post_title || '(Başlıksız Drone Sorusu)';
+        const author = item.author || 'Reddit Pilotu';
+        const reply = item.gemini_reply || item.response || item.reply || '';
+        const url = item.permalink || item.url || `https://reddit.com/r/${subreddit}`;
+        const dateStr = item.created_at || item.timestamp ? new Date(item.created_at || item.timestamp).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : 'Arşiv Kaydı';
+
+        html += `
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; transition:border-color 0.2s;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="background:#ff4500; color:#fff; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px;">
+                  r/${subreddit}
+                </span>
+                <span style="font-size:0.78rem; font-weight:700; color:#475569;">u/${author}</span>
+                <span style="font-size:0.72rem; color:#94a3b8;">• ${dateStr}</span>
+              </div>
+              <div>
+                <span style="background:#dcfce7; color:#15803d; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:6px;">
+                  ✅ BULUTTA YANITLANDI
+                </span>
+              </div>
+            </div>
+
+            <h4 style="font-size:0.92rem; font-weight:800; color:#0f172a; margin:0 0 10px 0;">
+              <a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#0f172a; text-decoration:none;" onmouseover="this.style.color='#ff4500'" onmouseout="this.style.color='#0f172a'">
+                ${title} ↗
+              </a>
+            </h4>
+
+            ${reply ? `
+              <div style="background:#ffffff; border:1px solid #e2e8f0; border-left:3px solid #ff4500; border-radius:6px; padding:10px 14px; font-size:0.8rem; color:#334155; line-height:1.45; white-space:pre-wrap; max-height:160px; overflow-y:auto;">
+                ${reply}
+              </div>
+            ` : ''}
+
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+              <a href="${url}" target="_blank" rel="noopener noreferrer" style="font-size:0.76rem; color:#ff4500; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                <span>Reddit'te Görüntüle</span> <span>↗</span>
+              </a>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function filterGitHubHistory() {
+      const q = (document.getElementById('gh-history-search')?.value || '').toLowerCase().trim();
+      if (!q) {
+        renderGitHubHistoryCards(_allGitHubHistoryItems);
+        return;
+      }
+      const filtered = _allGitHubHistoryItems.filter(i => {
+        const title = (i.title || i.post_title || '').toLowerCase();
+        const reply = (i.gemini_reply || i.response || '').toLowerCase();
+        const sub = (i.subreddit || '').toLowerCase();
+        return title.includes(q) || reply.includes(q) || sub.includes(q);
+      });
+      renderGitHubHistoryCards(filtered);
+    }
+
+    // -------------------------------------------------------------
+    // Settings Modal Handlers
+    // -------------------------------------------------------------
+    function openRedditSettingsModal() {
+      const modal = document.getElementById('reddit-settings-modal');
+      const tokenInput = document.getElementById('cfg-github-token');
+      const apiInput = document.getElementById('cfg-api-base-url');
+
+      if (tokenInput) tokenInput.value = localStorage.getItem('pozitron_github_token') || '';
+      if (apiInput) apiInput.value = localStorage.getItem('pozitron_api_base') || '';
+
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeRedditSettingsModal() {
+      const modal = document.getElementById('reddit-settings-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function toggleTokenVisibility() {
+      const input = document.getElementById('cfg-github-token');
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    }
+
+    function saveRedditSettingsModal(e) {
+      e.preventDefault();
+      const token = document.getElementById('cfg-github-token')?.value.trim() || '';
+      const apiBase = document.getElementById('cfg-api-base-url')?.value.trim() || '';
+
+      if (token) {
+        localStorage.setItem('pozitron_github_token', token);
+      } else {
+        localStorage.removeItem('pozitron_github_token');
+      }
+
+      if (apiBase) {
+        localStorage.setItem('pozitron_api_base', apiBase);
+      } else {
+        localStorage.removeItem('pozitron_api_base');
+      }
+
+      showToast("✅ Ayarlar başarıyla yerel belleğe kaydedildi!", "success");
+      closeRedditSettingsModal();
+      loadRedditAgentView();
     }
 
     function renderRedditStatus(status) {
