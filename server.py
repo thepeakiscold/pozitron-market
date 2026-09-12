@@ -966,10 +966,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
-        # Reddit Drone Bot: Manual Scan Trigger
+        # Reddit Drone Bot: Manual Scan Trigger (Autonomous execution)
         if path == '/api/reddit/scan':
             try:
-                res = reddit_drone_agent.scan_and_process(autonomous=False)
+                res = reddit_drone_agent.scan_and_process(autonomous=True)
                 self.send_json(200, {"success": True, "result": res})
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
@@ -984,52 +984,55 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
-        # Reddit Drone Bot: Approve and Publish Reply
+        # Reddit Drone Bot: Approve / Publish Reply
         if path == '/api/reddit/reply/approve':
-            interaction_id = data.get('id')
             try:
+                data = json.loads(self.get_post_body())
+                interaction_id = data.get("interaction_id")
                 res = reddit_drone_agent.approve_reply(interaction_id)
-                status_code = 200 if res.get('success') else 400
-                self.send_json(status_code, res)
+                self.send_json(200, res)
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return
 
         # Reddit Drone Bot: Reject Reply
         if path == '/api/reddit/reply/reject':
-            interaction_id = data.get('id')
             try:
+                data = json.loads(self.get_post_body())
+                interaction_id = data.get("interaction_id")
                 success = reddit_drone_agent.reject_reply(interaction_id)
-                self.send_json(200, {"success": success, "id": interaction_id})
+                self.send_json(200, {"success": success})
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return
 
         # Reddit Drone Bot: Edit Reply
         if path == '/api/reddit/reply/edit':
-            interaction_id = data.get('id')
-            text = data.get('text', '')
             try:
+                data = json.loads(self.get_post_body())
+                interaction_id = data.get("interaction_id")
+                text = data.get("text", "")
                 success = reddit_drone_agent.edit_reply(interaction_id, text)
-                self.send_json(200, {"success": success, "id": interaction_id})
+                self.send_json(200, {"success": success})
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return
 
-        # Reddit Drone Bot: Regenerate with Gemini
+        # Reddit Drone Bot: Regenerate Reply with Gemini
         if path == '/api/reddit/reply/generate':
-            interaction_id = data.get('id')
             try:
+                data = json.loads(self.get_post_body())
+                interaction_id = data.get("interaction_id")
                 res = reddit_drone_agent.regenerate_reply(interaction_id)
-                status_code = 200 if res.get('success') else 400
-                self.send_json(status_code, res)
+                self.send_json(200, res)
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return
 
         # Reddit Drone Bot: Toggle Autonomous Mode
         if path == '/api/reddit/toggle':
-            enabled = bool(data.get('enabled'))
+            data = json.loads(self.get_post_body())
+            enabled = bool(data.get("enabled", True))
             reddit_drone_agent.update_config({'is_autonomous_enabled': 1 if enabled else 0})
             if enabled:
                 reddit_drone_scheduler.start()
@@ -1039,7 +1042,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         # Reddit Drone Bot: Sync Chrome Session
-        if path == '/api/reddit/chrome-session/sync':
+        if path in ('/api/reddit/chrome-session/sync', '/api/reddit/sync-chrome'):
             try:
                 res = reddit_drone_agent.sync_chrome_session()
                 self.send_json(200, res)

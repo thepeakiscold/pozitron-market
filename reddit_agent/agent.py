@@ -181,12 +181,16 @@ class RedditDroneAgent:
 
         return cfg
 
-    def scan_and_process(self, autonomous: bool = False) -> dict:
+    def scan_and_process(self, autonomous: bool = None) -> dict:
         """
         Scans configured subreddits for drone questions,
-        generates Gemini answer drafts, and posts if autonomous is enabled.
+        generates Gemini answer drafts, and automatically posts to Reddit
+        without requiring manual approval when autonomous mode is enabled.
         """
         self.reload_config()
+        if autonomous is None:
+            autonomous = bool(self.config.get("is_autonomous_enabled", 1))
+
         subreddits_str = self.config.get("subreddits", "Turkey, teknoloji, bilim, AskTurkey, fpvturkey, droneturkey")
         subreddits = [s.strip() for s in subreddits_str.split(",") if s.strip()]
 
@@ -194,8 +198,9 @@ class RedditDroneAgent:
         keywords = [k.strip() for k in keywords_str.split(",") if k.strip()]
 
         custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! 🛸")
-        min_conf = int(self.config.get("auto_post_min_confidence", 85))
+        min_conf = int(self.config.get("auto_post_min_confidence", 70))
         max_daily = int(self.config.get("max_replies_per_day", 10))
+        dry_run = bool(self.config.get("dry_run_mode", 0))
 
         discovered = []
         new_questions_count = 0
@@ -239,7 +244,7 @@ class RedditDroneAgent:
                     "question_summary": ai_res.get("question_summary", p["title"]),
                     "gemini_reply": ai_res.get("reply_text", ""),
                     "status": "draft",
-                    "confidence_score": ai_res.get("confidence_score", 80),
+                    "confidence_score": ai_res.get("confidence_score", 85),
                     "upvotes": p.get("score", 0),
                     "created_at": datetime.now().isoformat()
                 }
@@ -249,13 +254,19 @@ class RedditDroneAgent:
                     new_questions_count += 1
                     discovered.append(interaction_data)
 
-                    # Auto-publish if autonomous mode is active
-                    if autonomous and bool(self.config.get("is_autonomous_enabled", 0)):
+                    # Auto-publish immediately without waiting for user approval
+                    if autonomous and not dry_run:
                         daily_count = get_daily_replies_count()
                         if daily_count < max_daily and interaction_data["confidence_score"] >= min_conf:
+                            print(f"[Reddit Bot] Otomatik onaylandı: {interaction_data['title'][:60]} -> Yayınlanıyor...")
                             pub_res = self.publish_reply(interaction_id)
                             if pub_res.get("success"):
                                 published_count += 1
+                                interaction_data["status"] = "published"
+                                interaction_data["permalink"] = pub_res.get("permalink", interaction_data["permalink"])
+                                print(f"[Reddit Bot] ✅ Başarıyla yayınlandı: {interaction_data['permalink']}")
+                            else:
+                                print(f"[Reddit Bot] ❌ Yayınlanamadı: {pub_res.get('error')}")
 
         # Update last scan timestamp
         self.update_config({

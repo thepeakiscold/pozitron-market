@@ -427,11 +427,11 @@
               <h2 style="font-size:1.35rem; font-weight:800; margin:0; color:#ffffff;">
                 Otonom Reddit Drone Asistanı &amp; PR Robotu
               </h2>
-              <span id="reddit-status-pill" class="tag-badge" style="background:#ea580c; color:#fff;">TÜRK SUBREDDITLER AKTİF</span>
+              <span id="reddit-status-pill" class="tag-badge" style="background:#059669; color:#fff;">🟢 TAM OTONOM (ONAYSIZ YAYINLANIYOR)</span>
             </div>
             <p style="font-size:0.88rem; color:#fed7aa; margin:0 0 14px 0; max-width:850px; line-height:1.6;">
-              Türk FPV, drone ve teknoloji topluluklarında (<strong>r/Turkey</strong>, <strong>r/teknoloji</strong>, <strong>r/bilim</strong>, <strong>r/AskTurkey</strong>, <strong>r/droneturkey</strong>, <strong>r/fpvturkey</strong>) sorulan teknik soruları tarar. 
-              <strong>Google Gemini AI</strong> ile samimi, motive edici ve teknik olarak %100 doğru Türkçe çözümler sunar.
+              Türk FPV, drone ve teknoloji topluluklarında (<strong>r/Turkey</strong>, <strong>r/teknoloji</strong>, <strong>r/bilim</strong>, <strong>r/AskTurkey</strong>, <strong>r/droneturkey</strong>, <strong>r/fpvturkey</strong>) sorulan teknik soruları düzenli tarar. 
+              Onay beklemeden <strong>tam otonom</strong> olarak teknik yanıtları üretir ve doğrudan Reddit'te yayınlar.
             </p>
             <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
               <span style="font-size:0.78rem; color:#fdba74; font-weight:700;">Hedef Sub’lar:</span>
@@ -831,6 +831,17 @@
           document.getElementById('reddit-kpi-draft').textContent = status.draft_count || 0;
           document.getElementById('reddit-kpi-published').textContent = status.published_count || 0;
           document.getElementById('reddit-kpi-today-limit').textContent = `${status.today_published_count || 0} / ${status.max_replies_per_day || 10}`;
+          
+          const pill = document.getElementById('reddit-status-pill');
+          if (pill) {
+            if (status.is_autonomous_enabled) {
+              pill.textContent = '🟢 TAM OTONOM (ONAYSIZ YAYINLANIYOR)';
+              pill.style.background = '#059669';
+            } else {
+              pill.textContent = '🟡 OTONOM DURDURULDU';
+              pill.style.background = '#d97706';
+            }
+          }
         }
       } catch(e) {
         console.warn("Reddit status fetch error:", e);

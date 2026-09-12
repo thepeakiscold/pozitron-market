@@ -154,9 +154,24 @@ class RedditClient:
 
         return posts
 
+    CORE_DRONE_KEYWORDS = [
+        "drone", "dron", "fpv", "quadcopter", "multicopter", "iha", "siha",
+        "dji", "betafpv", "betaflight", "inav", "elrs", "expresslrs",
+        "crossfire", "tbs", "vtx", "vrx", "teknofest", "uçuş kartı", "f405",
+        "f722", "cinewhoop", "whoop", "walksnail", "radiomaster", "jumper",
+        "taranis", "mobula", "cetus", "lipo batarya", "fırçasız motor",
+        "fırçasız", "brushless"
+    ]
+
+    DEDICATED_DRONE_SUBS = [
+        "fpvturkey", "droneturkey", "multicopter", "fpv", "drones", "fpvracing"
+    ]
+
     def is_question_matching_keywords(self, post: dict, keywords: list) -> bool:
         """
         Determines whether a post is a drone question matching the target keywords.
+        In general Turkish subreddits (r/Turkey, r/teknoloji, etc.), strictly enforces
+        at least one CORE_DRONE_KEYWORDS using word boundaries to avoid false positives.
         """
         # Don't answer our own bot
         if self.username and post.get("author", "").lower() == self.username.lower():
@@ -165,23 +180,43 @@ class RedditClient:
         title = post.get("title", "").lower()
         body = post.get("body", "").lower()
         full_text = f"{title} {body}"
+        subreddit = post.get("subreddit", "").lower().lstrip("r/").strip()
 
-        # 1. Keyword check
-        has_drone_keyword = False
-        for kw in keywords:
-            kw_clean = kw.strip().lower()
-            if kw_clean and (kw_clean in full_text):
-                has_drone_keyword = True
-                break
+        # 1. Subreddit specific keyword check
+        is_dedicated_drone_sub = any(ds in subreddit for ds in self.DEDICATED_DRONE_SUBS)
 
-        if not has_drone_keyword:
-            return False
+        if is_dedicated_drone_sub:
+            # In dedicated drone subreddits, any drone-related keyword matches
+            has_drone_keyword = False
+            for kw in (keywords or self.CORE_DRONE_KEYWORDS):
+                kw_clean = kw.strip().lower()
+                if not kw_clean:
+                    continue
+                pattern = r'\b' + re.escape(kw_clean) + r'\b'
+                if re.search(pattern, full_text, re.IGNORECASE):
+                    has_drone_keyword = True
+                    break
+            if not has_drone_keyword:
+                return False
+        else:
+            # In general subreddits (r/Turkey, r/teknoloji, r/AskTurkey, etc.),
+            # MUST contain at least one CORE drone keyword with word boundary!
+            has_core_keyword = False
+            for ckw in self.CORE_DRONE_KEYWORDS:
+                pattern = r'\b' + re.escape(ckw) + r'\b'
+                if re.search(pattern, full_text, re.IGNORECASE):
+                    has_core_keyword = True
+                    break
+
+            if not has_core_keyword:
+                return False
 
         # 2. Question / Help intent check
         question_indicators = [
             "?", "nasıl", "öneri", "tavsiye", "yardım", "çalışmıyor", "sorun", "neden",
             "bağlantı", "hangisi", "uyumlu mu", "başlangıç", "ne yapmalıyım", "hata",
             "arızalandı", "kurulum", "ayarı", "yardim", "destek", "anlamadım", "yardımcı",
+            "önerseniz", "bilgisi olan", "tavsiyesi olan", "fikri olan", "alınır mı",
             "how to", "why", "issue", "help", "problem", "which", "recommend"
         ]
 
@@ -208,7 +243,7 @@ class RedditClient:
         if post_url:
             try:
                 from .chrome_publisher import publish_via_chrome
-                chrome_res = publish_via_chrome(post_url, text)
+                chrome_res = publish_via_chrome(post_url, text, username=self.username)
                 if chrome_res.get("success"):
                     return {
                         "success": True,

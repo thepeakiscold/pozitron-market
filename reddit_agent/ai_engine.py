@@ -137,17 +137,28 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON çıktısı üret, markdo
         text = f"{title} {body}".lower()
         summary = title if title else (body[:80] + '...')
 
-        reply = f"Selamlar! Sorununu okudum. FPV ve drone sistemlerinde bu durum genellikle lehim kalitesi, doğru voltaj beslemesi (BEC/LiPo) ya da Betaflight / ELRS yazılım yapılandırmalarından kaynaklanabilir.\n\n"
+        # Verify it has at least some drone/electronics context
+        core_terms = ["drone", "dron", "fpv", "quad", "lehim", "motor", "esc", "vtx", "betaflight", "elrs", "dji", "teknofest", "lipo", "batarya", "pervane", "kumanda"]
+        has_drone_context = any(term in text for term in core_terms)
+        if not has_drone_context:
+            return {
+                "is_drone_question": False,
+                "confidence_score": 0,
+                "question_summary": summary[:100],
+                "reply_text": ""
+            }
+
+        reply = "Selamlar! Sorununu okudum. FPV ve drone sistemlerinde bu durum genellikle lehim kalitesi, doğru voltaj beslemesi (BEC/LiPo) ya da Betaflight / ELRS yazılım yapılandırmalarından kaynaklanabilir.\n\n"
         reply += "Kontrol etmeni önereceğim ilk adımlar:\n"
-        reply += "1. **Bağlantılar:** Multimetre ile kısa devre (continuity) kontrolü yap.\n"
-        reply += "2. **Yazılım:** Betaflight Configurator üzerinden alıcı (Receiver) ve port (UART) ayarlarının doğruluğunu teyit et.\n"
-        reply += "3. **Donanım:** Giriş voltajının parçanın çalışma aralığında (örn. 2S-6S) olduğundan emin ol.\n\n"
-        reply += "Daha detaylı hata kodu, parça modeli veya görsel paylaşırsan adım adım yardımcı olmaktan mutluluk duyarım.\n\n"
+        reply += "1. **Bağlantılar & Donanım:** Multimetre ile kısa devre (continuity) kontrolü yap. Lehim noktalarının parlak ve temiz olduğundan emin ol.\n"
+        reply += "2. **Yazılım & Portlar:** Betaflight Configurator üzerinden Ports sekmesinde doğru UART ve Receiver protokolünü (örn. CRSF / Serial) kontrol et.\n"
+        reply += "3. **Güç:** Giriş voltajının parçanın çalışma voltaj aralığıyla (örn. 1S-6S) tam uyumlu olduğunu doğrula.\n\n"
+        reply += "Daha detaylı hata kodu, kullandığın parçaların modelleri veya görsel paylaşırsan adım adım çözmeye yardımcı olurum.\n\n"
         reply += custom_signature or "*İyi uçuşlar ve kırımsız günler! 🛸*"
 
         return {
             "is_drone_question": True,
-            "confidence_score": 75,
+            "confidence_score": 85,
             "question_summary": summary[:100],
             "reply_text": reply
         }

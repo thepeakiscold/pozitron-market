@@ -20,6 +20,8 @@ function parseArgs() {
       params.textFile = args[++i];
     } else if (args[i] === '--cookies' && i + 1 < args.length) {
       params.cookies = args[++i];
+    } else if (args[i] === '--username' && i + 1 < args.length) {
+      params.username = args[++i];
     }
   }
   return params;
@@ -239,16 +241,20 @@ async function run() {
         break;
       }
 
+      const targetUsername = (params.username || 'Aggravating_End_1105').toLowerCase();
+
       // Check if newly added comment appears in the DOM or composer cleared
-      const domCheck = await page.evaluate(() => {
+      const domCheck = await page.evaluate((uname) => {
         const composer = document.querySelector('shreddit-composer div[role="textbox"]');
-        const justNow = document.querySelector('shreddit-comment[author="Aggravating_End_1105"], faceplate-timeago[created-timestamp]');
+        const userComments = Array.from(document.querySelectorAll('shreddit-comment'));
+        const hasUserComment = userComments.some(c => (c.getAttribute('author') || '').toLowerCase() === uname);
+        const timeago = document.querySelector('faceplate-timeago[created-timestamp]');
         return {
           composerActive: !!composer,
           composerText: composer ? composer.innerText.trim() : '',
-          hasUserComment: !!justNow
+          hasUserComment: hasUserComment || !!timeago
         };
-      });
+      }, targetUsername);
 
       if (domCheck.hasUserComment || (domCheck.composerActive && domCheck.composerText === '')) {
         success = true;
@@ -263,15 +269,16 @@ async function run() {
     }
 
     // Find comment permalink if available
-    const postPermalink = await page.evaluate(() => {
+    const targetUsername = (params.username || 'Aggravating_End_1105').toLowerCase();
+    const postPermalink = await page.evaluate((uname) => {
       const comments = Array.from(document.querySelectorAll('shreddit-comment'));
       for (const c of comments) {
-        if (c.getAttribute('author') === 'Aggravating_End_1105') {
+        if ((c.getAttribute('author') || '').toLowerCase() === uname) {
           return c.getAttribute('permalink') || '';
         }
       }
       return '';
-    });
+    }, targetUsername);
 
     const finalPermalink = postPermalink ? ('https://www.reddit.com' + postPermalink) : targetUrl;
 

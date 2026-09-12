@@ -4,7 +4,7 @@ import subprocess
 import tempfile
 from .chrome_session import extract_chrome_reddit_session
 
-def publish_via_chrome(post_url: str, reply_text: str) -> dict:
+def publish_via_chrome(post_url: str, reply_text: str, username: str = "") -> dict:
     """
     Publishes a comment to a Reddit post using the stealth Puppeteer Chrome session.
     """
@@ -15,6 +15,8 @@ def publish_via_chrome(post_url: str, reply_text: str) -> dict:
     session_res = extract_chrome_reddit_session()
     if not session_res.get("success") or not session_res.get("cookies"):
         return {"success": False, "error": session_res.get("error", "Chrome oturum çerezleri okunamadı.")}
+
+    active_username = username or session_res.get("username", "") or "Aggravating_End_1105"
 
     # Format cookies for Puppeteer
     puppeteer_cookies = []
@@ -46,7 +48,8 @@ def publish_via_chrome(post_url: str, reply_text: str) -> dict:
             poster_script,
             "--url", post_url,
             "--text-file", text_file.name,
-            "--cookies", cookie_file.name
+            "--cookies", cookie_file.name,
+            "--username", active_username
         ]
 
         proc = subprocess.run(
