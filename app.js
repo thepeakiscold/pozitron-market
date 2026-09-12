@@ -80,16 +80,19 @@ class PozitronApp {
     this.updateUserUI();
     this.updateCartUI();
 
-    // 4. Parse URL Query & Hash on Load (e.g. #category=motors, #builder, #build=..., or ?build=...)
-    this.parseInitialUrlState();
-    this.handleHashChange();
+    // 4. Parse URL Query & Hash on Load (e.g. #category=vtx, #brand=SpeedyBee, ?category=vtx, etc.)
+    const shouldScroll = this.handleUrlAndHashChange(true);
 
     // 5. Initial Product Fetch & Comments System
     await this.fetchProducts();
     this.initCommunityComments();
 
+    if (shouldScroll) {
+      this.scrollToCatalog();
+    }
+
     // 6. Listen for hash changes
-    window.addEventListener('hashchange', () => this.handleHashChange());
+    window.addEventListener('hashchange', () => this.handleUrlAndHashChange(false));
     window.addEventListener('languageChanged', () => {
       this.renderCategoriesPills();
       this.renderCategorySidebar();
@@ -104,50 +107,175 @@ class PozitronApp {
       if (modal && modal.style.display !== 'none') {
         modal.style.display = 'none';
       }
+      this.handleUrlAndHashChange(false);
     });
   }
 
-  parseInitialUrlState() {
+  handleUrlAndHashChange(isInitial = false) {
+    let changed = false;
+    let shouldScroll = false;
+
+    // 1. Parse Search Query Parameters (e.g. ?category=vtx, ?brand=SpeedyBee, ?q=motors, ?product=...)
     try {
       const urlParams = new URLSearchParams(window.location.search);
+
+      if (urlParams.has('category')) {
+        const cat = urlParams.get('category');
+        if (cat && this.filters.category !== cat) {
+          this.filters.category = cat;
+          if (!urlParams.has('brand')) this.filters.brand = 'all';
+          this.filters.page = 1;
+          changed = true;
+          shouldScroll = true;
+        }
+      }
+
+      if (urlParams.has('brand')) {
+        const brand = decodeURIComponent(urlParams.get('brand'));
+        if (brand && this.filters.brand !== brand) {
+          this.filters.brand = brand;
+          this.filters.page = 1;
+          changed = true;
+          shouldScroll = true;
+        }
+      }
+
+      if (urlParams.has('q')) {
+        const query = decodeURIComponent(urlParams.get('q'));
+        if (query && this.filters.q !== query) {
+          this.filters.q = query;
+          const searchInput = document.getElementById('search-input');
+          if (searchInput) searchInput.value = query;
+          this.filters.page = 1;
+          changed = true;
+          shouldScroll = true;
+        }
+      }
+
+      if (urlParams.has('voltage')) {
+        const v = urlParams.get('voltage');
+        if (v && this.filters.voltage !== v) {
+          this.filters.voltage = v;
+          this.filters.page = 1;
+          changed = true;
+          shouldScroll = true;
+        }
+      }
+
       if (urlParams.has('build')) {
-        setTimeout(() => this.loadSharedBuild(urlParams.get('build')), 300);
+        setTimeout(() => this.loadSharedBuild(urlParams.get('build')), 250);
       } else if (urlParams.has('product')) {
         const prod = urlParams.get('product');
-        setTimeout(() => this.openProductModal(prod), 300);
+        setTimeout(() => this.openProductModal(prod), 250);
       } else if (urlParams.has('builder')) {
-        setTimeout(() => this.openBuilderModal(), 300);
+        setTimeout(() => this.openBuilderModal(), 250);
+      } else if (urlParams.has('3d-studio')) {
+        setTimeout(() => this.open3DStudioModal(), 250);
       }
     } catch (e) {
-      console.warn('URL param parse error:', e);
+      console.warn('URL search parse error:', e);
+    }
+
+    // 2. Parse Hash Parameters (e.g. #category=vtx, #brand=SpeedyBee, #q=motor, #builder, #cart, etc.)
+    try {
+      const rawHash = (window.location.hash || '').replace(/^#/, '');
+      if (rawHash) {
+        const hashParams = new URLSearchParams(rawHash.includes('=') ? rawHash : '');
+
+        if (hashParams.has('category') || rawHash.startsWith('category=')) {
+          const cat = hashParams.get('category') || (rawHash.split('category=')[1] ? rawHash.split('category=')[1].split('&')[0] : '');
+          if (cat && this.filters.category !== cat) {
+            this.filters.category = cat;
+            if (!hashParams.has('brand') && !rawHash.includes('brand=')) {
+              this.filters.brand = 'all';
+            }
+            this.filters.page = 1;
+            changed = true;
+            shouldScroll = true;
+          }
+        }
+
+        if (hashParams.has('brand') || rawHash.startsWith('brand=')) {
+          const brand = decodeURIComponent(hashParams.get('brand') || (rawHash.split('brand=')[1] ? rawHash.split('brand=')[1].split('&')[0] : ''));
+          if (brand && this.filters.brand !== brand) {
+            this.filters.brand = brand;
+            this.filters.page = 1;
+            changed = true;
+            shouldScroll = true;
+          }
+        }
+
+        if (hashParams.has('q') || rawHash.startsWith('q=')) {
+          const query = decodeURIComponent(hashParams.get('q') || (rawHash.split('q=')[1] ? rawHash.split('q=')[1].split('&')[0] : ''));
+          if (query && this.filters.q !== query) {
+            this.filters.q = query;
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) searchInput.value = query;
+            this.filters.page = 1;
+            changed = true;
+            shouldScroll = true;
+          }
+        }
+
+        if (rawHash.startsWith('product=')) {
+          const prodSlug = rawHash.split('=')[1];
+          setTimeout(() => this.openProductModal(prodSlug), 250);
+        } else if (rawHash === 'builder') {
+          setTimeout(() => this.openBuilderModal(), 250);
+        } else if (rawHash.startsWith('build=')) {
+          const buildData = rawHash.substring(6);
+          setTimeout(() => this.loadSharedBuild(buildData), 250);
+        } else if (rawHash === '3d-studio') {
+          setTimeout(() => this.open3DStudioModal(), 250);
+        } else if (rawHash === 'cart') {
+          setTimeout(() => this.openCart(), 250);
+        } else if (rawHash === 'catalog-section' || rawHash === 'products') {
+          shouldScroll = true;
+        }
+      }
+    } catch (e) {
+      console.warn('Hash parse error:', e);
+    }
+
+    if (changed || isInitial) {
+      this.renderCategoriesPills();
+      this.renderCategorySidebar();
+      this.renderBrandSidebar();
+      this.updateDynamicSeoMeta();
+      if (!isInitial) {
+        this.fetchProducts();
+      }
+    }
+
+    if (shouldScroll) {
+      this.scrollToCatalog();
+    }
+
+    return shouldScroll;
+  }
+
+  scrollToCatalog() {
+    const el = document.getElementById('catalog-section');
+    if (el) {
+      setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
     }
   }
 
-  handleHashChange() {
-    const hash = window.location.hash.replace(/^#/, '');
-    if (!hash) return;
-
-    if (hash.startsWith('category=')) {
-      const cat = hash.split('=')[1];
-      this.filters.category = cat;
-      this.filters.page = 1;
-    } else if (hash.startsWith('q=')) {
-      const query = decodeURIComponent(hash.split('=')[1]);
-      this.filters.q = query;
-      const searchInput = document.getElementById('search-input');
-      if (searchInput) searchInput.value = query;
-      this.filters.page = 1;
-    } else if (hash.startsWith('product=')) {
-      const prodSlug = hash.split('=')[1];
-      this.openProductModal(prodSlug);
-    } else if (hash === 'builder') {
-      this.openBuilderModal();
-    } else if (hash.startsWith('build=')) {
-      const buildData = hash.substring(6);
-      this.loadSharedBuild(buildData);
-    } else if (hash === '3d-studio') {
-      this.open3DStudioModal();
+  handleSearchSubmit(e) {
+    if (e) e.preventDefault();
+    const searchInput = document.getElementById('search-input');
+    const val = searchInput ? searchInput.value.trim() : '';
+    this.filters.q = val;
+    this.filters.page = 1;
+    this.hideSuggestions();
+    this.fetchProducts();
+    this.updateDynamicSeoMeta();
+    if (val) {
+      history.pushState(null, '', '#q=' + encodeURIComponent(val));
     }
+    this.scrollToCatalog();
   }
 
   updateDynamicSeoMeta() {
@@ -163,6 +291,45 @@ class PozitronApp {
     }
 
     document.title = title;
+  }
+
+  resetAllFilters() {
+    this.filters = {
+      q: '',
+      category: 'all',
+      brand: 'all',
+      voltage: 'all',
+      in_stock: '1',
+      bestseller: '0',
+      min_price: '',
+      max_price: '',
+      sort: 'popular',
+      page: 1,
+      limit: 24
+    };
+    const searchInput = document.getElementById('search-input');
+    const searchClear = document.getElementById('search-clear-btn');
+    if (searchInput) searchInput.value = '';
+    if (searchClear) searchClear.style.display = 'none';
+    const inStockChk = document.getElementById('filter-in-stock');
+    if (inStockChk) inStockChk.checked = true;
+    const bestChk = document.getElementById('filter-bestseller');
+    if (bestChk) bestChk.checked = false;
+    const minP = document.getElementById('min-price-input');
+    if (minP) minP.value = '';
+    const maxP = document.getElementById('max-price-input');
+    if (maxP) maxP.value = '';
+    document.querySelectorAll('#voltage-filter-list .v-pill').forEach(p => p.classList.remove('active'));
+    const allVolt = document.querySelector('#voltage-filter-list .v-pill[data-voltage="all"]');
+    if (allVolt) allVolt.classList.add('active');
+    this.renderCategoriesPills();
+    this.renderCategorySidebar();
+    this.renderBrandSidebar();
+    this.fetchProducts();
+    this.updateDynamicSeoMeta();
+    if (window.location.hash) {
+      history.pushState(null, '', window.location.pathname + window.location.search);
+    }
   }
 
   bindEvents() {
@@ -188,11 +355,17 @@ class PozitronApp {
     const searchClear = document.getElementById('search-clear-btn');
     const searchForm = document.getElementById('search-form');
 
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => {
+        this.handleSearchSubmit(e);
+      });
+    }
+
     if (searchInput) {
       let debounceTimer = null;
       searchInput.addEventListener('input', (e) => {
         const val = e.target.value.trim();
-        searchClear.style.display = val ? 'block' : 'none';
+        if (searchClear) searchClear.style.display = val ? 'block' : 'none';
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
           this.handleLiveSearch(val);
@@ -202,21 +375,21 @@ class PozitronApp {
       searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
-          this.filters.q = searchInput.value.trim();
-          this.filters.page = 1;
-          this.hideSuggestions();
-          this.fetchProducts();
+          this.handleSearchSubmit(e);
         }
       });
     }
 
     if (searchClear) {
       searchClear.addEventListener('click', () => {
-        searchInput.value = '';
+        if (searchInput) searchInput.value = '';
         searchClear.style.display = 'none';
         this.filters.q = '';
         this.hideSuggestions();
         this.fetchProducts();
+        if (window.location.hash.startsWith('#q=')) {
+          history.pushState(null, '', '#');
+        }
       });
     }
 
@@ -258,37 +431,31 @@ class PozitronApp {
       });
     }
 
-    // Reset Filters Button
+    // Reset Filters Buttons
     const resetBtn = document.getElementById('btn-reset-filters');
     const resetEmptyBtn = document.getElementById('btn-reset-empty');
-    const handleReset = () => {
-      this.filters = {
-        q: '',
-        category: 'all',
-        brand: 'all',
-        voltage: 'all',
-        in_stock: '1',
-        bestseller: '0',
-        min_price: '',
-        max_price: '',
-        sort: 'popular',
-        page: 1,
-        limit: 24
-      };
-      if (searchInput) searchInput.value = '';
-      if (searchClear) searchClear.style.display = 'none';
-      document.getElementById('filter-in-stock').checked = true;
-      document.getElementById('filter-bestseller').checked = false;
-      document.getElementById('min-price-input').value = '';
-      document.getElementById('max-price-input').value = '';
-      this.renderCategoriesPills();
-      this.renderCategorySidebar();
-      this.renderBrandSidebar();
-      this.fetchProducts();
-    };
+    if (resetBtn) resetBtn.addEventListener('click', () => this.resetAllFilters());
+    if (resetEmptyBtn) resetEmptyBtn.addEventListener('click', () => this.resetAllFilters());
 
-    if (resetBtn) resetBtn.addEventListener('click', handleReset);
-    if (resetEmptyBtn) resetEmptyBtn.addEventListener('click', handleReset);
+    // Category links in page & footer (e.g. data-cat="vtx")
+    document.querySelectorAll('a[data-cat]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const cat = link.getAttribute('data-cat');
+        if (cat) {
+          e.preventDefault();
+          this.filters.category = cat;
+          this.filters.brand = 'all';
+          this.filters.page = 1;
+          this.renderCategoriesPills();
+          this.renderCategorySidebar();
+          this.renderBrandSidebar();
+          this.fetchProducts();
+          this.updateDynamicSeoMeta();
+          history.pushState(null, '', cat === 'all' ? '#' : `#category=${cat}`);
+          this.scrollToCatalog();
+        }
+      });
+    });
 
     // Price Filter Apply
     const btnApplyPrice = document.getElementById('btn-apply-price');
@@ -446,24 +613,12 @@ class PozitronApp {
       });
     }
 
-    // Brand Logo Reset Filters
+    // Brand Logo Reset Filters & Scroll to Top
     const brandLogo = document.getElementById('brand-logo-link');
     if (brandLogo) {
       brandLogo.addEventListener('click', (e) => {
         e.preventDefault();
-        // Reset state
-        this.filters = { q: '', category: '', brand: '', min_price: '', max_price: '', in_stock: '', bestseller: '', voltage: '', page: 1, limit: 12 };
-        // Reset UI
-        if (document.getElementById('search-input')) document.getElementById('search-input').value = '';
-        if (document.getElementById('min-price-input')) document.getElementById('min-price-input').value = '';
-        if (document.getElementById('max-price-input')) document.getElementById('max-price-input').value = '';
-        if (document.getElementById('filter-in-stock')) document.getElementById('filter-in-stock').checked = false;
-        if (document.getElementById('filter-bestseller')) document.getElementById('filter-bestseller').checked = false;
-        document.querySelectorAll('#voltage-filter-list .v-pill').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('#category-list-container li').forEach(li => li.classList.remove('active'));
-        document.querySelectorAll('#brand-list-container li').forEach(li => li.classList.remove('active'));
-        
-        this.fetchProducts();
+        this.resetAllFilters();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
     }    // WA Confirm Modal
@@ -911,14 +1066,25 @@ class PozitronApp {
 
     bar.innerHTML = html;
 
+    const activePill = bar.querySelector('.category-pill-btn.active');
+    if (activePill) {
+      setTimeout(() => {
+        activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }, 50);
+    }
+
     bar.querySelectorAll('.category-pill-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const cat = e.currentTarget.getAttribute('data-cat');
         this.filters.category = cat;
+        this.filters.brand = 'all';
         this.filters.page = 1;
         this.renderCategoriesPills();
         this.renderCategorySidebar();
+        this.renderBrandSidebar();
         this.fetchProducts();
+        this.updateDynamicSeoMeta();
+        history.pushState(null, '', cat === 'all' ? '#' : `#category=${cat}`);
       });
     });
   }
@@ -956,9 +1122,13 @@ class PozitronApp {
     list.querySelectorAll('input[name="sidebar-cat"]').forEach(input => {
       input.addEventListener('change', (e) => {
         this.filters.category = e.target.value;
+        this.filters.brand = 'all';
         this.filters.page = 1;
         this.renderCategoriesPills();
+        this.renderBrandSidebar();
         this.fetchProducts();
+        this.updateDynamicSeoMeta();
+        history.pushState(null, '', e.target.value === 'all' ? '#' : `#category=${e.target.value}`);
       });
     });
   }
@@ -993,6 +1163,7 @@ class PozitronApp {
         this.filters.brand = e.target.value;
         this.filters.page = 1;
         this.fetchProducts();
+        history.pushState(null, '', e.target.value === 'all' ? '#' : `#brand=${encodeURIComponent(e.target.value)}`);
       });
     });
   }
@@ -1633,6 +1804,14 @@ class PozitronApp {
   closeCartDrawer() {
     const backdrop = document.getElementById('cart-backdrop');
     if (backdrop) backdrop.classList.remove('open');
+  }
+
+  openCart() {
+    this.openCartDrawer();
+  }
+
+  closeCart() {
+    this.closeCartDrawer();
   }
 
   async handleApplyCoupon() {

@@ -276,7 +276,7 @@ def generate_product_page(product, category, related_products):
       
       <!-- Brand Logo -->
       <a href="../" class="brand-link" aria-label="Pozitron Market Anasayfa">
-        <img src="../assets/logo.svg" alt="Pozitron Market - Drone &amp; FPV Donanım Mağazası" class="brand-logo" width="220" height="42">
+        <img src="../assets/logo.svg" alt="Pozitron Market - Drone &amp; FPV Donanım Mağazası" class="brand-logo" width="280" height="56">
       </a>
 
       <!-- Search Form -->

@@ -220,7 +220,8 @@ img {
 }
 
 .brand-logo {
-  height: 50px;
+  height: 62px;
+  max-height: 64px;
   width: auto;
   transition: transform 0.2s ease;
 }
@@ -3209,9 +3210,9 @@ img {
     order: 1;
   }
   .brand-logo {
-    height: 40px;
+    height: 48px;
     width: auto;
-    max-width: 185px;
+    max-width: 220px;
   }
   .header-actions {
     order: 2;
