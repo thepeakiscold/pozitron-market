@@ -86,17 +86,16 @@ class TestInstagramPRAgent(unittest.TestCase):
         # Ensure dry run
         agent.update_config({'dry_run_mode': 1})
         
-        # 1. Generate post
-        draft = agent.generate_post(content_type='product_spotlight')
-        self.assertIsNotNone(draft['id'])
-        self.assertEqual(draft['status'], 'draft')
-        
-        # 2. Publish post (in dry run)
-        pub_res = agent.publish_post(draft['id'])
-        self.assertTrue(pub_res['success'])
+        # 1. Generate & publish post directly (no drafts)
+        res = agent.generate_and_publish_now(content_type='product_spotlight')
+        self.assertTrue(res['success'])
+        post = res['post']
+        self.assertIsNotNone(post['id'])
+        self.assertEqual(post['status'], 'published')
+        self.assertIsNotNone(post.get('published_at'))
         
         # 3. Check DB status
-        stored = get_instagram_post_by_id(draft['id'])
+        stored = get_instagram_post_by_id(post['id'])
         self.assertEqual(stored['status'], 'published')
         self.assertIsNotNone(stored['published_at'])
         
@@ -105,8 +104,8 @@ class TestInstagramPRAgent(unittest.TestCase):
         self.assertTrue(status['published_count'] >= 1)
         
         # 5. Clean up
-        agent.delete_post(draft['id'])
-        self.assertIsNone(get_instagram_post_by_id(draft['id']))
+        agent.delete_post(post['id'])
+        self.assertIsNone(get_instagram_post_by_id(post['id']))
 
 if __name__ == '__main__':
     unittest.main()

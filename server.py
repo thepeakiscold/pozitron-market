@@ -17,6 +17,7 @@ from export_data import export_static_data
 from instagram_agent.agent import InstagramPRAgent
 from instagram_agent.scheduler import InstagramScheduler
 from instagram_agent.chrome_session import extract_chrome_instagram_cookies
+from instagram_agent.engagement import InstagramEngagementEngine
 from reddit_agent.agent import RedditDroneAgent
 from reddit_agent.scheduler import RedditScheduler
 
@@ -430,6 +431,16 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     })
             except Exception as ex:
                 self.send_json(200, {"available": False, "error": str(ex)})
+            return
+
+        # Instagram PR: Drone Community Engagement Status
+        if path == '/api/instagram/engagement':
+            try:
+                engine = InstagramEngagementEngine(gemini_api_key=instagram_pr_agent.config.get('gemini_api_key'))
+                data = engine.load_interactions_data()
+                self.send_json(200, data)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
             return
 
         # Reddit Drone Bot: Status
@@ -860,22 +871,29 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
-        # Instagram PR: Generate Post Draft & 1080x1080 Image
-        if path == '/api/instagram/generate':
+        # Instagram PR: Direct Generate & Publish (No Drafts)
+        if path in ('/api/instagram/direct-publish', '/api/instagram/generate', '/api/instagram/publish'):
             content_type = data.get('content_type')
             product_id = data.get('product_id')
+            post_id = data.get('id')
             try:
-                post = instagram_pr_agent.generate_post(content_type=content_type, product_id=product_id)
-                self.send_json(200, {"success": True, "post": post})
+                if post_id:
+                    result = instagram_pr_agent.publish_post(post_id=post_id)
+                else:
+                    # Direct generation and instant publish without leftover draft
+                    result = instagram_pr_agent.generate_and_publish_now(content_type=content_type, product_id=product_id)
+                status_code = 200 if result.get('success') else 400
+                self.send_json(status_code, result)
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return
 
-        # Instagram PR: Publish Post
-        if path == '/api/instagram/publish':
-            post_id = data.get('id')
+        # Instagram PR: Run Drone Community Engagement (10 Follows & 10 Comments)
+        if path == '/api/instagram/engage':
             try:
-                result = instagram_pr_agent.publish_post(post_id=post_id)
+                engine = InstagramEngagementEngine(gemini_api_key=instagram_pr_agent.config.get('gemini_api_key'))
+                target_count = int(data.get('target_count', 10))
+                result = engine.run_daily_drone_engagement(target_count=target_count)
                 status_code = 200 if result.get('success') else 400
                 self.send_json(status_code, result)
             except Exception as e:

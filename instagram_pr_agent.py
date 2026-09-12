@@ -99,19 +99,72 @@ def cmd_daemon(agent: InstagramPRAgent):
         print("\n🛑 Kapatılıyor...")
         scheduler.stop()
 
-def cmd_auto_cycle(agent: InstagramPRAgent):
-    print("🚀 Pozitron Market Instagram PR Robotu Otonom Döngüsü Başlatılıyor...")
-    res = agent.run_autonomous_cycle()
+def cmd_direct_publish(agent: InstagramPRAgent, content_type: str = None, product_id: str = None):
+    print("⚡ Yeni Instagram gönderisi ve 1080x1080 afiş üretilip doğrudan canlı yayına aktarılıyor (Taslaksız)...")
+    res = agent.generate_and_publish_now(content_type=content_type, product_id=product_id)
     if res.get('success'):
-        print("\n🎉 OTONOM GÖNDERİ DÖNGÜSÜ BAŞARIYLA TAMAMLANDI!")
-        print(f"🔹 Mod:           {res.get('mode', 'dry_run').upper()}")
+        print("\n🎉 GÖNDERİ BAŞARIYLA YAYINLANDI!")
+        print(f"🔹 Mod:           {res.get('mode', 'live').upper()}")
         print(f"🔹 Gönderi ID:    {res.get('post', {}).get('id')}")
         print(f"🔹 Başlık:        {res.get('post', {}).get('title')}")
-        print(f"🔹 Görsel:        {res.get('post', {}).get('local_image_path')}")
         print(f"🔹 IG Permalink:  {res.get('ig_permalink')}")
     else:
-        print(f"\n❌ OTONOM DÖNGÜ HATASI: {res.get('error')}")
+        print(f"\n❌ YAYINLAMA HATASI: {res.get('error')}")
         sys.exit(1)
+
+def cmd_engage():
+    from instagram_agent.engagement import InstagramEngagementEngine
+    print("🛸 Drone Topluluğu Etkileşim Motoru Başlatılıyor (Hedef: 10 Takip & 10 Yorum)...")
+    engine = InstagramEngagementEngine()
+    res = engine.run_daily_drone_engagement(target_count=10)
+    print("\n" + "=" * 60)
+    print("📊 ETKİLEŞİM RAPORU:")
+    print(f"👤 Yeni Takip Edilen Pilot: +{res.get('new_follows', 0)} (Bugün Toplam: {res.get('today_follows', 0)}/10)")
+    print(f"💬 Yapılan Yeni Yorum:       +{res.get('new_comments', 0)} (Bugün Toplam: {res.get('today_comments', 0)}/10)")
+    if res.get('interacted_pilots'):
+        print("\nEtkileşime Geçilen Pilotlar:")
+        for p in res['interacted_pilots']:
+            print(f"  • @{p['username']}: {p['post_url']}")
+    print("=" * 60)
+
+def cmd_auto(agent: InstagramPRAgent, force: bool = False):
+    cfg = agent.get_safe_config()
+    freq_hours = cfg.get('posting_frequency_hours', 6)
+    last_run_str = agent.config.get('last_run_at')
+    should_post = force
+    
+    if not should_post:
+        if not last_run_str:
+            should_post = True
+        else:
+            try:
+                last_dt = datetime.fromisoformat(last_run_str)
+                hours_passed = (datetime.now() - last_dt).total_seconds() / 3600.0
+                if hours_passed >= freq_hours:
+                    should_post = True
+                else:
+                    print(f"ℹ️ Son paylaşımdan bu yana {hours_passed:.1f} saat geçti (Aralık: {freq_hours} saat). Paylaşım henüz beklenmiyor.")
+            except Exception:
+                should_post = True
+
+    if should_post:
+        print(f"🚀 Paylaşım periyodu ({freq_hours} saat) geldi! Doğrudan gönderi üretilip yayınlanıyor...")
+        cmd_direct_publish(agent)
+    
+    # Run daily engagement
+    print("\n🛸 Günlük drone topluluğu etkileşimi yürütülüyor...")
+    cmd_engage()
+
+def cmd_auto_cycle(agent: InstagramPRAgent):
+    print("🚀 Pozitron Market Instagram PR Robotu Otonom Döngüsü Başlatılıyor...")
+    res = agent.run_autonomous_cycle(run_engagement=True)
+    if res.get('success'):
+        print("\n🎉 OTONOM GÖNDERİ DÖNGÜSÜ BAŞARIYLA TAMAMLANDI!")
+        print(f"🔹 Gönderi ID:    {res.get('post_result', {}).get('post', {}).get('id')}")
+        print(f"🔹 Başlık:        {res.get('post_result', {}).get('post', {}).get('title')}")
+        print(f"🔹 IG Permalink:  {res.get('post_result', {}).get('ig_permalink')}")
+    else:
+        print(f"\n❌ OTONOM GÖNDERİ HATASI: {res.get('post_result', {}).get('error')}")
 
 def cmd_export_cookies():
     import json
@@ -134,14 +187,19 @@ def cmd_export_cookies():
 def main():
     parser = argparse.ArgumentParser(description="Pozitron Market Autonomous Instagram PR Agent CLI")
     parser.add_argument('--status', action='store_true', help="Ajan durumunu ve ayarlarını gösterir")
-    parser.add_argument('--generate', action='store_true', help="Yeni bir gönderi taslağı ve 1080x1080 görsel üretir")
-    parser.add_argument('--publish', action='store_true', help="Taslağı Instagram'da yayınlar (veya simüle eder)")
-    parser.add_argument('--auto-cycle', action='store_true', help="Tek adımda görsel ve içerik üretip paylaşır (CI / GitHub Actions için)")
+    parser.add_argument('--direct-publish', action='store_true', help="Taslaksız: Tek adımda gönderi üretip canlı yayınlar")
+    parser.add_argument('--engage', action='store_true', help="Drone meraklısı pilotları takip eder ve destek yorumu atar (Günde 10)")
+    parser.add_argument('--auto', action='store_true', help="Belirtilen aralık geldiyse direkt paylaşır + drone etkileşimi yapar")
+    parser.add_argument('--force', action='store_true', help="Aralığı beklemeden --auto modunu hemen tetikler")
+    parser.add_argument('--set-freq', type=int, help="Paylaşım sıklığını saat olarak ayarlar (ör: 3, 6, 12, 24)")
+    parser.add_argument('--generate', action='store_true', help="Yeni bir gönderi üretip yayınlar (Taslaksız)")
+    parser.add_argument('--publish', action='store_true', help="Doğrudan yayınlar")
+    parser.add_argument('--auto-cycle', action='store_true', help="Tek adımda görsel ve içerik üretip paylaşır ve etkileşime geçer")
     parser.add_argument('--export-cookies', action='store_true', help="GitHub Actions Secrets için Instagram oturum çerezlerini JSON olarak dışa aktarır")
-    parser.add_argument('--id', type=str, help="Yayınlanacak veya görüntülenecek gönderi ID'si")
+    parser.add_argument('--id', type=str, help="Yayınlanacak gönderi ID'si")
     parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight'], help="İçerik sütunu/tipi")
     parser.add_argument('--product', type=str, help="Öne çıkarılacak ürün ID'si veya slug")
-    parser.add_argument('--list', action='store_true', help="Kayıtlı gönderileri listeler")
+    parser.add_argument('--list', action='store_true', help="Kayıtlı yayınlanan gönderileri listeler")
     parser.add_argument('--limit', type=int, default=15, help="Listelenecek gönderi sayısı")
     parser.add_argument('--daemon', action='store_true', help="Sürekli arka plan planlayıcısı olarak çalıştırır")
     parser.add_argument('--toggle', type=str, choices=['on', 'off'], help="Otonom yayınlamayı açar veya kapatır")
@@ -149,16 +207,21 @@ def main():
     args = parser.parse_args()
     agent = InstagramPRAgent()
 
-    if args.status:
+    if args.set_freq:
+        agent.update_config({'posting_frequency_hours': args.set_freq})
+        print(f"✅ Paylaşım sıklığı güncellendi: Her {args.set_freq} saatte bir")
+    elif args.status:
         cmd_status(agent)
+    elif args.direct_publish or args.generate or args.publish:
+        cmd_direct_publish(agent, content_type=args.type, product_id=args.product)
+    elif args.engage:
+        cmd_engage()
+    elif args.auto:
+        cmd_auto(agent, force=args.force)
     elif args.auto_cycle:
         cmd_auto_cycle(agent)
     elif args.export_cookies:
         cmd_export_cookies()
-    elif args.generate:
-        cmd_generate(agent, content_type=args.type, product_id=args.product)
-    elif args.publish:
-        cmd_publish(agent, post_id=args.id)
     elif args.list:
         cmd_list(agent, limit=args.limit)
     elif args.daemon:

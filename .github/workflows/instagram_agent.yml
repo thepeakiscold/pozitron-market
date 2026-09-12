@@ -1,20 +1,21 @@
-name: Pozitron Instagram PR Agent (Online Runner)
+name: Pozitron Instagram PR Agent & Engagement Robot
 
 on:
   schedule:
-    # Runs every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
-    - cron: '0 */6 * * *'
+    # Runs every 3 hours to check dynamic posting frequency & daily engagement
+    - cron: '0 */3 * * *'
   workflow_dispatch:
     inputs:
       action:
         description: 'Islem Tipi'
         required: true
-        default: 'auto_cycle'
+        default: 'auto'
         type: choice
         options:
+          - 'auto'
+          - 'direct_publish'
+          - 'engage_only'
           - 'auto_cycle'
-          - 'generate_only'
-          - 'publish_latest'
       content_type:
         description: 'Icerik Konsepti (Opsiyonel)'
         required: false
@@ -41,7 +42,7 @@ permissions:
 
 jobs:
   run-instagram-pr:
-    name: Generate & Publish FPV Content
+    name: Autonomous Instagram PR & Drone Engagement
     runs-on: ubuntu-latest
 
     steps:
@@ -65,45 +66,38 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Run Instagram PR Agent
+      - name: Run Instagram PR Agent & Drone Engagement
         env:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID || '17841430407836914' }}
           INSTAGRAM_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          INSTAGRAM_COOKIES_JSON: ${{ secrets.INSTAGRAM_COOKIES_JSON }}
+          INSTAGRAM_SESSIONID: ${{ secrets.INSTAGRAM_SESSIONID }}
+          INSTAGRAM_CSRFTOKEN: ${{ secrets.INSTAGRAM_CSRFTOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CI: 'true'
         run: |
           echo "📸 Pozitron Market Instagram PR Robotu Calistiriliyor..."
           python3 instagram_pr_agent.py --status
 
-          ACTION="${{ github.event.inputs.action || 'auto_cycle' }}"
+          ACTION="${{ github.event.inputs.action || 'auto' }}"
           TYPE_ARG=""
           if [ -n "${{ github.event.inputs.content_type }}" ] && [ "${{ github.event.inputs.content_type }}" != "random" ]; then
             TYPE_ARG="--type ${{ github.event.inputs.content_type }}"
           fi
 
-          if [ "$ACTION" = "generate_only" ]; then
-            python3 instagram_pr_agent.py --generate $TYPE_ARG
-            git add assets/instagram/posts/ data/instagram_posts.json || true
-            git commit -m "chore(instagram-pr): save draft post & visual [skip ci]" || true
-            git push
-          elif [ "$ACTION" = "publish_latest" ]; then
-            python3 instagram_pr_agent.py --publish
-            git add data/instagram_posts.json || true
-            git commit -m "chore(instagram-pr): update post status & permalink [skip ci]" || true
-            git push
+          if [ "$ACTION" = "engage_only" ]; then
+            python3 instagram_pr_agent.py --engage
+          elif [ "$ACTION" = "direct_publish" ]; then
+            python3 instagram_pr_agent.py --direct-publish $TYPE_ARG
           else
-            # Full auto cycle: Generate -> Push Visual -> Publish to Meta API -> Push Status
-            python3 instagram_pr_agent.py --generate $TYPE_ARG
-            git add assets/instagram/posts/ data/instagram_posts.json || true
-            git commit -m "chore(instagram-pr): upload visual for Meta API ingestion [skip ci]" || true
-            git push
-            # Sleep 3s to allow CDN propagation
-            sleep 3
-            python3 instagram_pr_agent.py --publish
-            git add data/instagram_posts.json || true
-            git commit -m "chore(instagram-pr): record published post permalink [skip ci]" || true
-            git push
+            # Default 'auto': Checks frequency interval, directly publishes if due, and runs daily drone engagement
+            python3 instagram_pr_agent.py --auto $TYPE_ARG
           fi
+
+          # Commit updated posts, config, and interactions history
+          git add assets/instagram/posts/ data/instagram_posts.json data/instagram_config.json data/instagram_interactions.json || true
+          git commit -m "chore(instagram-pr): autonomous post & drone engagement update [skip ci]" || true
+          git push
 
           python3 instagram_pr_agent.py --list --limit 10

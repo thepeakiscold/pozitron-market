@@ -9,6 +9,7 @@ from .db import (
 from .content_generator import ContentGenerator
 from .image_generator import ImageGenerator
 from .meta_publisher import MetaPublisher
+from .engagement import InstagramEngagementEngine
 
 class InstagramPRAgent:
     def __init__(self):
@@ -132,60 +133,76 @@ class InstagramPRAgent:
 
         return self.get_safe_config()
 
-    def generate_post(self, content_type: str = None, product_id: str = None) -> dict:
+    def generate_and_publish_now(self, content_type: str = None, product_id: str = None) -> dict:
         """
-        Creates a new post draft with generated caption, hashtags, and 1080x1080 image.
+        Creates a new post and DIRECTLY publishes it to Instagram (Meta API or dry-run).
+        Never leaves a draft behind.
         """
         post_id = f"ig_post_{uuid.uuid4().hex[:12]}"
         
         # 1. Generate text and metadata
         content = self.content_gen.generate_content(content_type=content_type, product_id=product_id)
         
-        # 2. Package post data
-        post_data = {
+        # 2. Generate visual banner (1080x1080)
+        temp_post_data = {
             'id': post_id,
             'content_type': content['content_type'],
             'product_id': content.get('product_id'),
             'title': content['title'],
             'caption': content['caption'],
             'hashtags': content['hashtags'],
-            'status': 'draft',
             'product_data': content.get('product_data'),
             'tool_info': content.get('tool_info'),
             'created_at': datetime.now().isoformat()
         }
+        img_rel_path = self.image_gen.generate_post_image(temp_post_data)
+        temp_post_data['image_url'] = img_rel_path
+        temp_post_data['local_image_path'] = img_rel_path
 
-        # 3. Generate visual banner (1080x1080)
-        img_rel_path = self.image_gen.generate_post_image(post_data)
-        post_data['image_url'] = img_rel_path
-        post_data['local_image_path'] = img_rel_path
+        # 3. Publish immediately to Meta Graph API
+        result = self.publisher.publish_post(temp_post_data)
 
-        # 4. Save draft in database
-        save_instagram_post(post_data)
+        if result.get('success'):
+            now_iso = datetime.now().isoformat()
+            temp_post_data['status'] = 'published'
+            temp_post_data['ig_media_id'] = result.get('ig_media_id')
+            temp_post_data['ig_permalink'] = result.get('ig_permalink')
+            temp_post_data['published_at'] = now_iso
+            
+            # Save strictly published post to SQLite and JSON
+            save_instagram_post(temp_post_data)
 
-        return post_data
+            # Update schedule timings
+            freq_hours = self.config.get('posting_frequency_hours', 6)
+            next_run = (datetime.now() + timedelta(hours=freq_hours)).isoformat()
+            update_agent_config({
+                'last_run_at': now_iso,
+                'next_run_at': next_run
+            })
+            result['post'] = temp_post_data
+            return result
+        else:
+            # Do NOT persist as draft on failure
+            print(f"❌ Paylaşım başarısız oldu: {result.get('error')}")
+            return result
+
+    def generate_post(self, content_type: str = None, product_id: str = None) -> dict:
+        """Alias for direct generation & immediate publishing (no drafts)."""
+        res = self.generate_and_publish_now(content_type=content_type, product_id=product_id)
+        return res.get('post') or {}
 
     def publish_post(self, post_id: str = None) -> dict:
         """
-        Publishes post either to Instagram or in dry-run mode.
-        If post_id is None, finds the latest draft or generates a new one.
+        Publishes an existing post if post_id is provided, otherwise generates and publishes directly.
         """
-        post = None
-        if post_id:
-            post = get_instagram_post_by_id(post_id)
-        else:
-            drafts = get_instagram_posts(limit=1, status='draft')
-            if drafts:
-                post = drafts[0]
-            else:
-                post = self.generate_post()
+        if not post_id:
+            return self.generate_and_publish_now()
 
+        post = get_instagram_post_by_id(post_id)
         if not post:
-            return {"success": False, "error": "Paylaşılacak gönderi bulunamadı."}
+            return {"success": False, "error": f"Gönderi bulunamadı: {post_id}"}
 
-        # Publish via MetaPublisher
         result = self.publisher.publish_post(post)
-
         now_iso = datetime.now().isoformat()
         if result.get('success'):
             update_instagram_post_status(
@@ -195,32 +212,43 @@ class InstagramPRAgent:
                 ig_permalink=result.get('ig_permalink'),
                 published_at=now_iso
             )
-            # Update next run calculation
-            freq_hours = self.config.get('posting_frequency_hours', 12)
+            freq_hours = self.config.get('posting_frequency_hours', 6)
             next_run = (datetime.now() + timedelta(hours=freq_hours)).isoformat()
             update_agent_config({
                 'last_run_at': now_iso,
                 'next_run_at': next_run
             })
-        else:
-            update_instagram_post_status(
-                post_id=post['id'],
-                status='failed',
-                error_message=result.get('error', 'Bilinmeyen hata')
-            )
-
         result['post'] = get_instagram_post_by_id(post['id'])
         return result
 
-    def run_autonomous_cycle(self) -> dict:
+    def run_autonomous_cycle(self, run_engagement: bool = True) -> dict:
         """
-        Executes a single autonomous run: picks candidate, generates post, and publishes.
+        Executes a complete autonomous cycle:
+        1. Directly generates and publishes a new post (no drafts).
+        2. Engages with the drone community (follows up to 10 pilots & posts 10 comments).
         """
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 🤖 Instagram PR Ajanı otonom döngü başlatıyor...")
-        draft = self.generate_post()
-        res = self.publish_post(draft['id'])
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ Otonom döngü tamamlandı. Durum: {res.get('success')}")
-        return res
+        
+        # 1. Direct Post & Publish
+        post_res = self.generate_and_publish_now()
+        
+        # 2. Drone Community Engagement
+        engagement_res = {}
+        if run_engagement:
+            try:
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 🛸 Drone topluluğu etkileşim döngüsü başlatılıyor (Hedef: 10 takip & 10 yorum)...")
+                engine = InstagramEngagementEngine(gemini_api_key=self.config.get('gemini_api_key'))
+                engagement_res = engine.run_daily_drone_engagement(target_count=10)
+            except Exception as e:
+                print(f"⚠️ Etkileşim döngüsü hatası: {e}")
+                engagement_res = {"success": False, "error": str(e)}
+
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ Otonom döngü tamamlandı. Gönderi Durumu: {post_res.get('success')}")
+        return {
+            "success": post_res.get('success', False),
+            "post_result": post_res,
+            "engagement_result": engagement_res
+        }
 
     def get_posts(self, limit: int = 50, offset: int = 0, status: str = None) -> list:
         return get_instagram_posts(limit=limit, offset=offset, status=status)

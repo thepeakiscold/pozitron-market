@@ -1,0 +1,31 @@
+{
+  "today_date": "2026-09-12",
+  "today_follows_count": 1,
+  "today_comments_count": 1,
+  "max_daily_limit": 10,
+  "followed_user_ids": [
+    "73181351103"
+  ],
+  "commented_media_ids": [
+    "3983912198478190450_73181351103"
+  ],
+  "history": [
+    {
+      "type": "follow",
+      "username": "fpv.rodriguez",
+      "user_id": "73181351103",
+      "timestamp": "2026-09-12T13:37:17.477154",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "fpv.rodriguez",
+      "user_id": "73181351103",
+      "media_id": "3983912198478190450_73181351103",
+      "media_code": "DdJswluo1dy",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar 🛸",
+      "timestamp": "2026-09-12T13:37:25.799389",
+      "status": "success"
+    }
+  ]
+}

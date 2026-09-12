@@ -995,18 +995,68 @@
               </p>
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Taslaklar / Hazır Afişler</span>
-              <div style="font-size:1.8rem; font-weight:800; color:#eab308; margin:6px 0;" id="ig-gh-kpi-drafts">0</div>
+              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">🛸 Günlük Drone Etkileşimi</span>
+              <div style="font-size:1.4rem; font-weight:800; color:#0284c7; margin:6px 0; display:flex; gap:12px; align-items:baseline;">
+                <span>👤 <span id="ig-kpi-engagement-follows">0/10</span></span>
+                <span>💬 <span id="ig-kpi-engagement-comments">0/10</span></span>
+              </div>
               <p style="font-size:0.75rem; color:#64748b; margin:0;">
-                1080x1080 afişi çizilmiş, sıradaki yayına hazır taslaklar.
+                Günde 10 drone pilotunu takip etme &amp; 10 gönderiye destek yorumu.
               </p>
             </div>
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">
-              <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">Otomatik Zamanlama (Cron)</span>
-              <div style="font-size:1.05rem; font-weight:800; color:#16a34a; margin:6px 0;">Her 6 Saatte Bir</div>
-              <p style="font-size:0.75rem; color:#64748b; margin:0;">
-                Günde 4 kez Meta Graph API üzerinden otonom yayın.
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.74rem; font-weight:700; color:#64748b; text-transform:uppercase;">⏱️ Paylaşım Sıklığı</span>
+                <span id="ig-freq-save-status" style="font-size:0.72rem; color:#16a34a; font-weight:700;"></span>
+              </div>
+              <div style="margin:6px 0;">
+                <select id="ig-quick-freq-select" onchange="updatePostingFrequency(this.value)" style="width:100%; padding:6px 8px; font-size:0.86rem; font-weight:800; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; cursor:pointer;">
+                  <option value="3">Her 3 Saatte Bir (Günde 8 Post)</option>
+                  <option value="6" selected>Her 6 Saatte Bir (Günde 4 Post - Önerilen)</option>
+                  <option value="12">Her 12 Saatte Bir (Günde 2 Post)</option>
+                  <option value="24">Günde 1 Kez (Her 24 Saatte 1 Post)</option>
+                </select>
+              </div>
+              <p style="font-size:0.75rem; color:#64748b; margin:0;" id="ig-quick-freq-sub">
+                Sıradaki: <strong id="ig-next-post-calc" style="color:#0f172a;">Hesaplanıyor...</strong>
               </p>
+            </div>
+          </div>
+
+          <!-- DRONE COMMUNITY ENGAGEMENT PANEL -->
+          <div style="background:linear-gradient(135deg, #090d16 0%, #111827 100%); border:1px solid #1f2937; border-radius:14px; padding:20px 24px; color:#fff; margin-bottom:28px; box-shadow:0 4px 14px rgba(0,0,0,0.12);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+              <div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                  <span style="font-size:1.5rem;">🛸</span>
+                  <h4 style="font-size:1.08rem; font-weight:800; margin:0; color:#fff;">
+                    Drone &amp; FPV Topluluğu Günlük Etkileşim Robotu
+                  </h4>
+                  <span id="ig-engagement-badge" style="font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:9999px; background:#166534; color:#bbf7d0;">
+                    GÜNDE 10 TAKİP &amp; 10 YORUM KOTASI
+                  </span>
+                </div>
+                <p style="font-size:0.83rem; color:#94a3b8; margin:0 0 10px 0; max-width:820px; line-height:1.5;">
+                  Türk FPV drone pilotlarını ve Teknofest İHA ekiplerini (<code>#fpvturkey</code>, <code>#droneturkey</code>, <code>#fpvdrone</code>) otomatik keşfeder. Her gün <strong>10 pilotu takip eder</strong> ve gönderilerine kırımsız uçuşlar dileyen samimi <strong>10 destek yorumu</strong> bırakır.
+                </p>
+                <div style="display:flex; flex-wrap:wrap; gap:18px; font-size:0.82rem; color:#cbd5e1;">
+                  <span>👤 Bugün Takip Edilen Pilotlar: <strong id="ig-eng-today-follows" style="color:#38bdf8; font-size:0.95rem;">0 / 10</strong></span>
+                  <span>💬 Yapılan Destek Yorumları: <strong id="ig-eng-today-comments" style="color:#4ade80; font-size:0.95rem;">0 / 10</strong></span>
+                  <span>⏱️ Son Etkileşim: <strong id="ig-eng-last-time" style="color:#f8fafc;">-</strong></span>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                <button type="button" class="admin-btn-primary" onclick="triggerDroneCommunityEngagement()" id="btn-ig-trigger-engagement" style="background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:none; padding:10px 18px; font-size:0.85rem; font-weight:800; display:flex; align-items:center; gap:8px; box-shadow:0 3px 10px rgba(2,132,199,0.35); cursor:pointer;">
+                  <span>🛸</span> <span id="btn-ig-trigger-engagement-txt">Topluluk Etkileşimini Başlat (10 Takip &amp; 10 Yorum)</span>
+                </button>
+                <span style="font-size:0.72rem; color:#64748b;">Doğal insan temposu (8-16 sn bekleme) ile hesap güvenliği korunur.</span>
+              </div>
+            </div>
+
+            <!-- Recent Interacted Pilots Drawer -->
+            <div id="ig-eng-recent-list" style="margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); font-size:0.78rem; color:#94a3b8; display:none;">
+              <strong style="color:#e2e8f0;">Son Etkileşime Geçilen Pilotlar:</strong>
+              <div id="ig-eng-recent-items" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;"></div>
             </div>
           </div>
 
@@ -1019,13 +1069,12 @@
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span style="font-size:1.2rem;">📋</span>
                   <h3 style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:0;">
-                    Yayınlanan &amp; Hazırlanan Instagram Gönderileri
+                    Yayınlanan Instagram Gönderileri (@pozitronmarket)
                   </h3>
                 </div>
                 <div style="display:flex; gap:6px; align-items:center;">
-                  <button type="button" class="admin-btn-secondary btn-ig-filter active" data-filter="all" onclick="filterCloudInstagramPosts('all')" style="font-size:0.75rem; padding:4px 10px; font-weight:700;">Tümü</button>
-                  <button type="button" class="admin-btn-secondary btn-ig-filter" data-filter="published" onclick="filterCloudInstagramPosts('published')" style="font-size:0.75rem; padding:4px 10px; font-weight:700;">Yayınlananlar</button>
-                  <button type="button" class="admin-btn-secondary btn-ig-filter" data-filter="draft" onclick="filterCloudInstagramPosts('draft')" style="font-size:0.75rem; padding:4px 10px; font-weight:700;">Taslaklar</button>
+                  <button type="button" class="admin-btn-secondary btn-ig-filter active" data-filter="all" onclick="filterCloudInstagramPosts('all')" style="font-size:0.75rem; padding:4px 10px; font-weight:700;">Tüm Yayınlar</button>
+                  <button type="button" class="admin-btn-secondary" onclick="loadInstagramAgentView()" style="font-size:0.75rem; padding:4px 10px; font-weight:700;">🔄 Yenile</button>
                 </div>
               </div>
 
@@ -1192,8 +1241,8 @@
               </div>
             </div>
 
-            <button type="button" class="admin-btn-secondary" id="btn-ig-generate" onclick="triggerInstagramGenerate()" style="width:100%; padding:10px; margin-bottom:18px; font-weight:700; display:flex; justify-content:center; align-items:center; gap:8px; background:#f0f9ff; color:#0284c7; border:1px solid #bae6fd;">
-              <span>✨</span> <span id="btn-ig-generate-txt">Yeni Gönderi &amp; 1080x1080 Görsel Üret</span>
+            <button type="button" class="admin-btn-primary" id="btn-ig-direct-publish" onclick="triggerInstagramDirectPublish()" style="width:100%; padding:12px; margin-bottom:18px; font-weight:800; font-size:0.95rem; display:flex; justify-content:center; align-items:center; gap:8px; background:linear-gradient(135deg, #e1306c 0%, #fd1d1d 50%, #f56040 100%); border:none; box-shadow:0 4px 12px rgba(225,48,108,0.3); cursor:pointer;">
+              <span>⚡</span> <span id="btn-ig-direct-publish-txt">Şimdi Canlı Gönderi Üret &amp; Paylaş (Taslaksız)</span>
             </button>
 
             <div style="margin-bottom:14px;">
@@ -4090,7 +4139,102 @@
       if (getInstagramOperatingMode() === 'cloud') {
         triggerInstagramWorkflow();
       } else {
-        triggerInstagramCycleNow();
+        triggerInstagramDirectPublish();
+      }
+    }
+
+    async function updatePostingFrequency(hours) {
+      hours = parseInt(hours, 10);
+      const statusEl = document.getElementById('ig-freq-save-status');
+      if (statusEl) {
+        statusEl.textContent = 'Kaydediliyor...';
+        statusEl.style.color = '#0284c7';
+      }
+
+      localStorage.setItem('pozitron_posting_frequency', hours);
+
+      // Try updating local backend if running
+      try {
+        const res = await fetch('/api/instagram/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ posting_frequency_hours: hours })
+        });
+        if (res.ok) {
+          if (statusEl) statusEl.textContent = '✅ Kaydedildi';
+          showToast(`Paylaşım sıklığı güncellendi: Her ${hours} saatte bir`, 'success');
+          setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+          return;
+        }
+      } catch(e) {}
+
+      // In cloud mode
+      if (statusEl) statusEl.textContent = '✅ Seçildi (Bulut)';
+      showToast(`Paylaşım sıklığı seçildi: Her ${hours} saatte bir. Planlayıcı bu periyotta çalışır.`, 'success');
+      setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 3000);
+    }
+
+    async function triggerDroneCommunityEngagement() {
+      const btn = document.getElementById('btn-ig-trigger-engagement');
+      const btnTxt = document.getElementById('btn-ig-trigger-engagement-txt');
+      if (btn && btnTxt) {
+        btn.disabled = true;
+        btnTxt.textContent = '🛸 Pilotlar Taranıyor & Yorum Yapılıyor...';
+      }
+
+      showToast("🛸 Drone meraklısı pilotlar taranıyor (Günde 10 Takip & 10 Yorum)...", "info");
+
+      // 1. Try local backend
+      try {
+        const res = await fetch('/api/instagram/engage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_count: 10 })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          showToast(`✅ Topluluk etkileşimi tamamlandı! +${data.new_follows || 0} yeni takip, +${data.new_comments || 0} yorum yapıldı.`, 'success');
+          loadGitHubInstagramPosts();
+          if (btn && btnTxt) {
+            btn.disabled = false;
+            btnTxt.textContent = 'Topluluk Etkileşimini Başlat (10 Takip & 10 Yorum)';
+          }
+          return;
+        }
+      } catch(e) {}
+
+      // 2. Cloud mode: dispatch GitHub Actions workflow with engage_only
+      const token = getGitHubToken();
+      if (!token) {
+        openInstagramSettingsModal();
+        showToast("GitHub Personal Access Token tanımlanmamış. Ayarlardan giriniz.", "error");
+      } else {
+        try {
+          const res = await fetch('https://api.github.com/repos/thepeakiscold/pozitron-market/actions/workflows/instagram_agent.yml/dispatches', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github+json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              ref: 'main',
+              inputs: { action: 'engage_only' }
+            })
+          });
+          if (res.status === 204) {
+            showToast("🚀 Bulutta Drone Topluluk Etkileşimi başlatıldı! 10 takip ve 10 yorum icra ediliyor.", "success");
+            setTimeout(() => { loadInstagramWorkflowStatus(); }, 3000);
+          } else {
+            showToast("Bulut etkileşimi tetiklenemedi.", "error");
+          }
+        } catch(err) {
+          showToast("Bağlantı hatası: " + err.message, "error");
+        }
+      }
+
+      if (btn && btnTxt) {
+        btn.disabled = false;
+        btnTxt.textContent = 'Topluluk Etkileşimini Başlat (10 Takip & 10 Yorum)';
       }
     }
 
@@ -4098,8 +4242,75 @@
       const container = document.getElementById('ig-cloud-posts-list');
       const totalEl = document.getElementById('ig-gh-kpi-total');
       const pubEl = document.getElementById('ig-gh-kpi-published');
-      const draftEl = document.getElementById('ig-gh-kpi-drafts');
+      const engFollowsKpi = document.getElementById('ig-kpi-engagement-follows');
+      const engCommentsKpi = document.getElementById('ig-kpi-engagement-comments');
+      const engTodayFollows = document.getElementById('ig-eng-today-follows');
+      const engTodayComments = document.getElementById('ig-eng-today-comments');
+      const engLastTime = document.getElementById('ig-eng-last-time');
+      const freqSelect = document.getElementById('ig-quick-freq-select');
+      const nextPostCalc = document.getElementById('ig-next-post-calc');
 
+      // 1. Fetch Config
+      try {
+        let cfg = null;
+        try {
+          const res = await fetch(`./data/instagram_config.json?_t=${Date.now()}`);
+          if (res.ok) cfg = await res.json();
+        } catch(e) {}
+        if (!cfg) {
+          const resRaw = await fetch(`https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main/data/instagram_config.json?_t=${Date.now()}`);
+          if (resRaw.ok) cfg = await resRaw.json();
+        }
+        if (cfg) {
+          if (freqSelect && cfg.posting_frequency_hours) {
+            freqSelect.value = String(cfg.posting_frequency_hours);
+          }
+          if (nextPostCalc && cfg.next_post_at) {
+            nextPostCalc.textContent = new Date(cfg.next_post_at).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+          }
+        }
+      } catch(e) {}
+
+      // 2. Fetch Interactions
+      try {
+        let inter = null;
+        try {
+          const res = await fetch(`./data/instagram_interactions.json?_t=${Date.now()}`);
+          if (res.ok) inter = await res.json();
+        } catch(e) {}
+        if (!inter) {
+          const resRaw = await fetch(`https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main/data/instagram_interactions.json?_t=${Date.now()}`);
+          if (resRaw.ok) inter = await resRaw.json();
+        }
+        if (inter) {
+          const fCount = inter.today_follows_count || 0;
+          const cCount = inter.today_comments_count || 0;
+          if (engFollowsKpi) engFollowsKpi.textContent = `${fCount} / 10`;
+          if (engCommentsKpi) engCommentsKpi.textContent = `${cCount} / 10`;
+          if (engTodayFollows) engTodayFollows.textContent = `${fCount} / 10`;
+          if (engTodayComments) engTodayComments.textContent = `${cCount} / 10`;
+
+          if (inter.history && inter.history.length > 0) {
+            const lastItem = inter.history[inter.history.length - 1];
+            if (engLastTime && lastItem.timestamp) {
+              engLastTime.textContent = new Date(lastItem.timestamp).toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
+            }
+            const recentDrawer = document.getElementById('ig-eng-recent-list');
+            const recentItems = document.getElementById('ig-eng-recent-items');
+            if (recentDrawer && recentItems) {
+              recentDrawer.style.display = 'block';
+              const latestFive = inter.history.slice(-6).reverse();
+              recentItems.innerHTML = latestFive.map(h => `
+                <span style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:3px 8px; font-size:0.75rem; color:#cbd5e1;">
+                  ${h.type === 'follow' ? '👤 Takip: ' : '💬 Yorum: '} <strong>@${h.username}</strong>
+                </span>
+              `).join('');
+            }
+          }
+        }
+      } catch(e) {}
+
+      // 3. Fetch Posts
       try {
         let posts = [];
         // 1. Try local relative path first (instant on GitHub Pages & localhost)
@@ -4118,11 +4329,9 @@
         _allCloudIgPosts = Array.isArray(posts) ? posts : (posts.posts || []);
 
         const pubCount = _allCloudIgPosts.filter(p => p.status === 'published').length;
-        const draftCount = _allCloudIgPosts.filter(p => p.status === 'draft').length;
 
         if (totalEl) totalEl.textContent = _allCloudIgPosts.length;
         if (pubEl) pubEl.textContent = pubCount;
-        if (draftEl) draftEl.textContent = draftCount;
 
         renderCloudInstagramPosts();
 
@@ -4138,7 +4347,7 @@
             <div style="text-align:center; padding:32px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; color:#64748b;">
               <span style="font-size:1.6rem; display:block; margin-bottom:6px;">📭</span>
               <strong>Henüz kayıtlı gönderi bulunamadı.</strong>
-              <p style="font-size:0.78rem; margin:6px 0 0 0;">Yukarıdaki "Bulutta Instagram Postu Üret" butonuna basarak ilk gönderinizi hazırlayabilirsiniz.</p>
+              <p style="font-size:0.78rem; margin:6px 0 0 0;">Yukarıdaki "Bulutta Instagram Postu Üret & Paylaş" butonuna basarak ilk gönderinizi hazırlayabilirsiniz.</p>
             </div>
           `;
         }
@@ -4704,19 +4913,38 @@
       }
     }
 
-    async function triggerInstagramCycleNow() {
-      const btn = document.getElementById('btn-ig-quick-cycle');
-      if (btn) btn.disabled = true;
-      showToast("⚡ Otonom döngü başlatıldı: İçerik üretiliyor ve yayınlanıyor...", "info");
-      
+    async function triggerInstagramDirectPublish() {
+      const typeSelect = document.getElementById('ig-select-type');
+      const prodSelect = document.getElementById('ig-select-product');
+      const contentType = typeSelect ? typeSelect.value : 'product_spotlight';
+      const productId = prodSelect ? prodSelect.value : '';
+
+      showToast("⚡ Yeni Instagram gönderisi ve 1080x1080 görsel taslaksız doğrudan yayınlanıyor...", "info");
+
       try {
-        await triggerInstagramGenerate();
-        await triggerInstagramPublish();
+        const res = await fetch('/api/instagram/direct-publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content_type: contentType, product_id: productId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`🎉 Gönderi doğrudan yayınlandı! (${data.mode || 'live'})`, 'success');
+          if (data.post) {
+            _currentIgDraft = data.post;
+            applyDraftToUI(data.post);
+          }
+          loadInstagramAgentView();
+        } else {
+          showToast(`Hata: ${data.error || 'Yayınlama başarısız'}`, 'error');
+        }
       } catch(e) {
-        console.error(e);
-      } finally {
-        if (btn) btn.disabled = false;
+        showToast(`Bağlantı hatası: ${e.message}`, 'error');
       }
+    }
+
+    async function triggerInstagramCycleNow() {
+      await triggerInstagramDirectPublish();
     }
 
     async function handleSaveInstagramConfig(e) {

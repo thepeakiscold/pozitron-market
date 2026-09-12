@@ -5,6 +5,7 @@ from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pozitron.db')
 JSON_POSTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'instagram_posts.json')
+JSON_CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'instagram_config.json')
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -28,7 +29,7 @@ def sync_posts_from_json(cursor):
                 ''', (
                     p['id'], p.get('content_type', 'product_spotlight'), p.get('product_id'),
                     p.get('title', ''), p.get('caption', ''), p.get('hashtags', ''),
-                    p.get('image_url', ''), p.get('local_image_path', ''), p.get('status', 'draft'),
+                    p.get('image_url', ''), p.get('local_image_path', ''), p.get('status', 'published'),
                     p.get('ig_media_id'), p.get('ig_permalink'), p.get('error_message'),
                     p.get('scheduled_at'), p.get('published_at'),
                     json.dumps(p.get('metadata', {}), ensure_ascii=False) if isinstance(p.get('metadata'), dict) else p.get('metadata_json', '{}'),
@@ -38,11 +39,11 @@ def sync_posts_from_json(cursor):
             pass
 
 def sync_posts_to_json():
-    """Exports SQLite posts table to data/instagram_posts.json for Git persistence."""
+    """Exports SQLite published posts to data/instagram_posts.json for Git persistence. Drafts are never exported."""
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM instagram_posts ORDER BY created_at DESC")
+        cursor.execute("SELECT * FROM instagram_posts WHERE status = 'published' ORDER BY created_at DESC")
         rows = cursor.fetchall()
         conn.close()
         posts = [dict(r) for r in rows]
@@ -128,9 +129,19 @@ def get_agent_config():
     cursor.execute("SELECT * FROM instagram_agent_config WHERE id = 1")
     row = cursor.fetchone()
     conn.close()
-    if row:
-        return dict(row)
-    return {}
+    cfg = dict(row) if row else {}
+
+    # Overlay with data/instagram_config.json if available
+    if os.path.exists(JSON_CONFIG_PATH):
+        try:
+            with open(JSON_CONFIG_PATH, 'r', encoding='utf-8') as f:
+                json_cfg = json.load(f)
+            for k, v in json_cfg.items():
+                cfg[k] = v
+        except Exception:
+            pass
+
+    return cfg
 
 def update_agent_config(updates: dict):
     init_instagram_tables()
@@ -146,18 +157,34 @@ def update_agent_config(updates: dict):
         if k in allowed_fields:
             fields.append(f"{k} = ?")
             params.append(v)
-    if not fields:
-        return get_agent_config()
 
-    fields.append("updated_at = ?")
-    params.append(datetime.now().isoformat())
-    params.append(1)
+    if fields:
+        fields.append("updated_at = ?")
+        params.append(datetime.now().isoformat())
+        params.append(1)
 
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute(f"UPDATE instagram_agent_config SET {', '.join(fields)} WHERE id = ?", params)
-    conn.commit()
-    conn.close()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute(f"UPDATE instagram_agent_config SET {', '.join(fields)} WHERE id = ?", params)
+        conn.commit()
+        conn.close()
+
+    # Also persist to data/instagram_config.json
+    try:
+        json_cfg = {}
+        if os.path.exists(JSON_CONFIG_PATH):
+            with open(JSON_CONFIG_PATH, 'r', encoding='utf-8') as f:
+                json_cfg = json.load(f)
+        for k, v in updates.items():
+            if k not in ('access_token', 'gemini_api_key'):  # Don't leak raw secrets to git json
+                json_cfg[k] = v
+        json_cfg['updated_at'] = datetime.now().isoformat()
+        os.makedirs(os.path.dirname(JSON_CONFIG_PATH), exist_ok=True)
+        with open(JSON_CONFIG_PATH, 'w', encoding='utf-8') as f:
+            json.dump(json_cfg, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving to JSON_CONFIG_PATH: {e}")
+
     return get_agent_config()
 
 def save_instagram_post(post_data: dict):

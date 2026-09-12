@@ -65,13 +65,17 @@ class TestServerInstagramAPI(unittest.TestCase):
         self.assertEqual(data['config']['posting_frequency_hours'], 6)
 
     def test_generate_and_publish_flow(self):
-        # Generate
+        # Set dry run mode for testing
+        self._post('/api/instagram/config', {'dry_run_mode': 1})
+
+        # Generate and publish directly (no drafts)
         code, gen_data = self._post('/api/instagram/generate', {'content_type': 'tool_showcase'})
         self.assertEqual(code, 200)
         self.assertTrue(gen_data.get('success'))
         post = gen_data.get('post')
         self.assertIsNotNone(post)
         post_id = post['id']
+        self.assertEqual(post['status'], 'published')
 
         # Publish
         code, pub_data = self._post('/api/instagram/publish', {'id': post_id})
