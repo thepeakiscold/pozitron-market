@@ -236,7 +236,7 @@ class ImageGenerator:
         y_pt = 658
         for pt in points[:3]:
             clean_pt = clean_canvas_text(pt)
-            draw.text((115, y_pt), f"•  {clean_pt[:48]}", fill=(241, 245, 249), font=font_pt)
+            draw.text((115, y_pt), f"•  {clean_pt[:58]}", fill=(241, 245, 249), font=font_pt)
             y_pt += 36
 
         # Price Area (Bottom Left)
@@ -308,7 +308,7 @@ class ImageGenerator:
         item_y = y_box + 70
         for it in items[:4]:
             clean_it = clean_canvas_text(it)
-            draw.text((125, item_y), f"•  {clean_it[:46]}", fill=(241, 245, 249), font=font_item)
+            draw.text((125, item_y), f"•  {clean_it[:58]}", fill=(241, 245, 249), font=font_item)
             item_y += 54
 
         # Call to Action Button
