@@ -32,7 +32,7 @@ def init_reddit_tables():
             scan_interval_minutes INTEGER DEFAULT 30,
             max_replies_per_day INTEGER DEFAULT 10,
             auto_post_min_confidence INTEGER DEFAULT 85,
-            custom_signature TEXT DEFAULT 'İyi uçuşlar ve kırımsız günler! 🛸',
+            custom_signature TEXT DEFAULT 'İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]',
             last_scan_at TEXT,
             next_scan_at TEXT,
             updated_at TEXT
@@ -55,7 +55,7 @@ def init_reddit_tables():
                 '',
                 'Turkey, teknoloji, bilim, AskTurkey, fpvturkey, droneturkey',
                 'drone, fpv, quadcopter, betafpv, dji, kumanda, lehim, motor, esc, vtx, gözlük, batarya, lipo, teknofest, betaflight, inav, elrs, crossfire, shg, pervane, frame, uçuş, alıcı, verici',
-                0, 1, 30, 10, 85, 'İyi uçuşlar ve kırımsız günler! 🛸',
+                0, 1, 30, 10, 85, 'İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]',
                 NULL, NULL, ?
             )
         ''', (datetime.now().isoformat(),))

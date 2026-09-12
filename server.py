@@ -18,6 +18,7 @@ from instagram_agent.agent import InstagramPRAgent
 from instagram_agent.scheduler import InstagramScheduler
 from instagram_agent.chrome_session import extract_chrome_instagram_cookies
 from instagram_agent.engagement import InstagramEngagementEngine
+from instagram_agent.db import get_instagram_post_by_id
 from reddit_agent.agent import RedditDroneAgent
 from reddit_agent.scheduler import RedditScheduler
 from orchestrator import (
@@ -724,8 +725,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "type": "worker",
                         "category": "Icerik & Topluluk",
                         "status": "running" if ig_status.get("is_autonomous_enabled") else "idle",
-                        "status_text": "Post & Etkilesim Plani",
-                        "description": "Fiyat avantajli urunleri teknik kanca ve muhendislik diliyle afis haline getirir",
+                        "status_text": "Gemini 3.8 Flash Vizyon & Afis",
+                        "description": "Gemini 3.8 Flash ile gorsel planlama, cok modlu vizyon denetimi ve 1080x1080 afis uretir",
                         "inputs": ["lead_supervisor"],
                         "triggers": ["output_instagram_api"],
                         "payload_preview": active_dir.get("instagram_directive", {})
@@ -738,8 +739,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "type": "worker",
                         "category": "Organik PR / Q&A",
                         "status": "running" if rd_status.get("is_autonomous_enabled") else "idle",
-                        "status_text": "30 Dk Tarama • Sifir Spam",
-                        "description": "Topluluk sorularini Gemini 2.5 Flash ile yanitlar, organik kaynak gosterir",
+                        "status_text": "Gemini 3.8 Flash • Sifir Spam",
+                        "description": "Topluluk sorularini Gemini 3.8 Flash ile yanitlar, organik kaynak gosterir",
                         "inputs": ["lead_supervisor"],
                         "triggers": ["output_reddit_api"],
                         "payload_preview": active_dir.get("reddit_directive", {})
@@ -1247,6 +1248,25 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 result = engine.run_daily_drone_engagement(target_count=target_count)
                 status_code = 200 if result.get('success') else 400
                 self.send_json(status_code, result)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Multimodal Image Quality Audit (Gemini 3.8 Flash Vision)
+        if path == '/api/instagram/audit-image':
+            image_path = data.get('image_path')
+            post_id = data.get('post_id')
+            if not image_path and post_id:
+                post = get_instagram_post_by_id(post_id)
+                if post:
+                    image_path = post.get('local_image_path') or post.get('image_url')
+            if not image_path:
+                self.send_json(400, {"error": "image_path or post_id required"})
+                return
+            try:
+                gemini_key = instagram_pr_agent.config.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY', '')
+                audit_res = instagram_pr_agent.image_gen.audit_generated_image(image_path, gemini_api_key=gemini_key)
+                self.send_json(200, {"success": True, "audit": audit_res})
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return

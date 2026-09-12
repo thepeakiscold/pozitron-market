@@ -159,6 +159,14 @@ class InstagramPRAgent:
         temp_post_data['image_url'] = img_rel_path
         temp_post_data['local_image_path'] = img_rel_path
 
+        # 2.1 Multimodal Visual Quality & Safety Audit via Gemini 3.8 Flash Vision
+        gemini_key = self.config.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY', '')
+        audit_res = self.image_gen.audit_generated_image(img_rel_path, gemini_api_key=gemini_key, context=temp_post_data)
+        temp_post_data['visual_audit'] = audit_res
+        if not temp_post_data.get('metadata'):
+            temp_post_data['metadata'] = {}
+        temp_post_data['metadata']['visual_audit'] = audit_res
+
         # 3. Publish immediately to Meta Graph API
         result = self.publisher.publish_post(temp_post_data)
 
@@ -183,7 +191,7 @@ class InstagramPRAgent:
             return result
         else:
             # Do NOT persist as draft on failure
-            print(f"❌ Paylaşım başarısız oldu: {result.get('error')}")
+            print(f"[HATA] Paylasim basarisiz oldu: {result.get('error')}")
             return result
 
     def generate_post(self, content_type: str = None, product_id: str = None) -> dict:
@@ -227,7 +235,7 @@ class InstagramPRAgent:
         1. Directly generates and publishes a new post (no drafts).
         2. Engages with the drone community (follows up to 10 pilots & posts 10 comments).
         """
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 🤖 Instagram PR Ajanı otonom döngü başlatıyor...")
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INSTAGRAM AJANI] Instagram PR Ajani otonom dongu baslatiyor...")
         
         # 1. Direct Post & Publish
         post_res = self.generate_and_publish_now()
@@ -236,14 +244,14 @@ class InstagramPRAgent:
         engagement_res = {}
         if run_engagement:
             try:
-                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 🛸 Drone topluluğu etkileşim döngüsü başlatılıyor (Hedef: 10 takip & 10 yorum)...")
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TOPLULUK ETKİLEŞİMİ] Drone toplulugu etkilesim dongusu baslatiliyor (Hedef: 10 takip & 10 yorum)...")
                 engine = InstagramEngagementEngine(gemini_api_key=self.config.get('gemini_api_key'))
                 engagement_res = engine.run_daily_drone_engagement(target_count=10)
             except Exception as e:
-                print(f"⚠️ Etkileşim döngüsü hatası: {e}")
+                print(f"[UYARI] Etkilesim dongusu hatasi: {e}")
                 engagement_res = {"success": False, "error": str(e)}
 
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ Otonom döngü tamamlandı. Gönderi Durumu: {post_res.get('success')}")
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TAMAMLANDI] Otonom dongu tamamlandi. Gonderi Durumu: {post_res.get('success')}")
         return {
             "success": post_res.get('success', False),
             "post_result": post_res,

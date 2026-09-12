@@ -897,12 +897,12 @@
               <span id="ig-status-pill" class="tag-badge" style="background:#166534; color:#dcfce7;">LOKAL / BULUT HAZIR</span>
             </div>
             <p style="font-size:0.84rem; color:#cbd5e1; margin:0 0 12px 0; max-width:850px; line-height:1.5;">
-              Pozitron Market'in 500 urununu, Uyumluluk Sihirbazi'ni ve teknik FPV rehberlerini <strong>Google Gemini 2.5 Flash</strong> ozetleriyle 1080x1080 afis kartlari olarak <strong>@pozitronmarket</strong> hesabinda otonom yayinlar.
-              Ayrica <strong>gunde 10 Turk drone pilotuna</strong> takip ve teknik destek yorumu iletir.
+              Pozitron Market'in 500 urununu, Uyumluluk Sihirbazi'ni ve teknik FPV rehberlerini <strong>Google Gemini 3.8 Flash</strong> ozetleriyle 1080x1080 afis kartlari olarak <strong>@pozitronmarket</strong> hesabinda otonom yayinlar.
+              Gorseller uretildikten sonra <strong>Gemini 3.8 Flash Multimodal Vision</strong> ile piksel, tipografi ve marka denetiminden gecirilir.
             </p>
             <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.78rem; color:#94a3b8;">
               <span>HESAP: <strong style="color:#f8fafc;">@pozitronmarket</strong> (ID: 17841430407836914)</span>
-              <span>YAPAY ZEKA: <strong style="color:#f8fafc;">Gemini 2.5 Flash</strong></span>
+              <span>YAPAY ZEKA: <strong style="color:#f8fafc;">Gemini 3.8 Flash (Gorsel Vizyon Denetimli)</strong></span>
               <span>KITLE FILTRESI: <strong style="color:#38bdf8;">[TR] Yalnizca Turk Drone Pilotlari &amp; Teknofest</strong></span>
             </div>
           </div>
@@ -1833,30 +1833,45 @@
         const imgSrc = p.image_url ? p.image_url.replace(/^\.\//, '/') : './assets/hero_drone.png';
         const dateStr = p.created_at ? new Date(p.created_at).toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
         const isPub = p.status === 'published';
+        const audit = p.visual_audit || (p.metadata && p.metadata.visual_audit) || null;
+        const auditBadge = audit ? `
+          <span class="tag-badge" style="background:${audit.status === 'APPROVED' ? '#052e16' : '#7f1d1d'}; color:${audit.status === 'APPROVED' ? '#4ade80' : '#fca5a5'}; border:1px solid ${audit.status === 'APPROVED' ? '#166534' : '#991b1b'}; font-size:0.68rem;" title="${audit.recommendations || ''}">
+            [DENETIM: %${audit.quality_score || 98} - ${audit.status === 'APPROVED' ? 'KUSURSUZ' : 'REVIZYON'}]
+          </span>
+        ` : '';
+
         return `
           <div style="background:#0a0f1d; border:1px solid #1e293b; border-radius:8px; padding:12px; display:flex; gap:14px; align-items:center;">
             <a href="${imgSrc}" target="_blank">
               <img src="${imgSrc}" alt="" style="width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid #334155;">
             </a>
             <div style="flex:1; min-width:0;">
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
-                <h4 style="font-size:0.88rem; font-weight:800; color:#fff; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
+                <h4 style="font-size:0.88rem; font-weight:800; color:#fff; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:320px;">
                   ${p.title || 'FPV Donanim Paylasimi'}
                 </h4>
-                <span class="tag-badge" style="background:${isPub ? '#065f46' : '#78350f'}; color:${isPub ? '#6ee7b7' : '#fde68a'}; font-size:0.68rem;">
-                  ${isPub ? 'YAYINLANDI' : 'TASLAK'}
-                </span>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  ${auditBadge}
+                  <span class="tag-badge" style="background:${isPub ? '#065f46' : '#78350f'}; color:${isPub ? '#6ee7b7' : '#fde68a'}; font-size:0.68rem;">
+                    ${isPub ? 'YAYINLANDI' : 'TASLAK'}
+                  </span>
+                </div>
               </div>
-              <p style="font-size:0.75rem; color:#94a3b8; margin:0 0 4px 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              <p style="font-size:0.75rem; color:#94a3b8; margin:0 0 6px 0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
                 ${p.caption || ''}
               </p>
-              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#64748b;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:#64748b; flex-wrap:wrap; gap:8px;">
                 <span>${dateStr}</span>
-                ${p.ig_permalink ? `
-                  <a href="${p.ig_permalink}" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:700;">
-                    Instagram'da Goruntule
-                  </a>
-                ` : ''}
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <button type="button" onclick="auditPostImage('${p.id}', '${p.local_image_path || p.image_url || ''}')" style="background:#070b14; border:1px solid #334155; color:#38bdf8; padding:3px 8px; border-radius:4px; font-size:0.7rem; cursor:pointer; font-family:inherit;">
+                    <span>[VIZYON DENETLE] Gemini 3.8 Flash</span>
+                  </button>
+                  ${p.ig_permalink ? `
+                    <a href="${p.ig_permalink}" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:700;">
+                      Instagram'da Goruntule
+                    </a>
+                  ` : ''}
+                </div>
               </div>
             </div>
           </div>
@@ -1864,10 +1879,31 @@
       }).join('');
     }
 
+    async function auditPostImage(postId, imagePath) {
+      showToast("Gemini 3.8 Flash Cok Modlu Vizyon ile afis denetleniyor...", "info");
+      try {
+        const res = await fetch('/api/instagram/audit-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ post_id: postId, image_path: imagePath })
+        });
+        const data = await res.json();
+        if (data.success && data.audit) {
+          const a = data.audit;
+          showToast(`[VIZYON DENETIMI]: Kalite Skoru %${a.quality_score} | Durum: ${a.status} | Model: ${a.model_used}`, a.status === 'APPROVED' ? 'success' : 'warning');
+          loadInstagramData();
+        } else {
+          showToast(`[DENETIM HATASI]: ${data.error || 'Denetim yapilamadi'}`, "error");
+        }
+      } catch(e) {
+        showToast(`[BAGLANTI HATASI]: ${e.message}`, "error");
+      }
+    }
+
     async function triggerDirectPublishNow() {
       const btn = document.getElementById('btn-ig-direct-publish');
       if (btn) btn.disabled = true;
-      showToast("Gemini 2.5 Flash ile yeni FPV gonderisi ve 1080x1080 afis uretilip Instagram'a aktariliyor...", "info");
+      showToast("Gemini 3.8 Flash ile yeni FPV gonderisi ve 1080x1080 afis uretilip vizyon denetiminden geciriliyor...", "info");
 
       try {
         const res = await fetch('/api/instagram/direct-publish', {
@@ -2049,7 +2085,7 @@
             <!-- Gemini Generated Reply -->
             <div style="margin-bottom:12px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <label style="font-size:0.75rem; font-weight:800; color:#38bdf8;">[GEMINI 2.5 FLASH YANITI]:</label>
+                <label style="font-size:0.75rem; font-weight:800; color:#38bdf8;">[GEMINI 3.8 FLASH YANITI]:</label>
                 ${isPub ? `<a href="${link}" target="_blank" style="font-size:0.72rem; color:#ea580c; font-weight:700; text-decoration:none;">Reddit'te Gor</a>` : ''}
               </div>
               <textarea id="reddit-reply-${q.id}" rows="4" style="width:100%; box-sizing:border-box; background:#070b14; border:1px solid #1e293b; color:#f1f5f9; padding:10px; border-radius:6px; font-size:0.8rem; line-height:1.5; font-family:inherit; resize:vertical;" ${isPub ? 'readonly' : ''}>${q.gemini_reply || ''}</textarea>
@@ -2070,7 +2106,7 @@
                     <span>[AC] Sayfayi Ac</span>
                   </button>
                   <button type="button" class="btn-action btn-secondary" onclick="regenerateRedditReply('${q.id}')" style="font-size:0.76rem; padding:6px 10px;">
-                    <span>[YENIDEN YAZ] Gemini</span>
+                    <span>[YENIDEN YAZ] Gemini 3.8 Flash</span>
                   </button>
                   <button type="button" class="btn-action btn-secondary" onclick="saveRedditReplyEdit('${q.id}')" style="font-size:0.76rem; padding:6px 10px;">
                     <span>[KAYDET]</span>

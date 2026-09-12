@@ -7,8 +7,8 @@ import os
 class GeminiRedditEngine:
     def __init__(self, api_key: str = ""):
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
-        # Primary and fallback model names
-        self.models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"]
+        # Primary and fallback model names (Gemini 3.8 Flash primary)
+        self.models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
 
     def set_api_key(self, key: str):
         self.api_key = key
@@ -59,7 +59,8 @@ HEDEF & REDDİT STRATEJİSİ:
 4. FİYAT AVANTAJLI YEREL STOK: Fiyat avantajı bulunan yerel stok ürünlerini kullanıcıya tarafsız bir donanım geliştiricisi üslubuyla aktar.
 5. TON & DİL: Samimi bir pilot arkadaş gibi ("Hocam", "Dostum", "Pilot arkadaşım" gibi Reddit kültürüne uygun), anlaşılır, adımları maddeler halinde açıklayan temiz Türkçe.
 6. İMZA: Yanıtın en altına şu imzayı ekle:
-{custom_signature or '*İyi uçuşlar ve kırımsız günler! 🛸*'}
+{custom_signature or '*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*'}
+7. SIFIR EMOJİ KURALI: Kesinlikle hiçbir emoji kullanma. Tüm vurguları kalın metin veya temiz liste maddeleriyle yap.
 {lead_links_context}
 
 GÖNDERİ BİLGİLERİ:
@@ -129,6 +130,8 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON çıktısı üret, markdo
         """Strips markdown fences and parses json."""
         if not text:
             return None
+        # Clean any stray emojis
+        text = re.sub(r'[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf]', '', text)
         cleaned = text.strip()
         if cleaned.startswith("```json"):
             cleaned = cleaned[7:]
@@ -174,7 +177,8 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON çıktısı üret, markdo
         reply += "2. **Yazılım & Portlar:** Betaflight Configurator üzerinden Ports sekmesinde doğru UART ve Receiver protokolünü (örn. CRSF / Serial) kontrol et.\n"
         reply += "3. **Güç:** Giriş voltajının parçanın çalışma voltaj aralığıyla (örn. 1S-6S) tam uyumlu olduğunu doğrula.\n\n"
         reply += "Daha detaylı hata kodu, kullandığın parçaların modelleri veya görsel paylaşırsan adım adım çözmeye yardımcı olurum.\n\n"
-        reply += custom_signature or "*İyi uçuşlar ve kırımsız günler! 🛸*"
+        sig = custom_signature or "*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*"
+        reply += re.sub(r'[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf]', '', sig)
 
         return {
             "is_drone_question": True,

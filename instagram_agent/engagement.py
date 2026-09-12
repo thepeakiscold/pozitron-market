@@ -37,16 +37,16 @@ NON_TURKISH_REJECT_WORDS = [
 ]
 
 FPV_WARM_COMMENTS = [
-    "Harika uçuş! Kırımsız ve keyifli uçuşlar dileriz 🛸",
-    "Setup ve motor tepkisi çok iyi görünüyor, elinize sağlık! ⚡",
-    "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar 🚀",
-    "Süper akıcı freestyle hatları, keyifle izledik! Kırımsız günler 🛸",
-    "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar 🛸",
-    "Elinize sağlık, kırımsız ve bol irtifalı uçuşlar dileriz! ⚡",
-    "Çok temiz bir build ve uçuş performansı! Tebrikler 🛸",
-    "Drone hakimiyeti harika, gökyüzünde bol kırımsız uçuşlar! 🚀",
-    "Renkler ve hatlar müthiş! İyi uçuşlar pilot 🛸",
-    "Harika video! Pozitron FPV ailesi olarak selamlar ve kırımsız günler dileriz 🛸"
+    "Harika uçuş! Kırımsız ve keyifli uçuşlar dileriz. [Pozitron Market]",
+    "Setup ve motor tepkisi çok iyi görünüyor, elinize sağlık!",
+    "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+    "Süper akıcı freestyle hatları, keyifle izledik! Kırımsız günler dileriz.",
+    "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+    "Elinize sağlık, kırımsız ve bol irtifalı uçuşlar dileriz!",
+    "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+    "Drone hakimiyeti harika, gökyüzünde bol kırımsız uçuşlar!",
+    "Renkler ve hatlar müthiş! İyi uçuşlar pilot.",
+    "Harika video! Pozitron FPV ailesi olarak selamlar ve kırımsız günler dileriz."
 ]
 
 class InstagramEngagementEngine:
@@ -169,28 +169,32 @@ class InstagramEngagementEngine:
         return has_tr_char or has_tr_keyword or has_tr_user
 
     def generate_friendly_comment(self, username: str, caption: str = '') -> str:
-        """Generates a warm, supportive FPV comment (via Gemini or curated pool)."""
+        """Generates a warm, supportive FPV comment (via Gemini 3.8 Flash or curated pool)."""
         if self.gemini_api_key:
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.gemini_api_key}"
-                prompt = f"""Bir Türk FPV drone pilotunun Instagram gönderisine Pozitron Market FPV ekibi olarak samimi, motive edici, nazik ve kırımsız uçuşlar dileyen TEK CÜMLELİK kısa bir yorum yaz.
+            models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
+            prompt = f"""Bir Türk FPV drone pilotunun Instagram gönderisine Pozitron Market FPV ekibi olarak samimi, motive edici, nazik ve kırımsız uçuşlar dileyen TEK CÜMLELİK kısa bir yorum yaz.
 Pilot Kullanıcı Adı: @{username}
 Gönderi Metni: {caption[:200]}
 
 Kurallar:
 1. Reklam/pazarlama kokmasın, samimi bir FPV topluluk üyesi gibi yaz.
 2. 1 cümle olsun, max 15 kelime.
-3. Uygun bir drone/uçuş emojisi (🛸 veya ⚡) ekle.
+3. KESİNLİKLE HİÇBİR EMOJİ KULLANMA.
 4. Sadece yorum metnini döndür."""
 
-                payload = {"contents": [{"parts": [{"text": prompt}]}]}
-                res = requests.post(url, json=payload, timeout=6)
-                if res.status_code == 200:
-                    text = res.json()['candidates'][0]['content']['parts'][0]['text'].strip().strip('"')
-                    if text and len(text) < 120:
-                        return text
-            except Exception:
-                pass
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            import re
+            for m in models:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={self.gemini_api_key}"
+                    res = requests.post(url, json=payload, timeout=6)
+                    if res.status_code == 200:
+                        text = res.json()['candidates'][0]['content']['parts'][0]['text'].strip().strip('"')
+                        text = re.sub(r'[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf]', '', text).strip()
+                        if text and len(text) < 120:
+                            return text
+                except Exception:
+                    continue
         return random.choice(FPV_WARM_COMMENTS)
 
     def follow_user(self, user_id: str, username: str) -> bool:
@@ -292,7 +296,7 @@ Kurallar:
         comments_needed = max(0, min(self.max_daily, target_count) - data.get('today_comments_count', 0))
 
         if follows_needed == 0 and comments_needed == 0:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] ✅ Bugünün 10 takip ve 10 yorum kotası zaten tamamlandı.")
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [KOTA DOLU] Bugünün 10 takip ve 10 yorum kotası zaten tamamlandı.")
             return {
                 "success": True,
                 "completed_already": True,
@@ -314,7 +318,7 @@ Kurallar:
 
         my_user_id = str(self.session_cookies.get('ds_user_id', '30375317594'))
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] 🛸 Drone topluluğu etkileşim döngüsü başladı. Hedef: {follows_needed} takip, {comments_needed} yorum.")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] [ETKİLEŞİM BAŞLADI] Drone topluluğu etkileşim döngüsü başladı. Hedef: {follows_needed} takip, {comments_needed} yorum.")
 
         for tag in shuffled_tags:
             if follows_needed <= 0 and comments_needed <= 0:
@@ -341,7 +345,7 @@ Kurallar:
 
                 # 1. Follow Pilot
                 if follows_needed > 0 and u_id not in followed_ids:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] 👤 Pilot takip ediliyor: @{u_name} (ID: {u_id})")
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [PILOT TAKIP] Pilot takip ediliyor: @{u_name} (ID: {u_id})")
                     ok = self.follow_user(u_id, u_name)
                     if ok:
                         followed_ids.add(u_id)
@@ -362,7 +366,7 @@ Kurallar:
                 # 2. Leave Encouraging Drone Comment
                 if comments_needed > 0 and m_id not in commented_media_ids:
                     comment_text = self.generate_friendly_comment(u_name, c.get('caption', ''))
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] 💬 Gönderiye yorum yapılıyor (@{u_name} / https://instagram.com/p/{m_code}/): \"{comment_text}\"")
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [YORUM PAYLASIMI] Gonderiye yorum yapiliyor (@{u_name} / https://instagram.com/p/{m_code}/): \"{comment_text}\"")
                     ok = self.post_comment(m_id, m_code, comment_text)
                     if ok:
                         commented_media_ids.add(m_id)
@@ -395,7 +399,7 @@ Kurallar:
                     break
 
         self.save_interactions_data(data)
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] ✅ Etkileşim tamamlandı: +{new_follows} takip, +{new_comments} yorum.")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] [TAMAMLANDI] Etkilesim tamamlandi: +{new_follows} takip, +{new_comments} yorum.")
 
         return {
             "success": True,

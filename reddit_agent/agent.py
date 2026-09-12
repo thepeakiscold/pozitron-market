@@ -197,7 +197,7 @@ class RedditDroneAgent:
         keywords_str = self.config.get("keywords", "")
         keywords = [k.strip() for k in keywords_str.split(",") if k.strip()]
 
-        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! 🛸")
+        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]")
         min_conf = int(self.config.get("auto_post_min_confidence", 70))
         max_daily = int(self.config.get("max_replies_per_day", 10))
         dry_run = bool(self.config.get("dry_run_mode", 0))
@@ -264,9 +264,9 @@ class RedditDroneAgent:
                                 published_count += 1
                                 interaction_data["status"] = "published"
                                 interaction_data["permalink"] = pub_res.get("permalink", interaction_data["permalink"])
-                                print(f"[Reddit Bot] ✅ Başarıyla yayınlandı: {interaction_data['permalink']}")
+                                print(f"[Reddit Bot] [BASARILI] Başarıyla yayınlandı: {interaction_data['permalink']}")
                             else:
-                                print(f"[Reddit Bot] ❌ Yayınlanamadı: {pub_res.get('error')}")
+                                print(f"[Reddit Bot] [HATA] Yayınlanamadı: {pub_res.get('error')}")
 
         # Update last scan timestamp
         self.update_config({
@@ -335,7 +335,7 @@ class RedditDroneAgent:
         if not item:
             return {"success": False, "error": "Kayıt bulunamadı."}
 
-        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! 🛸")
+        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]")
         ai_res = self.ai_engine.evaluate_and_generate_reply(
             title=item.get("title", ""),
             body=item.get("body", ""),
@@ -388,7 +388,7 @@ class RedditDroneAgent:
         ]
 
         count = 0
-        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! 🛸")
+        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]")
         for s in samples:
             if get_interaction_by_reddit_id(s["reddit_id"]):
                 continue

@@ -243,7 +243,19 @@ def get_instagram_posts(limit: int = 50, offset: int = 0, status: str = None):
         cursor.execute("SELECT * FROM instagram_posts ORDER BY created_at DESC LIMIT ? OFFSET ?", (limit, offset))
     rows = cursor.fetchall()
     conn.close()
-    return [dict(r) for r in rows]
+    posts = []
+    for r in rows:
+        d = dict(r)
+        if d.get('metadata_json'):
+            try:
+                meta = json.loads(d['metadata_json'])
+                d['metadata'] = meta
+                if 'visual_audit' in meta:
+                    d['visual_audit'] = meta['visual_audit']
+            except Exception:
+                d['metadata'] = {}
+        posts.append(d)
+    return posts
 
 def get_instagram_post_by_id(post_id: str):
     init_instagram_tables()
@@ -252,7 +264,18 @@ def get_instagram_post_by_id(post_id: str):
     cursor.execute("SELECT * FROM instagram_posts WHERE id = ?", (post_id,))
     row = cursor.fetchone()
     conn.close()
-    return dict(row) if row else None
+    if row:
+        d = dict(row)
+        if d.get('metadata_json'):
+            try:
+                meta = json.loads(d['metadata_json'])
+                d['metadata'] = meta
+                if 'visual_audit' in meta:
+                    d['visual_audit'] = meta['visual_audit']
+            except Exception:
+                d['metadata'] = {}
+        return d
+    return None
 
 def delete_instagram_post(post_id: str):
     conn = get_db()

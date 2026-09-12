@@ -21,7 +21,7 @@ class InstagramScheduler:
             self._stop_event.clear()
             self._thread = threading.Thread(target=self._run_loop, name="InstagramPRScheduler", daemon=True)
             self._thread.start()
-            print("🚀 Instagram PR Planlayıcı arka plan iş parçacığı başlatıldı.")
+            print("[BASLATILDI] Instagram PR Planlayici arka plan is parcacigi baslatildi.")
 
     def stop(self):
         with self._lock:
@@ -31,7 +31,7 @@ class InstagramScheduler:
             if self._thread:
                 self._thread.join(timeout=3)
             self._thread = None
-            print("🛑 Instagram PR Planlayıcı durduruldu.")
+            print("[DURDURULDU] Instagram PR Planlayici durduruldu.")
 
     def trigger_now(self) -> dict:
         """Immediately executes an autonomous cycle."""
@@ -58,11 +58,11 @@ class InstagramScheduler:
                             should_run = True
 
                     if should_run:
-                        print(f"[{datetime.now().strftime('%H:%M:%S')}] ⏰ Planlanan saat geldi, otonom paylaşım yapılıyor...")
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] [OTONOM TETİKLEME] Planlanan saat geldi, otonom paylasim yapiliyor...")
                         self.agent.run_autonomous_cycle()
                 
             except Exception as e:
-                print(f"⚠️ Instagram Planlayıcı döngü hatası: {str(e)}")
+                print(f"[UYARI] Instagram Planlayici dongu hatasi: {str(e)}")
 
             # Sleep in 5-second intervals to allow prompt stopping
             for _ in range(12):  # checks every 60s total
