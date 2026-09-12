@@ -60,10 +60,15 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Configure Git Committer
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Run Instagram PR Agent
         env:
           INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
-          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID || '17841430407836914' }}
           INSTAGRAM_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CI: 'true'
@@ -79,22 +84,26 @@ jobs:
 
           if [ "$ACTION" = "generate_only" ]; then
             python3 instagram_pr_agent.py --generate $TYPE_ARG
+            git add assets/instagram/posts/ data/instagram_posts.json || true
+            git commit -m "chore(instagram-pr): save draft post & visual [skip ci]" || true
+            git push
           elif [ "$ACTION" = "publish_latest" ]; then
             python3 instagram_pr_agent.py --publish
+            git add data/instagram_posts.json || true
+            git commit -m "chore(instagram-pr): update post status & permalink [skip ci]" || true
+            git push
           else
-            python3 instagram_pr_agent.py --auto-cycle
+            # Full auto cycle: Generate -> Push Visual -> Publish to Meta API -> Push Status
+            python3 instagram_pr_agent.py --generate $TYPE_ARG
+            git add assets/instagram/posts/ data/instagram_posts.json || true
+            git commit -m "chore(instagram-pr): upload visual for Meta API ingestion [skip ci]" || true
+            git push
+            # Sleep 3s to allow CDN propagation
+            sleep 3
+            python3 instagram_pr_agent.py --publish
+            git add data/instagram_posts.json || true
+            git commit -m "chore(instagram-pr): record published post permalink [skip ci]" || true
+            git push
           fi
 
           python3 instagram_pr_agent.py --list --limit 10
-
-      - name: Commit and Push Generated Instagram Posts
-        run: |
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git add assets/instagram/posts/ data/instagram_posts.json || true
-          if git diff --staged --quiet; then
-            echo "Yeni gonderi dosyasi veya degisiklik yok."
-          else
-            git commit -m "chore(instagram-pr): save autonomous post & visual [skip ci]"
-            git push
-          fi

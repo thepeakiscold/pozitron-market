@@ -15,6 +15,10 @@ from server import ThreadedHTTPServer, PozitronRequestHandler
 class TestServerInstagramAPI(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        from instagram_agent.db import update_agent_config, get_agent_config
+        cls.orig_config = get_agent_config()
+        update_agent_config({'dry_run_mode': 1})
+
         cls.port = 8899
         cls.httpd = ThreadedHTTPServer(('127.0.0.1', cls.port), PozitronRequestHandler)
         cls.server_thread = threading.Thread(target=cls.httpd.serve_forever, daemon=True)
@@ -23,8 +27,11 @@ class TestServerInstagramAPI(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        from instagram_agent.db import update_agent_config
         cls.httpd.shutdown()
         cls.httpd.server_close()
+        if hasattr(cls, 'orig_config') and cls.orig_config:
+            update_agent_config({'dry_run_mode': cls.orig_config.get('dry_run_mode', 1)})
 
     def _get(self, path):
         url = f"http://127.0.0.1:{self.port}{path}"

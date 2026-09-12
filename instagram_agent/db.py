@@ -67,7 +67,7 @@ def init_instagram_tables():
             is_autonomous_enabled INTEGER DEFAULT 0,
             posting_frequency_hours INTEGER DEFAULT 12,
             dry_run_mode INTEGER DEFAULT 1,
-            public_base_url TEXT DEFAULT 'https://pozitronmarket.com',
+            public_base_url TEXT DEFAULT 'https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main',
             preferred_language TEXT DEFAULT 'tr',
             default_hashtags TEXT DEFAULT '#fpvturkey #fpvdrone #pozitronmarket #dronetopla #fpvpilot #fpvracing',
             last_run_at TEXT,
@@ -86,7 +86,7 @@ def init_instagram_tables():
                 public_base_url, preferred_language, default_hashtags,
                 last_run_at, next_run_at, updated_at
             ) VALUES (
-                1, '', '', '', 0, 12, 1, 'https://pozitronmarket.com', 'tr',
+                1, '', '', '', 0, 12, 1, 'https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main', 'tr',
                 '#fpvturkey #fpvdrone #pozitronmarket #dronetopla #fpvpilot #fpvracing #betafpv #iflight #tmotor',
                 NULL, NULL, ?
             )

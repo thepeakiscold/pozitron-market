@@ -6,7 +6,7 @@ import urllib.error
 import random
 
 class MetaPublisher:
-    def __init__(self, access_token: str = "", instagram_account_id: str = "", dry_run: bool = True, public_base_url: str = "https://pozitronmarket.com"):
+    def __init__(self, access_token: str = "", instagram_account_id: str = "", dry_run: bool = True, public_base_url: str = "https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main"):
         self.access_token = access_token
         self.instagram_account_id = instagram_account_id
         self.dry_run = dry_run
