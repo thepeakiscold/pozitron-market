@@ -1,0 +1,100 @@
+name: Pozitron Instagram PR Agent (Online Runner)
+
+on:
+  schedule:
+    # Runs every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Islem Tipi'
+        required: true
+        default: 'auto_cycle'
+        type: choice
+        options:
+          - 'auto_cycle'
+          - 'generate_only'
+          - 'publish_latest'
+      content_type:
+        description: 'Icerik Konsepti (Opsiyonel)'
+        required: false
+        default: 'random'
+        type: choice
+        options:
+          - 'random'
+          - 'product_spotlight'
+          - 'tool_showcase'
+          - 'deal_drop'
+          - 'pilot_tip'
+          - 'review_highlight'
+      dry_run:
+        description: 'Dry-Run (Test / Simulasyon Modu)'
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions:
+  contents: write
+
+jobs:
+  run-instagram-pr:
+    name: Generate & Publish FPV Content
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Instagram PR Agent
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_ACCOUNT_ID: ${{ secrets.INSTAGRAM_ACCOUNT_ID }}
+          INSTAGRAM_DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CI: 'true'
+        run: |
+          echo "📸 Pozitron Market Instagram PR Robotu Calistiriliyor..."
+          python3 instagram_pr_agent.py --status
+
+          ACTION="${{ github.event.inputs.action || 'auto_cycle' }}"
+          TYPE_ARG=""
+          if [ -n "${{ github.event.inputs.content_type }}" ] && [ "${{ github.event.inputs.content_type }}" != "random" ]; then
+            TYPE_ARG="--type ${{ github.event.inputs.content_type }}"
+          fi
+
+          if [ "$ACTION" = "generate_only" ]; then
+            python3 instagram_pr_agent.py --generate $TYPE_ARG
+          elif [ "$ACTION" = "publish_latest" ]; then
+            python3 instagram_pr_agent.py --publish
+          else
+            python3 instagram_pr_agent.py --auto-cycle
+          fi
+
+          python3 instagram_pr_agent.py --list --limit 10
+
+      - name: Commit and Push Generated Instagram Posts
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/instagram/posts/ data/instagram_posts.json || true
+          if git diff --staged --quiet; then
+            echo "Yeni gonderi dosyasi veya degisiklik yok."
+          else
+            git commit -m "chore(instagram-pr): save autonomous post & visual [skip ci]"
+            git push
+          fi

@@ -45,39 +45,66 @@ class ContentGenerator:
         else:
             return self._generate_product_spotlight(product_id)
 
+    def _load_products_from_json(self):
+        json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'products.json')
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return []
+
     def _get_candidate_product(self, product_id: str = None):
-        conn = get_db()
-        cursor = conn.cursor()
-        
-        if product_id:
-            cursor.execute("SELECT * FROM products WHERE id = ? OR slug = ?", (product_id, product_id))
-            row = cursor.fetchone()
-            conn.close()
-            return dict(row) if row else None
-
-        # Exclude recently posted products
         recent_ids = get_recent_posted_product_ids(20)
-        query = "SELECT * FROM products"
-        params = []
-        if recent_ids:
-            placeholders = ','.join('?' for _ in recent_ids)
-            query += f" WHERE id NOT IN ({placeholders})"
-            params.extend(recent_ids)
-        
-        query += " ORDER BY featured DESC, rating DESC, review_count DESC LIMIT 40"
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        conn.close()
-
-        if not rows:
+        rows = []
+        try:
             conn = get_db()
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM products ORDER BY RANDOM() LIMIT 1")
-            rows = cursor.fetchall()
-            conn.close()
+            
+            if product_id:
+                cursor.execute("SELECT * FROM products WHERE id = ? OR slug = ?", (product_id, product_id))
+                row = cursor.fetchone()
+                conn.close()
+                if row:
+                    return dict(row)
+            else:
+                query = "SELECT * FROM products"
+                params = []
+                if recent_ids:
+                    placeholders = ','.join('?' for _ in recent_ids)
+                    query += f" WHERE id NOT IN ({placeholders})"
+                    params.extend(recent_ids)
+                
+                query += " ORDER BY featured DESC, rating DESC, review_count DESC LIMIT 40"
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                conn.close()
 
-        selected = random.choice(rows)
-        return dict(selected)
+                if not rows:
+                    conn = get_db()
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT * FROM products ORDER BY RANDOM() LIMIT 1")
+                    rows = cursor.fetchall()
+                    conn.close()
+        except Exception:
+            rows = []
+
+        if rows:
+            selected = random.choice(rows)
+            return dict(selected)
+
+        # Fallback to data/products.json (e.g. for GitHub Actions runner)
+        json_prods = self._load_products_from_json()
+        if json_prods:
+            if product_id:
+                for p in json_prods:
+                    if p.get('id') == product_id or p.get('slug') == product_id:
+                        return p
+            avail = [p for p in json_prods if p.get('id') not in recent_ids]
+            return random.choice(avail if avail else json_prods)
+
+        return None
 
     def _generate_product_spotlight(self, product_id: str = None) -> dict:
         prod = self._get_candidate_product(product_id)

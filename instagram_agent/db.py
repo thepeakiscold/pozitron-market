@@ -4,12 +4,54 @@ import os
 from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pozitron.db')
+JSON_POSTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'instagram_posts.json')
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+def sync_posts_from_json(cursor):
+    """Imports posts from data/instagram_posts.json if SQLite table is fresh."""
+    if os.path.exists(JSON_POSTS_PATH):
+        try:
+            with open(JSON_POSTS_PATH, 'r', encoding='utf-8') as f:
+                posts = json.load(f)
+            for p in posts:
+                cursor.execute('''
+                    INSERT OR IGNORE INTO instagram_posts (
+                        id, content_type, product_id, title, caption, hashtags,
+                        image_url, local_image_path, status, ig_media_id, ig_permalink,
+                        error_message, scheduled_at, published_at, metadata_json, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    p['id'], p.get('content_type', 'product_spotlight'), p.get('product_id'),
+                    p.get('title', ''), p.get('caption', ''), p.get('hashtags', ''),
+                    p.get('image_url', ''), p.get('local_image_path', ''), p.get('status', 'draft'),
+                    p.get('ig_media_id'), p.get('ig_permalink'), p.get('error_message'),
+                    p.get('scheduled_at'), p.get('published_at'),
+                    json.dumps(p.get('metadata', {}), ensure_ascii=False) if isinstance(p.get('metadata'), dict) else p.get('metadata_json', '{}'),
+                    p.get('created_at', datetime.now().isoformat())
+                ))
+        except Exception:
+            pass
+
+def sync_posts_to_json():
+    """Exports SQLite posts table to data/instagram_posts.json for Git persistence."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM instagram_posts ORDER BY created_at DESC")
+        rows = cursor.fetchall()
+        conn.close()
+        posts = [dict(r) for r in rows]
+        os.makedirs(os.path.dirname(JSON_POSTS_PATH), exist_ok=True)
+        with open(JSON_POSTS_PATH, 'w', encoding='utf-8') as f:
+            json.dump(posts, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
 
 def init_instagram_tables():
     conn = get_db()
@@ -72,6 +114,9 @@ def init_instagram_tables():
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
         )
     ''')
+
+    # Seed from data/instagram_posts.json if present
+    sync_posts_from_json(cursor)
 
     conn.commit()
     conn.close()
@@ -145,6 +190,7 @@ def save_instagram_post(post_data: dict):
     ))
     conn.commit()
     conn.close()
+    sync_posts_to_json()
 
 def update_instagram_post_status(post_id: str, status: str, ig_media_id: str = None, ig_permalink: str = None, error_message: str = None, published_at: str = None):
     conn = get_db()
@@ -158,6 +204,7 @@ def update_instagram_post_status(post_id: str, status: str, ig_media_id: str = N
     ''', (status, ig_media_id, ig_permalink, error_message, published_at, post_id))
     conn.commit()
     conn.close()
+    sync_posts_to_json()
 
 def get_instagram_posts(limit: int = 50, offset: int = 0, status: str = None):
     init_instagram_tables()
@@ -187,6 +234,8 @@ def delete_instagram_post(post_id: str):
     conn.commit()
     count = cursor.rowcount
     conn.close()
+    if count > 0:
+        sync_posts_to_json()
     return count > 0
 
 def get_recent_posted_product_ids(limit: int = 30):

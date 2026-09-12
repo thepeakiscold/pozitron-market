@@ -99,11 +99,45 @@ def cmd_daemon(agent: InstagramPRAgent):
         print("\n🛑 Kapatılıyor...")
         scheduler.stop()
 
+def cmd_auto_cycle(agent: InstagramPRAgent):
+    print("🚀 Pozitron Market Instagram PR Robotu Otonom Döngüsü Başlatılıyor...")
+    res = agent.run_autonomous_cycle()
+    if res.get('success'):
+        print("\n🎉 OTONOM GÖNDERİ DÖNGÜSÜ BAŞARIYLA TAMAMLANDI!")
+        print(f"🔹 Mod:           {res.get('mode', 'dry_run').upper()}")
+        print(f"🔹 Gönderi ID:    {res.get('post', {}).get('id')}")
+        print(f"🔹 Başlık:        {res.get('post', {}).get('title')}")
+        print(f"🔹 Görsel:        {res.get('post', {}).get('local_image_path')}")
+        print(f"🔹 IG Permalink:  {res.get('ig_permalink')}")
+    else:
+        print(f"\n❌ OTONOM DÖNGÜ HATASI: {res.get('error')}")
+        sys.exit(1)
+
+def cmd_export_cookies():
+    import json
+    from instagram_agent.chrome_session import extract_chrome_instagram_cookies
+    res = extract_chrome_instagram_cookies()
+    if res.get("success") and res.get("cookies"):
+        cookies_list = [{"name": k, "value": v, "domain": ".instagram.com", "path": "/"} for k, v in res["cookies"].items() if v]
+        json_str = json.dumps(cookies_list)
+        print("\n" + "=" * 68)
+        print("🔑 INSTAGRAM OTURUM ÇEREZLERİ (GitHub Secret İçin Hazır):")
+        print("=" * 68)
+        print(json_str)
+        print("=" * 68)
+        print("👉 Yukarıdaki JSON metnini kopyalayıp GitHub reponuzda:")
+        print("   Settings -> Secrets and variables -> Actions -> New repository secret")
+        print("   İsim: INSTAGRAM_COOKIES_JSON olarak yapıştırabilirsiniz.\n")
+    else:
+        print(f"❌ Çerezler okunamadı: {res.get('error')}")
+
 def main():
     parser = argparse.ArgumentParser(description="Pozitron Market Autonomous Instagram PR Agent CLI")
     parser.add_argument('--status', action='store_true', help="Ajan durumunu ve ayarlarını gösterir")
     parser.add_argument('--generate', action='store_true', help="Yeni bir gönderi taslağı ve 1080x1080 görsel üretir")
     parser.add_argument('--publish', action='store_true', help="Taslağı Instagram'da yayınlar (veya simüle eder)")
+    parser.add_argument('--auto-cycle', action='store_true', help="Tek adımda görsel ve içerik üretip paylaşır (CI / GitHub Actions için)")
+    parser.add_argument('--export-cookies', action='store_true', help="GitHub Actions Secrets için Instagram oturum çerezlerini JSON olarak dışa aktarır")
     parser.add_argument('--id', type=str, help="Yayınlanacak veya görüntülenecek gönderi ID'si")
     parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight'], help="İçerik sütunu/tipi")
     parser.add_argument('--product', type=str, help="Öne çıkarılacak ürün ID'si veya slug")
@@ -117,6 +151,10 @@ def main():
 
     if args.status:
         cmd_status(agent)
+    elif args.auto_cycle:
+        cmd_auto_cycle(agent)
+    elif args.export_cookies:
+        cmd_export_cookies()
     elif args.generate:
         cmd_generate(agent, content_type=args.type, product_id=args.product)
     elif args.publish:

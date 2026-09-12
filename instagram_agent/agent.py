@@ -16,23 +16,51 @@ class InstagramPRAgent:
         config = get_agent_config()
         self.config = config
 
-        self.content_gen = ContentGenerator(gemini_api_key=config.get('gemini_api_key', ''))
+        env_token = os.environ.get('INSTAGRAM_ACCESS_TOKEN')
+        env_account_id = os.environ.get('INSTAGRAM_ACCOUNT_ID')
+        env_gemini = os.environ.get('GEMINI_API_KEY')
+        env_dry_run = os.environ.get('INSTAGRAM_DRY_RUN')
+
+        token = env_token if env_token is not None else config.get('access_token', '')
+        account_id = env_account_id if env_account_id is not None else config.get('instagram_account_id', '')
+        gemini_key = env_gemini if env_gemini is not None else config.get('gemini_api_key', '')
+
+        if env_dry_run is not None:
+            is_dry_run = env_dry_run.strip().lower() in ('1', 'true', 'yes')
+        else:
+            is_dry_run = bool(config.get('dry_run_mode', 1))
+
+        self.content_gen = ContentGenerator(gemini_api_key=gemini_key)
         self.image_gen = ImageGenerator(width=1080, height=1080)
         self.publisher = MetaPublisher(
-            access_token=config.get('access_token', ''),
-            instagram_account_id=config.get('instagram_account_id', ''),
-            dry_run=bool(config.get('dry_run_mode', 1)),
+            access_token=token,
+            instagram_account_id=account_id,
+            dry_run=is_dry_run,
             public_base_url=config.get('public_base_url', 'https://pozitronmarket.com')
         )
         self.scheduler = None
 
     def reload_config(self):
         self.config = get_agent_config()
-        self.content_gen.set_api_key(self.config.get('gemini_api_key', ''))
+        env_token = os.environ.get('INSTAGRAM_ACCESS_TOKEN')
+        env_account_id = os.environ.get('INSTAGRAM_ACCOUNT_ID')
+        env_gemini = os.environ.get('GEMINI_API_KEY')
+        env_dry_run = os.environ.get('INSTAGRAM_DRY_RUN')
+
+        token = env_token if env_token is not None else self.config.get('access_token', '')
+        account_id = env_account_id if env_account_id is not None else self.config.get('instagram_account_id', '')
+        gemini_key = env_gemini if env_gemini is not None else self.config.get('gemini_api_key', '')
+
+        if env_dry_run is not None:
+            is_dry_run = env_dry_run.strip().lower() in ('1', 'true', 'yes')
+        else:
+            is_dry_run = bool(self.config.get('dry_run_mode', 1))
+
+        self.content_gen.set_api_key(gemini_key)
         self.publisher.configure(
-            access_token=self.config.get('access_token', ''),
-            instagram_account_id=self.config.get('instagram_account_id', ''),
-            dry_run=bool(self.config.get('dry_run_mode', 1)),
+            access_token=token,
+            instagram_account_id=account_id,
+            dry_run=is_dry_run,
             public_base_url=self.config.get('public_base_url', 'https://pozitronmarket.com')
         )
 
