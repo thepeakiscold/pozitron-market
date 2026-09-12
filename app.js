@@ -505,10 +505,10 @@ class PozitronApp {
 
           // Detect brand
           if (iconEl) {
-            if (/^4/.test(val)) { iconEl.textContent = '💳 VISA'; iconEl.style.color = '#1a56db'; }
-            else if (/^(5[1-5]|2[2-7])/.test(val)) { iconEl.textContent = '💳 MC'; iconEl.style.color = '#ea580c'; }
-            else if (/^9792/.test(val)) { iconEl.textContent = '🇹🇷 TROY'; iconEl.style.color = '#0284c7'; }
-            else { iconEl.textContent = '💳'; iconEl.style.color = 'inherit'; }
+            if (/^4/.test(val)) { iconEl.textContent = 'VISA'; iconEl.style.color = '#1a56db'; }
+            else if (/^(5[1-5]|2[2-7])/.test(val)) { iconEl.textContent = 'MC'; iconEl.style.color = '#ea580c'; }
+            else if (/^9792/.test(val)) { iconEl.textContent = 'TROY'; iconEl.style.color = '#0284c7'; }
+            else { iconEl.textContent = ''; iconEl.style.color = 'inherit'; }
           }
         });
       }
@@ -895,7 +895,7 @@ class PozitronApp {
     const lang = window.i18n.currentLang;
     let html = `
       <button type="button" class="category-pill-btn ${this.filters.category === 'all' ? 'active' : ''}" data-cat="all">
-        <span>⚡</span> <span>${lang === 'tr' ? 'Tüm Parçalar' : 'All Parts'}</span>
+        <span>${lang === 'tr' ? 'Tüm Parçalar' : 'All Parts'}</span>
       </button>
     `;
 
@@ -904,7 +904,7 @@ class PozitronApp {
       const isActive = this.filters.category === cat.id ? 'active' : '';
       html += `
         <button type="button" class="category-pill-btn ${isActive}" data-cat="${cat.id}">
-          <span>${cat.icon || '📦'}</span> <span>${name}</span>
+          <span>${name}</span>
         </button>
       `;
     });
@@ -1172,7 +1172,8 @@ class PozitronApp {
                 </button>
               ` : `
                 <button type="button" class="btn-card-alert" data-action="stock-alert" data-id="${p.id}">
-                  <span>🔔 ${window.i18n.t('stock_alert_btn')}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                  <span>${window.i18n.t('stock_alert_btn')}</span>
                 </button>
               `}
             </div>
@@ -1279,7 +1280,7 @@ class PozitronApp {
     if (items.length === 0) {
       box.innerHTML = `
         <div class="search-no-results">
-          <div class="search-no-results-icon">🔍</div>
+          <div class="search-no-results-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
           <div class="search-no-results-title">"${query}" ile eşleşen ürün bulunamadı</div>
           <div class="search-no-results-sub">Farklı bir marka, model veya kategori aramayı deneyebilirsiniz.</div>
         </div>
@@ -1321,7 +1322,7 @@ class PozitronApp {
     box.innerHTML = `
       <div class="search-suggestions-header">
         <span class="search-suggestions-count">
-          <span>🔍</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           <span>"${query}" için <strong>${totalCount}</strong> ürün bulundu</span>
         </span>
         <span style="font-size:0.75rem; color:var(--text-muted);">Tıklayarak inceleyin</span>
@@ -1496,7 +1497,9 @@ class PozitronApp {
     if (this.cart.length === 0) {
       container.innerHTML = `
         <div style="text-align:center; padding: 40px 10px; color: var(--text-muted);">
-          <div style="font-size: 2.5rem; margin-bottom: 10px;">🛒</div>
+          <div style="margin-bottom: 12px; color:var(--text-muted);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          </div>
           <p>${window.i18n.currentLang === 'tr' ? 'Sepetiniz şu an boş.' : 'Your cart is empty.'}</p>
         </div>
       `;
@@ -1518,7 +1521,7 @@ class PozitronApp {
 
       const specsHtml = item.custom_specs ? `
         <div style="font-size:0.72rem; color:#0284c7; background:#f0f9ff; border:1px solid #bae6fd; border-radius:4px; padding:2px 6px; margin:3px 0; display:inline-block;">
-          🖨️ ${item.custom_specs.material} • ${item.custom_specs.infill} • ${item.custom_specs.color}
+          ${item.custom_specs.material} • ${item.custom_specs.infill} • ${item.custom_specs.color}
         </div>
       ` : '';
 
@@ -1752,7 +1755,9 @@ class PozitronApp {
     if (orders.length === 0) {
       body.innerHTML = `
         <div style="text-align:center; padding:32px 16px;">
-          <div style="font-size:2.5rem; margin-bottom:10px;">📦</div>
+          <div style="margin-bottom:12px; color:var(--text-muted);">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          </div>
           <strong style="display:block; font-size:1.05rem; color:var(--text-primary); margin-bottom:6px;">Henüz bir siparişiniz bulunmuyor</strong>
           <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Geniş drone donanım stoğumuzdan dilediğinizi sepetinize ekleyip sipariş oluşturabilirsiniz.</p>
         </div>
@@ -1983,7 +1988,7 @@ class PozitronApp {
     const secStatus = this.getLoginSecurityRecord(email);
     if (secStatus.locked) {
       if (err) {
-        err.innerHTML = `🛡️ <strong>Güvenlik Koruması:</strong> 3 kez hatalı deneme yapıldığı için hesabınız kilitlendi.<br>Lütfen <strong>${secStatus.remainingMinutes} dakika</strong> sonra tekrar deneyiniz.`;
+        err.innerHTML = `<strong>Güvenlik Koruması:</strong> 3 kez hatalı deneme yapıldığı için hesabınız kilitlendi.<br>Lütfen <strong>${secStatus.remainingMinutes} dakika</strong> sonra tekrar deneyiniz.`;
         err.style.display = 'block';
       }
       return;
@@ -1999,7 +2004,7 @@ class PozitronApp {
       const data = await res.json();
       if (res.status === 429 || data.locked) {
         if (err) {
-          err.innerHTML = `🛡️ <strong>Güvenlik Koruması:</strong> ${data.error || 'Hesabınız 30 dakika kilitlenmiştir.'}`;
+          err.innerHTML = `<strong>Güvenlik Koruması:</strong> ${data.error || 'Hesabınız 30 dakika kilitlenmiştir.'}`;
           err.style.display = 'block';
         }
         this.recordLoginFailure(email);
@@ -2038,12 +2043,12 @@ class PozitronApp {
       const failRes = this.recordLoginFailure(email);
       if (failRes.locked) {
         if (err) {
-          err.innerHTML = `🛡️ <strong>3 kez hatalı giriş yapıldı!</strong><br>Hesap güvenliğiniz için <strong>30 dakika</strong> boyunca giriş engellenmiştir.`;
+          err.innerHTML = `<strong>3 kez hatalı giriş yapıldı!</strong><br>Hesap güvenliğiniz için <strong>30 dakika</strong> boyunca giriş engellenmiştir.`;
           err.style.display = 'block';
         }
       } else {
         if (err) {
-          err.innerHTML = `❌ Hatalı e-posta veya şifre!<br><strong>Kalan deneme hakkınız: ${failRes.attemptsLeft}</strong> (3 hatalı denemede 30 dk kilitlenir).`;
+          err.innerHTML = `Hatalı e-posta veya şifre!<br><strong>Kalan deneme hakkınız: ${failRes.attemptsLeft}</strong> (3 hatalı denemede 30 dk kilitlenir).`;
           err.style.display = 'block';
         }
       }
@@ -2108,7 +2113,7 @@ class PozitronApp {
 
     if (existingUser) {
       if (err) {
-        err.textContent = `❌ "${email}" adresi ile kayıtlı bir hesap zaten var! Lütfen 'Giriş Yap' sekmesinden giriş yapınız.`;
+        err.textContent = `"${email}" adresi ile kayıtlı bir hesap zaten var! Lütfen 'Giriş Yap' sekmesinden giriş yapınız.`;
         err.style.display = 'block';
       }
       return;
@@ -2273,21 +2278,21 @@ class PozitronApp {
     const submitBtn = document.getElementById('submit-order-btn');
 
     if (method === 'iyzico') {
-      if (btnIcon) btnIcon.textContent = '🔒';
+      if (btnIcon) btnIcon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
       if (btnText) btnText.textContent = 'İyzico ile Güvenli Öde';
       if (submitBtn) {
         submitBtn.style.background = '#1a56db';
         submitBtn.style.borderColor = '#1a56db';
       }
     } else if (method === 'paytr') {
-      if (btnIcon) btnIcon.textContent = '⚡';
+      if (btnIcon) btnIcon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>';
       if (btnText) btnText.textContent = 'PayTR ile Güvenli Öde';
       if (submitBtn) {
         submitBtn.style.background = '#0891b2';
         submitBtn.style.borderColor = '#0891b2';
       }
     } else if (method === 'havale') {
-      if (btnIcon) btnIcon.textContent = '🏦';
+      if (btnIcon) btnIcon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>';
       if (btnText) btnText.textContent = 'Havale Bildirimini Tamamla';
       if (submitBtn) {
         submitBtn.style.background = '#059669';
@@ -2317,7 +2322,7 @@ class PozitronApp {
     const ibanEl = document.getElementById('bank-box-iban');
     if (ibanEl) {
       navigator.clipboard.writeText(ibanEl.textContent.trim());
-      this.showToast('IBAN panoya kopyalandı! 📋', 'success');
+      this.showToast('IBAN panoya kopyalandı.', 'success');
     }
   }
 
@@ -2325,7 +2330,7 @@ class PozitronApp {
     const refEl = document.getElementById('bank-box-ref');
     if (refEl) {
       navigator.clipboard.writeText(refEl.textContent.trim());
-      this.showToast('Sipariş referans kodu kopyalandı! 📋', 'success');
+      this.showToast('Sipariş referans kodu kopyalandı.', 'success');
     }
   }
 
@@ -2896,7 +2901,8 @@ class PozitronApp {
               </button>
             ` : `
               <button type="button" class="btn-primary" id="btn-modal-stock-alert" style="margin-top:6px; width:100%; justify-content:center; padding:12px; background:#f59e0b; border-color:#f59e0b; font-weight:700;">
-                <span>🔔 ${window.i18n.t('stock_alert_btn')}</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                <span>${window.i18n.t('stock_alert_btn')}</span>
               </button>
             `}
           </div>
@@ -2908,11 +2914,11 @@ class PozitronApp {
         <div class="product-modal-reviews-section">
           <div class="product-modal-reviews-header">
             <h4 class="product-modal-reviews-title">
-              <span>💬</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
               <span>${window.i18n.t('product_comments_tab_title')}</span>
             </h4>
             <button type="button" class="btn-secondary" id="btn-modal-write-review" style="font-size:0.8rem; padding:6px 12px; cursor:pointer;">
-              <span>✍️ ${window.i18n.t('product_write_review')}</span>
+              <span>${window.i18n.t('product_write_review')}</span>
             </button>
           </div>
           <div class="product-reviews-list" id="modal-product-reviews-list">
@@ -3036,10 +3042,10 @@ class PozitronApp {
     body.innerHTML = `
       <div class="builder-tab-bar">
         <button type="button" class="builder-tab-btn active" onclick="window.app.switchBuilderTab('auto')">
-          ⚡ ${lang === 'tr' ? 'Bütçeye Göre Otomatik Topla (Önerilen)' : 'Auto Build by Budget (Recommended)'}
+          ${lang === 'tr' ? 'Bütçeye Göre Otomatik Topla (Önerilen)' : 'Auto Build by Budget (Recommended)'}
         </button>
         <button type="button" class="builder-tab-btn" onclick="window.app.switchBuilderTab('manual')">
-          🛠️ ${lang === 'tr' ? 'Manuel Parça Seçimi & Test' : 'Manual Part Selection & Test'}
+          ${lang === 'tr' ? 'Manuel Parça Seçimi & Test' : 'Manual Part Selection & Test'}
         </button>
       </div>
 
@@ -3051,31 +3057,31 @@ class PozitronApp {
         </div>
         <div class="builder-style-grid">
           <div class="builder-style-card ${st.style === 'freestyle' ? 'active' : ''}" onclick="window.app.setBuilderStyle('freestyle')">
-            <span class="style-icon">🚀</span>
+            <span class="style-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg></span>
             <span class="style-name">Freestyle</span>
             <span class="style-sub">${lang === 'tr' ? '5" Klasik & Dayanıklı Çevik Gövde' : '5" Durable & Agile Carbon'}</span>
           </div>
 
           <div class="builder-style-card ${st.style === 'racing' ? 'active' : ''}" onclick="window.app.setBuilderStyle('racing')">
-            <span class="style-icon">🏁</span>
+            <span class="style-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path><line x1="4" y1="22" x2="4" y2="15"></line></svg></span>
             <span class="style-name">${lang === 'tr' ? 'Yarış & Hız' : 'Racing & Speed'}</span>
             <span class="style-sub">${lang === 'tr' ? '5" Ultra Hafif & Yüksek KV Motor' : '5" Ultralight & High KV Power'}</span>
           </div>
 
           <div class="builder-style-card ${st.style === 'cinematic' ? 'active' : ''}" onclick="window.app.setBuilderStyle('cinematic')">
-            <span class="style-icon">🎥</span>
+            <span class="style-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg></span>
             <span class="style-name">${lang === 'tr' ? '4K Sinematik' : '4K Cinematic'}</span>
             <span class="style-sub">${lang === 'tr' ? 'Pürüzsüz Uçuş & Sarsıntısız Çekim' : 'Smooth & Vibration-Free Cruise'}</span>
           </div>
 
           <div class="builder-style-card ${st.style === 'long_range' ? 'active' : ''}" onclick="window.app.setBuilderStyle('long_range')">
-            <span class="style-icon">🏔️</span>
+            <span class="style-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3l4 8 5-5 5 15H2L8 3z"></path></svg></span>
             <span class="style-name">${lang === 'tr' ? 'Uzun Menzil' : 'Long Range'}</span>
             <span class="style-sub">${lang === 'tr' ? '7" Yüksek İtiş, GPS & Uzun Süre' : '7" Long Endurance & GPS'}</span>
           </div>
 
           <div class="builder-style-card ${st.style === 'sub250' ? 'active' : ''}" onclick="window.app.setBuilderStyle('sub250')">
-            <span class="style-icon">🪶</span>
+            <span class="style-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></svg></span>
             <span class="style-name">249g Sub-250g</span>
             <span class="style-sub">${lang === 'tr' ? '3" Hafif, SHGM Kayıtsız Uçuş' : '3" Lightweight, Sub-250g Exempt'}</span>
           </div>
@@ -3090,7 +3096,7 @@ class PozitronApp {
         </div>
         <div class="builder-video-grid">
           <div class="builder-video-card ${st.video === 'digital' ? 'active' : ''}" onclick="window.app.setBuilderVideo('digital')">
-            <span style="font-size:1.8rem;">💎</span>
+            <span style="display:flex; align-items:center; justify-content:center; width:36px; height:36px; color:var(--brand-primary);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="6 2 18 2 22 7 12 22 2 7 6 2"></polygon><line x1="2" y1="7" x2="22" y2="7"></line><line x1="12" y1="22" x2="7" y2="7"></line><line x1="12" y1="22" x2="17" y2="7"></line><line x1="6" y1="2" x2="7" y2="7"></line><line x1="18" y1="2" x2="17" y2="7"></line></svg></span>
             <div>
               <strong style="display:block; font-size:0.95rem; color:var(--text-primary);">${lang === 'tr' ? 'Dijital HD (DJI O3 / Walksnail)' : 'Digital HD (DJI O3 / Walksnail)'}</strong>
               <small style="color:var(--text-muted); font-size:0.78rem;">${lang === 'tr' ? 'Kristal netlikte 1080p/4K canlı FPV gözlük yayını' : 'Crystal clear 1080p/4K low latency digital feed'}</small>
@@ -3098,7 +3104,7 @@ class PozitronApp {
           </div>
 
           <div class="builder-video-card ${st.video === 'analog' ? 'active' : ''}" onclick="window.app.setBuilderVideo('analog')">
-            <span style="font-size:1.8rem;">📺</span>
+            <span style="display:flex; align-items:center; justify-content:center; width:36px; height:36px; color:var(--brand-primary);"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg></span>
             <div>
               <strong style="display:block; font-size:0.95rem; color:var(--text-primary);">${lang === 'tr' ? 'Analog 5.8GHz' : 'Analog 5.8GHz'}</strong>
               <small style="color:var(--text-muted); font-size:0.78rem;">${lang === 'tr' ? 'Ekonomik, sıfır gecikme & geniş anten uyumu' : 'Budget-friendly, near-zero latency'}</small>
@@ -3140,7 +3146,7 @@ class PozitronApp {
 
       <!-- 1-Click Action Button -->
       <button type="button" class="btn-build-drone-action" onclick="window.app.executeAutoBuild()">
-        <span>⚡</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
         <span>${lang === 'tr' ? 'Bütçeme En Uygun Drone’u Oluştur' : 'Build Best Drone for My Budget'}</span>
       </button>
     `;
@@ -3404,15 +3410,15 @@ class PozitronApp {
 
         <!-- Verified Synergy Badges -->
         <div class="build-specs-row">
-          <span class="spec-badge">⚡ ${lang === 'tr' ? 'Voltaj & Hücre Uyumu: %100 Doğrulandı' : 'Voltage Synergy: 100% Verified'}</span>
-          <span class="spec-badge">🛡️ ${lang === 'tr' ? 'ESC Amper Dayanımı: Tam Güvenli' : 'ESC Current Rating: Safe Margin'}</span>
-          <span class="spec-badge">📐 ${lang === 'tr' ? 'Montaj & Vida Aralıkları: Birebir Uyumlu' : 'Stack & Frame Mount: Exact Fit'}</span>
-          <span class="spec-badge">🌀 ${lang === 'tr' ? 'Pervane & Motor Oranı: Yüksek Verimlilik' : 'Prop & Motor Ratio: High Efficiency'}</span>
+          <span class="spec-badge">${lang === 'tr' ? 'Voltaj & Hücre Uyumu: %100 Doğrulandı' : 'Voltage Synergy: 100% Verified'}</span>
+          <span class="spec-badge">${lang === 'tr' ? 'ESC Amper Dayanımı: Tam Güvenli' : 'ESC Current Rating: Safe Margin'}</span>
+          <span class="spec-badge">${lang === 'tr' ? 'Montaj & Vida Aralıkları: Birebir Uyumlu' : 'Stack & Frame Mount: Exact Fit'}</span>
+          <span class="spec-badge">${lang === 'tr' ? 'Pervane & Motor Oranı: Yüksek Verimlilik' : 'Prop & Motor Ratio: High Efficiency'}</span>
         </div>
 
         <!-- 8-Piece Items Breakdown -->
         <h4 style="font-size:0.92rem; font-weight:800; color:var(--text-secondary); text-transform:uppercase; margin-bottom:10px;">
-          📦 ${lang === 'tr' ? `Seçilen ${b.items.length} Parçalık Eksiksiz Drone Paketi` : `Selected ${b.items.length}-Piece Complete Drone Package`}
+          ${lang === 'tr' ? `Seçilen ${b.items.length} Parçalık Eksiksiz Drone Paketi` : `Selected ${b.items.length}-Piece Complete Drone Package`}
         </h4>
 
         <div class="build-items-list">
@@ -3447,20 +3453,20 @@ class PozitronApp {
 
         <!-- Actions -->
         <div class="build-actions-bar" style="display:flex; flex-wrap:wrap; gap:10px;">
-          <button type="button" class="btn-add-entire-build" onclick="window.app.addAllBuildItemsToCart()" style="flex:2; min-width:220px;">
-            <span>🛒</span>
+          <button type="button" class="btn-add-entire-build" onclick="window.app.addAllBuildItemsToCart()" style="flex:2; min-width:220px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
             <span>${lang === 'tr' ? 'Tüm Parçaları Tek Tıkla Sepete Ekle' : 'Add Entire Package to Cart'}</span>
           </button>
           <button type="button" class="btn-share-build-wa" onclick="window.app.shareBuildWhatsApp()" style="flex:1; min-width:170px; padding:14px; background:#25d366; color:#ffffff; font-weight:800; border-radius:var(--radius-md); border:none; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; font-size:0.92rem; box-shadow:0 4px 12px rgba(37,211,102,0.3); transition:all 0.15s ease;">
-            <span>💬</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
             <span>${lang === 'tr' ? 'WhatsApp ile Gönder' : 'Share on WhatsApp'}</span>
           </button>
           <button type="button" class="btn-share-build-link" onclick="window.app.shareBuildLink()" style="flex:1; min-width:170px; padding:14px; background:#0284c7; color:#ffffff; font-weight:800; border-radius:var(--radius-md); border:none; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; font-size:0.92rem; box-shadow:0 4px 12px rgba(2,132,199,0.3); transition:all 0.15s ease;">
-            <span>🔗</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
             <span>${lang === 'tr' ? 'Paketi Paylaş / Kopyala' : 'Copy Share Link'}</span>
           </button>
-          <button type="button" class="btn-rebuild-action" onclick="window.app.resetBuildResult()" style="flex:1; min-width:140px;">
-            <span>🔄</span>
+          <button type="button" class="btn-rebuild-action" onclick="window.app.resetBuildResult()" style="flex:1; min-width:140px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             <span>${lang === 'tr' ? 'Yeniden Hesapla' : 'Recalculate'}</span>
           </button>
         </div>
@@ -3479,8 +3485,8 @@ class PozitronApp {
       navigator.clipboard.writeText(shareUrl).then(() => {
         const lang = window.i18n.currentLang;
         this.showToast(lang === 'tr' 
-          ? '🔗 Drone paketi bağlantısı panoya kopyalandı! Arkadaşlarınız veya takımınızla paylaşabilirsiniz.' 
-          : '🔗 Drone build link copied to clipboard! You can share it with your team or friends.');
+          ? 'Drone paketi bağlantısı panoya kopyalandı! Arkadaşlarınız veya takımınızla paylaşabilirsiniz.' 
+          : 'Drone build link copied to clipboard! You can share it with your team or friends.');
       }).catch(() => {
         prompt('Drone Paketi Paylaşım Bağlantısı:', shareUrl);
       });
@@ -3503,7 +3509,7 @@ class PozitronApp {
       return `${idx + 1}. ${name} (${it.qty} Adet)`;
     }).join('\n');
 
-    const msg = `⚡ Pozitron Market Drone Toplama Sihirbazı ile hazırladığım FPV Drone Paketi:\n\n📦 Parça Listesi (${b.items.length} Parça):\n${itemsText}\n\n💰 Toplam Tutar: ${formattedTotal}\n\nUyumlu parçaları ve uyumluluk raporunu incelemek için:\n${shareUrl}`;
+    const msg = `Pozitron Market Drone Toplama Sihirbazı ile hazırladığım FPV Drone Paketi:\n\nParça Listesi (${b.items.length} Parça):\n${itemsText}\n\nToplam Tutar: ${formattedTotal}\n\nUyumlu parçaları ve uyumluluk raporunu incelemek için:\n${shareUrl}`;
 
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
   }
@@ -3542,8 +3548,8 @@ class PozitronApp {
         this.openBuilderModal('auto');
         const lang = window.i18n.currentLang;
         this.showToast(lang === 'tr' 
-          ? `📦 Paylaşılan ${validItems.length} parçalık drone paketi başarıyla yüklendi!` 
-          : `📦 Shared ${validItems.length}-piece drone package loaded successfully!`);
+          ? `Paylaşılan ${validItems.length} parçalık drone paketi başarıyla yüklendi!` 
+          : `Shared ${validItems.length}-piece drone package loaded successfully!`);
       }
     } catch (err) {
       console.warn('Failed to load shared build:', err);
@@ -3564,8 +3570,8 @@ class PozitronApp {
     this.openCart();
     const lang = window.i18n.currentLang;
     this.showToast(lang === 'tr' 
-      ? `✅ ${totalCount} parça uyumlu drone bileşeni sepetinize eklendi!` 
-      : `✅ ${totalCount} compatible drone parts added to your cart!`
+      ? `${totalCount} parça uyumlu drone bileşeni sepetinize eklendi!` 
+      : `${totalCount} compatible drone parts added to your cart!`
     );
   }
 
@@ -3594,10 +3600,10 @@ class PozitronApp {
     body.innerHTML = `
       <div class="builder-tab-bar">
         <button type="button" class="builder-tab-btn" onclick="window.app.switchBuilderTab('auto')">
-          ⚡ ${lang === 'tr' ? 'Bütçeye Göre Otomatik Topla' : 'Auto Build by Budget'}
+          ${lang === 'tr' ? 'Bütçeye Göre Otomatik Topla' : 'Auto Build by Budget'}
         </button>
         <button type="button" class="builder-tab-btn active" onclick="window.app.switchBuilderTab('manual')">
-          🛠️ ${lang === 'tr' ? 'Manuel Parça Seçimi & Test' : 'Manual Part Selection & Test'}
+          ${lang === 'tr' ? 'Manuel Parça Seçimi & Test' : 'Manual Part Selection & Test'}
         </button>
       </div>
 
@@ -3638,7 +3644,7 @@ class PozitronApp {
       <div class="builder-score-card">
         <div class="score-circle" id="builder-score-val">100</div>
         <div class="builder-feedback-wrap" id="builder-feedback-wrap">
-          <strong id="builder-status-text" style="color:var(--status-success); font-size:1.05rem;">✅ Mükemmel Uyumlu Kombinasyon!</strong>
+          <strong id="builder-status-text" style="color:var(--status-success); font-size:1.05rem;">Mükemmel Uyumlu Kombinasyon!</strong>
           <p id="builder-details-text" style="font-size:0.85rem; color:var(--text-secondary);">Seçilen motor KV değeri, ESC amperajı ve LiPo hücre sayısı tam uyumlu çalışmaktadır.</p>
         </div>
       </div>
@@ -3686,13 +3692,13 @@ class PozitronApp {
       scoreCircle.style.borderColor = 'var(--status-success)';
       scoreCircle.style.color = 'var(--status-success)';
       statusText.style.color = 'var(--status-success)';
-      statusText.textContent = "✅ Mükemmel Uyumlu Donanım Kombinasyonu!";
+      statusText.textContent = "Mükemmel Uyumlu Donanım Kombinasyonu!";
       detailsText.textContent = "Seçtiğiniz donanımlar voltaj, KV ve amperaj limitleri açısından güvenli uçuş standartlarına uygundur.";
     } else {
       scoreCircle.style.borderColor = 'var(--status-warning)';
       scoreCircle.style.color = 'var(--status-warning)';
       statusText.style.color = 'var(--status-warning)';
-      statusText.textContent = "⚠️ Dikkat: Uyumsuzluk Uyarısı Tespit Edildi";
+      statusText.textContent = "Dikkat: Uyumsuzluk Uyarısı Tespit Edildi";
       
       const warn = data.warnings && data.warnings[0];
       detailsText.textContent = warn ? (lang === 'tr' ? warn.tr : warn.en) : "Lütfen parçaların voltaj ve amperaj değerlerini kontrol ediniz.";
@@ -3709,8 +3715,11 @@ class PozitronApp {
 
     const toast = document.createElement('div');
     toast.className = `toast-msg ${type === 'success' ? 'toast-success' : 'toast-error'}`;
+    const icon = type === 'success'
+      ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+      : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
     toast.innerHTML = `
-      <span>${type === 'success' ? '✓' : '⚠️'}</span>
+      <span style="display:flex; align-items:center;">${icon}</span>
       <span>${message}</span>
     `;
 
@@ -3964,7 +3973,7 @@ class PozitronApp {
       if (res.ok) {
         const data = await res.json();
         if (data.url) this._3dConfig.serverUrl = data.url;
-        this.showToast(`✅ ${data.filename} sunucuya kaydedildi (${Math.round((data.size || file.size) / 1024)} KB)`, 'success');
+        this.showToast(`${data.filename} sunucuya kaydedildi (${Math.round((data.size || file.size) / 1024)} KB)`, 'success');
       } else {
         // Fallback JSON payload
         const reader = new FileReader();
@@ -4160,7 +4169,7 @@ class PozitronApp {
     const metrics = document.getElementById('model-metrics-bar');
     if (metrics) metrics.style.display = 'grid';
 
-    this.showToast(`✅ Model yüklendi: ${filename}`, 'success');
+    this.showToast(`Model yüklendi: ${filename}`, 'success');
   }
 
   renderSTLModel(arrayBuffer, filename) {
@@ -4242,7 +4251,7 @@ class PozitronApp {
     const metrics = document.getElementById('model-metrics-bar');
     if (metrics) metrics.style.display = 'grid';
 
-    this.showToast(`✅ STL Model başarıyla yüklendi: ${filename}`, 'success');
+    this.showToast(`STL Model başarıyla yüklendi: ${filename}`, 'success');
   }
 
   renderSTEPTextFallback(stepText, filename, fileSize) {
@@ -4449,7 +4458,7 @@ class PozitronApp {
     const metrics = document.getElementById('model-metrics-bar');
     if (metrics) metrics.style.display = 'grid';
 
-    this.showToast(`✅ CAD Modeli yüklendi: ${filename} (${sizeX}×${sizeY}×${sizeZ} mm, ${volCm3} cm³)`, 'success');
+    this.showToast(`CAD Modeli yüklendi: ${filename} (${sizeX}×${sizeY}×${sizeZ} mm, ${volCm3} cm³)`, 'success');
   }
 
   renderSimulatedFallbackModel(filename, fileSize) {
@@ -4520,7 +4529,7 @@ class PozitronApp {
     const metrics = document.getElementById('model-metrics-bar');
     if (metrics) metrics.style.display = 'grid';
 
-    this.showToast(`✅ CAD Modeli yüklendi: ${filename}`, 'success');
+    this.showToast(`CAD Modeli yüklendi: ${filename}`, 'success');
   }
 
   calculateGeometryVolume(geometry) {
@@ -4618,7 +4627,7 @@ class PozitronApp {
     });
     const btn = document.getElementById('btn-3d-wireframe');
     if (btn) {
-      btn.textContent = isWire ? '📦 Katı Mod' : '🌐 Tel Kafes';
+      btn.textContent = isWire ? 'Katı Görünüm' : 'Tel Kafes Görünüm';
     }
   }
 
@@ -4733,7 +4742,7 @@ class PozitronApp {
 
     this.addToCart(customCartItem, this._3dConfig.qty || 1);
     this.close3DStudioModal();
-    this.showToast(`"${this._3dConfig.filename}" (${this._3dConfig.material}) sepete eklendi! 🛒`, 'success');
+    this.showToast(`"${this._3dConfig.filename}" (${this._3dConfig.material}) sepete eklendi!`, 'success');
   }
 
   // ==========================================
