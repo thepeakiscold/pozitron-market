@@ -27,7 +27,7 @@ GLOBAL_HARDWARE_TRENDS = [
         "global_source": "SpeedyBee Global & Joshua Bardwell 2026 Recommended",
         "trend_score": 98,
         "trend_reason": "Dahili Bluetooth/WiFi ile sahada kablosuz Betaflight ayarı imkanı sunması ve 55A 8-bit ESC ile fiyat/performans lideri olması nedeniyle dünyada en çok satan FPV kulesi.",
-        "image_url": "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80",
+        "image_url": "./assets/products/trend_speedybee_f405_v4.jpg",
         "specs": {
             "MCU": "STM32F405",
             "IMU": "ICM42688P",
@@ -51,7 +51,7 @@ GLOBAL_HARDWARE_TRENDS = [
         "global_source": "DJI Enterprise & Global Cinematic FPV Community",
         "trend_score": 99,
         "trend_reason": "4K/60fps dahili RockSteady stabilizasyonlu kayıt kabiliyeti ve 10km'ye varan düşük gecikmeli O3 iletim protokolü ile sinematik pilotların vazgeçilmez donanımı.",
-        "image_url": "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=600&q=80",
+        "image_url": "./assets/products/trend_dji_o3_air_unit.jpg",
         "specs": {
             "Sensör": "1/1.7 inç CMOS 48MP",
             "Video Çözünürlüğü": "4K@60fps, 2.7K@120fps, 1080p@120fps",
@@ -74,7 +74,7 @@ GLOBAL_HARDWARE_TRENDS = [
         "global_source": "ExpressLRS Community & RadioMaster Global",
         "trend_score": 95,
         "trend_reason": "Çıkarılabilir stick uçları, katlanabilir anteni, dahili EdgeTX işletim sistemi ve ExpressLRS desteğiyle çantada taşınabilir en hafif ve ergonomik kumanda.",
-        "image_url": "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=600&q=80",
+        "image_url": "./assets/products/trend_radiomaster_pocket.jpg",
         "specs": {
             "İşletim Sistemi": "EdgeTX",
             "RF Protokolü": "Dahili ExpressLRS 2.4GHz",
@@ -98,7 +98,7 @@ GLOBAL_HARDWARE_TRENDS = [
         "global_source": "T-Motor Official & Global Freestyle Pilots Survey",
         "trend_score": 92,
         "trend_reason": "Havacılık sınıfı alüminyum çan, kavisli N52H mıknatıslar ve 6S pille sağladığı benzersiz gaz hakimiyeti ile 5 inç freestyle pilotlarının 2026 favorisi.",
-        "image_url": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+        "image_url": "./assets/products/trend_tmotor_velox_v3.jpg",
         "specs": {
             "KV Değeri": "1950KV",
             "Statör Ebadı": "2207",
@@ -121,7 +121,7 @@ GLOBAL_HARDWARE_TRENDS = [
         "global_source": "BetaFPV & Micro Drone Enthusiasts",
         "trend_score": 94,
         "trend_reason": "DJI O3, Caddx Vista ve RunCam Link dijital sistemlerini korumalı kanal yapısı içinde titreşimsiz taşıyabilen en gelişmiş kapalı alan cinewhoop gövdesi.",
-        "image_url": "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=600&q=80",
+        "image_url": "./assets/products/trend_betafpv_pavo20_pro.jpg",
         "specs": {
             "Dingil Mesafesi": "90 mm",
             "Desteklenen Pervane": "2.2 inç (Gemfan 22110)",
@@ -143,7 +143,7 @@ GLOBAL_HARDWARE_TRENDS = [
         "global_source": "Walksnail Official & Low-Light FPV Community",
         "trend_score": 96,
         "trend_reason": "1/1.8 inç Sony Starvis II gece görüş sensörü ile zifiri karanlıkta bile gündüz gibi net dijital FPV görüntüsü sunarak küresel pazarda büyük talep görüyor.",
-        "image_url": "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80",
+        "image_url": "./assets/products/trend_caddx_walksnail_avatar.jpg",
         "specs": {
             "Sensör": "1/1.8 inç Sony Starvis II",
             "Çözünürlük": "1080p@60fps / 720p@100fps",
@@ -166,7 +166,7 @@ GLOBAL_HARDWARE_TRENDS = [
         "global_source": "ToolkitRC & FPV Field Pilots Review",
         "trend_score": 93,
         "trend_reason": "Aynı anda iki bağımsız 6S bataryayı 15A hızında şarj edebilme ve cebinize sığacak kadar kompakt olması nedeniyle küresel saha şarj cihazı standardı.",
-        "image_url": "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=600&q=80",
+        "image_url": "./assets/products/trend_toolkitrc_m6d.jpg",
         "specs": {
             "Giriş Voltajı": "DC 7-28V (Maks 30A)",
             "Şarj Gücü": "2x 250W veya Senkron Modda 500W (Maks 15A)",
@@ -189,7 +189,7 @@ GLOBAL_HARDWARE_TRENDS = [
         "global_source": "Foxeer Official & FPV Racing League",
         "trend_score": 95,
         "trend_reason": "128K PWM frekansı, BLHeli_32 işlemcisi ve alüminyum soğutucu gövdesiyle yarış ve zorlu freestyle uçuşlarında ısınma problemi yaşamayan üst düzey ESC.",
-        "image_url": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+        "image_url": "./assets/products/trend_foxeer_reaper_f4.jpg",
         "specs": {
             "Sürekli Akım": "65A x 4",
             "Anlık Akım": "75A (10 saniye)",
