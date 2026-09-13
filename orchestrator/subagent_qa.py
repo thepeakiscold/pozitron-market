@@ -184,7 +184,7 @@ class QASentinelAgent:
                 result["issues"].append(f"{broken_count} adet Instagram afis gorseli diskte bulunamadi veya bozuk.")
 
             # Test Meta Graph API Token
-            access_token = cfg_dict.get("meta_access_token", "").strip()
+            access_token = (cfg_dict.get("access_token") or cfg_dict.get("meta_access_token") or "").strip()
             is_dry_run = bool(cfg_dict.get("dry_run_mode", 0))
 
             if not access_token:
