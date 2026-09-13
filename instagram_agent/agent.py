@@ -172,6 +172,18 @@ class InstagramPRAgent:
             temp_post_data['metadata'] = {}
         temp_post_data['metadata']['visual_audit'] = audit_res
 
+        # 2.2 Sync newly generated image to repo so Meta Graph API can download it
+        if not self.config.get('dry_run_mode', 0):
+            try:
+                repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                clean_img = img_rel_path.lstrip('./').lstrip('/')
+                import subprocess
+                subprocess.run(["git", "add", clean_img], cwd=repo_root, check=False, timeout=8)
+                subprocess.run(["git", "commit", "-m", f"chore(assets): auto-sync instagram post image {post_id}"], cwd=repo_root, check=False, timeout=8)
+                subprocess.run(["git", "push", "origin", "main"], cwd=repo_root, check=False, timeout=15)
+            except Exception as sync_e:
+                print(f"[UYARI] Gorsel senkronizasyon uyarisi: {sync_e}")
+
         # 3. Publish immediately to Meta Graph API
         result = self.publisher.publish_post(temp_post_data)
 

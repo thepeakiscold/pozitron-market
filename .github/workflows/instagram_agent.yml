@@ -1,9 +1,9 @@
 name: Pozitron Instagram PR Agent & Engagement Robot
 
 on:
-  schedule:
-    # Runs every 3 hours to check dynamic posting frequency & daily engagement
-    - cron: '0 */3 * * *'
+  # Cloud schedule disabled - All pipelines execute autonomously on local PC via systemd
+  # schedule:
+  #   - cron: '0 */3 * * *'
   workflow_dispatch:
     inputs:
       action:
