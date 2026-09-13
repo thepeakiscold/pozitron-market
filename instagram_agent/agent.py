@@ -94,10 +94,13 @@ class InstagramPRAgent:
         masked_token = f"{token[:6]}...{token[-4:]}" if len(token) > 10 else ("***" if token else "")
         gemini_key = self.config.get('gemini_api_key', '')
         masked_gemini = f"{gemini_key[:4]}...{gemini_key[-4:]}" if len(gemini_key) > 8 else ("***" if gemini_key else "")
+        token_valid, token_msg = self.publisher.test_token()
 
         return {
             "access_token_masked": masked_token,
             "has_access_token": bool(token),
+            "token_valid": token_valid,
+            "token_status_msg": token_msg,
             "instagram_account_id": self.config.get('instagram_account_id', ''),
             "gemini_api_key_masked": masked_gemini,
             "has_gemini_key": bool(gemini_key),
@@ -106,7 +109,9 @@ class InstagramPRAgent:
             "dry_run_mode": bool(self.config.get('dry_run_mode', 1)),
             "public_base_url": self.config.get('public_base_url', 'https://pozitronmarket.com'),
             "preferred_language": self.config.get('preferred_language', 'tr'),
-            "default_hashtags": self.config.get('default_hashtags', '')
+            "default_hashtags": self.config.get('default_hashtags', ''),
+            "last_run_at": self.config.get('last_run_at'),
+            "next_run_at": self.config.get('next_run_at')
         }
 
     def update_config(self, updates: dict) -> dict:

@@ -1028,6 +1028,37 @@
             <span class="tag-badge" style="background:#1e293b; color:#94a3b8;" id="ig-mockup-mode-badge">1080x1080</span>
           </div>
 
+          <!-- Meta API Token & Live Mode Settings Card -->
+          <div style="background:#070b14; border:1px solid #334155; border-radius:8px; padding:12px; margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size:0.78rem; font-weight:800; color:#fff;">Meta Graph API Baglantisi</span>
+              <span id="ig-token-status-badge" class="tag-badge" style="background:#dc2626; color:#fff; font-size:0.68rem;">Kontrol Ediliyor...</span>
+            </div>
+
+            <div id="ig-token-error-msg" style="font-size:0.72rem; color:#f87171; line-height:1.4; margin-bottom:8px; display:none; background:rgba(220,38,38,0.1); padding:6px 8px; border-radius:4px; border:1px solid rgba(220,38,38,0.2);"></div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding:6px 0; border-top:1px solid #1e293b; border-bottom:1px solid #1e293b;">
+              <div>
+                <div style="font-size:0.74rem; font-weight:700; color:#e2e8f0;">Canli Instagram Yayinlama</div>
+                <div style="font-size:0.68rem; color:#94a3b8;">Kapaliysa simulasyon/test modunda calisir</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="ig-live-mode-toggle" onchange="toggleInstagramLiveMode(this.checked)">
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <div>
+              <label style="font-size:0.72rem; color:#94a3b8; display:block; margin-bottom:4px;">Yeni Meta Access Token:</label>
+              <div style="display:flex; gap:6px;">
+                <input type="password" id="ig-new-access-token" placeholder="EAA..." style="flex:1; background:#0d1527; border:1px solid #334155; color:#fff; padding:6px 8px; border-radius:6px; font-size:0.75rem; font-family:'JetBrains Mono', monospace;">
+                <button type="button" class="btn-action" onclick="saveNewInstagramToken()" style="background:#0284c7; color:#fff; font-size:0.72rem; padding:6px 10px; white-space:nowrap;">
+                  <span>[KAYDET]</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Frequency Selector -->
           <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px; margin-bottom:16px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -1903,6 +1934,29 @@
           } else {
             _nextPostTargetDate = new Date(Date.now() + freq * 3600 * 1000);
           }
+
+          const tokenBadge = document.getElementById('ig-token-status-badge');
+          const tokenErrMsg = document.getElementById('ig-token-error-msg');
+          const liveToggle = document.getElementById('ig-live-mode-toggle');
+
+          if (tokenBadge) {
+            if (cfg.token_valid) {
+              tokenBadge.textContent = '[AKTIF & BAGLI]';
+              tokenBadge.style.background = '#059669';
+              if (tokenErrMsg) tokenErrMsg.style.display = 'none';
+            } else {
+              tokenBadge.textContent = '[SURESI DOLMUS / GECERSIZ]';
+              tokenBadge.style.background = '#dc2626';
+              if (tokenErrMsg) {
+                tokenErrMsg.textContent = cfg.token_status_msg || 'Meta erisim belirteci suresi dolmus.';
+                tokenErrMsg.style.display = 'block';
+              }
+            }
+          }
+
+          if (liveToggle) {
+            liveToggle.checked = !cfg.dry_run_mode;
+          }
         }
       } catch(e) {
         console.warn("Config error:", e);
@@ -2130,6 +2184,57 @@
         }
       } catch(e) {
         showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function saveNewInstagramToken() {
+      const input = document.getElementById('ig-new-access-token');
+      if (!input || !input.value.trim()) {
+        showToast("Lutfen gecerli bir Meta Access Token girin.", "error");
+        return;
+      }
+      const token = input.value.trim();
+      try {
+        showToast("Meta token test ediliyor ve kaydediliyor...", "info");
+        const res = await fetch('/api/instagram/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ access_token: token })
+        });
+        const data = await res.json();
+        if (data.success) {
+          input.value = '';
+          if (data.config && data.config.token_valid) {
+            showToast("Meta Access Token dogrulandi ve basariyla kaydedildi!", "success");
+          } else {
+            showToast(`Token kaydedildi ancak Meta dogrulamasi basarisiz: ${data.config ? data.config.token_status_msg : ''}`, "error");
+          }
+          loadInstagramData();
+        } else {
+          showToast(`Hata: ${data.error || 'Kaydedilemedi'}`, "error");
+        }
+      } catch(e) {
+        showToast("Baglanti hatasi: " + e.message, "error");
+      }
+    }
+
+    async function toggleInstagramLiveMode(isLive) {
+      try {
+        const dryRun = !isLive;
+        const res = await fetch('/api/instagram/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dry_run_mode: dryRun ? 1 : 0 })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(isLive ? "Canli yayinlama modu aktif! Gonderiler gercek Instagram hesabina iletilecek." : "Simulasyon (test) modu aktif. Gercek hesaba istek atilmayacak.", "success");
+          loadInstagramData();
+        } else {
+          showToast(`Hata: ${data.error}`, "error");
+        }
+      } catch(e) {
+        showToast("Baglanti hatasi: " + e.message, "error");
       }
     }
 
