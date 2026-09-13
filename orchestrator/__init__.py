@@ -8,6 +8,8 @@ from .subagent_price_intelligence import PriceIntelligenceAgent
 from .subagent_telemetry import TelemetryAgent
 from .subagent_seo import TechnicalSeoAgent
 from .subagent_trend_hunter import GlobalTrendHunterAgent
+from .subagent_qa import QASentinelAgent
+from .qa_scheduler import QAScheduler
 
 __all__ = [
     "LeadSupervisorAgent",
@@ -15,6 +17,8 @@ __all__ = [
     "PriceIntelligenceAgent",
     "TelemetryAgent",
     "TechnicalSeoAgent",
-    "GlobalTrendHunterAgent"
+    "GlobalTrendHunterAgent",
+    "QASentinelAgent",
+    "QAScheduler"
 ]
 

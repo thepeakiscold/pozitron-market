@@ -107,9 +107,70 @@ class RedditClient:
         except Exception:
             return False
 
-    def fetch_recent_posts(self, subreddit: str, limit: int = 25) -> list:
+    def search_drone_questions(self, subreddit: str, query: str = "drone OR fpv OR iha OR dji", limit: int = 15) -> list:
         """
-        Fetches newest posts from a subreddit.
+        Searches a subreddit specifically for drone questions.
+        Uses authenticated oauth.reddit.com if access_token exists;
+        otherwise falls back to public Reddit search endpoint.
+        """
+        subreddit = subreddit.strip().lstrip("r/")
+        if not subreddit:
+            return []
+
+        posts = []
+        is_auth = self._authenticate()
+        headers = {"User-Agent": self.user_agent}
+
+        if is_auth and self.access_token:
+            url = f"https://oauth.reddit.com/r/{subreddit}/search"
+            headers["Authorization"] = f"bearer {self.access_token}"
+        else:
+            url = f"https://www.reddit.com/r/{subreddit}/search.json"
+
+        params = {
+            "q": query,
+            "restrict_sr": "1",
+            "sort": "new",
+            "limit": limit
+        }
+
+        try:
+            res = requests.get(url, headers=headers, params=params, timeout=12)
+            if res.status_code == 200:
+                data = res.json()
+                children = data.get("data", {}).get("children", [])
+                now_ts = time.time()
+                for child in children:
+                    cdata = child.get("data", {})
+                    # Skip locked, archived, or posts older than 90 days
+                    if cdata.get("archived") or cdata.get("locked"):
+                        continue
+                    post_ts = cdata.get("created_utc", 0)
+                    if post_ts and (now_ts - post_ts) > (90 * 86400):
+                        continue
+
+                    posts.append({
+                        "reddit_id": f"t3_{cdata.get('id')}",
+                        "short_id": cdata.get("id"),
+                        "reddit_type": "submission",
+                        "title": cdata.get("title", ""),
+                        "body": cdata.get("selftext", ""),
+                        "author": cdata.get("author", ""),
+                        "subreddit": cdata.get("subreddit", subreddit),
+                        "url": cdata.get("url", ""),
+                        "permalink": f"https://reddit.com{cdata.get('permalink', '')}",
+                        "created_utc": post_ts,
+                        "score": cdata.get("score", 0),
+                        "num_comments": cdata.get("num_comments", 0)
+                    })
+        except Exception:
+            pass
+
+        return posts
+
+    def fetch_recent_posts(self, subreddit: str, limit: int = 25, include_search: bool = True) -> list:
+        """
+        Fetches newest posts from a subreddit, optionally augmented with targeted drone search.
         Uses OAuth2 if configured; otherwise falls back to public Reddit JSON API.
         """
         subreddit = subreddit.strip().lstrip("r/")
@@ -117,6 +178,7 @@ class RedditClient:
             return []
 
         posts = []
+        seen_ids = set()
         is_auth = self._authenticate()
 
         headers = {"User-Agent": self.user_agent}
@@ -133,10 +195,20 @@ class RedditClient:
             if res.status_code == 200:
                 data = res.json()
                 children = data.get("data", {}).get("children", [])
+                now_ts = time.time()
                 for child in children:
                     cdata = child.get("data", {})
+                    # Skip locked, archived, or posts older than 90 days
+                    if cdata.get("archived") or cdata.get("locked"):
+                        continue
+                    post_ts = cdata.get("created_utc", 0)
+                    if post_ts and (now_ts - post_ts) > (90 * 86400):
+                        continue
+
+                    rid = f"t3_{cdata.get('id')}"
+                    seen_ids.add(rid)
                     posts.append({
-                        "reddit_id": f"t3_{cdata.get('id')}",
+                        "reddit_id": rid,
                         "short_id": cdata.get("id"),
                         "reddit_type": "submission",
                         "title": cdata.get("title", ""),
@@ -145,12 +217,23 @@ class RedditClient:
                         "subreddit": cdata.get("subreddit", subreddit),
                         "url": cdata.get("url", ""),
                         "permalink": f"https://reddit.com{cdata.get('permalink', '')}",
-                        "created_utc": cdata.get("created_utc", 0),
+                        "created_utc": post_ts,
                         "score": cdata.get("score", 0),
                         "num_comments": cdata.get("num_comments", 0)
                     })
         except Exception:
             pass
+
+        # Augmented targeted search discovery
+        if include_search:
+            try:
+                search_results = self.search_drone_questions(subreddit, query="drone OR fpv OR iha OR dji", limit=15)
+                for sp in search_results:
+                    if sp["reddit_id"] not in seen_ids:
+                        seen_ids.add(sp["reddit_id"])
+                        posts.append(sp)
+            except Exception:
+                pass
 
         return posts
 
@@ -249,6 +332,7 @@ class RedditClient:
                 "published_at": datetime.now().isoformat()
             }
 
+        chrome_err = ""
         # 1. Primary Method: Automated Chrome Posting via User's Authenticated Session
         if post_url:
             try:
@@ -262,19 +346,16 @@ class RedditClient:
                         "published_at": datetime.now().isoformat()
                     }
                 else:
-                    chrome_err = chrome_res.get("error", "Chrome gönderim başarısız")
-                    # If OAuth credentials are not provided, return the Chrome error directly
-                    if not (self.client_id and self.client_secret):
-                        return {"success": False, "error": chrome_err}
+                    chrome_err = chrome_res.get("error", "Chrome gonderim basarisiz")
             except Exception as ce:
-                if not (self.client_id and self.client_secret):
-                    return {"success": False, "error": f"Chrome otomasyon hatası: {str(ce)}"}
+                chrome_err = f"Chrome otomasyon hatasi: {str(ce)}"
 
-        # 2. Secondary Method: Direct OAuth API (if client_id & client_secret configured)
+        # 2. Secondary Method: Direct OAuth REST API (via access_token / token_v2)
         if not self._authenticate():
+            err_details = f"Reddit oturum anahtari bulunamadi. (Chrome hatasi: {chrome_err})" if chrome_err else "Reddit oturum anahtari bulunamadi."
             return {
                 "success": False,
-                "error": "Reddit oturum anahtarı bulunamadı. Lütfen Chrome'da Reddit'e giriş yapın veya panelden senkronize edin."
+                "error": err_details
             }
 
         url = "https://oauth.reddit.com/api/comment"

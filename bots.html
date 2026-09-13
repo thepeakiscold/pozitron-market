@@ -457,6 +457,11 @@
         <span>Reddit Drone Asistani</span>
       </button>
 
+      <button type="button" class="bots-nav-tab" id="tab-btn-qa" onclick="switchBotsTab('qa')">
+        <span class="tag-badge" style="background:#10b981; color:#fff;" id="qa-nav-badge">[SUBAGENT 7]</span>
+        <span>Saglik, Tani ve Hata Denetimi (Gemini 3.8 Flash)</span>
+      </button>
+
       <button type="button" class="bots-nav-tab" id="tab-btn-daemon" onclick="switchBotsTab('daemon')">
         <span class="tag-badge" style="background:#334155; color:#cbd5e1;">[SISTEM]</span>
         <span>Arka Plan Servisi</span>
@@ -1355,6 +1360,176 @@
 
     </section>
 
+    <!-- ===================================================================== -->
+    <!-- SECTION 7: SUBAGENT 7 - PR HEALTH, DIAGNOSTICS & QA SENTINEL          -->
+    <!-- ===================================================================== -->
+    <section id="pane-qa" style="display:none;">
+      
+      <!-- Top Action & Info Bar -->
+      <div class="bots-card" style="margin-bottom:20px; background:#0d111d; border-color:#059669;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <span class="tag-badge" style="background:#059669; color:#fff;">[SUBAGENT 7]</span>
+              <h2 style="font-size:1.3rem; font-weight:800; margin:0; color:#ffffff;">
+                Otonom PR Saglik, Tani ve Hata Denetim Ajani (QA Sentinel)
+              </h2>
+              <span id="qa-overall-status-pill" class="tag-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI (100/100)</span>
+            </div>
+            <p style="font-size:0.84rem; color:#cbd5e1; margin:0 0 12px 0; max-width:900px; line-height:1.5;">
+              Boru hattindaki tum alt ajanlari (Subagents 1-6), Meta token gecerliligini, Reddit sifir yorum hareketsizligini, 
+              zamanlayici is parcaciklarini ve veritabani/onbellek senkronizasyonunu <strong>Google Gemini 3.8 Flash</strong> ile 30 dakikada bir otonom denetler.
+              Arizalari kullanici mudahalesine gerek kalmadan <strong>Self-Healing (Otonom Iyilestirme)</strong> ile aninda onarir.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.78rem; color:#94a3b8;">
+              <span>MODEL: <strong style="color:#38bdf8;">Gemini 3.8 Flash (Sentinel)</strong></span>
+              <span>TARAMA SIKLIGI: <strong style="color:#f8fafc;" id="qa-interval-text">Her 30 dakikada bir (Otonom)</strong></span>
+              <span>OTONOM IYILESTIRME: <strong style="color:#10b981;" id="qa-auto-heal-badge">[AKTIF] Auto-Heal Acik</strong></span>
+              <span>KAYITLI OLAY: <strong style="color:#f8fafc;" id="qa-incidents-count">0 Olay</strong></span>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn-action" style="background:#059669; border-color:#10b981;" onclick="runQADiagnostics(false)" id="btn-qa-run-diag">
+                <span>[DENETLE] Hata Denetimi &amp; Tani Baslat</span>
+              </button>
+              <button type="button" class="btn-action" style="background:#2563eb; border-color:#38bdf8;" onclick="runQAAutoHeal()" id="btn-qa-heal">
+                <span>[IYILESTIR] Otonom Onarim (Auto-Heal)</span>
+              </button>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn-action btn-secondary" onclick="toggleQAMode()" id="btn-qa-toggle" style="font-size:0.8rem; padding:7px 12px;">
+                <span>[DURUM] Otonom Nobetciyi Ac/Kapat</span>
+              </button>
+              <button type="button" class="btn-action btn-secondary" onclick="loadQAData()" style="font-size:0.8rem; padding:7px 12px;">
+                <span>[YENILE] Verileri Guncelle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 Channel Diagnostic Probe Badges Grid -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:24px;">
+        
+        <!-- Instagram Meta Card -->
+        <div class="bots-card" style="background:#0d1527; border:1px solid #334155; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#cbd5e1; text-transform:uppercase;">Subagent 1: Instagram Meta</span>
+            <span class="tag-badge" id="qa-ig-status-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI</span>
+          </div>
+          <div style="font-size:0.82rem; color:#94a3b8;" id="qa-ig-details">
+            Token: Kontrol ediliyor...
+          </div>
+        </div>
+
+        <!-- Reddit Bot Card -->
+        <div class="bots-card" style="background:#0d1527; border:1px solid #334155; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#cbd5e1; text-transform:uppercase;">Subagent 2: Reddit Botu</span>
+            <span class="tag-badge" id="qa-reddit-status-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI</span>
+          </div>
+          <div style="font-size:0.82rem; color:#94a3b8;" id="qa-reddit-details">
+            Oturum: Kontrol ediliyor...
+          </div>
+        </div>
+
+        <!-- Schedulers Watchdog Card -->
+        <div class="bots-card" style="background:#0d1527; border:1px solid #334155; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#cbd5e1; text-transform:uppercase;">Zamanlayici Is Parcaciklari</span>
+            <span class="tag-badge" id="qa-sched-status-badge" style="background:#065f46; color:#6ee7b7;">AKTIF</span>
+          </div>
+          <div style="font-size:0.82rem; color:#94a3b8;" id="qa-sched-details">
+            Watchdog: 3 zamanlayici calisiyor
+          </div>
+        </div>
+
+        <!-- Database & Cache Parity Card -->
+        <div class="bots-card" style="background:#0d1527; border:1px solid #334155; padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#cbd5e1; text-transform:uppercase;">Veritabani &amp; Onbellek</span>
+            <span class="tag-badge" id="qa-db-status-badge" style="background:#065f46; color:#6ee7b7;">SENKRON</span>
+          </div>
+          <div style="font-size:0.82rem; color:#94a3b8;" id="qa-db-details">
+            SQLite ve JSON paritesi tam
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Gemini 3.8 Flash RCA & Executive Summary Card -->
+      <div class="bots-card" style="margin-bottom:24px; background:#0c1322; border:1px solid #0284c7;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag-badge" style="background:#0284c7; color:#fff;">[GEMINI 3.8 FLASH]</span>
+            <h3 style="margin:0; font-size:1.1rem; color:#fff; font-weight:700;">Kok Neden Analizi (RCA) ve Otonom Iyilestirme Raporu</h3>
+          </div>
+          <span style="font-size:0.75rem; color:#64748b;" id="qa-last-audit-time">Son Denetim: -</span>
+        </div>
+
+        <div id="qa-rca-summary-box" style="background:#080d1a; border-radius:8px; padding:16px; margin-bottom:14px; border:1px solid #1e293b;">
+          <div style="color:#38bdf8; font-weight:700; font-size:0.85rem; margin-bottom:6px;">YONETICI OZETI:</div>
+          <p id="qa-rca-executive" style="font-size:0.88rem; color:#e2e8f0; line-height:1.6; margin:0;">
+            Sistem denetleniyor...
+          </p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div style="background:#080d1a; border-radius:8px; padding:14px; border:1px solid #1e293b;">
+            <div style="color:#f59e0b; font-weight:700; font-size:0.82rem; margin-bottom:8px;">TESPIT EDILEN KOK NEDENLER:</div>
+            <ul id="qa-root-causes-list" style="margin:0; padding-left:18px; font-size:0.82rem; color:#cbd5e1; line-height:1.6;">
+              <li>Henuz anomali tespit edilmedi.</li>
+            </ul>
+          </div>
+          <div style="background:#080d1a; border-radius:8px; padding:14px; border:1px solid #1e293b;">
+            <div style="color:#10b981; font-weight:700; font-size:0.82rem; margin-bottom:8px;">OTONOM IYILESTIRME AKSIYONLARI:</div>
+            <ul id="qa-remedies-list" style="margin:0; padding-left:18px; font-size:0.82rem; color:#cbd5e1; line-height:1.6;">
+              <li>Sistem saglikli ve tum koruma katmanlari aktif.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Incident History Log Table -->
+      <div class="bots-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="tag-badge" style="background:#334155; color:#cbd5e1;">[LOG]</span>
+              <h3 style="margin:0; font-size:1.05rem; color:#fff; font-weight:700;">Otonom Cozulen Olay ve Ariza Gecmisi (qa_incident_log)</h3>
+            </div>
+            <div style="font-size:0.78rem; color:#94a3b8; margin-top:2px;">
+              Subagent 7 tarafindan kullanici mudahalesine gerek kalmadan otomatik onarilan tum sistem durumlari
+            </div>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+            <thead>
+              <tr style="border-bottom:1px solid #334155; color:#94a3b8; text-align:left;">
+                <th style="padding:10px 12px;">ZAMAN</th>
+                <th style="padding:10px 12px;">KANAL</th>
+                <th style="padding:10px 12px;">SEVIYE</th>
+                <th style="padding:10px 12px;">ACIKLAMA</th>
+                <th style="padding:10px 12px;">OTONOM ONARIM</th>
+              </tr>
+            </thead>
+            <tbody id="qa-incidents-tbody">
+              <tr>
+                <td colspan="5" style="padding:20px; text-align:center; color:#64748b;">
+                  Olay kayitlari yukleniyor...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
   </main>
 
   <!-- Toast Notification Popup -->
@@ -1394,6 +1569,7 @@
       const paneTrend = document.getElementById('pane-trendhunter');
       const paneIg = document.getElementById('pane-instagram');
       const paneReddit = document.getElementById('pane-reddit');
+      const paneQa = document.getElementById('pane-qa');
       const paneDaemon = document.getElementById('pane-daemon');
 
       const btnPipeline = document.getElementById('tab-btn-pipeline');
@@ -1401,9 +1577,10 @@
       const btnTrend = document.getElementById('tab-btn-trendhunter');
       const btnIg = document.getElementById('tab-btn-instagram');
       const btnReddit = document.getElementById('tab-btn-reddit');
+      const btnQa = document.getElementById('tab-btn-qa');
       const btnDaemon = document.getElementById('tab-btn-daemon');
 
-      [btnPipeline, btnOrch, btnTrend, btnIg, btnReddit, btnDaemon].forEach(b => {
+      [btnPipeline, btnOrch, btnTrend, btnIg, btnReddit, btnQa, btnDaemon].forEach(b => {
         if (b) b.classList.remove('active', 'active-pipeline', 'active-lead', 'active-trend', 'active-ig', 'active-reddit');
       });
 
@@ -1412,6 +1589,7 @@
       if (paneTrend) paneTrend.style.display = tabName === 'trendhunter' ? 'block' : 'none';
       if (paneIg) paneIg.style.display = tabName === 'instagram' ? 'block' : 'none';
       if (paneReddit) paneReddit.style.display = tabName === 'reddit' ? 'block' : 'none';
+      if (paneQa) paneQa.style.display = tabName === 'qa' ? 'block' : 'none';
       if (paneDaemon) paneDaemon.style.display = tabName === 'daemon' ? 'block' : 'none';
 
       if (tabName === 'pipeline') {
@@ -1429,6 +1607,9 @@
       } else if (tabName === 'reddit') {
         if (btnReddit) btnReddit.classList.add('active-reddit');
         loadRedditData();
+      } else if (tabName === 'qa') {
+        if (btnQa) btnQa.classList.add('active');
+        loadQAData();
       } else if (tabName === 'daemon') {
         if (btnDaemon) btnDaemon.classList.add('active');
       }
@@ -1474,11 +1655,13 @@
         let topColor = '#38bdf8';
         if (node.type === 'trigger') topColor = '#10b981';
         else if (node.id && node.id.includes('trend')) topColor = '#a855f7';
+        else if (node.type === 'sentinel' || (node.id && node.id.includes('qa'))) topColor = '#14b8a6';
         else if (node.type === 'agent') topColor = '#6366f1';
         else if (node.type === 'supervisor') topColor = '#0284c7';
         else if (node.type === 'worker') {
           if (node.id.includes('instagram')) topColor = '#f43f5e';
           else if (node.id.includes('reddit')) topColor = '#ea580c';
+          else if (node.id.includes('qa')) topColor = '#14b8a6';
           else topColor = '#0ea5e9';
         } else if (node.type === 'destination') topColor = '#64748b';
 
@@ -2835,6 +3018,208 @@
         }
       } catch (e) {
         showToast("Baglanti hatasi: " + e.message, "error");
+      }
+    }
+
+    // =========================================================================
+    // SUBAGENT 7: QA SENTINEL, PROBES & AUTO-HEAL
+    // =========================================================================
+    async function loadQAData() {
+      try {
+        const res = await fetch('/api/qa/status');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // Overall status badge
+        const pill = document.getElementById('qa-overall-status-pill');
+        if (pill) {
+          const st = data.health_status || 'HEALTHY';
+          const score = data.health_score || 100;
+          pill.textContent = `${st} (${score}/100)`;
+          if (st === 'HEALTHY') {
+            pill.style.background = '#065f46';
+            pill.style.color = '#6ee7b7';
+          } else if (st === 'DEGRADED') {
+            pill.style.background = '#854d0e';
+            pill.style.color = '#fef08a';
+          } else {
+            pill.style.background = '#991b1b';
+            pill.style.color = '#fecaca';
+          }
+        }
+
+        // Meta info
+        const intervalText = document.getElementById('qa-interval-text');
+        if (intervalText) intervalText.textContent = `Her ${data.check_interval_minutes || 30} dakikada bir (Otonom)`;
+
+        const autoHealBadge = document.getElementById('qa-auto-heal-badge');
+        if (autoHealBadge) {
+          autoHealBadge.textContent = data.auto_heal_enabled ? '[AKTIF] Auto-Heal Acik' : '[KAPALI] Auto-Heal Kapali';
+          autoHealBadge.style.color = data.auto_heal_enabled ? '#10b981' : '#ef4444';
+        }
+
+        const incCount = document.getElementById('qa-incidents-count');
+        if (incCount) incCount.textContent = `${data.total_incidents_recorded || 0} Olay (${data.auto_healed_incidents_count || 0} Otomatik Onarildi)`;
+
+        // Render probe details if report exists
+        const rep = data.latest_report;
+        if (rep && rep.probe_details) {
+          const probes = rep.probe_details;
+
+          // 1. Instagram
+          const igBadge = document.getElementById('qa-ig-status-badge');
+          const igDetails = document.getElementById('qa-ig-details');
+          if (igBadge && probes.instagram) {
+            igBadge.textContent = probes.instagram.status;
+            igBadge.style.background = probes.instagram.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+            igDetails.innerHTML = `Token: <strong>${probes.instagram.token_mode}</strong><br>Yayinda: ${probes.instagram.published_posts} gonderi<br>Gorseller: ${probes.instagram.banner_images_intact ? 'Tam' : 'Bozuk gorsel var'}`;
+          }
+
+          // 2. Reddit
+          const redBadge = document.getElementById('qa-reddit-status-badge');
+          const redDetails = document.getElementById('qa-reddit-details');
+          if (redBadge && probes.reddit) {
+            redBadge.textContent = probes.reddit.status;
+            redBadge.style.background = probes.reddit.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+            redDetails.innerHTML = `Kullanici: <strong>${probes.reddit.session_username || 'Tanimlanmadi'}</strong><br>Yayinlanan: ${probes.reddit.published_count} yorum<br>Arama: ${probes.reddit.search_endpoint_ok ? 'Erisilebilir' : 'Erisilemedi'}`;
+          }
+
+          // 3. Schedulers
+          const schedBadge = document.getElementById('qa-sched-status-badge');
+          const schedDetails = document.getElementById('qa-sched-details');
+          if (schedBadge && probes.schedulers_and_threads) {
+            schedBadge.textContent = probes.schedulers_and_threads.status;
+            schedBadge.style.background = probes.schedulers_and_threads.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+            const dead = probes.schedulers_and_threads.dead_schedulers || [];
+            schedDetails.innerHTML = dead.length === 0 ? 'Tum zamanlayici is parcaciklari aktif' : `Duran: ${dead.join(', ')}`;
+          }
+
+          // 4. Database & Cache
+          const dbBadge = document.getElementById('qa-db-status-badge');
+          const dbDetails = document.getElementById('qa-db-details');
+          if (dbBadge && probes.database_and_cache) {
+            dbBadge.textContent = probes.database_and_cache.status;
+            dbBadge.style.background = probes.database_and_cache.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+            dbDetails.innerHTML = probes.database_and_cache.cache_files_in_sync ? 'SQLite ve JSON onbellegi esit' : 'JSON onbellegi senkron degil';
+          }
+
+          // 5. RCA & Executive Summary
+          if (rep.ai_analysis) {
+            const ai = rep.ai_analysis;
+            const exec = document.getElementById('qa-rca-executive');
+            if (exec) exec.textContent = ai.executive_summary || 'Ozet bulunamadi.';
+
+            const causesList = document.getElementById('qa-root-causes-list');
+            if (causesList && ai.root_causes) {
+              causesList.innerHTML = ai.root_causes.map(c => `<li>${c}</li>`).join('');
+            }
+
+            const remList = document.getElementById('qa-remedies-list');
+            if (remList && ai.auto_heal_actions_recommended) {
+              remList.innerHTML = ai.auto_heal_actions_recommended.map(a => `<li>${a}</li>`).join('');
+            }
+
+            const lastAudit = document.getElementById('qa-last-audit-time');
+            if (lastAudit) lastAudit.textContent = `Son Denetim: ${rep.timestamp ? new Date(rep.timestamp).toLocaleTimeString('tr-TR') : '-'}`;
+          }
+        }
+
+        // Load incidents table
+        loadQAIncidents();
+
+      } catch (err) {
+        console.error('loadQAData error:', err);
+      }
+    }
+
+    async function loadQAIncidents() {
+      try {
+        const res = await fetch('/api/qa/incidents?limit=25');
+        if (!res.ok) return;
+        const data = await res.json();
+        const tbody = document.getElementById('qa-incidents-tbody');
+        if (!tbody) return;
+
+        if (!data.incidents || data.incidents.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center; color:#64748b;">Henuz kayitli bir ariza veya olay bulunmuyor. Sistem kusursuz calisiyor.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.incidents.map(inc => {
+          const sevColor = inc.severity === 'CRITICAL' ? '#ef4444' : (inc.severity === 'WARNING' ? '#f59e0b' : '#38bdf8');
+          const healedBadge = inc.auto_healed 
+            ? `<span class="tag-badge" style="background:#065f46; color:#6ee7b7;">[ONARILDI] ${inc.heal_action || 'Otonom'}</span>`
+            : `<span class="tag-badge" style="background:#7f1d1d; color:#fecaca;">BEKLIYOR</span>`;
+          return `
+            <tr style="border-bottom:1px solid #1e293b;">
+              <td style="padding:8px 12px; color:#64748b; font-family:'JetBrains Mono', monospace;">${inc.created_at ? new Date(inc.created_at).toLocaleTimeString('tr-TR') : '-'}</td>
+              <td style="padding:8px 12px; font-weight:700; color:#cbd5e1;">${inc.channel.toUpperCase()}</td>
+              <td style="padding:8px 12px; font-weight:700; color:${sevColor};">${inc.severity}</td>
+              <td style="padding:8px 12px; color:#e2e8f0;">${inc.description}</td>
+              <td style="padding:8px 12px;">${healedBadge}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('loadQAIncidents error:', e);
+      }
+    }
+
+    async function runQADiagnostics(autoHeal = false) {
+      showToast('Subagent 7 sistem denetimini ve Gemini 3.8 Flash tanisini baslatti...', 'info');
+      try {
+        const res = await fetch('/api/qa/run', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({auto_heal: autoHeal})
+        });
+        if (res.ok) {
+          showToast('Sistem tani ve hata denetimi basariyla tamamlandi.', 'success');
+          loadQAData();
+        } else {
+          showToast('Denetim calistirilirken hata olustu.', 'error');
+        }
+      } catch (err) {
+        showToast('Baglanti hatasi: ' + err.message, 'error');
+      }
+    }
+
+    async function runQAAutoHeal() {
+      showToast('Otonom iyilestirme (Auto-Heal) tetiklendi, tum kanallar onariliyor...', 'info');
+      try {
+        const res = await fetch('/api/qa/auto-heal', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({})
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const count = (data.healed_actions || []).length;
+          showToast(`Otonom onarim tamamlandi: ${count} adet iyilestirme uygulandi.`, 'success');
+          loadQAData();
+        } else {
+          showToast('Otomatik iyilestirme sirasinda hata olustu.', 'error');
+        }
+      } catch (err) {
+        showToast('Baglanti hatasi: ' + err.message, 'error');
+      }
+    }
+
+    async function toggleQAMode() {
+      try {
+        const cur = await fetch('/api/qa/status').then(r => r.json());
+        const newMode = !cur.is_autonomous_enabled;
+        const res = await fetch('/api/qa/toggle', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({enabled: newMode})
+        });
+        if (res.ok) {
+          showToast(`Subagent 7 Otonom Nobetci ${newMode ? 'ACILDI' : 'KAPATILDI'}.`, 'info');
+          loadQAData();
+        }
+      } catch (err) {
+        showToast('Hata: ' + err.message, 'error');
       }
     }
 

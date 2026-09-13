@@ -67,7 +67,9 @@ async function run() {
       '/usr/bin/google-chrome-stable',
       '/usr/bin/google-chrome',
       '/usr/bin/chromium-browser',
-      '/usr/bin/chromium'
+      '/usr/bin/chromium',
+      '/home/eyup/.local/bin/google-chrome-stable',
+      '/home/eyup/.local/bin/google-chrome'
     ].filter(Boolean);
 
     for (const p of candidates) {

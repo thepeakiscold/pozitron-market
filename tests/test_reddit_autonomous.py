@@ -75,5 +75,69 @@ class TestRedditAutonomousBot(unittest.TestCase):
         self.assertGreaterEqual(result["auto_published_count"], 1, "Should auto-publish the answer without manual approval")
         self.assertTrue(mock_post.called, "post_reply should be invoked directly")
 
+    @patch("requests.get")
+    def test_search_drone_questions(self, mock_get):
+        """Ensure search_drone_questions queries reddit and parses results."""
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "data": {
+                "children": [
+                    {
+                        "data": {
+                            "id": "abc1234",
+                            "title": "İlk drone için tercihiniz hangisi olurdu?",
+                            "selftext": "DJI mı FPV mi önerirsiniz?",
+                            "author": "fpv_user",
+                            "subreddit": "teknoloji",
+                            "permalink": "/r/teknoloji/comments/abc1234/",
+                            "created_utc": 1787400000.0,
+                            "score": 10,
+                            "num_comments": 4,
+                            "archived": False,
+                            "locked": False
+                        }
+                    }
+                ]
+            }
+        }
+        res = self.client.search_drone_questions("teknoloji", query="drone", limit=5)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0]["short_id"], "abc1234")
+        self.assertEqual(res[0]["title"], "İlk drone için tercihiniz hangisi olurdu?")
+
+    def test_archived_or_too_old_posts_ignored(self):
+        """Ensure archived or posts older than 90 days are excluded to avoid TOO_OLD errors."""
+        import time
+        old_time = time.time() - (120 * 86400)
+        with patch("requests.get") as mock_get:
+            mock_get.return_value.status_code = 200
+            mock_get.return_value.json.return_value = {
+                "data": {
+                    "children": [
+                        {
+                            "data": {
+                                "id": "old1",
+                                "title": "Old drone question",
+                                "selftext": "archived text",
+                                "created_utc": old_time,
+                                "archived": False
+                            }
+                        },
+                        {
+                            "data": {
+                                "id": "archived1",
+                                "title": "Archived drone question",
+                                "selftext": "locked text",
+                                "created_utc": time.time(),
+                                "archived": True
+                            }
+                        }
+                    ]
+                }
+            }
+            res = self.client.search_drone_questions("teknoloji", query="drone")
+            self.assertEqual(len(res), 0, "Archived and old posts should be ignored")
+
 if __name__ == '__main__':
     unittest.main()
+

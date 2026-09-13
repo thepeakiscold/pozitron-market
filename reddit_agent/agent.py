@@ -258,15 +258,30 @@ class RedditDroneAgent:
                     if autonomous and not dry_run:
                         daily_count = get_daily_replies_count()
                         if daily_count < max_daily and interaction_data["confidence_score"] >= min_conf:
-                            print(f"[Reddit Bot] Otomatik onaylandı: {interaction_data['title'][:60]} -> Yayınlanıyor...")
+                            print(f"[Reddit Bot] Otomatik onaylandi: {interaction_data['title'][:60]} -> Yayinlaniyor...")
                             pub_res = self.publish_reply(interaction_id)
                             if pub_res.get("success"):
                                 published_count += 1
                                 interaction_data["status"] = "published"
                                 interaction_data["permalink"] = pub_res.get("permalink", interaction_data["permalink"])
-                                print(f"[Reddit Bot] [BASARILI] Başarıyla yayınlandı: {interaction_data['permalink']}")
+                                print(f"[Reddit Bot] [BASARILI] Basariyla yayinlandi: {interaction_data['permalink']}")
                             else:
-                                print(f"[Reddit Bot] [HATA] Yayınlanamadı: {pub_res.get('error')}")
+                                print(f"[Reddit Bot] [HATA] Yayinlanamadi: {pub_res.get('error')}")
+
+        # If no new questions were auto-published in this run, check pending high-confidence drafts
+        if autonomous and not dry_run and published_count == 0:
+            daily_count = get_daily_replies_count()
+            if daily_count < max_daily:
+                pending_drafts = get_interactions(limit=3, status="draft")
+                for draft in pending_drafts:
+                    if draft.get("confidence_score", 0) >= min_conf:
+                        print(f"[Reddit Bot] Kuyruktan taslak otomatik secildi: {draft['title'][:60]} -> Yayinlaniyor...")
+                        pub_res = self.publish_reply(draft["id"])
+                        if pub_res.get("success"):
+                            published_count += 1
+                            break
+                        else:
+                            print(f"[Reddit Bot] [HATA] Taslak yayinlanamadi: {pub_res.get('error')}")
 
         # Update last scan timestamp
         self.update_config({

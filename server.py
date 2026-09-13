@@ -23,7 +23,8 @@ from reddit_agent.agent import RedditDroneAgent
 from reddit_agent.scheduler import RedditScheduler
 from orchestrator import (
     LeadSupervisorAgent, SupervisorScheduler,
-    PriceIntelligenceAgent, TelemetryAgent, TechnicalSeoAgent
+    PriceIntelligenceAgent, TelemetryAgent, TechnicalSeoAgent,
+    GlobalTrendHunterAgent, QASentinelAgent, QAScheduler
 )
 
 PORT = 8000
@@ -46,6 +47,12 @@ lead_supervisor_agent = LeadSupervisorAgent()
 supervisor_scheduler = SupervisorScheduler(lead_supervisor_agent)
 if lead_supervisor_agent.get_status().get('is_autonomous_enabled'):
     supervisor_scheduler.start()
+
+# Subagent 7: PR Health, Diagnostics & QA Sentinel Agent
+qa_agent = QASentinelAgent()
+qa_scheduler = QAScheduler(qa_agent)
+if qa_agent.get_status().get('is_autonomous_enabled'):
+    qa_scheduler.start()
 
 # Security Lockout Configuration: 3 failed attempts => 30-minute cooldown
 LOGIN_ATTEMPTS_LOCK = threading.Lock()
@@ -589,6 +596,17 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"proposals": proposals, "count": len(proposals)})
             return
 
+        # Subagent 7: PR Health, Diagnostics & QA Sentinel Status
+        if path == '/api/qa/status':
+            self.send_json(200, qa_agent.get_status())
+            return
+
+        # Subagent 7: QA Incident History Log
+        if path == '/api/qa/incidents':
+            limit = int(query.get('limit', [50])[0])
+            self.send_json(200, {"incidents": qa_agent.get_incidents(limit=limit)})
+            return
+
         # Subagent 3: Latest Telemetry
         if path == '/api/telemetry/latest':
             self.send_json(200, lead_supervisor_agent.telemetry_agent.get_latest_telemetry())
@@ -615,6 +633,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             sup_status = lead_supervisor_agent.get_status()
             ig_status = instagram_pr_agent.get_status()
             rd_status = reddit_drone_agent.get_status()
+            qa_status = qa_agent.get_status()
             tel = lead_supervisor_agent.telemetry_agent.get_latest_telemetry()
             summary = lead_supervisor_agent.price_agent.get_summary_stats()
             trend_props = lead_supervisor_agent.trend_agent.get_proposals(limit=100)
@@ -714,7 +733,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "status_text": f"Model: gemini-3.8-flash • Mod: {sup_status.get('active_growth_mode', 'AGGRESSIVE_EXPANSION')}",
                         "description": "Google Antigravity 2.0 (gemini-3.8-flash): Istihbarat ve telemetriyi analiz eder, 12h evrimle sistemi optimize eder, magazaya trend urun ekler",
                         "inputs": ["subagent_5_price", "subagent_3_telemetry", "subagent_6_trend"],
-                        "triggers": ["subagent_1_instagram", "subagent_2_reddit", "subagent_4_seo", "output_pozitron_web"],
+                        "triggers": ["subagent_1_instagram", "subagent_2_reddit", "subagent_4_seo", "subagent_7_qa", "output_pozitron_web"],
                         "payload_preview": active_dir
                     },
                     {
@@ -758,6 +777,28 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "inputs": ["lead_supervisor"],
                         "triggers": ["output_pozitron_web"],
                         "payload_preview": active_dir.get("seo_content_directive", {})
+                    },
+                    {
+                        "id": "subagent_7_qa",
+                        "label": "Subagent 7: QA & Saglik Sentineli",
+                        "tag": "[SUBAGENT 7]",
+                        "column": 4,
+                        "type": "sentinel",
+                        "category": "Tani, QA & Otonom Onarim",
+                        "status": "running" if qa_status.get("is_autonomous_enabled") else "idle",
+                        "status_text": f"Saglik: %{qa_status.get('last_health_score', 100)} • Gemini 3.8 Flash",
+                        "description": "Kritik pipeline saglik denetimi, oturum ve token dogrulama ile Gemini 3.8 Flash otonom iyilestirme",
+                        "inputs": ["lead_supervisor"],
+                        "triggers": ["output_instagram_api", "output_reddit_api"],
+                        "payload_preview": {
+                            "agent": "QASentinelAgent",
+                            "model": "gemini-3.8-flash",
+                            "health_score": qa_status.get("last_health_score", 100),
+                            "last_status": qa_status.get("last_status", "UNKNOWN"),
+                            "auto_heal_enabled": qa_status.get("auto_heal_enabled", True),
+                            "auto_heals_applied": qa_status.get("auto_heals_applied", 0),
+                            "last_run": qa_status.get("last_run_at")
+                        }
                     },
                     {
                         "id": "output_instagram_api",
@@ -826,10 +867,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     {"from": "lead_supervisor", "to": "subagent_1_instagram", "label": "instagram_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_2_reddit", "label": "reddit_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_4_seo", "label": "seo_directive", "type": "directive"},
+                    {"from": "lead_supervisor", "to": "subagent_7_qa", "label": "qa_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "output_pozitron_web", "label": "Katalog Enjeksiyonu", "type": "publish"},
                     {"from": "subagent_1_instagram", "to": "output_instagram_api", "label": "Yayin & Etkilesim", "type": "publish"},
                     {"from": "subagent_2_reddit", "to": "output_reddit_api", "label": "Otonom Yanit", "type": "publish"},
-                    {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "Ic Linkli Rehber", "type": "publish"}
+                    {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "Ic Linkli Rehber", "type": "publish"},
+                    {"from": "subagent_7_qa", "to": "output_instagram_api", "label": "API Saglik Probu", "type": "publish"},
+                    {"from": "subagent_7_qa", "to": "output_reddit_api", "label": "Oturum Probu", "type": "publish"}
                 ]
             }
             self.send_json(200, graph)
@@ -1505,6 +1549,43 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     target_keywords=target_keywords
                 )
                 self.send_json(201, {"success": True, "article": article})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 7: Trigger On-Demand Diagnostic Audit
+        if path == '/api/qa/run':
+            try:
+                auto_heal = bool(data.get("auto_heal", True))
+                report = qa_agent.run_full_diagnostics(auto_heal=auto_heal)
+                self.send_json(200, {"success": True, "report": report})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 7: Trigger Auto-Healing
+        if path == '/api/qa/auto-heal':
+            try:
+                report = qa_agent.run_full_diagnostics(auto_heal=True)
+                self.send_json(200, {"success": True, "healed_actions": report.get("healed_actions", []), "report": report})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 7: Toggle Autonomous Watchdog Mode
+        if path == '/api/qa/toggle':
+            try:
+                enabled = bool(data.get("enabled", True))
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute("UPDATE qa_agent_config SET is_autonomous_enabled = ?, updated_at = ? WHERE id = 1", (1 if enabled else 0, datetime.now().isoformat()))
+                conn.commit()
+                conn.close()
+                if enabled:
+                    qa_scheduler.start()
+                else:
+                    qa_scheduler.stop()
+                self.send_json(200, {"success": True, "is_autonomous_enabled": enabled})
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return

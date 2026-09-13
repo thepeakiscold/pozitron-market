@@ -45,7 +45,23 @@ def export_static_data():
     cursor.execute("SELECT * FROM reviews ORDER BY created_at DESC")
     reviews = [dict(row) for row in cursor.fetchall()]
 
+    # 4. Instagram Posts
+    cursor.execute("SELECT * FROM instagram_posts ORDER BY id DESC")
+    instagram_posts = [dict(row) for row in cursor.fetchall()]
+
+    # 5. Reddit Interactions
+    cursor.execute("SELECT * FROM reddit_interactions ORDER BY id DESC")
+    reddit_interactions = [dict(row) for row in cursor.fetchall()]
+
     conn.close()
+
+    # Save to data/instagram_posts.json
+    with open(os.path.join(OUTPUT_DIR, "instagram_posts.json"), "w", encoding="utf-8") as f:
+        json.dump(instagram_posts, f, ensure_ascii=False, indent=2)
+
+    # Save to data/reddit_history.json
+    with open(os.path.join(OUTPUT_DIR, "reddit_history.json"), "w", encoding="utf-8") as f:
+        json.dump(reddit_interactions, f, ensure_ascii=False, indent=2)
 
     # Save to data/products.json
     with open(os.path.join(OUTPUT_DIR, "products.json"), "w", encoding="utf-8") as f:

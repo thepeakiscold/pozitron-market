@@ -14,6 +14,7 @@ from .subagent_price_intelligence import PriceIntelligenceAgent
 from .subagent_telemetry import TelemetryAgent
 from .subagent_seo import TechnicalSeoAgent
 from .subagent_trend_hunter import GlobalTrendHunterAgent
+from .subagent_qa import QASentinelAgent
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pozitron.db')
 
@@ -30,6 +31,7 @@ class LeadSupervisorAgent:
     - 12 saatte bir otonom evrim ve stratejik oz-iyilestirme dongusunu calistirir (Subagent telemetrilerini
       analiz eder, darbogazlari tespit eder, agresif pazar buyumesi icin parametreleri gunceller).
     - Subagent 6 (Global Trend Hunter) onerilerini degerlendirir ve onaylayip magazaya ekler.
+    - Subagent 7 (QA Sentinel) denetim sonuclarini takip eder ve sistem sagligini guvenceye alir.
     """
     def __init__(self):
         self.model_code = "gemini-3.8-flash"
@@ -38,6 +40,7 @@ class LeadSupervisorAgent:
         self.telemetry_agent = TelemetryAgent()
         self.seo_agent = TechnicalSeoAgent()
         self.trend_agent = GlobalTrendHunterAgent()
+        self.qa_agent = QASentinelAgent()
         self.current_directive: Optional[Dict] = None
         self._load_latest_directive()
 

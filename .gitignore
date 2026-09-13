@@ -6,6 +6,8 @@ __pycache__/
 
 # Sensitive & Local Database Files
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 data/users.json
