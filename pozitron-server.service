@@ -1,0 +1,17 @@
+[Unit]
+Description=Pozitron Market Server & Autonomous Agent Pipeline
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/eyup/Pozitron
+Environment=PYTHONUNBUFFERED=1
+Environment=PATH=/home/eyup/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=DISPLAY=:0
+Environment=XDG_RUNTIME_DIR=/run/user/1000
+ExecStart=/usr/bin/python3 /home/eyup/Pozitron/server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

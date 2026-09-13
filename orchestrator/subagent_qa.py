@@ -370,9 +370,13 @@ class QASentinelAgent:
         server_service_active = False
         try:
             import subprocess
-            proc = subprocess.run(["systemctl", "is-active", "pozitron-server.service"], capture_output=True, text=True, timeout=2)
+            proc = subprocess.run(["systemctl", "--user", "is-active", "pozitron-server.service"], capture_output=True, text=True, timeout=2)
             if proc.stdout.strip() == "active":
                 server_service_active = True
+            else:
+                proc2 = subprocess.run(["systemctl", "is-active", "pozitron-server.service"], capture_output=True, text=True, timeout=2)
+                if proc2.stdout.strip() == "active":
+                    server_service_active = True
         except Exception:
             pass
 
