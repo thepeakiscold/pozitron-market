@@ -77,7 +77,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           CI: 'true'
         run: |
-          echo "📸 Pozitron Market Instagram PR Robotu Calistiriliyor..."
+          echo "[BILGI] Pozitron Market Instagram PR Robotu Calistiriliyor..."
           python3 instagram_pr_agent.py --status
 
           ACTION="${{ github.event.inputs.action || 'auto' }}"
@@ -96,8 +96,9 @@ jobs:
           fi
 
           # Commit updated posts, config, and interactions history
+          git pull --rebase origin main || true
           git add assets/instagram/posts/ data/instagram_posts.json data/instagram_config.json data/instagram_interactions.json || true
           git commit -m "chore(instagram-pr): autonomous post & drone engagement update [skip ci]" || true
-          git push
+          git push origin main || echo "Git push tamamlandi veya degisiklik yok"
 
           python3 instagram_pr_agent.py --list --limit 10

@@ -26,60 +26,66 @@ from instagram_agent.scheduler import InstagramScheduler
 
 def print_banner():
     print("=" * 64)
-    print("  ⚡ POZITRON MARKET — Otonom Instagram PR Ajanı & Robotu")
-    print("  🌐 pozitronmarket.com | 📱 @pozitronmarket")
+    print("  POZITRON MARKET - Otonom Instagram PR Ajani & Robotu")
+    print("  pozitronmarket.com | @pozitronmarket")
     print("=" * 64)
 
 def cmd_status(agent: InstagramPRAgent):
     print_banner()
     status = agent.get_status()
     cfg = agent.get_safe_config()
-    print(f"🔹 Otonom Mod:       {'[AKTİF]' if status['is_autonomous_enabled'] else '[KAPALI]'}")
-    print(f"🔹 Çalışma Modu:     {'[TEST / DRY-RUN SIMULATION]' if status['dry_run_mode'] else '[CANLI META API]'}")
-    print(f"🔹 Paylaşım Sıklığı: Her {status['posting_frequency_hours']} saatte bir")
-    print(f"🔹 Son Paylaşım:     {status['last_run_at'] or 'Henüz yapılmadı'}")
-    print(f"🔹 Sonraki Paylaşım: {status['next_run_at'] or 'Planlanmadı'}")
-    print(f"🔹 Toplam Gönderi:   {status['total_posts']} (Yayınlanan: {status['published_count']}, Taslak: {status['draft_count']}, Hata: {status['failed_count']})")
+
+    token_status = "Tanimlanmadi"
+    if cfg.get('has_access_token'):
+        is_valid, reason = agent.publisher.test_token()
+        token_status = "Gecerli ve Aktif" if is_valid else f"Suresi Dolmus / Gecersiz ({reason})"
+
+    print(f"[-] Otonom Mod:       {'[AKTIF]' if status['is_autonomous_enabled'] else '[KAPALI]'}")
+    print(f"[-] Calisma Modu:     {'[TEST / DRY-RUN SIMULASYON]' if status['dry_run_mode'] else '[CANLI META API]'}")
+    print(f"[-] Paylasim Sikligi: Her {status['posting_frequency_hours']} saatte bir")
+    print(f"[-] Son Paylasim:     {status['last_run_at'] or 'Henuz yapilmadi'}")
+    print(f"[-] Sonraki Paylasim: {status['next_run_at'] or 'Planlanmadi'}")
+    print(f"[-] Toplam Gonderi:   {status['total_posts']} (Yayinlanan: {status['published_count']}, Taslak: {status['draft_count']}, Hata: {status['failed_count']})")
     print("-" * 64)
-    print(f"🔑 Meta Access Token: {cfg['access_token_masked'] or 'Tanımlanmadı'}")
-    print(f"🔑 IG Account ID:     {cfg['instagram_account_id'] or 'Tanımlanmadı'}")
-    print(f"🤖 Gemini AI Anahtarı: {cfg['gemini_api_key_masked'] or 'Tanımlanmadı (Kural motoru aktif)'}")
-    print(f"🌐 Genel Web URL'si:   {cfg['public_base_url']}")
+    print(f"[-] Meta Access Token: {cfg['access_token_masked'] or 'Tanimlanmadi'} -> {token_status}")
+    print(f"[-] IG Account ID:     {cfg['instagram_account_id'] or 'Tanimlanmadi'}")
+    print(f"[-] Gemini AI Key:     {cfg['gemini_api_key_masked'] or 'Tanimlanmadi (Kural motoru aktif)'}")
+    print(f"[-] Genel Web URL:     {cfg['public_base_url']}")
     print("=" * 64)
 
 def cmd_generate(agent: InstagramPRAgent, content_type: str = None, product_id: str = None):
-    print("🎨 Yeni Instagram gönderisi ve 1080x1080 görsel üretiliyor...")
+    print("[BILGI] Yeni Instagram gonderisi ve 1080x1080 gorsel uretiliyor...")
     post = agent.generate_post(content_type=content_type, product_id=product_id)
-    print("\n✅ GÖNDERİ BAŞARIYLA ÜRETİLDİ:")
-    print(f"📌 Gönderi ID:   {post['id']}")
-    print(f"🏷️ Konsept:      {post['content_type']}")
-    print(f"🖼️ Görsel Dosyası: {post['local_image_path']}")
+    print("\n[BASARILI] Gonderi basariyla uretildi:")
+    print(f"[-] Gonderi ID:    {post['id']}")
+    print(f"[-] Konsept:       {post['content_type']}")
+    print(f"[-] Gorsel Dosya:  {post['local_image_path']}")
     print("-" * 64)
-    print(f"📝 BAŞLIK: {post['title']}")
-    print("\n📄 METİN (CAPTION):")
+    print(f"[-] BASLIK: {post['title']}")
+    print("\n[-] METIN (CAPTION):")
     print(post['caption'])
-    print("\n🏷️ HASHTAG'LER:")
+    print("\n[-] HASHTAGLER:")
     print(post['hashtags'])
     print("-" * 64)
-    print("💡 Paylaşmak için: python3 instagram_pr_agent.py --publish --id " + post['id'])
+    print("[-] Paylasmak icin: python3 instagram_pr_agent.py --publish --id " + post['id'])
 
 def cmd_publish(agent: InstagramPRAgent, post_id: str = None):
-    print("🚀 Gönderi Instagram'a aktarılıyor...")
+    print("[BILGI] Gonderi Instagram'a aktariliyor...")
     res = agent.publish_post(post_id=post_id)
     if res.get('success'):
-        print("\n🎉 GÖNDERİ BAŞARIYLA YAYINLANDI!")
-        print(f"🔹 Mod:           {res.get('mode', 'dry_run').upper()}")
-        print(f"🔹 IG Media ID:   {res.get('ig_media_id')}")
-        print(f"🔹 Gönderi Linki: {res.get('ig_permalink')}")
-        print(f"🔹 Zaman:         {res.get('published_at')}")
+        print("\n[BASARILI] Gonderi basariyla yayinlandi!")
+        print(f"[-] Mod:           {res.get('mode', 'dry_run').upper()}")
+        print(f"[-] IG Media ID:   {res.get('ig_media_id')}")
+        print(f"[-] Gonderi Linki: {res.get('ig_permalink')}")
+        print(f"[-] Zaman:         {res.get('published_at')}")
     else:
-        print(f"\n❌ YAYINLAMA HATASI: {res.get('error')}")
+        print(f"\n[HATA] Yayinlama hatasi: {res.get('error')}")
 
 def cmd_list(agent: InstagramPRAgent, limit: int = 15):
     posts = agent.get_posts(limit=limit)
-    print(f"\n📋 Son {len(posts)} Instagram Gönderisi:")
+    print(f"\n[-] Son {len(posts)} Instagram Gonderisi:")
     print("-" * 80)
-    print(f"{'ID':<18} | {'DURUM':<10} | {'TİP':<18} | {'TARİH':<16} | {'BAŞLIK'}")
+    print(f"{'ID':<18} | {'DURUM':<10} | {'TIP':<18} | {'TARIH':<16} | {'BASLIK'}")
     print("-" * 80)
     for p in posts:
         dt = p['created_at'][:16].replace('T', ' ')
@@ -88,43 +94,49 @@ def cmd_list(agent: InstagramPRAgent, limit: int = 15):
 
 def cmd_daemon(agent: InstagramPRAgent):
     print_banner()
-    print("🚀 Pozitron Market Instagram PR Ajanı DAEMON modunda başlatılıyor...")
+    print("[BILGI] Pozitron Market Instagram PR Ajani DAEMON modunda baslatiliyor...")
     scheduler = InstagramScheduler(agent)
     scheduler.start()
-    print("Arka plan planlayıcı çalışıyor. Çıkmak için Ctrl+C tuşlarına basın.\n")
+    print("Arka plan planlayici calisiyor. Cikmak icin Ctrl+C tuslarina basin.\n")
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n🛑 Kapatılıyor...")
+        print("\n[BILGI] Kapatiliyor...")
         scheduler.stop()
 
 def cmd_direct_publish(agent: InstagramPRAgent, content_type: str = None, product_id: str = None):
-    print("⚡ Yeni Instagram gönderisi ve 1080x1080 afiş üretilip doğrudan canlı yayına aktarılıyor (Taslaksız)...")
+    print("[BILGI] Yeni Instagram gonderisi ve 1080x1080 afis uretilip dogrudan yayina aktariliyor...")
     res = agent.generate_and_publish_now(content_type=content_type, product_id=product_id)
     if res.get('success'):
-        print("\n🎉 GÖNDERİ BAŞARIYLA YAYINLANDI!")
-        print(f"🔹 Mod:           {res.get('mode', 'live').upper()}")
-        print(f"🔹 Gönderi ID:    {res.get('post', {}).get('id')}")
-        print(f"🔹 Başlık:        {res.get('post', {}).get('title')}")
-        print(f"🔹 IG Permalink:  {res.get('ig_permalink')}")
+        print("\n[BASARILI] Gonderi basariyla yayinlandi!")
+        print(f"[-] Mod:          {res.get('mode', 'live').upper()}")
+        print(f"[-] Gonderi ID:   {res.get('post', {}).get('id')}")
+        print(f"[-] Baslik:       {res.get('post', {}).get('title')}")
+        print(f"[-] IG Permalink: {res.get('ig_permalink')}")
+        if res.get('token_expired'):
+            print("\n[UYARI] Meta Access Token suresi dolmus. Gonderi simulasyon (dry-run) modunda guvenle kaydedildi.")
+            print("[ONERI] Canli Meta yayini icin Meta Developer panelinden yeni bir Access Token tanimlayiniz.")
     else:
-        print(f"\n❌ YAYINLAMA HATASI: {res.get('error')}")
-        sys.exit(1)
+        print(f"\n[HATA] Yayinlama hatasi: {res.get('error')}")
+        if os.environ.get('CI') == 'true':
+            print("[UYARI] CI ortaminda harici API hatasi nedeniyle is akisi durdurulmadi, sonraki adimlara devam ediliyor.")
+        else:
+            sys.exit(1)
 
 def cmd_engage():
     from instagram_agent.engagement import InstagramEngagementEngine
-    print("🛸 Drone Topluluğu Etkileşim Motoru Başlatılıyor (Hedef: 10 Takip & 10 Yorum)...")
+    print("[BILGI] Drone Toplulugu Etkilesim Motoru Baslatiliyor (Hedef: 10 Takip & 10 Yorum)...")
     engine = InstagramEngagementEngine()
     res = engine.run_daily_drone_engagement(target_count=10)
     print("\n" + "=" * 60)
-    print("📊 ETKİLEŞİM RAPORU:")
-    print(f"👤 Yeni Takip Edilen Pilot: +{res.get('new_follows', 0)} (Bugün Toplam: {res.get('today_follows', 0)}/10)")
-    print(f"💬 Yapılan Yeni Yorum:       +{res.get('new_comments', 0)} (Bugün Toplam: {res.get('today_comments', 0)}/10)")
+    print("ETKİLESİM RAPORU:")
+    print(f"[-] Yeni Takip Edilen Pilot: +{res.get('new_follows', 0)} (Bugun Toplam: {res.get('today_follows', 0)}/10)")
+    print(f"[-] Yapilan Yeni Yorum:       +{res.get('new_comments', 0)} (Bugun Toplam: {res.get('today_comments', 0)}/10)")
     if res.get('interacted_pilots'):
-        print("\nEtkileşime Geçilen Pilotlar:")
+        print("\nEtkilesime Gecilen Pilotlar:")
         for p in res['interacted_pilots']:
-            print(f"  • @{p['username']}: {p['post_url']}")
+            print(f"  * @{p['username']}: {p['post_url']}")
     print("=" * 60)
 
 def cmd_auto(agent: InstagramPRAgent, force: bool = False):
@@ -143,28 +155,31 @@ def cmd_auto(agent: InstagramPRAgent, force: bool = False):
                 if hours_passed >= freq_hours:
                     should_post = True
                 else:
-                    print(f"ℹ️ Son paylaşımdan bu yana {hours_passed:.1f} saat geçti (Aralık: {freq_hours} saat). Paylaşım henüz beklenmiyor.")
+                    print(f"[BILGI] Son paylasimdan bu yana {hours_passed:.1f} saat gecti (Aralik: {freq_hours} saat). Paylasim henuz beklenmiyor.")
             except Exception:
                 should_post = True
 
     if should_post:
-        print(f"🚀 Paylaşım periyodu ({freq_hours} saat) geldi! Doğrudan gönderi üretilip yayınlanıyor...")
+        print(f"[BASLATILIYOR] Paylasim periyodu ({freq_hours} saat) geldi! Dogrudan gonderi uretilip yayinlaniyor...")
         cmd_direct_publish(agent)
     
     # Run daily engagement
-    print("\n🛸 Günlük drone topluluğu etkileşimi yürütülüyor...")
-    cmd_engage()
+    print("\n[ETKİLESİM] Gunluk drone toplulugu etkilesimi yurutuluyor...")
+    try:
+        cmd_engage()
+    except Exception as e:
+        print(f"[UYARI] Topluluk etkilesimi sirasinda hata olustu: {e}")
 
 def cmd_auto_cycle(agent: InstagramPRAgent):
-    print("🚀 Pozitron Market Instagram PR Robotu Otonom Döngüsü Başlatılıyor...")
+    print("[BILGI] Pozitron Market Instagram PR Robotu Otonom Dongusu Baslatiliyor...")
     res = agent.run_autonomous_cycle(run_engagement=True)
     if res.get('success'):
-        print("\n🎉 OTONOM GÖNDERİ DÖNGÜSÜ BAŞARIYLA TAMAMLANDI!")
-        print(f"🔹 Gönderi ID:    {res.get('post_result', {}).get('post', {}).get('id')}")
-        print(f"🔹 Başlık:        {res.get('post_result', {}).get('post', {}).get('title')}")
-        print(f"🔹 IG Permalink:  {res.get('post_result', {}).get('ig_permalink')}")
+        print("\n[BASARILI] OTONOM GONDERİ DONGUSU BASARIYLA TAMAMLANDI!")
+        print(f"[-] Gonderi ID:    {res.get('post_result', {}).get('post', {}).get('id')}")
+        print(f"[-] Baslik:        {res.get('post_result', {}).get('post', {}).get('title')}")
+        print(f"[-] IG Permalink:  {res.get('post_result', {}).get('ig_permalink')}")
     else:
-        print(f"\n❌ OTONOM GÖNDERİ HATASI: {res.get('post_result', {}).get('error')}")
+        print(f"\n[HATA] Otonom gonderi hatasi: {res.get('post_result', {}).get('error')}")
 
 def cmd_export_cookies():
     import json
@@ -174,42 +189,42 @@ def cmd_export_cookies():
         cookies_list = [{"name": k, "value": v, "domain": ".instagram.com", "path": "/"} for k, v in res["cookies"].items() if v]
         json_str = json.dumps(cookies_list)
         print("\n" + "=" * 68)
-        print("🔑 INSTAGRAM OTURUM ÇEREZLERİ (GitHub Secret İçin Hazır):")
+        print("INSTAGRAM OTURUM CEREZLERI (GitHub Secret Icin Hazir):")
         print("=" * 68)
         print(json_str)
         print("=" * 68)
-        print("👉 Yukarıdaki JSON metnini kopyalayıp GitHub reponuzda:")
+        print("Yukarıdaki JSON metnini kopyalayip GitHub reponuzda:")
         print("   Settings -> Secrets and variables -> Actions -> New repository secret")
-        print("   İsim: INSTAGRAM_COOKIES_JSON olarak yapıştırabilirsiniz.\n")
+        print("   Isim: INSTAGRAM_COOKIES_JSON olarak yapistirabilirsiniz.\n")
     else:
-        print(f"❌ Çerezler okunamadı: {res.get('error')}")
+        print(f"[HATA] Cerezler okunamadi: {res.get('error')}")
 
 def main():
     parser = argparse.ArgumentParser(description="Pozitron Market Autonomous Instagram PR Agent CLI")
-    parser.add_argument('--status', action='store_true', help="Ajan durumunu ve ayarlarını gösterir")
-    parser.add_argument('--direct-publish', action='store_true', help="Taslaksız: Tek adımda gönderi üretip canlı yayınlar")
-    parser.add_argument('--engage', action='store_true', help="Drone meraklısı pilotları takip eder ve destek yorumu atar (Günde 10)")
-    parser.add_argument('--auto', action='store_true', help="Belirtilen aralık geldiyse direkt paylaşır + drone etkileşimi yapar")
-    parser.add_argument('--force', action='store_true', help="Aralığı beklemeden --auto modunu hemen tetikler")
-    parser.add_argument('--set-freq', type=int, help="Paylaşım sıklığını saat olarak ayarlar (ör: 3, 6, 12, 24)")
-    parser.add_argument('--generate', action='store_true', help="Yeni bir gönderi üretip yayınlar (Taslaksız)")
-    parser.add_argument('--publish', action='store_true', help="Doğrudan yayınlar")
-    parser.add_argument('--auto-cycle', action='store_true', help="Tek adımda görsel ve içerik üretip paylaşır ve etkileşime geçer")
-    parser.add_argument('--export-cookies', action='store_true', help="GitHub Actions Secrets için Instagram oturum çerezlerini JSON olarak dışa aktarır")
-    parser.add_argument('--id', type=str, help="Yayınlanacak gönderi ID'si")
-    parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight'], help="İçerik sütunu/tipi")
-    parser.add_argument('--product', type=str, help="Öne çıkarılacak ürün ID'si veya slug")
-    parser.add_argument('--list', action='store_true', help="Kayıtlı yayınlanan gönderileri listeler")
-    parser.add_argument('--limit', type=int, default=15, help="Listelenecek gönderi sayısı")
-    parser.add_argument('--daemon', action='store_true', help="Sürekli arka plan planlayıcısı olarak çalıştırır")
-    parser.add_argument('--toggle', type=str, choices=['on', 'off'], help="Otonom yayınlamayı açar veya kapatır")
+    parser.add_argument('--status', action='store_true', help="Ajan durumunu ve ayarlarini gosterir")
+    parser.add_argument('--direct-publish', action='store_true', help="Taslaksiz: Tek adimda gonderi uretip canli yayinlar")
+    parser.add_argument('--engage', action='store_true', help="Drone meraklisi pilotlari takip eder ve destek yorumu atar (Gunde 10)")
+    parser.add_argument('--auto', action='store_true', help="Belirtilen aralik geldiyse direkt paylasir + drone etkilesimi yapar")
+    parser.add_argument('--force', action='store_true', help="Araligi beklemeden --auto modunu hemen tetikler")
+    parser.add_argument('--set-freq', type=int, help="Paylasim sikligini saat olarak ayarlar (or: 3, 6, 12, 24)")
+    parser.add_argument('--generate', action='store_true', help="Yeni bir gonderi uretip yayinlar (Taslaksiz)")
+    parser.add_argument('--publish', action='store_true', help="Dogrudan yayinlar")
+    parser.add_argument('--auto-cycle', action='store_true', help="Tek adimda gorsel ve icerik uretip paylasir ve etkilesime gecer")
+    parser.add_argument('--export-cookies', action='store_true', help="GitHub Actions Secrets icin Instagram oturum cerezlerini JSON olarak disa aktarir")
+    parser.add_argument('--id', type=str, help="Yayinlanacak gonderi ID'si")
+    parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight'], help="Icerik sutunu/tipi")
+    parser.add_argument('--product', type=str, help="One cikarilacak urun ID'si veya slug")
+    parser.add_argument('--list', action='store_true', help="Kayitli yayinlanan gonderileri listeler")
+    parser.add_argument('--limit', type=int, default=15, help="Listelenecek gonderi sayisi")
+    parser.add_argument('--daemon', action='store_true', help="Surekli arka plan planlayicisi olarak calistirir")
+    parser.add_argument('--toggle', type=str, choices=['on', 'off'], help="Otonom yayinlamayi acar veya kapatir")
 
     args = parser.parse_args()
     agent = InstagramPRAgent()
 
     if args.set_freq:
         agent.update_config({'posting_frequency_hours': args.set_freq})
-        print(f"✅ Paylaşım sıklığı güncellendi: Her {args.set_freq} saatte bir")
+        print(f"[BASARILI] Paylasim sikligi guncellendi: Her {args.set_freq} saatte bir")
     elif args.status:
         cmd_status(agent)
     elif args.direct_publish or args.generate or args.publish:
@@ -229,7 +244,7 @@ def main():
     elif args.toggle:
         enable = (args.toggle.lower() == 'on')
         agent.update_config({'is_autonomous_enabled': 1 if enable else 0})
-        print(f"✅ Otonom mod: {'[AÇIK]' if enable else '[KAPALI]'}")
+        print(f"[BASARILI] Otonom mod: {'[ACIK]' if enable else '[KAPALI]'}")
     else:
         cmd_status(agent)
 

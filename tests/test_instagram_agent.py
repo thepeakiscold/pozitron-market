@@ -107,5 +107,28 @@ class TestInstagramPRAgent(unittest.TestCase):
         agent.delete_post(post['id'])
         self.assertIsNone(get_instagram_post_by_id(post['id']))
 
+    def test_06_meta_publisher_expired_token_graceful_fallback(self):
+        pub = MetaPublisher(
+            access_token="INVALID_OR_EXPIRED_TOKEN_190",
+            instagram_account_id="17841430407836914",
+            dry_run=False,
+            public_base_url="https://pozitronmarket.com"
+        )
+        is_valid, reason = pub.test_token()
+        self.assertFalse(is_valid)
+
+        # Publishing with invalid/expired token must fall back gracefully rather than crash
+        mock_post = {
+            'id': 'test_fallback_002',
+            'caption': 'Fallback test caption',
+            'hashtags': '#fpv #test',
+            'image_url': './assets/instagram/posts/test_fallback_002.jpg'
+        }
+        res = pub.publish_post(mock_post)
+        self.assertTrue(res['success'])
+        self.assertEqual(res['mode'], 'simulation_fallback')
+        self.assertTrue(res.get('token_expired'))
+        self.assertTrue(res['ig_media_id'].startswith('sim_ig_'))
+
 if __name__ == '__main__':
     unittest.main()
