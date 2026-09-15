@@ -1,0 +1,51 @@
+name: Market Order Sync
+
+on:
+  repository_dispatch:
+    types: [order_placed, market_order]
+  workflow_dispatch:
+
+concurrency:
+  group: market-inventory
+  cancel-in-progress: false
+
+jobs:
+  sync-inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Market Sync
+        env:
+          CLIENT_PAYLOAD: ${{ toJson(github.event.client_payload) }}
+        run: |
+          python3 scripts/cloud_market_sync.py
+
+      - name: Commit and Push with Rebase Retry
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/products.json data/pozitron_data.js data/orders_log.json
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "[skip ci] chore(market): auto deduct stock"
+          
+          # Retry loop to pull changes if a concurrent push occurred
+          for i in {1..5}; do
+            git pull --rebase origin main && git push origin main && break
+            echo "Push conflict detected. Retrying in 3 seconds ($i/5)..."
+            sleep 3
+          done
