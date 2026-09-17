@@ -1,0 +1,17 @@
+# Render.com Blueprint Specification
+# Pozitron Market - Cloud Backend API
+services:
+  - type: web
+    name: pozitron-market-api
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python3 server.py"
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: PYTHON_VERSION
+        value: 3.11.9

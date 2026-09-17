@@ -5,7 +5,7 @@ import hashlib
 import uuid
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pozitron.db')
+DB_PATH = os.environ.get('DATABASE_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pozitron.db')
 
 def get_db():
     conn = sqlite3.connect(DB_PATH, timeout=30.0)

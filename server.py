@@ -544,6 +544,15 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         })
 
     def handle_api_get(self, path, query):
+        # Health Check Endpoint (Cloud / Render / Railway)
+        if path == '/api/health':
+            self.send_json(200, {
+                "status": "healthy",
+                "service": "pozitron-cloud-api",
+                "timestamp": datetime.now().isoformat()
+            })
+            return
+
         # Instagram PR: Status
         if path == '/api/instagram/status':
             self.send_json(200, instagram_pr_agent.get_status())
@@ -1808,7 +1817,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
-        # 3. Google / Gmail Sign-In Simulation
+        # 3. Google / Gmail Sign-In
         if path == '/api/auth/google':
             email = data.get('email', '').strip().lower()
             full_name = data.get('full_name', '').strip() or email.split('@')[0].capitalize()
@@ -1819,6 +1828,17 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(400, {"error": "Google email is required."})
                 return
 
+            ADMIN_EMAILS = [
+                'thepeakiscold@gmail.com',
+                'furkaniusprimes@gmail.com',
+                'eyupfurkanpekoz@gmail.com',
+                'eyuppekoz@gmail.com',
+                'pekozfurkan@gmail.com',
+                'pozitronmarket@gmail.com'
+            ]
+            is_admin_email = any(adm in email for adm in ['furkan', 'eyup', 'thepeak', 'pozitron']) or (email in ADMIN_EMAILS)
+            assigned_role = 'admin' if is_admin_email else 'customer'
+
             cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
 
@@ -1826,8 +1846,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 user_dict = dict(user)
                 if 'password_hash' in user_dict:
                     del user_dict['password_hash']
-                # Grant admin to known admin emails or gmail users
-                if user_dict.get('role') != 'admin' and ('furkan' in email or 'eyup' in email or 'thepeak' in email or user_dict.get('provider') == 'gmail'):
+                # Upgrade to admin if email qualifies
+                if is_admin_email and user_dict.get('role') != 'admin':
                     cursor.execute("UPDATE users SET role = 'admin' WHERE id = ?", (user_dict['id'],))
                     conn.commit()
                     user_dict['role'] = 'admin'
@@ -1836,8 +1856,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 now = datetime.now().isoformat()
                 cursor.execute('''
                     INSERT INTO users (id, email, password_hash, full_name, avatar_url, provider, role, created_at)
-                    VALUES (?, ?, NULL, ?, ?, 'gmail', 'admin', ?)
-                ''', (user_id, email, full_name, avatar_url, now))
+                    VALUES (?, ?, NULL, ?, ?, 'google', ?, ?)
+                ''', (user_id, email, full_name, avatar_url, assigned_role, now))
                 conn.commit()
 
                 cursor.execute("SELECT id, email, full_name, avatar_url, provider, role, phone, address, city, country FROM users WHERE id = ?", (user_id,))

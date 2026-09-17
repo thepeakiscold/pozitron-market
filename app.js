@@ -2349,6 +2349,21 @@ class PozitronApp {
       })
     }).catch(err => console.log('User webhook error:', err));
 
+    // Synchronize manual register with centralized backend
+    try {
+      const apiTarget = window.PozitronAPI ? window.PozitronAPI.getUrl('/api/auth/register') : '/api/auth/register';
+      fetch(apiTarget, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: newUser.email,
+          password: password,
+          full_name: newUser.full_name,
+          avatar_url: newUser.avatar_url
+        })
+      }).catch(() => {});
+    } catch(e) {}
+
     // Log in
     this.loginWithUser(newUser);
     this.closeAuthModal();
@@ -5228,7 +5243,8 @@ window.handleCredentialResponse = function(response) {
 
   // Synchronize Google login directly with backend SQLite database
   try {
-    fetch('/api/auth/google', {
+    const apiTarget = window.PozitronAPI ? window.PozitronAPI.getUrl('/api/auth/google') : '/api/auth/google';
+    fetch(apiTarget, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5236,10 +5252,17 @@ window.handleCredentialResponse = function(response) {
         full_name: existing.full_name,
         avatar_url: existing.avatar_url
       })
+    }).then(async res => {
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.user && data.user.role) {
+          existing.role = data.user.role;
+          localStorage.setItem('pozitron_user', JSON.stringify(existing));
+        }
+      }
     }).catch(() => {});
   } catch(e) {}
   
-  existing.role = 'admin';
   window.app.loginWithUser(existing);
   window.app.closeAuthModal();
   window.app.showToast(`Hoş geldiniz, ${existing.full_name}!`, 'success');
