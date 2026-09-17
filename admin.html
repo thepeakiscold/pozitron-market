@@ -2936,20 +2936,29 @@
           const list = JSON.parse(localRaw);
           if (Array.isArray(list)) {
             for (const item of list) {
-              if (item && item.email && !users.some(u => u.email.toLowerCase() === item.email.toLowerCase())) {
+              if (!item || !item.email) continue;
+              const serverMatch = users.find(u => u.email.toLowerCase() === item.email.toLowerCase());
+              if (!serverMatch) {
                 users.push(item);
-                // Synchronize existing local user into the cloud database
-                if (backendReachable) {
-                  fetch('/api/auth/google', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      email: item.email,
-                      full_name: item.full_name || item.email.split('@')[0],
-                      avatar_url: item.avatar_url
-                    })
-                  }).catch(() => {});
-                }
+              } else if (item.provider && serverMatch.provider !== item.provider) {
+                // Preserve accurate provider from client (manual vs google)
+                serverMatch.provider = item.provider;
+              }
+
+              // Synchronize existing local user into the cloud database with exact provider & role
+              if (backendReachable) {
+                fetch('/api/auth/sync', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    email: item.email,
+                    full_name: item.full_name || item.email.split('@')[0],
+                    avatar_url: item.avatar_url,
+                    provider: item.provider || 'manual',
+                    role: item.role || 'customer',
+                    phone: item.phone || ''
+                  })
+                }).catch(() => {});
               }
             }
           }

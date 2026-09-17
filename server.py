@@ -1891,6 +1891,39 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
+        # 3b. Sync User (Preserves exact provider and role from client)
+        if path == '/api/auth/sync':
+            email = data.get('email', '').strip().lower()
+            full_name = data.get('full_name', '').strip() or email.split('@')[0].capitalize()
+            avatar_url = data.get('avatar_url', f"https://api.dicebear.com/7.x/bottts/svg?seed={email}")
+            provider = data.get('provider', 'manual')
+            role = data.get('role', 'customer')
+            phone = data.get('phone', '')
+
+            if not email:
+                conn.close()
+                self.send_json(400, {"error": "Email is required."})
+                return
+
+            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+            user = cursor.fetchone()
+
+            if user:
+                cursor.execute("UPDATE users SET provider = ?, full_name = ? WHERE email = ?", (provider, full_name, email))
+                conn.commit()
+            else:
+                user_id = str(uuid.uuid4())
+                now = datetime.now().isoformat()
+                cursor.execute('''
+                    INSERT INTO users (id, email, password_hash, full_name, avatar_url, provider, role, phone, created_at)
+                    VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?)
+                ''', (user_id, email, full_name, avatar_url, provider, role, phone, now))
+                conn.commit()
+
+            conn.close()
+            self.send_json(200, {"success": True, "provider": provider})
+            return
+
         # 4. Coupon Validation
         if path == '/api/coupons/validate':
             code = data.get('code', '').strip().upper()
