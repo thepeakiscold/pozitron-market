@@ -1278,14 +1278,9 @@
     function isUserAdmin(user) {
       if (!user) return false;
       const email = (user.email || user.username || '').toLowerCase().trim();
-      const role = (user.role || '').toLowerCase().trim();
-
-      // If user is already marked admin in authenticated session
-      if (role === 'admin' || role === 'superadmin') return true;
-
       if (!email) return false;
 
-      // Owner and Manager Authorized Accounts (exact match only)
+      // Owner and Manager Authorized Accounts ONLY (Strict email whitelist)
       const adminEmails = [
         'furkaniusprimes@gmail.com',
         'thepeakiscold@gmail.com',
@@ -1293,8 +1288,6 @@
         'eyuppekoz@gmail.com',
         'pekozfurkan@gmail.com',
         'pozitronmarket@gmail.com',
-        'erenpekmez@gmail.com',
-        'erennn@gmail.com',
         'ahmet@pozitron.market'
       ];
       if (adminEmails.includes(email)) return true;

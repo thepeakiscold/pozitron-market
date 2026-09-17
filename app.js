@@ -1986,12 +1986,9 @@ class PozitronApp {
   isUserAdmin(user) {
     if (!user) return false;
     const email = (user.email || user.username || '').toLowerCase().trim();
-    const role = (user.role || '').toLowerCase().trim();
-
-    if (role === 'admin' || role === 'superadmin') return true;
     if (!email) return false;
 
-    // Owner and Manager Authorized Accounts (exact match only)
+    // Owner and Manager Authorized Accounts ONLY (Strict email whitelist)
     const adminEmails = [
       'furkaniusprimes@gmail.com',
       'thepeakiscold@gmail.com',
@@ -1999,8 +1996,6 @@ class PozitronApp {
       'eyuppekoz@gmail.com',
       'pekozfurkan@gmail.com',
       'pozitronmarket@gmail.com',
-      'erenpekmez@gmail.com',
-      'erennn@gmail.com',
       'ahmet@pozitron.market'
     ];
     if (adminEmails.includes(email)) return true;
@@ -5202,6 +5197,9 @@ window.handleCredentialResponse = function(response) {
   const usersDb = window.app.getAllUsersFromDb();
   let existing = usersDb.find(u => u.email && u.email.toLowerCase() === payload.email.toLowerCase());
   
+  const isAdmin = window.app.isUserAdmin({ email: payload.email });
+  const userRole = isAdmin ? 'admin' : 'customer';
+
   if (!existing) {
     existing = {
       id: "usr_google_" + Date.now().toString(36),
@@ -5210,7 +5208,7 @@ window.handleCredentialResponse = function(response) {
       full_name: payload.name || payload.email.split('@')[0],
       avatar_url: payload.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(payload.name || payload.email)}`,
       provider: "google",
-      role: "admin",
+      role: userRole,
       created_at: new Date().toISOString()
     };
     usersDb.push(existing);
@@ -5227,16 +5225,16 @@ window.handleCredentialResponse = function(response) {
         full_name: existing.full_name,
         email: existing.email,
         provider: 'google',
-        role: 'admin',
+        role: userRole,
         avatar_url: existing.avatar_url,
         registered_at: existing.created_at
       })
     }).catch(err => console.log('User webhook error:', err));
   } else {
-    // Update avatar and ensure admin role
+    // Update avatar and ensure correct role
     existing.avatar_url = payload.picture || existing.avatar_url;
     existing.full_name = payload.name || existing.full_name;
-    existing.role = 'admin';
+    existing.role = userRole;
     existing.provider = 'google';
     localStorage.setItem('pozitron_users_db', JSON.stringify(usersDb));
   }
