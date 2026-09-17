@@ -5,7 +5,7 @@
 
 (function() {
   // Default cloud API endpoint (Can be overridden via localStorage or admin settings)
-  const DEFAULT_CLOUD_API = "https://pozitron-market.onrender.com";
+  const DEFAULT_CLOUD_API = "https://pozitron-market-api.onrender.com";
 
   class PozitronApiClient {
     constructor() {
