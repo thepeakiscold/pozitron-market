@@ -198,6 +198,17 @@ class LeadSupervisorAgent:
             "price_action_flags": price_action_flags
         }
 
+        # Autonomously apply bestseller promotion for top price advantage products
+        try:
+            conn_pr = get_db()
+            cursor_pr = conn_pr.cursor()
+            for p in top_advantage_products[:3]:
+                cursor_pr.execute("UPDATE products SET is_bestseller = 1 WHERE sku = ?", (p["sku"],))
+            conn_pr.commit()
+            conn_pr.close()
+        except Exception:
+            pass
+
         self._save_directive_to_db(cycle_id, directive_payload)
         self.current_directive = directive_payload
 
@@ -209,6 +220,13 @@ class LeadSupervisorAgent:
             )
         except Exception as e:
             print(f"[Lead Supervisor] SEO generation notice: {e}")
+
+        # Keep data/products.json, pozitron_data.js, seo_articles.json, and feeds in parity
+        try:
+            from export_data import export_static_data
+            export_static_data()
+        except Exception as ee:
+            print(f"[Lead Supervisor] Static data export notice: {ee}")
 
         self._update_supervisor_timestamps(now_iso)
         return directive_payload
@@ -572,7 +590,8 @@ class SupervisorScheduler:
         self.thread = None
 
     def _loop(self):
-        time.sleep(5)
+        if self.stop_event.wait(timeout=5.0):
+            return
 
         # Initial operational cycle check
         status = self.supervisor_agent.get_status()

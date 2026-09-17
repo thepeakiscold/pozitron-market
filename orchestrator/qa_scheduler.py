@@ -37,7 +37,8 @@ class QAScheduler:
 
     def _loop(self):
         # Initial diagnostic audit on startup after short delay
-        time.sleep(3)
+        if self.stop_event.wait(timeout=3.0):
+            return
         try:
             print("[Subagent 7 - QA Sentinel] Baslangic sistem tani ve saglik denetimi yurutuluyor...")
             self.qa_agent.run_full_diagnostics(auto_heal=True)

@@ -40,6 +40,14 @@ class TestRedditAutonomousBot(unittest.TestCase):
         for p in drone_posts:
             self.assertTrue(self.client.is_question_matching_keywords(p, self.keywords), f"Should match: {p['title']}")
 
+    def tearDown(self):
+        from database import get_db
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM reddit_interactions WHERE reddit_id LIKE 't3_drone_test_%'")
+        conn.commit()
+        conn.close()
+
     @patch("reddit_agent.agent.RedditClient.post_reply")
     @patch("reddit_agent.agent.RedditClient.fetch_recent_posts")
     def test_autonomous_posting_without_approval(self, mock_fetch, mock_post):
@@ -67,9 +75,11 @@ class TestRedditAutonomousBot(unittest.TestCase):
         }
 
         agent = RedditDroneAgent()
-        agent.config["is_autonomous_enabled"] = 1
-        agent.config["dry_run_mode"] = 0
-        agent.config["auto_post_min_confidence"] = 70
+        agent.update_config({
+            "is_autonomous_enabled": 1,
+            "dry_run_mode": 0,
+            "auto_post_min_confidence": 70
+        })
 
         result = agent.scan_and_process(autonomous=True)
         self.assertGreaterEqual(result["auto_published_count"], 1, "Should auto-publish the answer without manual approval")

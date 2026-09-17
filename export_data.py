@@ -53,6 +53,14 @@ def export_static_data():
     cursor.execute("SELECT * FROM reddit_interactions ORDER BY id DESC")
     reddit_interactions = [dict(row) for row in cursor.fetchall()]
 
+    # 6. SEO Articles (Subagent 3)
+    cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC")
+    seo_articles = [dict(row) for row in cursor.fetchall()]
+
+    # 7. Global Trend Proposals (Subagent 6)
+    cursor.execute("SELECT * FROM global_trend_proposals ORDER BY id DESC")
+    global_trends = [dict(row) for row in cursor.fetchall()]
+
     conn.close()
 
     # Save to data/instagram_posts.json
@@ -62,6 +70,14 @@ def export_static_data():
     # Save to data/reddit_history.json
     with open(os.path.join(OUTPUT_DIR, "reddit_history.json"), "w", encoding="utf-8") as f:
         json.dump(reddit_interactions, f, ensure_ascii=False, indent=2)
+
+    # Save to data/seo_articles.json
+    with open(os.path.join(OUTPUT_DIR, "seo_articles.json"), "w", encoding="utf-8") as f:
+        json.dump(seo_articles, f, ensure_ascii=False, indent=2)
+
+    # Save to data/global_trends.json
+    with open(os.path.join(OUTPUT_DIR, "global_trends.json"), "w", encoding="utf-8") as f:
+        json.dump(global_trends, f, ensure_ascii=False, indent=2)
 
     # Save to data/products.json
     with open(os.path.join(OUTPUT_DIR, "products.json"), "w", encoding="utf-8") as f:
@@ -76,7 +92,8 @@ def export_static_data():
         "categories": categories,
         "brands": brands,
         "products": products,
-        "reviews": reviews
+        "reviews": reviews,
+        "seo_articles": seo_articles[:10]
     }
 
     with open(os.path.join(OUTPUT_DIR, "pozitron_data.js"), "w", encoding="utf-8") as f:

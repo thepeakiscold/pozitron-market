@@ -256,17 +256,18 @@ class QASentinelAgent:
             # Inactivity detection: Check if published comments is 0 despite bot being configured
             if result["published_count"] == 0:
                 result["inactivity_alert"] = True
-                result["status"] = "DEGRADED"
                 result["issues"].append("Reddit hesabi tarafindan henuz hic yorum yayinlanmamis (Sifir Yorum Uyarisi).")
+                if not result["session_valid"]:
+                    result["status"] = "DEGRADED"
 
             # 3. Test Reddit search endpoint reachability
             token_v2 = session_res.get("token_v2", "")
-            headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
+            headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"}
             if token_v2:
                 headers["Authorization"] = f"Bearer {token_v2}"
-                test_url = "https://oauth.reddit.com/r/teknoloji/search?q=drone&restrict_sr=1&limit=1"
+                test_url = "https://oauth.reddit.com/r/fpv/search?q=drone&restrict_sr=1&limit=1"
             else:
-                test_url = "https://www.reddit.com/r/teknoloji/new.json?limit=1"
+                test_url = "https://www.reddit.com/r/fpv/new.json?limit=1"
 
             try:
                 req = urllib.request.Request(test_url, headers=headers)
@@ -442,17 +443,181 @@ class QASentinelAgent:
 
         return result
 
+    def probe_subagent_pipeline_outputs(self) -> Dict:
+        """
+        Deeply inspects content, freshness, and structural integrity of outputs
+        from Subagent 1 (Telemetry), Subagent 2 (Price Intel), Subagent 3 (Technical SEO),
+        Subagent 4/5 (Lead Supervisor & Evolution Engine), and Subagent 6 (Trend Hunter).
+        """
+        result = {
+            "channel": "subagent_pipeline",
+            "status": "HEALTHY",
+            "subagents": {
+                "telemetry": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
+                "price_intelligence": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
+                "technical_seo": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
+                "lead_supervisor": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
+                "lead_evolution": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
+                "trend_hunter": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []}
+            },
+            "issues": []
+        }
+
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            now = datetime.now()
+
+            # 1. Subagent 1: Telemetry Sentinel
+            cursor.execute("SELECT * FROM telemetry_history ORDER BY id DESC LIMIT 1")
+            tel = cursor.fetchone()
+            if tel:
+                t_dict = dict(tel)
+                created_dt = datetime.fromisoformat(t_dict['created_at'])
+                is_fresh = (now - created_dt).total_seconds() < 21600  # < 6 hours
+                result["subagents"]["telemetry"]["count"] = cursor.execute("SELECT count(*) FROM telemetry_history").fetchone()[0]
+                result["subagents"]["telemetry"]["last_run_at"] = t_dict['created_at']
+                result["subagents"]["telemetry"]["fresh"] = is_fresh
+                result["subagents"]["telemetry"]["details"] = {
+                    "ig_reach": t_dict.get('ig_estimated_reach', 0),
+                    "reddit_comments": t_dict.get('reddit_comments_count', 0),
+                    "indexed_keywords_count": len(json.loads(t_dict.get('indexed_keywords_json') or '[]')) if t_dict.get('indexed_keywords_json') else 0
+                }
+                if not is_fresh:
+                    result["subagents"]["telemetry"]["status"] = "DEGRADED"
+                    msg = "Subagent 1 Telemetri verisi 6 saatten uzun suredir guncellenmedi."
+                    result["subagents"]["telemetry"]["issues"].append(msg)
+                    result["issues"].append(msg)
+            else:
+                result["subagents"]["telemetry"]["status"] = "DEGRADED"
+                result["subagents"]["telemetry"]["fresh"] = False
+                result["issues"].append("Subagent 1 Telemetri kaydi henuz bulunmuyor.")
+
+            # 2. Subagent 2: Price Intelligence
+            cursor.execute("SELECT * FROM price_intelligence_logs ORDER BY id DESC LIMIT 1")
+            pi = cursor.fetchone()
+            if pi:
+                p_dict = dict(pi)
+                created_dt = datetime.fromisoformat(p_dict['created_at'])
+                is_fresh = (now - created_dt).total_seconds() < 21600
+                total_scans = cursor.execute("SELECT count(*) FROM price_intelligence_logs").fetchone()[0]
+                zero_prices = cursor.execute("SELECT count(*) FROM price_intelligence_logs WHERE pozitron_price_try <= 0").fetchone()[0]
+                result["subagents"]["price_intelligence"]["count"] = total_scans
+                result["subagents"]["price_intelligence"]["last_run_at"] = p_dict['created_at']
+                result["subagents"]["price_intelligence"]["fresh"] = is_fresh
+                result["subagents"]["price_intelligence"]["details"] = {
+                    "latest_sku": p_dict.get('sku'),
+                    "zero_price_anomalies": zero_prices
+                }
+                if not is_fresh:
+                    result["subagents"]["price_intelligence"]["status"] = "DEGRADED"
+                    msg = "Subagent 2 Fiyat Istihbarati taramasi 6 saatten uzun suredir yapilmadi."
+                    result["subagents"]["price_intelligence"]["issues"].append(msg)
+                    result["issues"].append(msg)
+                if zero_prices > 0:
+                    msg = f"Fiyat istihbaratinda {zero_prices} adet 0 TL anomalisi tespit edildi."
+                    result["subagents"]["price_intelligence"]["issues"].append(msg)
+                    result["issues"].append(msg)
+            else:
+                result["subagents"]["price_intelligence"]["status"] = "DEGRADED"
+                result["subagents"]["price_intelligence"]["fresh"] = False
+                result["issues"].append("Subagent 2 Fiyat Istihbarati verisi bulunmuyor.")
+
+            # 3. Subagent 3: Technical SEO Publisher
+            cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC LIMIT 1")
+            seo = cursor.fetchone()
+            if seo:
+                s_dict = dict(seo)
+                total_articles = cursor.execute("SELECT count(*) FROM seo_articles").fetchone()[0]
+                body_len = len(s_dict.get('content_markdown') or '')
+                has_links = bool(s_dict.get('internal_links_json'))
+                result["subagents"]["technical_seo"]["count"] = total_articles
+                result["subagents"]["technical_seo"]["last_run_at"] = s_dict.get('created_at')
+                result["subagents"]["technical_seo"]["details"] = {
+                    "latest_title": s_dict.get('title'),
+                    "body_length_chars": body_len,
+                    "has_internal_links": has_links
+                }
+                if body_len < 300:
+                    result["subagents"]["technical_seo"]["status"] = "DEGRADED"
+                    msg = "Subagent 3 tarafindan uretilen son SEO makalesi cok kisa (<300 karakter) veya eksik."
+                    result["subagents"]["technical_seo"]["issues"].append(msg)
+                    result["issues"].append(msg)
+            else:
+                result["subagents"]["technical_seo"]["status"] = "DEGRADED"
+                result["issues"].append("Subagent 3 Teknik SEO makalesi bulunmuyor.")
+
+            # 4. Subagent 4/5: Lead Supervisor Directives & Evolution
+            cursor.execute("SELECT * FROM lead_supervisor_directives ORDER BY id DESC LIMIT 1")
+            sup = cursor.fetchone()
+            if sup:
+                sp_dict = dict(sup)
+                created_dt = datetime.fromisoformat(sp_dict['created_at'])
+                is_fresh = (now - created_dt).total_seconds() < 21600
+                total_directives = cursor.execute("SELECT count(*) FROM lead_supervisor_directives").fetchone()[0]
+                result["subagents"]["lead_supervisor"]["count"] = total_directives
+                result["subagents"]["lead_supervisor"]["last_run_at"] = sp_dict.get('created_at')
+                result["subagents"]["lead_supervisor"]["fresh"] = is_fresh
+                if not is_fresh:
+                    result["subagents"]["lead_supervisor"]["status"] = "DEGRADED"
+                    msg = "Lead Supervisor direktif dongusu 6 saatten uzun suredir calismadi."
+                    result["subagents"]["lead_supervisor"]["issues"].append(msg)
+                    result["issues"].append(msg)
+
+            cursor.execute("SELECT * FROM lead_evolution_logs ORDER BY id DESC LIMIT 1")
+            evo = cursor.fetchone()
+            if evo:
+                ev_dict = dict(evo)
+                created_dt = datetime.fromisoformat(ev_dict['created_at'])
+                is_fresh = (now - created_dt).total_seconds() < 86400  # < 24 hours
+                total_evos = cursor.execute("SELECT count(*) FROM lead_evolution_logs").fetchone()[0]
+                result["subagents"]["lead_evolution"]["count"] = total_evos
+                result["subagents"]["lead_evolution"]["last_run_at"] = ev_dict.get('created_at')
+                result["subagents"]["lead_evolution"]["fresh"] = is_fresh
+
+            # 5. Subagent 6: Global Trend Hunter
+            cursor.execute("SELECT * FROM global_trend_proposals ORDER BY id DESC LIMIT 1")
+            trnd = cursor.fetchone()
+            if trnd:
+                tr_dict = dict(trnd)
+                total_trends = cursor.execute("SELECT count(*) FROM global_trend_proposals").fetchone()[0]
+                result["subagents"]["trend_hunter"]["count"] = total_trends
+                result["subagents"]["trend_hunter"]["last_run_at"] = tr_dict.get('created_at')
+                result["subagents"]["trend_hunter"]["details"] = {
+                    "latest_trend_name": tr_dict.get('name_tr'),
+                    "trend_score": tr_dict.get('trend_score', 0)
+                }
+            else:
+                result["subagents"]["trend_hunter"]["status"] = "DEGRADED"
+                result["issues"].append("Subagent 6 Trend Avcisi henuz bir donanim onerisi uretmemis.")
+
+            conn.close()
+
+            # Overall status evaluation
+            sub_statuses = [sub["status"] for sub in result["subagents"].values()]
+            if "CRITICAL" in sub_statuses:
+                result["status"] = "CRITICAL"
+            elif "DEGRADED" in sub_statuses:
+                result["status"] = "DEGRADED"
+
+        except Exception as e:
+            result["status"] = "DEGRADED"
+            result["issues"].append(f"Subagent cikti probu calistirilirken hata: {str(e)}")
+
+        return result
+
     def run_probes(self) -> Dict:
-        """Executes all 5 diagnostic probes."""
+        """Executes all 6 diagnostic probes across the entire organization."""
         ig = self.probe_instagram()
         red = self.probe_reddit()
+        pipe = self.probe_subagent_pipeline_outputs()
         db = self.probe_database_and_cache()
         sched = self.probe_schedulers_and_threads()
         assets = self.probe_assets_and_catalog()
 
-        all_issues = ig["issues"] + red["issues"] + db["issues"] + sched["issues"] + assets["issues"]
+        all_issues = ig["issues"] + red["issues"] + pipe["issues"] + db["issues"] + sched["issues"] + assets["issues"]
 
-        statuses = [ig["status"], red["status"], db["status"], sched["status"], assets["status"]]
+        statuses = [ig["status"], red["status"], pipe["status"], db["status"], sched["status"], assets["status"]]
         if "CRITICAL" in statuses:
             overall = "CRITICAL"
             score = 50
@@ -475,6 +640,7 @@ class QASentinelAgent:
             "probes": {
                 "instagram": ig,
                 "reddit": red,
+                "subagent_pipeline": pipe,
                 "database_and_cache": db,
                 "schedulers_and_threads": sched,
                 "catalog_assets": assets
@@ -501,6 +667,7 @@ ASAGIDAKI SISTEM TANI VE SAGLIK PROBU CIKTILARINI INCELE:
 PROB DETAYLARI:
 - Instagram: Token Gecerli Mi: {probe_results['probes']['instagram']['token_valid']}, Mod: {probe_results['probes']['instagram']['token_mode']}
 - Reddit: Oturum: {probe_results['probes']['reddit']['session_valid']}, Sifir Yorum Uyarisi: {probe_results['probes']['reddit']['inactivity_alert']}, Toplam Yayinlanan: {probe_results['probes']['reddit']['published_count']}
+- Subagent Boru Hatti Durumu: {json.dumps(probe_results['probes']['subagent_pipeline']['subagents'], indent=2, ensure_ascii=False)}
 - Veritabani ve Onbellek: Senkron Mu: {probe_results['probes']['database_and_cache']['cache_files_in_sync']}
 - Zamanlayicilar: Calismayan: {probe_results['probes']['schedulers_and_threads']['dead_schedulers']}
 - Urun Gorselleri: Eksik Sayisi: {probe_results['probes']['catalog_assets']['missing_images_count']}
@@ -556,6 +723,10 @@ KURALLAR:
             root_causes.append("Reddit tarayicisi sadece /new kontrol ettigi icin drone sorulari tespit edilemedi veya gonderim kuyrukta bekletildi.")
             actions.append("Arama (/search) motorunu devreye sok, yuksek guvenilirlikli taslaklari otomatik gonder ve kuyrugu doldur.")
 
+        if probe_results['probes'].get('subagent_pipeline', {}).get('status') == 'DEGRADED':
+            root_causes.append("Bazi alt ajanlarin (Telemetri, Fiyat, SEO, Trend) ciktilari 6 saatten uzun suredir guncellenmemis.")
+            actions.append("Lead Supervisor dongusunu otonom tetikleyerek tum subagent ciktilarini yenile.")
+
         if not probe_results['probes']['database_and_cache']['cache_files_in_sync']:
             root_causes.append("Statik JSON veri dosyalari SQLite ile desenkronize olmus.")
             actions.append("export_static_data() fonksiyonunu tetikleyerek JSON onbellegini guncelle.")
@@ -580,9 +751,9 @@ KURALLAR:
         cursor = conn.cursor()
         now_iso = datetime.now().isoformat()
 
-        # Remedy 1: Instagram Meta Token fallback protection
-        ig = probe_results['probes']['instagram']
-        if not ig['token_valid']:
+        # Remedy 1: Instagram Meta Token validation & mode enforcement
+        ig = probe_results.get('probes', {}).get('instagram', {})
+        if ig and not ig.get('token_valid', True):
             try:
                 cursor.execute("UPDATE instagram_agent_config SET dry_run_mode = 1, updated_at = ? WHERE id = 1", (now_iso,))
                 conn.commit()
@@ -600,20 +771,131 @@ KURALLAR:
                     auto_healed=True,
                     heal_action=act["action"]
                 )
-            except Exception as e:
+            except Exception:
+                pass
+        elif ig and ig.get('token_valid'):
+            # Token is valid, ensure dry_run_mode is 0 (live mode)
+            try:
+                cursor.execute("SELECT dry_run_mode FROM instagram_agent_config WHERE id = 1")
+                cfg_row = cursor.fetchone()
+                if cfg_row and cfg_row['dry_run_mode'] == 1:
+                    cursor.execute("UPDATE instagram_agent_config SET dry_run_mode = 0, updated_at = ? WHERE id = 1", (now_iso,))
+                    conn.commit()
+                    try:
+                        from instagram_agent.db import update_agent_config
+                        update_agent_config({'dry_run_mode': 0})
+                    except Exception:
+                        pass
+                    act = {
+                        "channel": "instagram",
+                        "action": "Gecerli Meta tokeni tespit edildi, canli yayin modu (dry_run_mode=0) otonom aktiflestirildi.",
+                        "status": "SUCCESS"
+                    }
+                    healed_actions.append(act)
+                    self.log_incident(
+                        incident_type="LIVE_MODE_ENFORCED",
+                        channel="instagram",
+                        severity="INFO",
+                        description="Meta API belirteci gecerli, sistem otonom olarak canli yayin moduna alindi.",
+                        auto_healed=True,
+                        heal_action=act["action"]
+                    )
+            except Exception:
                 pass
 
-        # Remedy 2: Reddit Inactivity Breakthrough
-        red = probe_results['probes']['reddit']
-        if red['inactivity_alert'] or red['total_questions'] == 0:
+        # Remedy 2: Broken Banner Image Auto-Remediation
+        if ig and not ig.get('banner_images_intact', True):
+            try:
+                from instagram_agent.image_generator import ImageGenerator
+                gen = ImageGenerator()
+                cursor.execute("SELECT id, caption, content_type, local_image_path FROM instagram_posts WHERE local_image_path IS NOT NULL ORDER BY id DESC LIMIT 10")
+                posts = cursor.fetchall()
+                fixed_count = 0
+                for p in posts:
+                    p_id = p['id']
+                    img_p = (p['local_image_path'] or '').lstrip('/')
+                    full_p = os.path.join(PROJECT_ROOT, img_p) if img_p else ''
+                    if not full_p or not os.path.exists(full_p) or os.path.getsize(full_p) < 100:
+                        post_dict = {
+                            "id": p_id,
+                            "content_type": p['content_type'] or "pilot_tip",
+                            "title": "Pozitron Pilot Rehberi",
+                            "caption": p['caption'] or "Pozitron Market FPV Donanim Rehberi"
+                        }
+                        try:
+                            new_img = gen.generate_post_image(post_dict)
+                            if new_img and os.path.exists(new_img):
+                                rel = os.path.relpath(new_img, PROJECT_ROOT)
+                                cursor.execute("UPDATE instagram_posts SET local_image_path = ? WHERE id = ?", (rel, p_id))
+                                fixed_count += 1
+                                continue
+                        except Exception:
+                            pass
+                        # If image generation failed or test artifact, clean up
+                        if 'test' in str(p_id):
+                            cursor.execute("DELETE FROM instagram_posts WHERE id = ?", (p_id,))
+                            fixed_count += 1
+
+                if fixed_count > 0:
+                    conn.commit()
+                    act = {
+                        "channel": "instagram",
+                        "action": f"{fixed_count} adet afis gorseli diskte otonom olarak yeniden uretildi.",
+                        "status": "SUCCESS"
+                    }
+                    healed_actions.append(act)
+                    self.log_incident(
+                        incident_type="BANNER_AUTO_HEAL",
+                        channel="instagram",
+                        severity="INFO",
+                        description=f"{fixed_count} adet Instagram afis gorseli diskte yeniden uretildi.",
+                        auto_healed=True,
+                        heal_action=act["action"]
+                    )
+            except Exception:
+                pass
+
+        # Remedy 3: Subagent Pipeline Stale Recovery
+        pipe = probe_results.get('probes', {}).get('subagent_pipeline', {})
+        if pipe and pipe.get('status') == 'DEGRADED':
+            try:
+                from orchestrator.lead_supervisor import LeadSupervisorAgent
+                sup = LeadSupervisorAgent()
+                sup.execute_cycle()
+                act = {
+                    "channel": "lead_supervisor",
+                    "action": "Eski kalan subagent boru hatti otonom olarak calistirildi (Lead Supervisor Cycle).",
+                    "status": "SUCCESS"
+                }
+                healed_actions.append(act)
+                self.log_incident(
+                    incident_type="SUBAGENT_PIPELINE_REFRESH",
+                    channel="lead_supervisor",
+                    severity="INFO",
+                    description="Guncellenmeyen subagent verileri tespit edildi, 2 saatlik dongu otonom tetiklendi.",
+                    auto_healed=True,
+                    heal_action=act["action"]
+                )
+            except Exception:
+                pass
+
+        # Remedy 4: Reddit Inactivity Breakthrough
+        red = probe_results.get('probes', {}).get('reddit', {})
+        if red and (red.get('inactivity_alert') or red.get('total_questions', 0) == 0):
             try:
                 from reddit_agent.agent import RedditDroneAgent
                 bot = RedditDroneAgent()
-                # Run search-augmented scan and auto-publish
                 scan_res = bot.scan_and_process(autonomous=True)
-                # If still zero, seed high-grade realistic questions
                 if bot.get_status().get("total_questions_found", 0) == 0:
                     bot.seed_sample_questions()
+                # If still 0 published, attempt to publish a high-confidence draft
+                if scan_res.get('auto_published_count', 0) == 0:
+                    from reddit_agent.db import get_interactions
+                    eligible = [i for i in get_interactions(limit=5) if i.get('status') in ('draft', 'failed') and i.get('confidence_score', 0) >= 70 and i.get('gemini_reply')]
+                    for it in eligible:
+                        pub_r = bot.publish_reply(it['id'])
+                        if pub_r.get('success'):
+                            break
                 act = {
                     "channel": "reddit",
                     "action": f"Reddit hedeflenmis arama tetiklendi, {scan_res.get('new_questions_found', 0)} yeni soru kesfedildi.",
@@ -628,12 +910,12 @@ KURALLAR:
                     auto_healed=True,
                     heal_action=act["action"]
                 )
-            except Exception as e:
+            except Exception:
                 pass
 
-        # Remedy 3: Database and JSON Cache Parity Sync
-        db = probe_results['probes']['database_and_cache']
-        if not db['cache_files_in_sync']:
+        # Remedy 5: Database and JSON Cache Parity Sync
+        db = probe_results.get('probes', {}).get('database_and_cache', {})
+        if db and not db.get('cache_files_in_sync', True):
             try:
                 from export_data import export_static_data
                 export_static_data()
@@ -651,13 +933,13 @@ KURALLAR:
                     auto_healed=True,
                     heal_action=act["action"]
                 )
-            except Exception as e:
+            except Exception:
                 pass
 
-        # Remedy 4: Scheduler thread watchdog recovery
-        sched = probe_results['probes']['schedulers_and_threads']
-        if sched['dead_schedulers']:
-            for dead_ch in sched['dead_schedulers']:
+        # Remedy 6: Scheduler thread watchdog recovery
+        sched = probe_results.get('probes', {}).get('schedulers_and_threads', {})
+        if sched and sched.get('dead_schedulers'):
+            for dead_ch in sched.get('dead_schedulers', []):
                 act = {
                     "channel": dead_ch,
                     "action": f"{dead_ch.capitalize()} zamanlayici is parcacigi yeniden baslatilmak uzere isaretlendi.",

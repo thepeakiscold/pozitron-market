@@ -1430,6 +1430,9 @@
               </button>
             </div>
             <div style="display:flex; gap:8px;">
+              <button type="button" class="btn-action btn-secondary" onclick="syncCloudMarketOrders()" id="btn-qa-sync-cloud" style="font-size:0.8rem; padding:7px 12px; background:#4f46e5; border-color:#6366f1; color:#fff;">
+                <span>[SENKRON] Bulut Stoklarini Cek</span>
+              </button>
               <button type="button" class="btn-action btn-secondary" onclick="toggleQAMode()" id="btn-qa-toggle" style="font-size:0.8rem; padding:7px 12px;">
                 <span>[DURUM] Otonom Nobetciyi Ac/Kapat</span>
               </button>
@@ -1488,6 +1491,85 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- Subagent Pipeline Output Health Matrix (Subagents 1-6 Deep Audit) -->
+      <div class="bots-card" style="margin-bottom:24px; background:#0d111d; border:1px solid #10b981;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="tag-badge" style="background:#059669; color:#fff;">[PIPELINE MATRIX]</span>
+            <h3 style="margin:0; font-size:1.1rem; color:#fff; font-weight:700;">Alt Ajan Cikti Saglik ve Icerik Matrisi (Subagents 1-6)</h3>
+          </div>
+          <span id="qa-pipeline-overall-badge" class="tag-badge" style="background:#065f46; color:#6ee7b7;">BORU HATTI SAGLIKLI</span>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+          <!-- Subagent 1: Telemetry -->
+          <div style="background:#080d1a; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-weight:700; font-size:0.85rem; color:#38bdf8;">Subagent 1: Telemetri</span>
+              <span id="pipe-tel-badge" class="tag-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI</span>
+            </div>
+            <div id="pipe-tel-details" style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">
+              Son Calisma: Yukleniyor...
+            </div>
+          </div>
+
+          <!-- Subagent 2: Price Intelligence -->
+          <div style="background:#080d1a; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-weight:700; font-size:0.85rem; color:#38bdf8;">Subagent 2: Fiyat Istihbarati</span>
+              <span id="pipe-price-badge" class="tag-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI</span>
+            </div>
+            <div id="pipe-price-details" style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">
+              Son Calisma: Yukleniyor...
+            </div>
+          </div>
+
+          <!-- Subagent 3: Technical SEO -->
+          <div style="background:#080d1a; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-weight:700; font-size:0.85rem; color:#38bdf8;">Subagent 3: Teknik SEO</span>
+              <span id="pipe-seo-badge" class="tag-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI</span>
+            </div>
+            <div id="pipe-seo-details" style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">
+              Son Calisma: Yukleniyor...
+            </div>
+          </div>
+
+          <!-- Subagent 4: Lead Supervisor -->
+          <div style="background:#080d1a; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-weight:700; font-size:0.85rem; color:#38bdf8;">Subagent 4: Lead Supervisor</span>
+              <span id="pipe-lead-badge" class="tag-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI</span>
+            </div>
+            <div id="pipe-lead-details" style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">
+              Son Calisma: Yukleniyor...
+            </div>
+          </div>
+
+          <!-- Subagent 5: Lead Evolution Engine -->
+          <div style="background:#080d1a; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-weight:700; font-size:0.85rem; color:#38bdf8;">Subagent 5: Evolution Engine</span>
+              <span id="pipe-evo-badge" class="tag-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI</span>
+            </div>
+            <div id="pipe-evo-details" style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">
+              Son Calisma: Yukleniyor...
+            </div>
+          </div>
+
+          <!-- Subagent 6: Global Trend Hunter -->
+          <div style="background:#080d1a; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span style="font-weight:700; font-size:0.85rem; color:#38bdf8;">Subagent 6: Trend Avcisi</span>
+              <span id="pipe-trend-badge" class="tag-badge" style="background:#065f46; color:#6ee7b7;">SAGLIKLI</span>
+            </div>
+            <div id="pipe-trend-details" style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">
+              Son Calisma: Yukleniyor...
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Gemini 3.8 Flash RCA & Executive Summary Card -->
@@ -3208,7 +3290,73 @@
             dbDetails.innerHTML = probes.database_and_cache.cache_files_in_sync ? 'SQLite ve JSON onbellegi esit' : 'JSON onbellegi senkron degil';
           }
 
-          // 5. RCA & Executive Summary
+          // 5. Subagent Pipeline Matrix (Subagents 1-6)
+          if (probes.subagent_pipeline) {
+            const pipe = probes.subagent_pipeline;
+            const pipeOverall = document.getElementById('qa-pipeline-overall-badge');
+            if (pipeOverall) {
+              pipeOverall.textContent = pipe.status === 'HEALTHY' ? 'BORU HATTI SAGLIKLI' : 'BORU HATTINDA ANOMALI VAR';
+              pipeOverall.style.background = pipe.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+              pipeOverall.style.color = pipe.status === 'HEALTHY' ? '#6ee7b7' : '#fef08a';
+            }
+            const subs = pipe.subagents || {};
+
+            // Subagent 1: Telemetry
+            const telBadge = document.getElementById('pipe-tel-badge');
+            const telDet = document.getElementById('pipe-tel-details');
+            if (telBadge && subs.telemetry) {
+              telBadge.textContent = subs.telemetry.status;
+              telBadge.style.background = subs.telemetry.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+              telDet.innerHTML = `Toplam Kayit: <strong>${subs.telemetry.count}</strong><br>Son Calisma: ${subs.telemetry.last_run_at ? new Date(subs.telemetry.last_run_at).toLocaleString('tr-TR') : 'Yok'}`;
+            }
+
+            // Subagent 2: Price Intelligence
+            const priceBadge = document.getElementById('pipe-price-badge');
+            const priceDet = document.getElementById('pipe-price-details');
+            if (priceBadge && subs.price_intelligence) {
+              priceBadge.textContent = subs.price_intelligence.status;
+              priceBadge.style.background = subs.price_intelligence.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+              priceDet.innerHTML = `Toplam Tarama: <strong>${subs.price_intelligence.count}</strong><br>Son Calisma: ${subs.price_intelligence.last_run_at ? new Date(subs.price_intelligence.last_run_at).toLocaleString('tr-TR') : 'Yok'}`;
+            }
+
+            // Subagent 3: Technical SEO
+            const seoBadge = document.getElementById('pipe-seo-badge');
+            const seoDet = document.getElementById('pipe-seo-details');
+            if (seoBadge && subs.technical_seo) {
+              seoBadge.textContent = subs.technical_seo.status;
+              seoBadge.style.background = subs.technical_seo.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+              seoDet.innerHTML = `Toplam Makale: <strong>${subs.technical_seo.count}</strong><br>Son Calisma: ${subs.technical_seo.last_run_at ? new Date(subs.technical_seo.last_run_at).toLocaleString('tr-TR') : 'Yok'}`;
+            }
+
+            // Subagent 4: Lead Supervisor
+            const leadBadge = document.getElementById('pipe-lead-badge');
+            const leadDet = document.getElementById('pipe-lead-details');
+            if (leadBadge && subs.lead_supervisor) {
+              leadBadge.textContent = subs.lead_supervisor.status;
+              leadBadge.style.background = subs.lead_supervisor.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+              leadDet.innerHTML = `Toplam Direktif: <strong>${subs.lead_supervisor.count}</strong><br>Son Calisma: ${subs.lead_supervisor.last_run_at ? new Date(subs.lead_supervisor.last_run_at).toLocaleString('tr-TR') : 'Yok'}`;
+            }
+
+            // Subagent 5: Evolution Engine
+            const evoBadge = document.getElementById('pipe-evo-badge');
+            const evoDet = document.getElementById('pipe-evo-details');
+            if (evoBadge && subs.lead_evolution) {
+              evoBadge.textContent = subs.lead_evolution.status;
+              evoBadge.style.background = subs.lead_evolution.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+              evoDet.innerHTML = `Toplam Evrim: <strong>${subs.lead_evolution.count}</strong><br>Son Calisma: ${subs.lead_evolution.last_run_at ? new Date(subs.lead_evolution.last_run_at).toLocaleString('tr-TR') : 'Yok'}`;
+            }
+
+            // Subagent 6: Trend Hunter
+            const trendBadge = document.getElementById('pipe-trend-badge');
+            const trendDet = document.getElementById('pipe-trend-details');
+            if (trendBadge && subs.trend_hunter) {
+              trendBadge.textContent = subs.trend_hunter.status;
+              trendBadge.style.background = subs.trend_hunter.status === 'HEALTHY' ? '#065f46' : '#854d0e';
+              trendDet.innerHTML = `Toplam Oneri: <strong>${subs.trend_hunter.count}</strong><br>Son Calisma: ${subs.trend_hunter.last_run_at ? new Date(subs.trend_hunter.last_run_at).toLocaleString('tr-TR') : 'Yok'}`;
+            }
+          }
+
+          // 6. RCA & Executive Summary
           if (rep.ai_analysis) {
             const ai = rep.ai_analysis;
             const exec = document.getElementById('qa-rca-executive');
@@ -3325,6 +3473,26 @@
         }
       } catch (err) {
         showToast('Hata: ' + err.message, 'error');
+      }
+    }
+
+    async function syncCloudMarketOrders() {
+      showToast('Bulut pazar yeri siparisleri ve stoklari GitHub uzerinden cekiliyor...', 'info');
+      try {
+        const res = await fetch('/api/admin/sync-cloud-market', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({})
+        });
+        if (res.ok) {
+          const data = await res.json();
+          showToast(`Bulut senkronizasyonu tamamlandi: ${data.products_updated || 0} urun stogu guncellendi.`, 'success');
+          loadQAData();
+        } else {
+          showToast('Bulut senkronizasyonunda hata olustu.', 'error');
+        }
+      } catch (err) {
+        showToast('Baglanti hatasi: ' + err.message, 'error');
       }
     }
 

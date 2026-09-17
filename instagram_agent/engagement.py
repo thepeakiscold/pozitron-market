@@ -55,7 +55,28 @@ class InstagramEngagementEngine:
         self.csrf_token = csrf_token or ''
         self.gemini_api_key = gemini_api_key or os.environ.get('GEMINI_API_KEY', '')
         self.max_daily = 10
+        self._load_gemini_key_if_needed()
         self._load_session_if_needed()
+
+    def _load_gemini_key_if_needed(self):
+        if not self.gemini_api_key:
+            try:
+                import sqlite3
+                db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pozitron.db')
+                conn = sqlite3.connect(db_path)
+                c = conn.cursor()
+                c.execute("SELECT gemini_api_key FROM instagram_agent_config WHERE id = 1")
+                row = c.fetchone()
+                if row and row[0]:
+                    self.gemini_api_key = row[0].strip()
+                if not self.gemini_api_key:
+                    c.execute("SELECT gemini_api_key FROM reddit_agent_config WHERE id = 1")
+                    row2 = c.fetchone()
+                    if row2 and row2[0]:
+                        self.gemini_api_key = row2[0].strip()
+                conn.close()
+            except Exception:
+                pass
 
     def _load_session_if_needed(self):
         """Loads Chrome session or ENV session if not provided."""
@@ -169,16 +190,23 @@ class InstagramEngagementEngine:
         return has_tr_char or has_tr_keyword or has_tr_user
 
     def generate_friendly_comment(self, username: str, caption: str = '') -> str:
-        """Generates a warm, supportive FPV comment (via Gemini 3.8 Flash or curated pool)."""
+        """Generates a warm, supportive FPV comment strictly matched to the post context."""
+        cap_lower = caption.lower()
+        self._load_gemini_key_if_needed()
+
         if self.gemini_api_key:
             models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
-            prompt = f"""Bir Türk FPV drone pilotunun Instagram gönderisine Pozitron Market FPV ekibi olarak samimi, motive edici, nazik ve kırımsız uçuşlar dileyen TEK CÜMLELİK kısa bir yorum yaz.
+            prompt = f"""Bir Türk FPV drone pilotunun Instagram gönderisine Pozitron Market FPV ekibi olarak samimi, motive edici, nazik TEK CÜMLELİK kısa bir yorum yaz.
 Pilot Kullanıcı Adı: @{username}
-Gönderi Metni: {caption[:200]}
+Gönderi Metni: {caption[:300]}
 
-Kurallar:
-1. Reklam/pazarlama kokmasın, samimi bir FPV topluluk üyesi gibi yaz.
-2. 1 cümle olsun, max 15 kelime.
+KRİTİK UYARI VE İÇERİK UYUMU:
+1. GÖNDERİ KONUSUNA TAM UYUMLU OL:
+   - Eğer gönderide kırım, kaza, yanan motor/ESC veya hasar varsa: Geçmiş olsun dile, moral ver ("Büyük geçmiş olsun, en kısa sürede göklere dönmen dileğiyle"). ASLA kaza gönderisine "Harika uçuş!" deme!
+   - Eğer gönderi yeni bir drone toplama/build/lehimleme ise: Temiz işçiliği ve build kalitesini öv ("Elinize sağlık, çok temiz bir build olmuş, ilk uçuşta başarılar").
+   - Eğer gönderi yarış/Teknofest ise: Parkurda ve yarışta başarılar dile.
+   - Eğer gönderi freestyle veya akrobasi uçuşu ise: Akıcı hatları ve kontrolü tebrik et.
+2. 1 cümle olsun, maksimum 15 kelime.
 3. KESİNLİKLE HİÇBİR EMOJİ KULLANMA.
 4. Sadece yorum metnini döndür."""
 
@@ -195,7 +223,44 @@ Kurallar:
                             return text
                 except Exception:
                     continue
-        return random.choice(FPV_WARM_COMMENTS)
+
+        # Intelligent context-aware rule-based fallback
+        crash_words = ['kırım', 'kirim', 'kırdım', 'kirdim', 'yandı', 'yandi', 'hasar', 'patladı', 'patladi', 'çöp', 'cop', 'crash', 'geçmiş olsun']
+        if any(w in cap_lower for w in crash_words):
+            return random.choice([
+                "Büyük geçmiş olsun pilot, FPV'nin doğasında kırım var. En kısa sürede göklere dönmen dileğiyle!",
+                "Geçmiş olsun, toparlayıp en kısa sürede tekrar gökyüzüne dönmeniz dileğiyle.",
+                "Geçmiş olsun dostum, kırımsız günlere en kısa sürede dönüş dileriz."
+            ])
+
+        build_words = ['build', 'lehim', 'lehimleme', 'toplama', 'f405', 'f722', 'frame', 'atölye', 'atolye', 'setup', 'motor montaj']
+        if any(w in cap_lower for w in build_words):
+            return random.choice([
+                "Elinize sağlık, lehimler ve kablolama gayet temiz görünüyor. İlk uçuşta başarılar!",
+                "Çok temiz ve özenli bir build olmuş, elinize sağlık! Maiden uçuşunda başarılar.",
+                "Build çok şık ve düzenli duruyor, gökyüzünde kırımsız uçuşlar dileriz!"
+            ])
+
+        race_words = ['yarış', 'yaris', 'teknofest', 'turnuva', 'sıralama', 'siralama', 'track', 'gate']
+        if any(w in cap_lower for w in race_words):
+            return random.choice([
+                "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+                "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!"
+            ])
+
+        flight_words = ['freestyle', 'uçuş', 'ucus', 'dive', 'gap', 'akrobasi', 'kadraj', 'gökyüzü']
+        if any(w in cap_lower for w in flight_words):
+            return random.choice([
+                "Harika uçuş! Akıcı hatlar ve temiz kontrol, kırımsız ve keyifli uçuşlar dileriz.",
+                "Setup ve motor tepkisi çok iyi görünüyor, elinize sağlık!",
+                "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+                "Süper akıcı freestyle hatları, keyifle izledik! Kırımsız günler dileriz."
+            ])
+
+        return random.choice([
+            "Elinize sağlık, kırımsız ve bol irtifalı keyifli uçuşlar dileriz!",
+            "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz."
+        ])
 
     def follow_user(self, user_id: str, username: str) -> bool:
         """Sends follow request to an Instagram user via GraphQL mutation."""

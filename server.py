@@ -33,26 +33,89 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Instagram PR Agent & Scheduler Instance
 instagram_pr_agent = InstagramPRAgent()
 instagram_pr_scheduler = InstagramScheduler(instagram_pr_agent)
-if instagram_pr_agent.config.get('is_autonomous_enabled'):
-    instagram_pr_scheduler.start()
 
 # Reddit Drone Agent & Scheduler Instance
 reddit_drone_agent = RedditDroneAgent()
 reddit_drone_scheduler = RedditScheduler(reddit_drone_agent)
-if reddit_drone_agent.config.get('is_autonomous_enabled'):
-    reddit_drone_scheduler.start()
 
 # Lead Supervisor Agent & 2-Hour Orchestration Scheduler
 lead_supervisor_agent = LeadSupervisorAgent()
 supervisor_scheduler = SupervisorScheduler(lead_supervisor_agent)
-if lead_supervisor_agent.get_status().get('is_autonomous_enabled'):
-    supervisor_scheduler.start()
 
 # Subagent 7: PR Health, Diagnostics & QA Sentinel Agent
 qa_agent = QASentinelAgent()
 qa_scheduler = QAScheduler(qa_agent)
-if qa_agent.get_status().get('is_autonomous_enabled'):
-    qa_scheduler.start()
+
+# Autonomous Thread Watchdog & Cloud Market Inventory Sync Loop
+def start_thread_watchdog():
+    def watchdog_loop():
+        time.sleep(15)
+        while True:
+            try:
+                # 1. Resuscitate terminated scheduler threads
+                if instagram_pr_agent.get_status().get('is_autonomous_enabled'):
+                    if not instagram_pr_scheduler.is_running():
+                        print("[Watchdog] Reviving InstagramPRScheduler thread...")
+                        instagram_pr_scheduler.start()
+
+                if reddit_drone_agent.get_status().get('is_autonomous_enabled'):
+                    if not reddit_drone_scheduler.is_running():
+                        print("[Watchdog] Reviving RedditDroneScheduler thread...")
+                        reddit_drone_scheduler.start()
+
+                if lead_supervisor_agent.get_status().get('is_autonomous_enabled'):
+                    if not supervisor_scheduler.is_running():
+                        print("[Watchdog] Reviving LeadSupervisorScheduler thread...")
+                        supervisor_scheduler.start()
+
+                if qa_agent.get_status().get('is_autonomous_enabled'):
+                    if not qa_scheduler.is_running():
+                        print("[Watchdog] Reviving QAScheduler thread...")
+                        qa_scheduler.start()
+
+                # 2. Periodic cloud market inventory sync (git pull --rebase)
+                try:
+                    import subprocess
+                    sync_proc = subprocess.run(
+                        ["git", "pull", "--rebase", "origin", "main"],
+                        cwd=BASE_DIR,
+                        capture_output=True,
+                        text=True,
+                        timeout=25
+                    )
+                    if sync_proc.returncode == 0 and "Already up to date." not in sync_proc.stdout:
+                        print("[Watchdog] Cloud market orders pulled:", sync_proc.stdout.strip())
+                        prod_json_p = os.path.join(BASE_DIR, "data", "products.json")
+                        if os.path.exists(prod_json_p):
+                            with open(prod_json_p, "r", encoding="utf-8") as pf:
+                                prods = json.load(pf)
+                            conn_w = get_db()
+                            cur_w = conn_w.cursor()
+                            for prd in prods:
+                                cur_w.execute("UPDATE products SET stock = ? WHERE id = ?", (prd.get("stock", 0), prd.get("id")))
+                            conn_w.commit()
+                            conn_w.close()
+                except Exception:
+                    pass
+
+            except Exception as we:
+                print(f"[Watchdog] Loop notice: {we}")
+
+            time.sleep(60)
+
+    t = threading.Thread(target=watchdog_loop, name="SystemdThreadWatchdog", daemon=True)
+    t.start()
+
+def start_all_schedulers():
+    if instagram_pr_agent.config.get('is_autonomous_enabled'):
+        instagram_pr_scheduler.start()
+    if reddit_drone_agent.config.get('is_autonomous_enabled'):
+        reddit_drone_scheduler.start()
+    if lead_supervisor_agent.get_status().get('is_autonomous_enabled'):
+        supervisor_scheduler.start()
+    if qa_agent.get_status().get('is_autonomous_enabled'):
+        qa_scheduler.start()
+    start_thread_watchdog()
 
 # Security Lockout Configuration: 3 failed attempts => 30-minute cooldown
 LOGIN_ATTEMPTS_LOCK = threading.Lock()
@@ -1590,6 +1653,41 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
+        # Cloud Market & Local PC Inventory Synchronizer (Autonomous Bridge)
+        if path == '/api/admin/sync-cloud-market':
+            try:
+                import subprocess
+                pull_res = subprocess.run(
+                    ["git", "pull", "--rebase", "origin", "main"],
+                    cwd=BASE_DIR,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                prod_json_p = os.path.join(BASE_DIR, "data", "products.json")
+                updated_count = 0
+                if os.path.exists(prod_json_p):
+                    with open(prod_json_p, "r", encoding="utf-8") as pf:
+                        prods = json.load(pf)
+                    conn_sync = get_db()
+                    cur_sync = conn_sync.cursor()
+                    for prd in prods:
+                        cur_sync.execute("UPDATE products SET stock = ? WHERE id = ?", (prd.get("stock", 0), prd.get("id")))
+                        if cur_sync.rowcount > 0:
+                            updated_count += 1
+                    conn_sync.commit()
+                    conn_sync.close()
+                export_static_data()
+                self.send_json(200, {
+                    "success": True,
+                    "git_status": pull_res.stdout.strip() if pull_res.returncode == 0 else pull_res.stderr.strip(),
+                    "products_updated": updated_count,
+                    "message": "Bulut pazar yeri stoklari basariyla yerel veritabanina ve statik dosyalara senkronize edildi."
+                })
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
         conn = get_db()
         cursor = conn.cursor()
 
@@ -2377,6 +2475,7 @@ def run_server():
     print(f" 500 Drone Items Active in SQLite Database")
     print(f" Languages: Turkish (TR) & English (EN)")
     print(f"==================================================")
+    start_all_schedulers()
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

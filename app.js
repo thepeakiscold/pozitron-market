@@ -2552,6 +2552,15 @@ class PozitronApp {
     const orderNum = 'PZTR-' + (method.toUpperCase()) + '-' + Math.floor(10000 + Math.random() * 90000);
     const orderItemsStr = this.cart.map(i => `${i.quantity}x ${i.name_tr || i.title || 'Ürün'}`).join(', ');
 
+    const structuredItems = (this.cart && this.cart.length > 0) ? this.cart.map(i => ({
+      id: i.id,
+      sku: i.sku || '',
+      name: i.name_tr || i.name_en || i.title || 'Ürün',
+      quantity: parseInt(i.quantity || 1, 10),
+      price_try: parseFloat(i.price_try || 0),
+      price_usd: parseFloat(i.price_usd || 0)
+    })) : [];
+
     if (method === 'havale') {
       const refCode = document.getElementById('bank-box-ref')?.textContent || orderNum;
       const bankName = document.getElementById('bank-box-name')?.textContent || 'Ziraat Bankası';
@@ -2564,6 +2573,7 @@ class PozitronApp {
         total_usd: (this._currentGrandUSD || 0).toFixed(2),
         total_try: (this._currentGrandTRY || 0).toFixed(2),
         items: orderItemsStr,
+        items_detail: structuredItems,
         created_at: new Date().toISOString(),
         shipping_address: `${address} - ${city}`,
         tracking_number: 'PZTR-HV-' + Date.now().toString(36).toUpperCase(),
@@ -2607,6 +2617,7 @@ class PozitronApp {
       total_usd: (this._currentGrandUSD || 0).toFixed(2),
       total_try: (this._currentGrandTRY || 0).toFixed(2),
       items: orderItemsStr,
+      items_detail: structuredItems,
       created_at: new Date().toISOString(),
       shipping_address: `${address} - ${city}`,
       tracking_number: 'PZTR-TR-' + Date.now().toString(36).toUpperCase(),
@@ -2683,11 +2694,22 @@ class PozitronApp {
   finalizeOrder(order) {
     if (!order) return;
 
+    if (!order.items_detail && this.cart && this.cart.length > 0) {
+      order.items_detail = this.cart.map(i => ({
+        id: i.id,
+        sku: i.sku || '',
+        name: i.name_tr || i.name_en || i.title || 'Ürün',
+        quantity: parseInt(i.quantity || 1, 10),
+        price_try: parseFloat(i.price_try || 0),
+        price_usd: parseFloat(i.price_usd || 0)
+      }));
+    }
+
     const prevOrders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
     prevOrders.unshift(order);
     localStorage.setItem('pozitron_orders', JSON.stringify(prevOrders));
 
-    // Send Webhook to Google Sheets
+    // Send Webhook to Google Sheets & Autonomous Cloud Relay
     const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
     fetch(WEBHOOK_URL, {
       method: 'POST',
@@ -2696,17 +2718,31 @@ class PozitronApp {
       body: JSON.stringify(order)
     }).catch(err => console.log('Webhook log:', err));
 
-    // Automatically Deduct Stock
+    // Automatically Deduct Stock (Local Memory & Admin Storage)
     try {
-      const adminProds = JSON.parse(localStorage.getItem('pozitron_admin_products') || '[]');
-      if (adminProds.length > 0) {
-        this.cart.forEach(cItem => {
-          const prod = adminProds.find(p => p.id === cItem.id);
-          if (prod) {
-            prod.stock = Math.max(0, (prod.stock || 0) - (cItem.quantity || 1));
-          }
-        });
-        localStorage.setItem('pozitron_admin_products', JSON.stringify(adminProds));
+      if (this.cart && this.cart.length > 0) {
+        // 1. Update live window.__POZITRON_DATA__ in-memory for instant visual responsiveness
+        if (window.__POZITRON_DATA__ && Array.isArray(window.__POZITRON_DATA__.products)) {
+          this.cart.forEach(cItem => {
+            const p = window.__POZITRON_DATA__.products.find(x => x.id === cItem.id || (x.sku && x.sku === cItem.sku));
+            if (p) {
+              p.stock = Math.max(0, (p.stock || 0) - (cItem.quantity || 1));
+              p.in_stock = p.stock > 0;
+            }
+          });
+        }
+
+        // 2. Update Admin LocalStorage if present
+        const adminProds = JSON.parse(localStorage.getItem('pozitron_admin_products') || '[]');
+        if (adminProds.length > 0) {
+          this.cart.forEach(cItem => {
+            const prod = adminProds.find(p => p.id === cItem.id);
+            if (prod) {
+              prod.stock = Math.max(0, (prod.stock || 0) - (cItem.quantity || 1));
+            }
+          });
+          localStorage.setItem('pozitron_admin_products', JSON.stringify(adminProds));
+        }
       }
     } catch (stkErr) {
       console.error('Stock deduction error:', stkErr);

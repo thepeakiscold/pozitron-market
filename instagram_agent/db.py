@@ -129,18 +129,20 @@ def get_agent_config():
     cursor.execute("SELECT * FROM instagram_agent_config WHERE id = 1")
     row = cursor.fetchone()
     conn.close()
-    cfg = dict(row) if row else {}
+    db_cfg = dict(row) if row else {}
 
-    # Overlay with data/instagram_config.json if available
+    cfg = {}
+    # Base configuration from json if available
     if os.path.exists(JSON_CONFIG_PATH):
         try:
             with open(JSON_CONFIG_PATH, 'r', encoding='utf-8') as f:
                 json_cfg = json.load(f)
-            for k, v in json_cfg.items():
-                cfg[k] = v
+            cfg.update(json_cfg)
         except Exception:
             pass
 
+    # Ensure SQLite operational settings take absolute precedence
+    cfg.update(db_cfg)
     return cfg
 
 def update_agent_config(updates: dict):

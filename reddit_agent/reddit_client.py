@@ -262,8 +262,21 @@ class RedditClient:
 
         title = post.get("title", "").lower()
         body = post.get("body", "").lower()
-        full_text = f"{title} {body}"
         subreddit = post.get("subreddit", "").lower().lstrip("r/").strip()
+
+        # Strip URLs to avoid false matches (e.g. "?igsh=" query parameters triggering question intent)
+        clean_title = re.sub(r'https?://\S+', '', title)
+        clean_body = re.sub(r'https?://\S+', '', body)
+        clean_full_text = f"{clean_title} {clean_body}".strip()
+
+        # 0. Exclude non-drone audio/camera equipment (e.g. DJI Mic, Osmo Pocket)
+        audio_video_gear_excludes = [
+            "dji mic", "mic mini", "kablosuz mikrofon", "yaka mikrofonu", "osmo pocket",
+            "osmo action", "action cam", "gopro hero", "insta360 go", "ronin sc", "ronin rs"
+        ]
+        if any(term in clean_full_text for term in audio_video_gear_excludes):
+            if not any(t in clean_full_text for t in ["uçuş", "ucus", "lehim", "betaflight", "elrs", "esc", "lipo", "quad"]):
+                return False
 
         # 1. Subreddit specific keyword check
         is_dedicated_drone_sub = any(ds in subreddit for ds in self.DEDICATED_DRONE_SUBS)
@@ -276,7 +289,7 @@ class RedditClient:
                 if not kw_clean:
                     continue
                 pattern = r'\b' + re.escape(kw_clean) + r'\b'
-                if re.search(pattern, full_text, re.IGNORECASE):
+                if re.search(pattern, clean_full_text, re.IGNORECASE):
                     has_drone_keyword = True
                     break
             if not has_drone_keyword:
@@ -290,14 +303,23 @@ class RedditClient:
                 "savunma sanayii", "milli savunma", "şehit", "sehit", "savaş", "savas",
                 "harekat", "operasyon", "seçim", "secim", "hükümet", "hukumet"
             ]
-            if any(term in full_text for term in political_or_military_excludes):
+            if any(term in clean_full_text for term in political_or_military_excludes):
                 return False
 
-            # 2. MUST contain at least one CORE drone keyword with word boundary!
+            # 2. Filter out light shows, drone shows, ceremonies, racing horse events
+            news_event_excludes = [
+                "gösterisi", "gosterisi", "ışık gösterisi", "isik gosterisi", "silueti",
+                "resepsiyonu", "yarış atı", "yaris ati", "gazi koşusu", "gazi kosusu",
+                "emniyet müdürlüğü", "operasyonunda drone", "yakalandı", "gözaltına", "tutuklandı"
+            ]
+            if any(term in clean_full_text for term in news_event_excludes):
+                return False
+
+            # 3. MUST contain at least one CORE drone keyword with word boundary!
             has_core_keyword = False
             for ckw in self.CORE_DRONE_KEYWORDS:
                 pattern = r'\b' + re.escape(ckw) + r'\b'
-                if re.search(pattern, full_text, re.IGNORECASE):
+                if re.search(pattern, clean_full_text, re.IGNORECASE):
                     has_core_keyword = True
                     break
 
@@ -313,8 +335,17 @@ class RedditClient:
             "how to", "why", "issue", "help", "problem", "which", "recommend"
         ]
 
-        has_question_intent = any(indicator in full_text for indicator in question_indicators)
-        return has_question_intent
+        if "?" in clean_full_text:
+            return True
+
+        for indicator in question_indicators:
+            if indicator == "?":
+                continue
+            pattern = r'\b' + re.escape(indicator) + r'\b'
+            if re.search(pattern, clean_full_text, re.IGNORECASE):
+                return True
+
+        return False
 
     def post_reply(self, thing_id: str, text: str, post_url: str = "") -> dict:
         """

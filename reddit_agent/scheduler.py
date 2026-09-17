@@ -29,14 +29,16 @@ class RedditScheduler:
 
     def _loop(self):
         # Initial short delay on startup
-        time.sleep(3)
+        if self.stop_event.wait(timeout=3.0):
+            return
 
         while not self.stop_event.is_set():
             try:
                 # Reload config
                 cfg = self.agent.get_safe_config()
                 if not cfg.get("is_autonomous_enabled"):
-                    time.sleep(10)
+                    if self.stop_event.wait(timeout=10.0):
+                        break
                     continue
 
                 # Run a scan cycle

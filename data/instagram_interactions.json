@@ -1,5 +1,5 @@
 {
-  "today_date": "2026-09-13",
+  "today_date": "2026-09-17",
   "today_follows_count": 10,
   "today_comments_count": 10,
   "max_daily_limit": 10,
@@ -14,7 +14,47 @@
     "1423162151",
     "1639034998",
     "35163875437",
-    "28272605669"
+    "28272605669",
+    "76593119314",
+    "48893385914",
+    "72914254852",
+    "2105813334",
+    "77904569327",
+    "76870127175",
+    "12644166818",
+    "1419737225",
+    "80862905969",
+    "71188584436",
+    "31126519679",
+    "66290789977",
+    "60158893339",
+    "2006037956",
+    "69561489224",
+    "20476027649",
+    "30057287231",
+    "363696549",
+    "75036905846",
+    "1702710907",
+    "49632929554",
+    "1619861859",
+    "63761085137",
+    "70612249007",
+    "55177644370",
+    "29423022903",
+    "1364889680",
+    "4687555264",
+    "46713576660",
+    "77193695574",
+    "42799115445",
+    "48918057608",
+    "9611547239",
+    "64444887518",
+    "64398302556",
+    "35456919855",
+    "10160638339",
+    "68932795649",
+    "6915194263",
+    "53185115751"
   ],
   "commented_media_ids": [
     "3983912198478190450_73181351103",
@@ -27,7 +67,47 @@
     "3375116111608627741_55948459378",
     "2873628352605003555_1639034998",
     "3312275856908411110_35163875437",
-    "2572601858677929646_28272605669"
+    "2572601858677929646_28272605669",
+    "3920193833756131931_76593119314",
+    "3985562377116716454_48893385914",
+    "3985805437365789004_72914254852",
+    "3981114905799462831_2105813334",
+    "3985469618763479639_77904569327",
+    "3757167095550078832_76870127175",
+    "3985420887497872034_12644166818",
+    "3727198969630839836_1419737225",
+    "3850622005607674461_80862905969",
+    "3985356191808871701_71188584436",
+    "3732471062077547860_66290789977",
+    "3986309813035510783_60158893339",
+    "3785912103098706306_2006037956",
+    "3888089681784512220_78315513825",
+    "3985916648758252550_69561489224",
+    "3986122767093704787_20476027649",
+    "3986064299742785011_76110090417",
+    "3981545911086716260_30057287231",
+    "3986299377541409636_363696549",
+    "3986118737530225387_75036905846",
+    "3753218418389127380_49632929554",
+    "3727381927243030611_1619861859",
+    "3986787940285753095_63761085137",
+    "3725999285214215131_70612249007",
+    "3987012006466135014_55177644370",
+    "3986722488610507283_29423022903",
+    "3981024596233782126_1364889680",
+    "3970238371746800209_1702710907",
+    "3986613551526667423_4687555264",
+    "3836125814660637097_46713576660",
+    "3986865602811329207_42799115445",
+    "3751889114107795663_48918057608",
+    "3987650780118591947_9611547239",
+    "3987381054273445928_64444887518",
+    "3987662298009768619_64398302556",
+    "3987600849744320615_35456919855",
+    "3987284392652860656_63761085137",
+    "3987532689074607656_10160638339",
+    "3985538396007211969_68932795649",
+    "3987480558657440700_6915194263"
   ],
   "history": [
     {
@@ -215,6 +295,686 @@
       "media_code": "COzt8KfAfau",
       "comment": "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
       "timestamp": "2026-09-13T21:31:28.201402",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "pakistan.tr",
+      "user_id": "76593119314",
+      "timestamp": "2026-09-14T10:40:15.173914",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "pakistan.tr",
+      "user_id": "76593119314",
+      "media_id": "3920193833756131931_76593119314",
+      "media_code": "DZnU4WPtgJb",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-14T10:40:24.334702",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "turkiye_dosyasi",
+      "user_id": "48893385914",
+      "timestamp": "2026-09-14T10:40:54.803459",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "turkiye_dosyasi",
+      "user_id": "48893385914",
+      "media_id": "3985562377116716454_48893385914",
+      "media_code": "DdPj92WNA2m",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-14T10:41:06.789965",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "glaigo_official",
+      "user_id": "72914254852",
+      "timestamp": "2026-09-14T10:41:36.549022",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "glaigo_official",
+      "user_id": "72914254852",
+      "media_id": "3985805437365789004_72914254852",
+      "media_code": "DdQbO12AiFM",
+      "comment": "Süper akıcı freestyle hatları, keyifle izledik! Kırımsız günler dileriz.",
+      "timestamp": "2026-09-14T10:41:47.213762",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "mucitgenc",
+      "user_id": "2105813334",
+      "timestamp": "2026-09-14T10:42:15.742709",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "mucitgenc",
+      "user_id": "2105813334",
+      "media_id": "3981114905799462831_2105813334",
+      "media_code": "Dc_wun6MI-v",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-14T10:42:24.158474",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gezgin_gazeteci_",
+      "user_id": "77904569327",
+      "timestamp": "2026-09-14T10:42:53.243227",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "gezgin_gazeteci_",
+      "user_id": "77904569327",
+      "media_id": "3985469618763479639_77904569327",
+      "media_code": "DdPO4CZgjpX",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-14T10:43:02.022318",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "manifestanotturna",
+      "user_id": "76870127175",
+      "timestamp": "2026-09-14T10:43:28.530136",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "manifestanotturna",
+      "user_id": "76870127175",
+      "media_id": "3757167095550078832_76870127175",
+      "media_code": "DQkI5EsDG9w",
+      "comment": "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+      "timestamp": "2026-09-14T10:43:37.943563",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "moh_aem90",
+      "user_id": "12644166818",
+      "timestamp": "2026-09-14T10:44:04.843095",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "moh_aem90",
+      "user_id": "12644166818",
+      "media_id": "3985420887497872034_12644166818",
+      "media_code": "DdPDy53u5Ki",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı uçuşlar dileriz!",
+      "timestamp": "2026-09-14T10:44:13.292983",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "cerenumayy_",
+      "user_id": "1419737225",
+      "timestamp": "2026-09-14T10:44:38.174417",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "cerenumayy_",
+      "user_id": "1419737225",
+      "media_id": "3727198969630839836_1419737225",
+      "media_code": "DO5q7cgDFQc",
+      "comment": "Harika uçuş! Kırımsız ve keyifli uçuşlar dileriz. [Pozitron Market]",
+      "timestamp": "2026-09-14T10:44:49.963775",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "ardes.team",
+      "user_id": "80862905969",
+      "timestamp": "2026-09-14T10:45:13.359448",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "ardes.team",
+      "user_id": "80862905969",
+      "media_id": "3850622005607674461_80862905969",
+      "media_code": "DVwKFAIjDJd",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-14T10:45:21.212209",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "siluet.2024",
+      "user_id": "71188584436",
+      "timestamp": "2026-09-14T10:45:51.504800",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "siluet.2024",
+      "user_id": "71188584436",
+      "media_id": "3985356191808871701_71188584436",
+      "media_code": "DdO1FdUK90V",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-14T10:46:02.724563",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "karakoprubld",
+      "user_id": "31126519679",
+      "timestamp": "2026-09-15T04:40:43.704675",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "2n_news",
+      "user_id": "66290789977",
+      "timestamp": "2026-09-15T04:41:20.014540",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "2n_news",
+      "user_id": "66290789977",
+      "media_id": "3732471062077547860_66290789977",
+      "media_code": "DPMZqfNjqVU",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-15T04:41:31.503268",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "sobtr_afyon",
+      "user_id": "60158893339",
+      "timestamp": "2026-09-15T04:42:04.608858",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "sobtr_afyon",
+      "user_id": "60158893339",
+      "media_id": "3986309813035510783_60158893339",
+      "media_code": "DdSN6eSoqv_",
+      "comment": "Süper akıcı freestyle hatları, keyifle izledik! Kırımsız günler dileriz.",
+      "timestamp": "2026-09-15T04:42:16.001518",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "kanal_urfa",
+      "user_id": "2006037956",
+      "timestamp": "2026-09-15T04:42:44.126877",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "kanal_urfa",
+      "user_id": "2006037956",
+      "media_id": "3785912103098706306_2006037956",
+      "media_code": "DSKQv_IDOmC",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-15T04:42:53.065786",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "ktuprotek",
+      "user_id": "78315513825",
+      "media_id": "3888089681784512220_78315513825",
+      "media_code": "DX1RPcxoJ7c",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-15T04:43:30.276958",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "iztechnextgen",
+      "user_id": "69561489224",
+      "timestamp": "2026-09-15T04:44:04.797252",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "iztechnextgen",
+      "user_id": "69561489224",
+      "media_id": "3985916648758252550_69561489224",
+      "media_code": "DdQ0hLhjRQG",
+      "comment": "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+      "timestamp": "2026-09-15T04:44:15.996335",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "rizemem53",
+      "user_id": "20476027649",
+      "timestamp": "2026-09-15T04:44:43.338653",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "rizemem53",
+      "user_id": "20476027649",
+      "media_id": "3986122767093704787_20476027649",
+      "media_code": "DdRjYmLt6hT",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı uçuşlar dileriz!",
+      "timestamp": "2026-09-15T04:44:53.194733",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "dr.vteam",
+      "user_id": "76110090417",
+      "media_id": "3986064299742785011_76110090417",
+      "media_code": "DdRWFyOCO3z",
+      "comment": "Harika uçuş! Kırımsız ve keyifli uçuşlar dileriz. [Pozitron Market]",
+      "timestamp": "2026-09-15T04:45:28.635862",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "butundunyagundemi",
+      "user_id": "30057287231",
+      "timestamp": "2026-09-15T04:45:52.852572",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "butundunyagundemi",
+      "user_id": "30057287231",
+      "media_id": "3981545911086716260_30057287231",
+      "media_code": "DdBSuk3O5Vk",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-15T04:46:01.144521",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "hakancd",
+      "user_id": "363696549",
+      "timestamp": "2026-09-15T04:46:31.394575",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "hakancd",
+      "user_id": "363696549",
+      "media_id": "3986299377541409636_363696549",
+      "media_code": "DdSLinet2tk",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-15T04:46:43.709577",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "calamitas.ai",
+      "user_id": "75036905846",
+      "timestamp": "2026-09-15T04:47:11.276713",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "calamitas.ai",
+      "user_id": "75036905846",
+      "media_id": "3986118737530225387_75036905846",
+      "media_code": "DdRid9XBILr",
+      "comment": "Drone hakimiyeti harika, gökyüzünde bol kırımsız uçuşlar!",
+      "timestamp": "2026-09-15T04:47:21.888057",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "haber7com",
+      "user_id": "1702710907",
+      "timestamp": "2026-09-15T04:47:51.903382",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gdhdefence",
+      "user_id": "49632929554",
+      "timestamp": "2026-09-16T04:41:31.745543",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "gdhdefence",
+      "user_id": "49632929554",
+      "media_id": "3753218418389127380_49632929554",
+      "media_code": "DQWHEQgiZDU",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-16T04:41:39.894159",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "hurisltn",
+      "user_id": "1619861859",
+      "timestamp": "2026-09-16T04:42:11.009128",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "hurisltn",
+      "user_id": "1619861859",
+      "media_id": "3727381927243030611_1619861859",
+      "media_code": "DO6Uh1DiCBT",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-16T04:42:23.214931",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "ankarauniversitesi_teknofest",
+      "user_id": "63761085137",
+      "timestamp": "2026-09-16T04:42:50.976547",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "ankarauniversitesi_teknofest",
+      "user_id": "63761085137",
+      "media_id": "3986787940285753095_63761085137",
+      "media_code": "DdT6oI_iycH",
+      "comment": "Süper akıcı freestyle hatları, keyifle izledik! Kırımsız günler dileriz.",
+      "timestamp": "2026-09-16T04:43:02.682478",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "sivassende",
+      "user_id": "70612249007",
+      "timestamp": "2026-09-16T04:43:32.927001",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "sivassende",
+      "user_id": "70612249007",
+      "media_id": "3725999285214215131_70612249007",
+      "media_code": "DO1aJvUjXvb",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-16T04:43:41.555578",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "hilal_onlyqueen",
+      "user_id": "55177644370",
+      "timestamp": "2026-09-16T04:44:10.349763",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "hilal_onlyqueen",
+      "user_id": "55177644370",
+      "media_id": "3987012006466135014_55177644370",
+      "media_code": "DdUtku4oaPm",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-16T04:44:19.512995",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "sualtiroketaraci",
+      "user_id": "29423022903",
+      "timestamp": "2026-09-16T04:44:48.622852",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "sualtiroketaraci",
+      "user_id": "29423022903",
+      "media_id": "3986722488610507283_29423022903",
+      "media_code": "DdTrvsXsMoT",
+      "comment": "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+      "timestamp": "2026-09-16T04:44:59.092491",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "yaylahaber",
+      "user_id": "1364889680",
+      "timestamp": "2026-09-16T04:45:22.951726",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "yaylahaber",
+      "user_id": "1364889680",
+      "media_id": "3981024596233782126_1364889680",
+      "media_code": "Dc_cMckm4Nu",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı uçuşlar dileriz!",
+      "timestamp": "2026-09-16T04:45:30.854455",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "haber7com",
+      "user_id": "1702710907",
+      "media_id": "3970238371746800209_1702710907",
+      "media_code": "DcZHsONl-JR",
+      "comment": "Harika uçuş! Kırımsız ve keyifli uçuşlar dileriz. [Pozitron Market]",
+      "timestamp": "2026-09-16T04:45:56.691465",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "sanliurfasgk",
+      "user_id": "4687555264",
+      "timestamp": "2026-09-16T04:46:27.726906",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "sanliurfasgk",
+      "user_id": "4687555264",
+      "media_id": "3986613551526667423_4687555264",
+      "media_code": "DdTS-czgWSf",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-16T04:46:35.369893",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "meukurumsal",
+      "user_id": "46713576660",
+      "timestamp": "2026-09-16T04:47:06.526615",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "meukurumsal",
+      "user_id": "46713576660",
+      "media_id": "3836125814660637097_46713576660",
+      "media_code": "DU8qBqQjaGp",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-16T04:47:18.565462",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "douteknofest_",
+      "user_id": "77193695574",
+      "timestamp": "2026-09-16T04:47:45.812305",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "kanguru.havacilik",
+      "user_id": "42799115445",
+      "timestamp": "2026-09-17T04:42:22.827761",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "kanguru.havacilik",
+      "user_id": "42799115445",
+      "media_id": "3986865602811329207_42799115445",
+      "media_code": "DdUMSR2yvq3",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-17T04:42:31.779929",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gencmotto",
+      "user_id": "48918057608",
+      "timestamp": "2026-09-17T04:43:02.492992",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "gencmotto",
+      "user_id": "48918057608",
+      "media_id": "3751889114107795663_48918057608",
+      "media_code": "DQRY0VbDNjP",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-17T04:43:14.420450",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "pence.iha",
+      "user_id": "9611547239",
+      "timestamp": "2026-09-17T04:43:43.023135",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "pence.iha",
+      "user_id": "9611547239",
+      "media_id": "3987650780118591947_9611547239",
+      "media_code": "DdW-0HNRynL",
+      "comment": "Süper akıcı freestyle hatları, keyifle izledik! Kırımsız günler dileriz.",
+      "timestamp": "2026-09-17T04:43:54.545507",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "plakayirmibes",
+      "user_id": "64444887518",
+      "timestamp": "2026-09-17T04:44:28.668382",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "plakayirmibes",
+      "user_id": "64444887518",
+      "media_id": "3987381054273445928_64444887518",
+      "media_code": "DdWBfFcF2Ao",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-17T04:44:36.254426",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "enrgscience",
+      "user_id": "64398302556",
+      "timestamp": "2026-09-17T04:45:08.629143",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "enrgscience",
+      "user_id": "64398302556",
+      "media_id": "3987662298009768619_64398302556",
+      "media_code": "DdXBbuFFxKr",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-17T04:45:17.656684",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "aog.systems",
+      "user_id": "35456919855",
+      "timestamp": "2026-09-17T04:45:48.108631",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "aog.systems",
+      "user_id": "35456919855",
+      "media_id": "3987600849744320615_35456919855",
+      "media_code": "DdWzdh7Dlhn",
+      "comment": "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+      "timestamp": "2026-09-17T04:45:59.008107",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "ankarauniversitesi_teknofest",
+      "user_id": "63761085137",
+      "media_id": "3987284392652860656_63761085137",
+      "media_code": "DdVrgeSiGzw",
+      "comment": "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+      "timestamp": "2026-09-17T04:46:23.532447",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "sanliurfaash",
+      "user_id": "10160638339",
+      "timestamp": "2026-09-17T04:46:53.827444",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "sanliurfaash",
+      "user_id": "10160638339",
+      "media_id": "3987532689074607656_10160638339",
+      "media_code": "DdWj9qWjNYo",
+      "comment": "Görüntü netliği ve PID ayarları şahane oturmuş! Pozitron Market FPV ekibinden selamlar.",
+      "timestamp": "2026-09-17T04:47:05.498596",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "bayraktarimiz",
+      "user_id": "68932795649",
+      "timestamp": "2026-09-17T04:47:30.157142",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "bayraktarimiz",
+      "user_id": "68932795649",
+      "media_id": "3985538396007211969_68932795649",
+      "media_code": "DdPeg4MsKPB",
+      "comment": "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+      "timestamp": "2026-09-17T04:47:38.770848",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "prof.dr.azizsancarbilsem",
+      "user_id": "6915194263",
+      "timestamp": "2026-09-17T04:48:07.889931",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "prof.dr.azizsancarbilsem",
+      "user_id": "6915194263",
+      "media_id": "3987480558657440700_6915194263",
+      "media_code": "DdWYHEHjYu8",
+      "comment": "Çok temiz bir build ve uçuş performansı! Tebrikler.",
+      "timestamp": "2026-09-17T04:48:19.180746",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "kardelencocukdr",
+      "user_id": "53185115751",
+      "timestamp": "2026-09-17T04:48:50.227216",
       "status": "success"
     }
   ]

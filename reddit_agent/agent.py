@@ -268,20 +268,24 @@ class RedditDroneAgent:
                             else:
                                 print(f"[Reddit Bot] [HATA] Yayinlanamadi: {pub_res.get('error')}")
 
-        # If no new questions were auto-published in this run, check pending high-confidence drafts
+        # If no new questions were auto-published in this run, check pending high-confidence drafts or retry failed items
         if autonomous and not dry_run and published_count == 0:
             daily_count = get_daily_replies_count()
             if daily_count < max_daily:
-                pending_drafts = get_interactions(limit=3, status="draft")
-                for draft in pending_drafts:
-                    if draft.get("confidence_score", 0) >= min_conf:
-                        print(f"[Reddit Bot] Kuyruktan taslak otomatik secildi: {draft['title'][:60]} -> Yayinlaniyor...")
-                        pub_res = self.publish_reply(draft["id"])
+                pending = get_interactions(limit=10, status="draft")
+                if not pending:
+                    # Also consider high-confidence failed items eligible for retry
+                    pending = [i for i in get_interactions(limit=10, status="failed") if i.get("confidence_score", 0) >= min_conf]
+
+                for candidate in pending:
+                    if candidate.get("confidence_score", 0) >= min_conf and candidate.get("gemini_reply"):
+                        print(f"[Reddit Bot] Kuyruktan secildi: {candidate['title'][:60]} -> Yayinlaniyor...")
+                        pub_res = self.publish_reply(candidate["id"])
                         if pub_res.get("success"):
                             published_count += 1
                             break
                         else:
-                            print(f"[Reddit Bot] [HATA] Taslak yayinlanamadi: {pub_res.get('error')}")
+                            print(f"[Reddit Bot] [HATA] Yayinlanamadi: {pub_res.get('error')}")
 
         # Update last scan timestamp
         self.update_config({

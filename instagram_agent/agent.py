@@ -1,5 +1,7 @@
 import os
+import time
 import uuid
+import urllib.request
 from datetime import datetime, timedelta
 from .db import (
     get_agent_config, update_agent_config, save_instagram_post,
@@ -143,6 +145,7 @@ class InstagramPRAgent:
         Creates a new post and DIRECTLY publishes it to Instagram (Meta API or dry-run).
         Never leaves a draft behind.
         """
+        self.reload_config()
         post_id = f"ig_post_{uuid.uuid4().hex[:12]}"
         
         # 1. Generate text and metadata
@@ -179,8 +182,19 @@ class InstagramPRAgent:
                 clean_img = img_rel_path.lstrip('./').lstrip('/')
                 import subprocess
                 subprocess.run(["git", "add", clean_img], cwd=repo_root, check=False, timeout=8)
-                subprocess.run(["git", "commit", "-m", f"chore(assets): auto-sync instagram post image {post_id}"], cwd=repo_root, check=False, timeout=8)
+                subprocess.run(["git", "commit", "-m", f"chore(assets): auto-sync instagram post image {post_id} [skip ci]"], cwd=repo_root, check=False, timeout=8)
                 subprocess.run(["git", "push", "origin", "main"], cwd=repo_root, check=False, timeout=15)
+
+                # Wait for GitHub CDN to return HTTP 200 for public raw url
+                pub_url = f"{self.publisher.public_base_url}/{clean_img}"
+                for attempt in range(6):
+                    try:
+                        req_chk = urllib.request.Request(pub_url, headers={'User-Agent': 'Mozilla/5.0'})
+                        with urllib.request.urlopen(req_chk, timeout=4) as r_chk:
+                            if r_chk.status == 200:
+                                break
+                    except Exception:
+                        time.sleep(2)
             except Exception as sync_e:
                 print(f"[UYARI] Gorsel senkronizasyon uyarisi: {sync_e}")
 
@@ -227,6 +241,18 @@ class InstagramPRAgent:
         if not post:
             return {"success": False, "error": f"Gönderi bulunamadı: {post_id}"}
 
+        self.reload_config()
+        if not self.config.get('dry_run_mode', 0) and post.get('local_image_path'):
+            try:
+                repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                clean_img = post['local_image_path'].lstrip('./').lstrip('/')
+                import subprocess
+                subprocess.run(["git", "add", clean_img], cwd=repo_root, check=False, timeout=8)
+                subprocess.run(["git", "commit", "-m", f"chore(assets): auto-sync instagram post image {post['id']} [skip ci]"], cwd=repo_root, check=False, timeout=8)
+                subprocess.run(["git", "push", "origin", "main"], cwd=repo_root, check=False, timeout=15)
+            except Exception:
+                pass
+
         result = self.publisher.publish_post(post)
         now_iso = datetime.now().isoformat()
         if result.get('success'):
@@ -252,6 +278,7 @@ class InstagramPRAgent:
         1. Directly generates and publishes a new post (no drafts).
         2. Engages with the drone community (follows up to 10 pilots & posts 10 comments).
         """
+        self.reload_config()
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INSTAGRAM AJANI] Instagram PR Ajani otonom dongu baslatiyor...")
         
         # 1. Direct Post & Publish
