@@ -56,7 +56,7 @@ def generate_feeds():
         else:
             full_img_url = img_url
 
-        prod_link = f"{BASE_URL}/products/{slug}.html" if slug else f"{BASE_URL}/#prod-{p_id}"
+        prod_link = f"{BASE_URL}/products/{slug}" if slug else f"{BASE_URL}/#prod-{p_id}"
         title = (name_tr or name_en or 'FPV Drone Parçası').strip()
         description = (desc_tr or desc_en or f"{brand} {title} yüksek performanslı FPV drone bileşeni.").strip()
         availability = 'in_stock' if int(stock) > 0 else 'out_of_stock'

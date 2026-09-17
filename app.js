@@ -1297,7 +1297,7 @@ class PozitronApp {
 
       html += `
         <article class="product-card" data-id="${p.id}" data-slug="${p.slug}">
-          <a href="./products/${p.slug}.html" class="card-media-wrap" title="${name}">
+          <a href="./products/${p.slug}" class="card-media-wrap" title="${name}">
             ${badgeHtml}
             <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="card-product-img" loading="lazy">
           </a>
@@ -1312,7 +1312,7 @@ class PozitronApp {
             </div>
 
             <h3 class="card-title">
-              <a href="./products/${p.slug}.html">${name}</a>
+              <a href="./products/${p.slug}">${name}</a>
             </h3>
 
             ${ratingRowHtml}
@@ -1503,7 +1503,7 @@ class PozitronApp {
         const staticData = this.getStaticData();
         const prod = (staticData.products || []).find(p => p.id === pid || p.slug === pid);
         if (prod && prod.slug) {
-          window.location.href = `./products/${prod.slug}.html`;
+          window.location.href = `./products/${prod.slug}`;
         } else {
           this.openProductModal(pid);
         }
@@ -2979,7 +2979,7 @@ class PozitronApp {
     const staticData = this.getStaticData();
     const p = (staticData.products || []).find(x => x.id === idOrSlug || x.slug === idOrSlug);
     const slug = p?.slug || idOrSlug;
-    window.location.href = `./products/${slug}.html`;
+    window.location.href = `./products/${slug}`;
   }
 
   closeProductModal() {
@@ -3428,7 +3428,7 @@ class PozitronApp {
               : (brandStr ? `${brandStr} ${rawTitle}` : rawTitle);
 
             return `
-              <div class="build-item-card" onclick="window.open('./products/' + ('${p.slug}' || '${p.id}') + '.html', '_blank')" title="${lang === 'tr' ? 'Ürünü Yeni Sekmede İncele' : 'View Product in New Tab'}">
+              <div class="build-item-card" onclick="window.open('./products/' + ('${p.slug}' || '${p.id}'), '_blank')" title="${lang === 'tr' ? 'Ürünü Yeni Sekmede İncele' : 'View Product in New Tab'}">
                 <img src="${p.image_url}" alt="${brandStr}" class="build-item-img" onerror="this.src='https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=150&q=80'">
                 <div class="build-item-info">
                   <div style="display:flex; align-items:center;">
@@ -4928,7 +4928,7 @@ class PozitronApp {
         e.stopPropagation();
         const slug = e.currentTarget.getAttribute('data-slug');
         if (slug) {
-          window.location.href = `./products/${slug}.html`;
+          window.location.href = `./products/${slug}`;
         }
       });
     });

@@ -112,7 +112,7 @@ def generate_product_page(product, category, related_products, all_products, by_
     cat_name_tr = category.get("name_tr", "Drone Parçaları") if category else "Drone Parçaları"
     cat_id = category.get("id", "motors") if category else "motors"
 
-    canonical_url = f"{BASE_URL}/products/{slug}.html"
+    canonical_url = f"{BASE_URL}/products/{slug}"
 
     # Meta description
     clean_desc_tr = re.sub(r'<[^>]+>', '', desc_tr).replace('"', '&quot;').strip()
@@ -263,7 +263,7 @@ def generate_product_page(product, category, related_products, all_products, by_
                     """
                 elif row_type == "name":
                     cell_content = f"""
-                      <a href="./{c_slug}.html" class="pdp-compare-prod-name" title="{escape_str(c_name)}">
+                      <a href="./{c_slug}" class="pdp-compare-prod-name" title="{escape_str(c_name)}">
                         {escape_str(c_name)}
                       </a>
                     """
@@ -328,7 +328,7 @@ def generate_product_page(product, category, related_products, all_products, by_
         rel_img = rel.get("image_url", "./assets/placeholder.png")
         rel_img_src = f"../{rel_img[2:]}" if rel_img.startswith("./") else rel_img
         related_html += f"""
-          <a href="./{rel_slug}.html" class="pdp-related-card">
+          <a href="./{rel_slug}" class="pdp-related-card">
             <div class="pdp-related-img-wrap">
               <img src="{escape_str(rel_img_src)}" alt="{escape_str(rel_name)}" loading="lazy" onerror="this.src='../assets/hero_drone.png'">
             </div>
@@ -506,6 +506,11 @@ def generate_product_page(product, category, related_products, all_products, by_
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css?v=20260912_amazon_suite">
+  <script>
+    if (window.location.pathname.endsWith('.html')) {{
+      window.history.replaceState(null, '', window.location.pathname.slice(0, -5) + window.location.search + window.location.hash);
+    }}
+  </script>
 </head>
 <body>
 
@@ -1231,7 +1236,7 @@ def main():
             f.write(content)
 
         generated_count += 1
-        sitemap_product_urls.append(f"{BASE_URL}/products/{slug}.html")
+        sitemap_product_urls.append(f"{BASE_URL}/products/{slug}")
 
     print(f"Generated {generated_count} product HTML pages with Amazon Suite in '{OUTPUT_DIR}/'.")
 

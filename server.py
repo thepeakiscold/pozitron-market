@@ -339,6 +339,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         # Serve frontend static files
         if path == '/' or path == '/index.html':
             self.path = '/index.html'
+        else:
+            # Check if an extensionless path matches an existing .html file (e.g. /products/<slug>)
+            clean_rel = path.lstrip('/')
+            if clean_rel and not os.path.splitext(clean_rel)[1]:
+                candidate_html = os.path.join(BASE_DIR, clean_rel + '.html')
+                if os.path.exists(candidate_html) and os.path.isfile(candidate_html):
+                    self.path = '/' + clean_rel + '.html'
         return super().do_GET()
 
     def do_HEAD(self):
@@ -349,6 +356,11 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
             return
+        clean_rel = path.lstrip('/')
+        if clean_rel and not os.path.splitext(clean_rel)[1]:
+            candidate_html = os.path.join(BASE_DIR, clean_rel + '.html')
+            if os.path.exists(candidate_html) and os.path.isfile(candidate_html):
+                self.path = '/' + clean_rel + '.html'
         return super().do_HEAD()
 
     def handle_sitemap_xml(self):
@@ -2398,6 +2410,54 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             conn.close()
 
             self.send_json(200, {"success": True, "message": "Kullanıcı başarıyla silindi.", "deleted_id": user_id})
+            return
+
+        # Admin: Update User Role (Grant / Revoke Admin Privilege)
+        if path == '/api/admin/users/update_role':
+            user_id = data.get('id')
+            email = (data.get('email') or '').lower().strip()
+            new_role = (data.get('role') or '').lower().strip()
+
+            if not user_id and not email:
+                conn.close()
+                self.send_json(400, {"error": "User ID or Email is required"})
+                return
+
+            if new_role not in ('admin', 'customer'):
+                conn.close()
+                self.send_json(400, {"error": "Geçersiz rol. Yalnızca 'admin' veya 'customer' atanabilir."})
+                return
+
+            # Primary root accounts protected from demotion
+            admin_emails = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'eyuppekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com']
+            if new_role != 'admin':
+                cursor.execute("SELECT email FROM users WHERE id = ? OR LOWER(email) = ?", (user_id, email))
+                row = cursor.fetchone()
+                if row and row[0] and row[0].lower().strip() in admin_emails:
+                    conn.close()
+                    self.send_json(403, {"error": "Ana kurucu yönetici hesabı yetkisizleştirilemez."})
+                    return
+
+            if user_id:
+                cursor.execute("UPDATE users SET role = ? WHERE id = ?", (new_role, user_id))
+            elif email:
+                cursor.execute("UPDATE users SET role = ? WHERE LOWER(email) = ?", (new_role, email))
+
+            conn.commit()
+
+            if user_id:
+                cursor.execute("SELECT id, email, full_name, avatar_url, provider, role, phone, address, city, country, created_at FROM users WHERE id = ?", (user_id,))
+            else:
+                cursor.execute("SELECT id, email, full_name, avatar_url, provider, role, phone, address, city, country, created_at FROM users WHERE LOWER(email) = ?", (email,))
+            updated_user = cursor.fetchone()
+            conn.close()
+
+            user_data = dict(updated_user) if updated_user else {"id": user_id, "email": email, "role": new_role}
+            self.send_json(200, {
+                "success": True,
+                "message": f"Kullanıcı rolü başarıyla '{new_role}' olarak güncellendi.",
+                "user": user_data
+            })
             return
 
         # 12. Admin: Currency Sync across catalog

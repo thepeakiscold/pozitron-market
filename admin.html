@@ -2884,6 +2884,7 @@
         const avatar = getRobotAvatar(u);
         const isGoogle = u.provider === 'google' || u.provider === 'gmail';
         const isAdmin = u.role === 'admin' || u.role === 'superadmin';
+        const isProtected = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'eyuppekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com'].includes((u.email || '').toLowerCase().trim());
         
         let dateFormatted = '-';
         if (u.created_at) {
@@ -2934,9 +2935,9 @@
             </td>
             <td>
               ${isAdmin ? `
-                <span class="badge-stock" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe;">YÖNETİCİ</span>
+                <span class="badge-stock" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe; font-weight:700;">YÖNETİCİ</span>
               ` : `
-                <span class="badge-stock badge-stock-in" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;">Müşteri</span>
+                <span class="badge-stock badge-stock-in" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-weight:700;">Müşteri</span>
               `}
             </td>
             <td>
@@ -2944,6 +2945,19 @@
             </td>
             <td>
               <div style="display:flex; gap:6px; align-items:center;">
+                ${!isAdmin ? `
+                  <button type="button" class="admin-btn-action" title="Yönetici Yetkisi Ver" style="color:#7e22ce; border-color:#d8b4fe; background:#f3e8ff; padding:5px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-weight:700; font-size:0.75rem;" onclick="toggleAdminUserRole('${u.id}', '${u.email}', 'admin')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>Admin Yap</span>
+                  </button>
+                ` : (!isProtected ? `
+                  <button type="button" class="admin-btn-action" title="Yönetici Yetkisini Kaldır" style="color:#b45309; border-color:#fde68a; background:#fef3c7; padding:5px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-weight:700; font-size:0.75rem;" onclick="toggleAdminUserRole('${u.id}', '${u.email}', 'customer')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
+                    <span>Yetkiyi Al</span>
+                  </button>
+                ` : `
+                  <span title="Ana Yönetici Hesabı (Yetkisi kaldırılamaz)" style="font-size:0.72rem; color:#64748b; font-weight:700; background:#f1f5f9; padding:4px 8px; border-radius:6px; border:1px solid #cbd5e1;">Kurucu</span>
+                `)}
                 <a href="${mailLink}" class="admin-btn-action" title="E-Posta Gönder" style="text-decoration:none; padding:5px 8px; display:inline-flex; align-items:center;">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                 </a>
@@ -2952,7 +2966,7 @@
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="#16a34a"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"/></svg>
                   </a>
                 ` : ''}
-                ${!isAdmin ? `
+                ${!isProtected ? `
                   <button type="button" class="admin-btn-action" title="Kullanıcıyı Sil" style="color:#ef4444; border-color:#fecaca; background:#fef2f2; padding:5px 8px; cursor:pointer; display:inline-flex; align-items:center;" onclick="deleteAdminUser('${u.id}', '${u.email}')">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                   </button>
@@ -3023,6 +3037,59 @@
       a.click();
       document.body.removeChild(a);
       showToast('Kullanıcı listesi CSV olarak indirildi!', 'success');
+    }
+
+    async function toggleAdminUserRole(userId, userEmail, newRole) {
+      const isGranting = newRole === 'admin';
+      const promptMsg = isGranting 
+        ? `"${userEmail}" kullanıcısına Yönetici (Admin) yetkisi vermek istediğinize emin misiniz?` 
+        : `"${userEmail}" kullanıcısının Yönetici yetkisini geri alıp 'Müşteri' rolüne geçirmek istediğinize emin misiniz?`;
+
+      if (!confirm(promptMsg)) {
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/admin/users/update_role', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: userId, email: userEmail, role: newRole })
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+          showToast(result.error || 'Rol güncellenirken bir hata oluştu.', 'error');
+          return;
+        }
+      } catch(e) {
+        console.warn('Backend offline, updating local state:', e);
+      }
+
+      // Update in-memory cached list
+      const target = _cachedUsers.find(u => u.id === userId || (u.email || '').toLowerCase() === (userEmail || '').toLowerCase());
+      if (target) {
+        target.role = newRole;
+      }
+
+      // Persist in localStorage
+      try {
+        let localUsers = JSON.parse(localStorage.getItem('pozitron_users_db') || '[]');
+        const locTarget = localUsers.find(u => u.id === userId || (u.email || '').toLowerCase() === (userEmail || '').toLowerCase());
+        if (locTarget) {
+          locTarget.role = newRole;
+        } else if (target) {
+          localUsers.push(target);
+        }
+        localStorage.setItem('pozitron_users_db', JSON.stringify(localUsers));
+      } catch(e) {}
+
+      // Update Stats
+      const adminsEl = document.getElementById('users-stat-admins');
+      if (adminsEl) {
+        adminsEl.textContent = _cachedUsers.filter(u => u.role === 'admin' || u.role === 'superadmin').length;
+      }
+
+      renderAdminUsersTable(_cachedUsers);
+      showToast(isGranting ? `"${userEmail}" kullanıcısına başarıyla Yönetici yetkisi verildi!` : `"${userEmail}" kullanıcısının Yönetici yetkisi kaldırıldı.`, 'success');
     }
 
     async function deleteAdminUser(userId, userEmail) {
