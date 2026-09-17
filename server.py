@@ -12,8 +12,27 @@ import math
 import base64
 import threading
 from datetime import datetime
-from database import get_db, hash_password
+from database import get_db, init_db, hash_password
+from seed_data import seed_database
 from export_data import export_static_data
+
+# Ensure database tables and initial data exist (Crucial for fresh cloud deployments like Render)
+def ensure_database_ready():
+    try:
+        init_db()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT count(*) FROM products")
+        count = cursor.fetchone()[0]
+        conn.close()
+        if count == 0:
+            print("[INIT] Database empty on fresh deployment. Seeding initial products and categories...")
+            seed_database()
+    except Exception as e:
+        print(f"[INIT] Database setup notice: {e}")
+
+ensure_database_ready()
+
 from instagram_agent.agent import InstagramPRAgent
 from instagram_agent.scheduler import InstagramScheduler
 from instagram_agent.chrome_session import extract_chrome_instagram_cookies

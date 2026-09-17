@@ -2916,10 +2916,12 @@
         }
       } catch(e) {}
 
+      let backendReachable = false;
       // 2. Try backend SQLite API
       try {
         const res = await fetch('/api/admin/users');
         if (res.ok) {
+          backendReachable = true;
           const data = await res.json();
           if (data && Array.isArray(data.users)) {
             users = data.users;
@@ -2927,7 +2929,7 @@
         }
       } catch(e) {}
 
-      // 3. Fallback / Merge with client-side registered database
+      // 3. Fallback / Merge with client-side registered database & sync to backend
       try {
         const localRaw = localStorage.getItem('pozitron_users_db');
         if (localRaw) {
@@ -2936,6 +2938,18 @@
             for (const item of list) {
               if (item && item.email && !users.some(u => u.email.toLowerCase() === item.email.toLowerCase())) {
                 users.push(item);
+                // Synchronize existing local user into the cloud database
+                if (backendReachable) {
+                  fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      email: item.email,
+                      full_name: item.full_name || item.email.split('@')[0],
+                      avatar_url: item.avatar_url
+                    })
+                  }).catch(() => {});
+                }
               }
             }
           }
