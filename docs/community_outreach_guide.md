@@ -49,7 +49,7 @@ Teknofest İHA ve FPV kategorilerinde yarışan ekipler için parça uyumluluğu
 Ayrıca yarışma esnasında acil kırılan veya özel tasarım gerektiren parçalarınız için (GoPro mount, motor koruyucu, anten tutucu) aynı gün kargolu esnek TPU 95A / PETG 3D baskı hizmetimiz de devrede:
 🔗 https://pozitronmarket.com/3d-baski-studio.html
 
-Takım arkadaşlarınızla parça listesi çıkarırken sihirbazın "Paketi Paylaş" özelliğiyle listenizi doğrudan grupta paylaşabilirsiniz. Yarışma hazırlığı yapan öğrenci takımlarına özel destek için doğrudan WhatsApp'tan da yazabilirsiniz: +90 544 245 11 18. Başarılar dileriz!
+Takım arkadaşlarınızla parça listesi çıkarırken sihirbazın "Paketi Paylaş" özelliğiyle listenizi doğrudan grupta paylaşabilirsiniz. Yarışma hazırlığı yapan öğrenci takımlarına özel destek için doğrudan WhatsApp'tan da yazabilirsiniz: +90 542 546 55 62. Başarılar dileriz!
 ```
 
 ---
