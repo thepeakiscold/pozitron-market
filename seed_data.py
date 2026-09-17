@@ -655,20 +655,6 @@ def seed_database():
             "Istanbul",
             "Turkey",
             now.isoformat()
-        ),
-        (
-            "usr_eyup_02",
-            "eyuppekoz@gmail.com",
-            None,
-            "Eyüp Peköz",
-            "https://api.dicebear.com/7.x/bottts/svg?seed=eyuppekoz",
-            "gmail",
-            "admin",
-            "+90 532 999 8877",
-            "Karakoy Rihtim Cad. No: 15",
-            "Istanbul",
-            "Turkey",
-            now.isoformat()
         )
     ]
 

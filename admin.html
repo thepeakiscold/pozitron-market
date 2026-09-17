@@ -1285,7 +1285,6 @@
         'furkaniusprimes@gmail.com',
         'thepeakiscold@gmail.com',
         'eyupfurkanpekoz@gmail.com',
-        'eyuppekoz@gmail.com',
         'pekozfurkan@gmail.com',
         'pozitronmarket@gmail.com',
         'ahmet@pozitron.market'
@@ -2889,7 +2888,8 @@
       'test_pilot@example.com',
       'demo.pilot@gmail.com',
       'drone.tr@gmail.com',
-      'eyup@pozitron.com'
+      'eyup@pozitron.com',
+      'eyuppekoz@gmail.com'
     ];
 
     async function getAdminUsersList() {
@@ -3022,7 +3022,7 @@
         const avatar = getRobotAvatar(u);
         const isGoogle = u.provider === 'google' || u.provider === 'gmail';
         const isAdmin = u.role === 'admin' || u.role === 'superadmin';
-        const isProtected = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'eyuppekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com'].includes((u.email || '').toLowerCase().trim());
+        const isProtected = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com', 'ahmet@pozitron.market'].includes((u.email || '').toLowerCase().trim());
         
         let dateFormatted = '-';
         if (u.created_at) {

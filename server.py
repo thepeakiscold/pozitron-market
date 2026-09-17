@@ -24,6 +24,9 @@ def ensure_database_ready():
         cursor = conn.cursor()
         cursor.execute("SELECT count(*) FROM products")
         count = cursor.fetchone()[0]
+        # Purge legacy removed accounts
+        cursor.execute("DELETE FROM users WHERE LOWER(email) = 'eyuppekoz@gmail.com'")
+        conn.commit()
         conn.close()
         if count == 0:
             print("[INIT] Database empty on fresh deployment. Seeding initial products and categories...")
@@ -1851,11 +1854,11 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 'thepeakiscold@gmail.com',
                 'furkaniusprimes@gmail.com',
                 'eyupfurkanpekoz@gmail.com',
-                'eyuppekoz@gmail.com',
                 'pekozfurkan@gmail.com',
-                'pozitronmarket@gmail.com'
+                'pozitronmarket@gmail.com',
+                'ahmet@pozitron.market'
             ]
-            is_admin_email = any(adm in email for adm in ['furkan', 'eyup', 'thepeak', 'pozitron']) or (email in ADMIN_EMAILS)
+            is_admin_email = (email in ADMIN_EMAILS) or email.endswith('@pozitron.market')
             assigned_role = 'admin' if is_admin_email else 'customer'
 
             cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
@@ -2467,7 +2470,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(400, {"error": "User ID or Email is required"})
                 return
 
-            admin_emails = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'eyuppekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com']
+            admin_emails = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com', 'ahmet@pozitron.market']
             if email in admin_emails:
                 conn.close()
                 self.send_json(403, {"error": "Yönetici Gmail hesabı silinemez."})
@@ -2501,7 +2504,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             # Primary root accounts protected from demotion
-            admin_emails = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'eyuppekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com']
+            admin_emails = ['furkaniusprimes@gmail.com', 'thepeakiscold@gmail.com', 'eyupfurkanpekoz@gmail.com', 'pekozfurkan@gmail.com', 'pozitronmarket@gmail.com', 'ahmet@pozitron.market']
             if new_role != 'admin':
                 cursor.execute("SELECT email FROM users WHERE id = ? OR LOWER(email) = ?", (user_id, email))
                 row = cursor.fetchone()

@@ -1993,7 +1993,6 @@ class PozitronApp {
       'furkaniusprimes@gmail.com',
       'thepeakiscold@gmail.com',
       'eyupfurkanpekoz@gmail.com',
-      'eyuppekoz@gmail.com',
       'pekozfurkan@gmail.com',
       'pozitronmarket@gmail.com',
       'ahmet@pozitron.market'
