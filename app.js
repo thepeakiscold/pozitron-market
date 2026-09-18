@@ -5245,6 +5245,7 @@ window.handleCredentialResponse = function(response) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        credential: response.credential,
         email: existing.email,
         full_name: existing.full_name,
         avatar_url: existing.avatar_url
@@ -5252,6 +5253,9 @@ window.handleCredentialResponse = function(response) {
     }).then(async res => {
       if (res.ok) {
         const data = await res.json();
+        if (data && data.token) {
+          localStorage.setItem('pozitron_token', data.token);
+        }
         if (data && data.user && data.user.role) {
           existing.role = data.user.role;
           localStorage.setItem('pozitron_user', JSON.stringify(existing));

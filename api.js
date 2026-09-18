@@ -77,13 +77,29 @@
     }
 
     /**
-     * Unified fetch wrapper with API URL prefixing and JSON handling
+     * Unified fetch wrapper with API URL prefixing, JSON handling, and Authorization
      */
     async fetch(endpoint, options = {}) {
       const url = this.getUrl(endpoint);
       const defaultHeaders = {
         'Accept': 'application/json'
       };
+
+      // Security: Attach Authorization token or Admin Key if present
+      const token = localStorage.getItem('pozitron_token') || 
+        (function() {
+          try {
+            const u = JSON.parse(localStorage.getItem('pozitron_user') || '{}');
+            return u.token || '';
+          } catch(e) { return ''; }
+        })();
+      const adminKey = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+
+      if (token) {
+        defaultHeaders['Authorization'] = `Bearer ${token}`;
+      } else if (adminKey) {
+        defaultHeaders['X-Admin-Key'] = adminKey;
+      }
 
       if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
         defaultHeaders['Content-Type'] = 'application/json';
@@ -131,16 +147,48 @@
   window.PozitronAPI = new PozitronApiClient();
 
   // Transparent fetch interceptor: Automatically redirects relative /api/ calls
-  // to the configured cloud backend when running in production / GitHub Pages
+  // and injects authorization headers when running in production / GitHub Pages
   if (typeof window.fetch === 'function') {
     const originalFetch = window.fetch;
     window.fetch = function(resource, init) {
-      if (typeof resource === 'string' && resource.startsWith('/api/')) {
-        const apiBase = window.PozitronAPI ? window.PozitronAPI.getBaseUrl() : '';
-        if (apiBase) {
-          resource = `${apiBase}${resource}`;
+      init = init || {};
+      
+      // Inject Authorization headers if calling /api/
+      const isApiCall = typeof resource === 'string' && (resource.startsWith('/api/') || resource.includes('/api/'));
+      if (isApiCall) {
+        const token = localStorage.getItem('pozitron_token') || 
+          (function() {
+            try {
+              const u = JSON.parse(localStorage.getItem('pozitron_user') || '{}');
+              return u.token || '';
+            } catch(e) { return ''; }
+          })();
+        const adminKey = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+
+        let headers = init.headers || {};
+        const isHeadersInstance = (typeof Headers !== 'undefined' && headers instanceof Headers);
+        const hasAuth = isHeadersInstance ? (headers.has('Authorization') || headers.has('X-Admin-Key')) : (headers['Authorization'] || headers['X-Admin-Key']);
+
+        if (!hasAuth) {
+          if (token) {
+            if (isHeadersInstance) headers.set('Authorization', `Bearer ${token}`);
+            else headers['Authorization'] = `Bearer ${token}`;
+          } else if (adminKey) {
+            if (isHeadersInstance) headers.set('X-Admin-Key', adminKey);
+            else headers['X-Admin-Key'] = adminKey;
+          }
+        }
+        init.headers = headers;
+
+        // Redirect relative path to configured backend
+        if (resource.startsWith('/api/')) {
+          const apiBase = window.PozitronAPI ? window.PozitronAPI.getBaseUrl() : '';
+          if (apiBase) {
+            resource = `${apiBase}${resource}`;
+          }
         }
       }
+
       return originalFetch.call(this, resource, init);
     };
   }

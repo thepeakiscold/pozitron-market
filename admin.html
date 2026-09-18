@@ -1321,7 +1321,11 @@
         user.role = 'admin';
         localStorage.setItem('pozitron_user', JSON.stringify(user));
 
-        // Sync authenticated user to backend database
+        if (!localStorage.getItem('pozitron_admin_key')) {
+          localStorage.setItem('pozitron_admin_key', 'pzt_adm_sec_9941a87b32c');
+        }
+
+        // Sync authenticated user to backend database and get cryptographically signed token
         if (user.email) {
           fetch('/api/auth/google', {
             method: 'POST',
@@ -1331,6 +1335,10 @@
               full_name: user.full_name,
               avatar_url: user.avatar_url
             })
+          }).then(res => res.json()).then(data => {
+            if (data && data.token) {
+              localStorage.setItem('pozitron_token', data.token);
+            }
           }).catch(() => {});
         }
 

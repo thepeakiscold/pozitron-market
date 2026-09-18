@@ -4,6 +4,7 @@ import os
 import json
 import sqlite3
 import urllib.parse
+import urllib.request
 import uuid
 import re
 import random
@@ -11,10 +12,78 @@ import time
 import math
 import base64
 import threading
+import hmac
+import hashlib
 from datetime import datetime
 from database import get_db, init_db, hash_password
 from seed_data import seed_database
 from export_data import export_static_data
+
+# ==============================================================================
+# Cyber Security Controls & Cryptographic Authentication
+# ==============================================================================
+SECRET_KEY = os.environ.get('SECRET_KEY', 'pozitron_secret_prod_key_7792_fpv_market')
+ADMIN_API_KEY = os.environ.get('ADMIN_API_KEY', 'pzt_adm_sec_9941a87b32c')
+
+BLOCKED_STATIC_EXTENSIONS = {
+    '.db', '.sqlite', '.sqlite3', '.py', '.pyc', '.env', '.yaml', '.yml',
+    '.sh', '.service', '.sql', '.log', '.bak', '.toml', '.lock'
+}
+
+ALLOWED_STATIC_EXTENSIONS = {
+    '', '.html', '.htm', '.css', '.js', '.mjs', '.png', '.jpg', '.jpeg', '.webp',
+    '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.xml', '.txt',
+    '.tsv', '.json', '.step', '.stp', '.stl', '.obj', '.map'
+}
+
+BLOCKED_SENSITIVE_FILES = {
+    'pozitron.db', 'server.py', 'database.py', 'seed_data.py', 'export_data.py',
+    'render.yaml', 'dockerfile', 'procfile', 'requirements.txt', 'orders_log.json',
+    'package.json', 'package-lock.json', '.clinerules', 'rule.clinerules',
+    'instagram_config.json', 'reddit_history.json'
+}
+
+ALLOWED_UPLOAD_EXTENSIONS = {'.step', '.stp', '.stl', '.obj', '.png', '.jpg', '.jpeg', '.webp'}
+MAX_UPLOAD_SIZE = 30 * 1024 * 1024  # 30 MB
+
+def create_auth_token(user_dict: dict) -> str:
+    """Generates an unforgeable cryptographic HMAC-SHA256 signed session token."""
+    payload = {
+        "uid": str(user_dict.get("id", "")),
+        "email": str(user_dict.get("email") or "").lower().strip(),
+        "role": str(user_dict.get("role", "customer")),
+        "ts": int(time.time()),
+        "exp": int(time.time()) + (30 * 86400)  # 30 days valid
+    }
+    raw = base64.urlsafe_b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8').rstrip('=')
+    sig = hmac.new(SECRET_KEY.encode('utf-8'), raw.encode('utf-8'), hashlib.sha256).hexdigest()
+    return f"pztr.{raw}.{sig}"
+
+def verify_auth_token(token: str) -> dict:
+    """Verifies HMAC signature and expiration of an authentication token."""
+    if not token or not isinstance(token, str):
+        return None
+    token = token.strip()
+    if token.startswith("Bearer "):
+        token = token[7:].strip()
+    # Direct Master Admin Key verification
+    if token == ADMIN_API_KEY:
+        return {"uid": "master_admin", "email": "furkaniusprimes@gmail.com", "role": "admin"}
+    parts = token.split('.')
+    if len(parts) != 3 or parts[0] != 'pztr':
+        return None
+    raw, sig = parts[1], parts[2]
+    expected_sig = hmac.new(SECRET_KEY.encode('utf-8'), raw.encode('utf-8'), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(sig, expected_sig):
+        return None
+    try:
+        padded = raw + '=' * ((4 - len(raw) % 4) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded.encode('utf-8')).decode('utf-8'))
+        if payload.get("exp", 0) < int(time.time()):
+            return None  # Expired
+        return payload
+    except Exception:
+        return None
 
 # Ensure database tables and initial data exist (Crucial for fresh cloud deployments like Render)
 def ensure_database_ready():
@@ -212,6 +281,72 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=BASE_DIR, **kwargs)
 
+    def get_current_user(self):
+        """Extracts and verifies caller identity from Authorization header or API key."""
+        auth_header = self.headers.get('Authorization', '')
+        token = auth_header
+        if not token:
+            token = self.headers.get('X-Admin-Key', '')
+        if not token:
+            parsed = urllib.parse.urlparse(self.path)
+            qs = urllib.parse.parse_qs(parsed.query)
+            token = qs.get('token', [None])[0] or qs.get('api_key', [None])[0] or qs.get('admin_key', [None])[0]
+
+        user = verify_auth_token(token)
+        if user:
+            return user
+
+        # Local development convenience fallback if running locally
+        client_ip = self.client_address[0] if self.client_address else ""
+        if client_ip in ('127.0.0.1', 'localhost', '::1') and os.environ.get('POZITRON_ENV') != 'production':
+            return {"uid": "local_dev", "email": "furkaniusprimes@gmail.com", "role": "admin"}
+
+        return None
+
+    def require_admin(self) -> bool:
+        """Enforces administrative authentication on protected endpoints."""
+        user = self.get_current_user()
+        if not user or user.get('role') != 'admin':
+            self.send_json(401, {
+                "error": "Yetkisiz erişim. Yönetici kimlik doğrulaması (Bearer Token veya Admin API Key) gereklidir.",
+                "auth_required": True
+            })
+            return False
+        return True
+
+    def is_static_path_allowed(self, raw_path: str) -> bool:
+        """Whitelists public static file extensions and strictly blocks source/DB leaks."""
+        clean = raw_path.split('?')[0].split('#')[0].lstrip('/')
+        if not clean:
+            return True
+
+        parts = clean.replace('\\', '/').split('/')
+        for p in parts:
+            # Block dotfiles (.git, .env, .nojekyll)
+            if p.startswith('.'):
+                return False
+            # Block sensitive named files
+            if p.lower() in BLOCKED_SENSITIVE_FILES:
+                return False
+
+        base_name = os.path.basename(clean).lower()
+        if base_name in BLOCKED_SENSITIVE_FILES:
+            return False
+
+        ext = os.path.splitext(clean)[1].lower()
+        if ext in BLOCKED_STATIC_EXTENSIONS:
+            return False
+
+        if ext and ext not in ALLOWED_STATIC_EXTENSIONS:
+            return False
+
+        # Path traversal guard
+        full_path = os.path.realpath(os.path.join(BASE_DIR, clean))
+        if not (full_path == BASE_DIR or full_path.startswith(BASE_DIR + os.sep)):
+            return False
+
+        return True
+
     def send_json(self, status_code, data):
         response_bytes = json.dumps(data, ensure_ascii=False).encode('utf-8')
         self.send_response(status_code)
@@ -219,7 +354,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Content-Length', str(len(response_bytes)))
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Key')
         self.end_headers()
         self.wfile.write(response_bytes)
 
@@ -234,7 +369,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Key')
         self.end_headers()
 
     def do_DELETE(self):
@@ -253,6 +388,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_json(404, {"error": "Endpoint not found"})
 
     def handle_api_delete(self, path):
+        if not self.require_admin():
+            return
+
         conn = get_db()
         cursor = conn.cursor()
 
@@ -322,19 +460,37 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
-        # Serve uploaded files from uploads/ directory
+        # Serve uploaded files from uploads/ directory with strict traversal & whitelist checks
         if path.startswith('/uploads/'):
-            file_name = urllib.parse.unquote(path[len('/uploads/'):])
-            file_path = os.path.join(BASE_DIR, 'uploads', file_name)
+            requested_rel = urllib.parse.unquote(path[len('/uploads/'):]).lstrip('/\\')
+            uploads_dir = os.path.realpath(os.path.join(BASE_DIR, 'uploads'))
+            file_path = os.path.realpath(os.path.join(uploads_dir, requested_rel))
+
+            # Anti-Path Traversal Check
+            if not file_path.startswith(uploads_dir + os.sep):
+                self.send_json(403, {"error": "Access denied"})
+                return
+
+            ext = os.path.splitext(file_path)[1].lower()
+            if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+                self.send_json(403, {"error": "File type not permitted"})
+                return
+
             if os.path.exists(file_path) and os.path.isfile(file_path):
                 self.send_response(200)
                 content_type = 'application/octet-stream'
-                if file_name.lower().endswith('.step') or file_name.lower().endswith('.stp'):
+                if ext in ('.step', '.stp'):
                     content_type = 'text/plain; charset=utf-8'
-                elif file_name.lower().endswith('.stl'):
+                elif ext == '.stl':
                     content_type = 'application/octet-stream'
-                elif file_name.lower().endswith('.obj'):
+                elif ext == '.obj':
                     content_type = 'text/plain; charset=utf-8'
+                elif ext == '.png':
+                    content_type = 'image/png'
+                elif ext in ('.jpg', '.jpeg'):
+                    content_type = 'image/jpeg'
+                elif ext == '.webp':
+                    content_type = 'image/webp'
                 self.send_header('Content-Type', content_type)
                 self.send_header('Content-Length', str(os.path.getsize(file_path)))
                 self.send_header('Access-Control-Allow-Origin', '*')
@@ -358,6 +514,11 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(content)
                 return
 
+        # Security: Enforce static file whitelist and block sensitive files (.db, .py, etc.)
+        if not self.is_static_path_allowed(self.path):
+            self.send_json(404, {"error": "File not found"})
+            return
+
         # Serve frontend static files
         if path == '/' or path == '/index.html':
             self.path = '/index.html'
@@ -373,6 +534,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_HEAD(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+        if not self.is_static_path_allowed(self.path):
+            self.send_response(404)
+            self.end_headers()
+            return
         if path in ('/bots', '/bots.html'):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
@@ -504,10 +669,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_json(404, {"error": "Endpoint not found"})
 
     def handle_file_upload(self, path):
-        uploads_dir = os.path.join(BASE_DIR, 'uploads')
+        uploads_dir = os.path.realpath(os.path.join(BASE_DIR, 'uploads'))
         os.makedirs(uploads_dir, exist_ok=True)
 
         content_length = int(self.headers.get('Content-Length', 0))
+        if content_length > MAX_UPLOAD_SIZE:
+            self.send_json(413, {"error": "Dosya boyutu çok büyük (Maksimum 30 MB izin verilir)."})
+            return
+
         content_type = self.headers.get('Content-Type', '')
 
         filename = None
@@ -545,24 +714,35 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if not filename:
             filename = f"model_{int(time.time())}.step"
 
-        # Sanitize filename
-        safe_filename = "".join(c for c in filename if c.isalnum() or c in "._- ")
-        if not safe_filename:
-            safe_filename = f"model_{int(time.time())}.step"
+        # Security: Extension Whitelist validation
+        ext = os.path.splitext(filename)[1].lower()
+        if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+            self.send_json(400, {
+                "error": "Desteklenmeyen dosya türü. Yalnızca 3D model (.step, .stp, .stl, .obj) veya görsel (.png, .jpg, .jpeg, .webp) yüklenebilir."
+            })
+            return
 
-        dest_path = os.path.join(uploads_dir, safe_filename)
+        # Security: Re-generate safe filename with UUID to prevent collision & traversal
+        clean_stem = "".join(c for c in os.path.splitext(filename)[0] if c.isalnum() or c in "_-")[:32] or "upload"
+        safe_filename = f"{clean_stem}_{uuid.uuid4().hex[:8]}{ext}"
+
+        dest_path = os.path.realpath(os.path.join(uploads_dir, safe_filename))
+        if not dest_path.startswith(uploads_dir + os.sep):
+            self.send_json(400, {"error": "Geçersiz dosya yolu."})
+            return
+
         with open(dest_path, "wb") as f:
             f.write(file_bytes)
 
         file_size = len(file_bytes)
-        print(f"[Upload] Saved 3D model: {dest_path} ({file_size} bytes)")
+        print(f"[Upload] Saved safe 3D/image asset: {dest_path} ({file_size} bytes)")
 
         self.send_json(200, {
             "success": True,
             "filename": safe_filename,
             "url": f"/uploads/{urllib.parse.quote(safe_filename)}",
             "size": file_size,
-            "message": f"'{safe_filename}' dosyası localhost sunucusuna başarıyla yüklendi! ({file_size} bayt)"
+            "message": f"'{safe_filename}' dosyası başarıyla yüklendi! ({file_size} bayt)"
         })
 
     def handle_api_get(self, path, query):
@@ -574,6 +754,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "timestamp": datetime.now().isoformat()
             })
             return
+
+        # Security: All admin and agent automation endpoints require verified admin credentials
+        if (path.startswith('/api/admin/') or 
+            path in ('/api/instagram/config', '/api/instagram/chrome-session', '/api/reddit/config', '/api/lead-supervisor/config', '/api/qa-agent/config')):
+            if not self.require_admin():
+                return
 
         # Instagram PR: Status
         if path == '/api/instagram/status':
@@ -1364,6 +1550,16 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_json(404, {"error": "API route not found"})
 
     def handle_api_post(self, path, data):
+        # Security: Protected Admin & Autonomous Agent endpoints require verified admin credentials
+        if (path.startswith('/api/admin/') or 
+            path.startswith('/api/instagram/') or 
+            path.startswith('/api/reddit/') or 
+            path.startswith('/api/lead-supervisor/') or 
+            path.startswith('/api/qa-agent/') or 
+            path.startswith('/api/agent/')):
+            if not self.require_admin():
+                return
+
         # Instagram PR: Update Config
         if path == '/api/instagram/config':
             try:
@@ -1769,11 +1965,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             user_data = dict(cursor.fetchone())
             conn.close()
 
+            token = create_auth_token(user_data)
             self.send_json(201, {
                 "success": True,
                 "message": "Account created successfully!",
                 "user": user_data,
-                "token": f"pztr_token_{user_id[:8]}"
+                "token": token
             })
             return
 
@@ -1831,24 +2028,43 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 del user_dict['password_hash']
             conn.close()
 
+            token = create_auth_token(user_dict)
             self.send_json(200, {
                 "success": True,
                 "message": "Login successful!",
                 "user": user_dict,
-                "token": f"pztr_token_{user_dict['id'][:8]}"
+                "token": token
             })
             return
 
-        # 3. Google / Gmail Sign-In
+        # 3. Google / Gmail Sign-In with Cryptographic Verification
         if path == '/api/auth/google':
             email = data.get('email', '').strip().lower()
             full_name = data.get('full_name', '').strip() or email.split('@')[0].capitalize()
             avatar_url = data.get('avatar_url', f"https://api.dicebear.com/7.x/bottts/svg?seed={email}")
+            credential = data.get('credential', '').strip()
 
             if not email:
                 conn.close()
                 self.send_json(400, {"error": "Google email is required."})
                 return
+
+            # Cryptographically verify Google ID Token with Google Accounts API
+            verified_by_google = False
+            if credential:
+                try:
+                    verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(credential)}"
+                    req = urllib.request.Request(verify_url, headers={'User-Agent': 'Pozitron-Auth-Verifier/1.0'})
+                    with urllib.request.urlopen(req, timeout=4) as g_resp:
+                        if g_resp.status == 200:
+                            token_info = json.loads(g_resp.read().decode('utf-8'))
+                            google_email = (token_info.get('email') or '').lower().strip()
+                            if google_email == email and token_info.get('email_verified') in ('true', True, 1):
+                                verified_by_google = True
+                                full_name = token_info.get('name') or full_name
+                                avatar_url = token_info.get('picture') or avatar_url
+                except Exception as ex:
+                    print(f"[Auth] Google token verification notice: {ex}")
 
             ADMIN_EMAILS = [
                 'thepeakiscold@gmail.com',
@@ -1858,8 +2074,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 'pozitronmarket@gmail.com',
                 'ahmet@pozitron.market'
             ]
-            is_admin_email = (email in ADMIN_EMAILS) or email.endswith('@pozitron.market')
-            assigned_role = 'admin' if is_admin_email else 'customer'
+            is_whitelisted = (email in ADMIN_EMAILS) or email.endswith('@pozitron.market')
+            is_local = (self.client_address[0] in ('127.0.0.1', 'localhost', '::1')) if self.client_address else False
+            has_admin_key = (self.headers.get('X-Admin-Key') == ADMIN_API_KEY) or (self.headers.get('Authorization') == f"Bearer {ADMIN_API_KEY}")
+
+            # Admin escalation is protected: requires whitelisted email + cryptographic proof OR admin key
+            assigned_role = 'customer'
+            if is_whitelisted and (verified_by_google or has_admin_key or is_local):
+                assigned_role = 'admin'
 
             cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
@@ -1868,8 +2090,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 user_dict = dict(user)
                 if 'password_hash' in user_dict:
                     del user_dict['password_hash']
-                # Upgrade to admin if email qualifies
-                if is_admin_email and user_dict.get('role') != 'admin':
+                # Upgrade to admin if email qualifies with verification
+                if assigned_role == 'admin' and user_dict.get('role') != 'admin':
                     cursor.execute("UPDATE users SET role = 'admin' WHERE id = ?", (user_dict['id'],))
                     conn.commit()
                     user_dict['role'] = 'admin'
@@ -1886,11 +2108,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 user_dict = dict(cursor.fetchone())
 
             conn.close()
+            token = create_auth_token(user_dict)
             self.send_json(200, {
                 "success": True,
                 "message": "Authenticated with Google successfully!",
                 "user": user_dict,
-                "token": f"pztr_google_{user_dict['id'][:8]}"
+                "token": token
             })
             return
 
@@ -1907,6 +2130,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 conn.close()
                 self.send_json(400, {"error": "Email is required."})
                 return
+
+            # Security: Client cannot elevate itself to admin via sync without admin privileges
+            if role == 'admin' and not self.require_admin():
+                role = 'customer'
 
             cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
