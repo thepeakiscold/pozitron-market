@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 from .db import (
     get_agent_config, update_agent_config, save_instagram_post,
     update_instagram_post_status, get_instagram_posts,
-    get_instagram_post_by_id, delete_instagram_post, init_instagram_tables
+    get_instagram_post_by_id, delete_instagram_post, init_instagram_tables,
+    get_last_post_image_mode
 )
 from .content_generator import ContentGenerator
 from .image_generator import ImageGenerator
@@ -155,10 +156,14 @@ class InstagramPRAgent:
 
         print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Yeni gönderi hazırlandı: {content['title']} (Tip: {content['content_type']})")
 
-        # 2. Generate visual banner (1080x1080)
+        # 2. Determine Image Mode (Alternating: canvas vs gemini_image every other post)
+        last_mode = get_last_post_image_mode()
+        target_mode = 'gemini_image' if last_mode != 'gemini_image' else 'canvas'
+
         temp_post_data = {
             'id': post_id,
             'content_type': content['content_type'],
+            'image_mode': target_mode,
             'product_id': content.get('product_id'),
             'title': content['title'],
             'caption': content['caption'],
@@ -168,7 +173,16 @@ class InstagramPRAgent:
             'visual_summary': content.get('visual_summary'),
             'created_at': datetime.now().isoformat()
         }
-        img_rel_path = self.image_gen.generate_post_image(temp_post_data)
+
+        gemini_key = self.config.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY', '')
+
+        if target_mode == 'gemini_image':
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Gemini AI Image modu secildi (Her 2 postta bir). Gorsel uretiliyor...")
+            img_rel_path = self.image_gen.generate_gemini_ai_image(temp_post_data, gemini_api_key=gemini_key)
+        else:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Canvas Banner modu secildi. Gorsel hazirlaniyor...")
+            img_rel_path = self.image_gen.generate_post_image(temp_post_data)
+
         temp_post_data['image_url'] = img_rel_path
         temp_post_data['local_image_path'] = img_rel_path
 

@@ -61,7 +61,28 @@ def export_static_data():
     cursor.execute("SELECT * FROM global_trend_proposals ORDER BY id DESC")
     global_trends = [dict(row) for row in cursor.fetchall()]
 
+    # 8. Settings (System, FX rate, Payment configurations)
+    settings = {}
+    try:
+        cursor.execute("SELECT key, value FROM settings")
+        for r in cursor.fetchall():
+            val = r['value']
+            try:
+                val = float(val) if '.' in val else int(val)
+            except ValueError:
+                pass
+            settings[r['key']] = val
+    except Exception:
+        pass
+
+    if 'usd_rate' not in settings:
+        settings['usd_rate'] = 47.0
+
     conn.close()
+
+    # Save to data/settings.json
+    with open(os.path.join(OUTPUT_DIR, "settings.json"), "w", encoding="utf-8") as f:
+        json.dump(settings, f, ensure_ascii=False, indent=2)
 
     # Save to data/instagram_posts.json
     with open(os.path.join(OUTPUT_DIR, "instagram_posts.json"), "w", encoding="utf-8") as f:
@@ -93,7 +114,9 @@ def export_static_data():
         "brands": brands,
         "products": products,
         "reviews": reviews,
-        "seo_articles": seo_articles[:10]
+        "seo_articles": seo_articles[:10],
+        "settings": settings,
+        "usd_rate": settings.get("usd_rate", 47.0)
     }
 
     with open(os.path.join(OUTPUT_DIR, "pozitron_data.js"), "w", encoding="utf-8") as f:

@@ -1,5 +1,10 @@
 import os
+import io
 import math
+import base64
+import json
+import re
+import urllib.request
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -477,3 +482,218 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             "recommendations": f"{width}x{height} afis cozunurlugu, siber arka plan ve tipografi duzeni basariyla dogrulandi.",
             "model_used": "gemini-3.8-flash-vision-auditor"
         }
+
+    def generate_gemini_ai_image(self, post_data: dict, gemini_api_key: str = None) -> str:
+        """
+        Generates an AI-crafted image for the post using Google Gemini / Imagen models.
+        Overlays Pozitron cyberpunk branding and returns the relative path to the image.
+        """
+        post_id = post_data['id']
+        title = post_data.get('title', 'FPV Drone Donanimi')
+        content_type = post_data.get('content_type', 'product_spotlight')
+        prod = post_data.get('product_data') or {}
+
+        # 1. Construct cinematic English prompt
+        if content_type in ('product_spotlight', 'review_highlight') and prod:
+            prod_name = prod.get('name_en') or prod.get('name_tr') or title
+            brand = prod.get('brand', 'FPV')
+            prompt = (
+                f"A futuristic, ultra-realistic commercial product photograph of {brand} {prod_name}, high-performance FPV racing drone hardware. "
+                "Floating in a dark cyberpunk aerospace laboratory with neon cyan and electric blue circuit accents, carbon fiber textures, "
+                "precision machined titanium details, subtle volumetric atmosphere, dramatic studio rim lighting, razor sharp focus, 8k resolution."
+            )
+        elif content_type == 'pro_tip':
+            prompt = (
+                f"A breathtaking dynamic action photograph of an FPV racing quadcopter carving through an illuminated neon obstacle course at night. "
+                "Motion blur on glowing polycarbonate propellers, aerodynamic contrails, futuristic city skyline background, crisp cinematic lighting, 8k."
+            )
+        else:
+            prompt = (
+                f"A high-tech cinematic workbench of an FPV drone pilot workshop. Carbon fiber drone frame with custom soldering, high-end electronics, "
+                "digital oscilloscope display, holographic telemetry schematics, moody atmospheric cyan and orange lighting, 8k resolution."
+            )
+
+        ai_image = None
+
+        # 2. Call Google Imagen / Gemini Image API if API key is provided
+        if gemini_api_key:
+            # Method A: Google GenAI SDK if installed
+            try:
+                from google import genai
+                from google.genai import types
+                client = genai.Client(api_key=gemini_api_key)
+                response = client.models.generate_images(
+                    model='imagen-3.0-generate-002',
+                    prompt=prompt,
+                    config=types.GenerateImagesConfig(
+                        number_of_images=1,
+                        aspect_ratio="1:1"
+                    )
+                )
+                if response.generated_images and len(response.generated_images) > 0:
+                    img_bytes = response.generated_images[0].image.image_bytes
+                    ai_image = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+            except Exception:
+                pass
+
+            # Method B: Direct REST API call to Google Imagen endpoint
+            if ai_image is None:
+                try:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key={gemini_api_key}"
+                    payload = {
+                        "instances": [{"prompt": prompt}],
+                        "parameters": {
+                            "sampleCount": 1,
+                            "aspectRatio": "1:1",
+                            "outputMimeType": "image/jpeg"
+                        }
+                    }
+                    req = urllib.request.Request(
+                        url,
+                        data=json.dumps(payload).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'}
+                    )
+                    with urllib.request.urlopen(req, timeout=25) as resp:
+                        res_json = json.loads(resp.read().decode('utf-8'))
+                        preds = res_json.get('predictions') or []
+                        if preds and 'bytesBase64Encoded' in preds[0]:
+                            b64_data = preds[0]['bytesBase64Encoded']
+                            img_data = base64.b64decode(b64_data)
+                            ai_image = Image.open(io.BytesIO(img_data)).convert('RGB')
+                except Exception:
+                    pass
+
+        # 3. Procedural AI visual generator if offline, key missing, or error
+        if ai_image is None:
+            ai_image = self._generate_procedural_ai_visual(title, content_type, prod)
+
+        # 4. Guarantee 1080x1080 dimensions
+        ai_image = ai_image.resize((self.width, self.height), Image.Resampling.LANCZOS)
+
+        # 5. Overlay Pozitron Cyber Branding
+        self._overlay_ai_branding(ai_image, post_data)
+
+        # 6. Save image to disk
+        filename = f"{post_id}.jpg"
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        ai_image.save(file_path, 'JPEG', quality=95)
+        return f"./assets/instagram/posts/{filename}"
+
+    def _generate_procedural_ai_visual(self, title: str, content_type: str, prod: dict) -> Image.Image:
+        """
+        Creates an intricate, high-tech procedural AI visual with cyber lighting, glowing grid,
+        and centered hardware component.
+        """
+        base = Image.new('RGB', (self.width, self.height), color=(8, 12, 22))
+        draw = ImageDraw.Draw(base)
+
+        # Deep ambient cyber gradient
+        for y in range(self.height):
+            ratio = y / self.height
+            r = int(8 * (1 - ratio) + 15 * ratio)
+            g = int(12 * (1 - ratio) + 23 * ratio)
+            b = int(24 * (1 - ratio) + 42 * ratio)
+            draw.line([(0, y), (self.width, y)], fill=(r, g, b))
+
+        # Cyan / Blue hexagonal matrix & circuit lines
+        cx, cy = self.width // 2, self.height // 2 - 20
+        for radius in (120, 200, 280, 360, 440):
+            draw.ellipse(
+                [(cx - radius, cy - radius), (cx + radius, cy + radius)],
+                outline=(14, 165, 233),
+                width=1
+            )
+
+        # High-tech radial rays
+        for angle_deg in range(0, 360, 30):
+            rad = math.radians(angle_deg)
+            x1 = cx + int(140 * math.cos(rad))
+            y1 = cy + int(140 * math.sin(rad))
+            x2 = cx + int(480 * math.cos(rad))
+            y2 = cy + int(480 * math.sin(rad))
+            draw.line([(x1, y1), (x2, y2)], fill=(2, 132, 199), width=1)
+
+        # Load product image if available
+        prod_img = None
+        if prod and prod.get('image_url'):
+            local_p = prod.get('image_url', '').lstrip('/')
+            abs_p = os.path.join(BASE_DIR, local_p)
+            prod_img = _load_product_image(abs_p)
+
+        if prod_img:
+            # Center and place product with subtle glow
+            prod_img.thumbnail((560, 560), Image.Resampling.LANCZOS)
+            px = cx - prod_img.width // 2
+            py = cy - prod_img.height // 2
+            
+            # Glow circle behind product
+            glow = Image.new('RGBA', (self.width, self.height), (0, 0, 0, 0))
+            gdraw = ImageDraw.Draw(glow)
+            gdraw.ellipse([(cx - 260, cy - 260), (cx + 260, cy + 260)], fill=(2, 132, 199, 70))
+            glow = glow.filter(ImageFilter.GaussianBlur(40))
+            base.paste(glow, (0, 0), glow)
+
+            base.paste(prod_img, (px, py), prod_img if prod_img.mode == 'RGBA' else None)
+        else:
+            # Stylized Quadcopter Drone Frame Vector
+            draw.line([(cx - 200, cy - 200), (cx + 200, cy + 200)], fill=(56, 189, 248), width=5)
+            draw.line([(cx - 200, cy + 200), (cx + 200, cy - 200)], fill=(56, 189, 248), width=5)
+            # Motor Bells
+            for mx, my in [(cx - 200, cy - 200), (cx + 200, cy - 200), (cx - 200, cy + 200), (cx + 200, cy + 200)]:
+                draw.ellipse([(mx - 35, my - 35), (mx + 35, my + 35)], fill=(15, 23, 42), outline=(14, 165, 233), width=3)
+                draw.ellipse([(mx - 15, my - 15), (mx + 15, my + 15)], fill=(2, 132, 199))
+            # Center Core
+            draw.rectangle([(cx - 65, cy - 50), (cx + 65, cy + 50)], fill=(15, 23, 42), outline=(56, 189, 248), width=3)
+            # Center Optics Camera
+            draw.ellipse([(cx - 20, cy - 60), (cx + 20, cy - 20)], fill=(234, 179, 8), outline=(255, 255, 255), width=2)
+
+        return base
+
+    def _overlay_ai_branding(self, img: Image.Image, post_data: dict):
+        """Overlays cyberpunk header and footer branding on the AI generated image."""
+        draw = ImageDraw.Draw(img)
+
+        # 1. Top Bar Overlay (semi-transparent glassmorphic band)
+        header_bar = Image.new('RGBA', (self.width, 100), (8, 12, 22, 210))
+        img.paste(header_bar, (0, 0), header_bar)
+
+        font_brand = get_font(24, bold=True)
+        font_sub = get_font(16, bold=False)
+
+        # Brand Pill Badge
+        draw.rounded_rectangle([(30, 24), (380, 76)], radius=12, fill=(2, 132, 199), outline=(56, 189, 248), width=2)
+        draw.text((45, 36), "POZITRON MARKET", fill=(255, 255, 255), font=font_brand)
+
+        # AI Badge Right
+        draw.rounded_rectangle([(self.width - 320, 24), (self.width - 30, 76)], radius=12, fill=(15, 23, 42), outline=(14, 165, 233), width=2)
+        draw.text((self.width - 305, 38), "AI FPV VISUAL", fill=(56, 189, 248), font=font_brand)
+
+        # 2. Bottom Bar Overlay (Title and Call to Action)
+        footer_height = 200
+        footer_bar = Image.new('RGBA', (self.width, footer_height), (8, 12, 22, 230))
+        img.paste(footer_bar, (0, self.height - footer_height), footer_bar)
+
+        # Subtle neon dividing line
+        draw.line([(0, self.height - footer_height), (self.width, self.height - footer_height)], fill=(2, 132, 199), width=3)
+
+        title = clean_canvas_text(post_data.get('title', 'Pozitron Market FPV Donanim'))
+        font_title = get_font(30, bold=True)
+        font_footer_sub = get_font(20, bold=False)
+
+        # Draw truncated title
+        if len(title) > 55:
+            title = title[:52] + "..."
+        draw.text((40, self.height - footer_height + 25), title, fill=(255, 255, 255), font=font_title)
+
+        prod = post_data.get('product_data') or {}
+        if prod and prod.get('price_try'):
+            price_str = f"{float(prod['price_try']):.2f} TL"
+            draw.text((40, self.height - footer_height + 75), f"Fiyat: {price_str}", fill=(74, 222, 128), font=font_brand)
+
+        # Domain / CTA Subtitle
+        draw.text(
+            (40, self.height - 50),
+            "pozitronmarket.com | Turkiye'nin FPV Drone ve Robotik Merkezi",
+            fill=(148, 163, 184),
+            font=font_footer_sub
+        )

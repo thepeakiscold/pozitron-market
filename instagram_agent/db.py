@@ -111,10 +111,17 @@ def init_instagram_tables():
             scheduled_at TEXT,
             published_at TEXT,
             metadata_json TEXT,
+            image_mode TEXT DEFAULT 'canvas', -- 'canvas' or 'gemini_image'
             created_at TEXT NOT NULL,
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
         )
     ''')
+
+    # Migration: Ensure image_mode exists
+    cursor.execute("PRAGMA table_info(instagram_posts)")
+    ig_cols = [c[1] for c in cursor.fetchall()]
+    if 'image_mode' not in ig_cols:
+        cursor.execute("ALTER TABLE instagram_posts ADD COLUMN image_mode TEXT DEFAULT 'canvas'")
 
     # Seed from data/instagram_posts.json if present
     sync_posts_from_json(cursor)
@@ -197,8 +204,8 @@ def save_instagram_post(post_data: dict):
         INSERT OR REPLACE INTO instagram_posts (
             id, content_type, product_id, title, caption, hashtags,
             image_url, local_image_path, status, ig_media_id, ig_permalink,
-            error_message, scheduled_at, published_at, metadata_json, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            error_message, scheduled_at, published_at, metadata_json, image_mode, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         post_data['id'],
         post_data.get('content_type', 'product_spotlight'),
@@ -214,12 +221,24 @@ def save_instagram_post(post_data: dict):
         post_data.get('error_message'),
         post_data.get('scheduled_at'),
         post_data.get('published_at'),
-        json.dumps(post_data.get('metadata', {}), ensure_ascii=False),
+        json.dumps(post_data.get('metadata', {}), ensure_ascii=False) if isinstance(post_data.get('metadata'), dict) else post_data.get('metadata_json', '{}'),
+        post_data.get('image_mode', 'canvas'),
         post_data.get('created_at', datetime.now().isoformat())
     ))
     conn.commit()
     conn.close()
     sync_posts_to_json()
+
+def get_last_post_image_mode() -> str:
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT image_mode FROM instagram_posts WHERE status IN ('published', 'draft', 'scheduled') ORDER BY created_at DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    if row and row[0]:
+        return row[0]
+    return 'canvas'
 
 def update_instagram_post_status(post_id: str, status: str, ig_media_id: str = None, ig_permalink: str = None, error_message: str = None, published_at: str = None):
     conn = get_db()

@@ -297,9 +297,99 @@ def init_db():
         )
     ''')
 
+    # Settings Table (System, FX, Payment, 3D Print Configurations)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    ''')
+
+    # Seed default settings if not exists
+    default_settings = [
+        ('usd_rate', '47.0'),
+        ('site_name', 'Pozitron Market'),
+        ('support_email', 'destek@pozitronmarket.com'),
+        ('bank_owner', 'Burak Peköz'),
+        ('bank_iban', 'TR41 0020 5000 0908 0479 3000 01'),
+        ('bank_name', 'Kuveyt Türk Katılım Bankası (7/24 FAST)'),
+        ('3d_setup_fee', '50.0'),
+        ('3d_price_pla', '1.50'),
+        ('3d_price_petg', '2.00'),
+        ('3d_price_tpu', '3.50'),
+        ('3d_price_abs', '2.25'),
+        ('3d_price_asa', '2.50'),
+        ('3d_price_pa6', '5.00')
+    ]
+    for k, v in default_settings:
+        cursor.execute("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)",
+                       (k, v, datetime.now().isoformat()))
+
+    # Migration: Ensure image_mode column exists on instagram_posts
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='instagram_posts'")
+    if cursor.fetchone():
+        cursor.execute("PRAGMA table_info(instagram_posts)")
+        ig_cols = [c[1] for c in cursor.fetchall()]
+        if 'image_mode' not in ig_cols:
+            cursor.execute("ALTER TABLE instagram_posts ADD COLUMN image_mode TEXT DEFAULT 'canvas'")
+
     conn.commit()
     conn.close()
     print("Database initialized successfully.")
+
+def get_setting(key: str, default=None):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT value FROM settings WHERE key = ?", (key,))
+        row = cursor.fetchone()
+        conn.close()
+        if row is not None:
+            val = row[0]
+            try:
+                return float(val) if '.' in val else int(val)
+            except ValueError:
+                return val
+    except Exception:
+        pass
+    return default
+
+def set_setting(key: str, value) -> bool:
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        now_str = datetime.now().isoformat()
+        cursor.execute('''
+            INSERT INTO settings (key, value, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+        ''', (key, str(value), now_str))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error setting {key}: {e}")
+        return False
+
+def get_all_settings() -> dict:
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT key, value FROM settings")
+        rows = cursor.fetchall()
+        conn.close()
+        res = {}
+        for r in rows:
+            val = r['value']
+            try:
+                val = float(val) if '.' in val else int(val)
+            except ValueError:
+                pass
+            res[r['key']] = val
+        return res
+    except Exception:
+        return {}
 
 def hash_password(password: str) -> str:
     salt = "pozitron_fpv_salt_2026"
@@ -307,3 +397,4 @@ def hash_password(password: str) -> str:
 
 if __name__ == '__main__':
     init_db()
+

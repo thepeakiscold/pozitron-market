@@ -59,13 +59,16 @@ class PozitronApp {
     };
 
     this.pendingOrderData = null;
+    this.usdRate = parseFloat(localStorage.getItem('pozitron_usd_rate')) || 
+      (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 47.0);
 
     this.init();
   }
 
   async init() {
-    // 0. Initialize User Database
+    // 0. Initialize User Database & Currency Rate
     this.initUserDatabase();
+    await this.loadCurrencyRate();
 
     // 1. Initialize i18n
     window.i18n.updateDom();
@@ -1939,7 +1942,39 @@ class PozitronApp {
   }
 
 
-  openOrdersModal() {
+  async loadCurrencyRate() {
+    try {
+      const res = await fetch('/api/settings');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.usd_rate) {
+          const rate = parseFloat(data.usd_rate);
+          if (!isNaN(rate) && rate > 0) {
+            this.usdRate = rate;
+            localStorage.setItem('pozitron_usd_rate', rate.toString());
+            return;
+          }
+        }
+      }
+    } catch(e) {}
+
+    try {
+      const res2 = await fetch('/api/currency-rate');
+      if (res2.ok) {
+        const data2 = await res2.json();
+        if (data2 && data2.usd_rate) {
+          const rate = parseFloat(data2.usd_rate);
+          if (!isNaN(rate) && rate > 0) {
+            this.usdRate = rate;
+            localStorage.setItem('pozitron_usd_rate', rate.toString());
+            return;
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  async openOrdersModal() {
     const drop = document.getElementById('user-dropdown-menu');
     if (drop) drop.style.display = 'none';
 
@@ -1947,7 +1982,32 @@ class PozitronApp {
     const body = document.getElementById('orders-modal-body');
     if (!modal || !body) return;
 
-    const orders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
+    modal.style.display = 'flex';
+    body.innerHTML = '<div style="text-align:center; padding:32px 16px; color:var(--text-muted);">Siparişleriniz yükleniyor...</div>';
+
+    let orders = [];
+    try {
+      orders = JSON.parse(localStorage.getItem('pozitron_orders') || '[]');
+    } catch(e) {
+      orders = [];
+    }
+
+    // Try fetching live orders from API if user is logged in
+    const currentUser = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
+    if (currentUser && (currentUser.email || currentUser.id)) {
+      try {
+        const qUrl = currentUser.email ? `/api/orders?email=${encodeURIComponent(currentUser.email)}` : `/api/orders/user/${encodeURIComponent(currentUser.id)}`;
+        const res = await fetch(qUrl);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.orders) && data.orders.length > 0) {
+            const existingNums = new Set(data.orders.map(o => o.order_number || o.id));
+            orders = data.orders.concat(orders.filter(o => !existingNums.has(o.order_number || o.id)));
+          }
+        }
+      } catch(err) {}
+    }
+
     if (orders.length === 0) {
       body.innerHTML = `
         <div style="text-align:center; padding:32px 16px;">
@@ -1959,23 +2019,33 @@ class PozitronApp {
         </div>
       `;
     } else {
-      body.innerHTML = orders.map(ord => `
-        <div style="border:1px solid var(--border-subtle); border-radius:10px; padding:14px 16px; margin-bottom:12px; background:var(--bg-secondary);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <strong style="color:var(--brand-primary); font-size:0.92rem;">${ord.order_number}</strong>
-            <span style="font-size:0.78rem; background:#dcfce7; color:#16a34a; padding:3px 8px; border-radius:6px; font-weight:600;">Hazırlanıyor / Kargoda</span>
-          </div>
-          <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.6;">
-            <div><strong>Kargo Takip:</strong> ${ord.tracking_number}</div>
-            <div><strong>Tarih:</strong> ${new Date(ord.created_at || Date.now()).toLocaleDateString('tr-TR')}</div>
-            <div><strong>Teslimat:</strong> ${this.escapeHTML(ord.shipping_address || 'İstanbul / Turkey')}</div>
-            <div><strong>Toplam:</strong> <span style="color:var(--brand-primary); font-weight:700;">${this.formatPrice(ord.total_usd, ord.total_try)}</span></div>
-          </div>
-        </div>
-      `).join('');
-    }
+      body.innerHTML = orders.map(ord => {
+        const st = (ord.status || ord.order_status || 'CONFIRMED').toUpperCase();
+        let badgeHtml = '<span style="font-size:0.78rem; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px; font-weight:600;">● Onaylandı</span>';
+        if (st === 'SHIPPED' || st === 'KARGODA') {
+          badgeHtml = '<span style="font-size:0.78rem; background:#ffedd5; color:#c2410c; padding:3px 8px; border-radius:6px; font-weight:600;">🚚 Kargoya Verildi</span>';
+        } else if (st === 'DELIVERED' || st === 'TESLİM EDİLDİ') {
+          badgeHtml = '<span style="font-size:0.78rem; background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-weight:600;">✅ Teslim Edildi</span>';
+        } else if (st === 'CANCELLED' || st === 'İPTAL') {
+          badgeHtml = '<span style="font-size:0.78rem; background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:6px; font-weight:600;">✕ İptal Edildi</span>';
+        }
 
-    modal.style.display = 'flex';
+        return `
+          <div style="border:1px solid var(--border-subtle); border-radius:10px; padding:14px 16px; margin-bottom:12px; background:var(--bg-secondary);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong style="color:var(--brand-primary); font-size:0.92rem;">${ord.order_number || ord.id}</strong>
+              ${badgeHtml}
+            </div>
+            <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.6;">
+              <div><strong>Kargo Takip:</strong> ${ord.tracking_number || '-'}</div>
+              <div><strong>Tarih:</strong> ${new Date(ord.created_at || Date.now()).toLocaleDateString('tr-TR')}</div>
+              <div><strong>Teslimat:</strong> ${this.escapeHTML(ord.shipping_address || 'İstanbul / Turkey')}</div>
+              <div><strong>Toplam:</strong> <span style="color:var(--brand-primary); font-weight:700;">${this.formatPrice(ord.total_usd, ord.total_try)}</span></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
   }
 
   closeOrdersModal() {

@@ -15,7 +15,7 @@ import threading
 import hmac
 import hashlib
 from datetime import datetime
-from database import get_db, init_db, hash_password
+from database import get_db, init_db, hash_password, get_setting, set_setting, get_all_settings
 from seed_data import seed_database
 from export_data import export_static_data
 
@@ -757,6 +757,20 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
+        # Settings & Currency Rate Endpoints
+        if path == '/api/settings':
+            self.send_json(200, get_all_settings())
+            return
+
+        if path in ('/api/currency-rate', '/api/currency'):
+            rate = get_setting('usd_rate', 47.0)
+            self.send_json(200, {
+                "usd_rate": rate,
+                "currency": "TRY",
+                "base": "USD"
+            })
+            return
+
         # Security: All admin and agent automation endpoints require verified admin credentials
         if (path.startswith('/api/admin/') or 
             path in ('/api/instagram/config', '/api/instagram/chrome-session', '/api/reddit/config', '/api/lead-supervisor/config', '/api/qa-agent/config')):
@@ -1467,7 +1481,29 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
-        # 5. Order lookup: /api/orders/<order_number>
+        # 5. Orders Query / List: /api/orders (supports ?email=... or ?user_id=...)
+        if path == '/api/orders':
+            user_id = query.get('user_id', [''])[0].strip()
+            email = query.get('email', [''])[0].strip().lower()
+            if user_id or email:
+                cursor.execute("SELECT * FROM orders WHERE (user_id = ? AND ? != '') OR (LOWER(customer_email) = ? AND ? != '') ORDER BY created_at DESC",
+                               (user_id, user_id, email, email))
+            else:
+                cursor.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT 50")
+            orders = []
+            for r in cursor.fetchall():
+                od = dict(r)
+                try:
+                    od['items'] = json.loads(od['items_json'])
+                except:
+                    od['items'] = []
+                od['status'] = od.get('order_status') or od.get('status') or 'CONFIRMED'
+                orders.append(od)
+            conn.close()
+            self.send_json(200, {"orders": orders})
+            return
+
+        # 5b. Order lookup: /api/orders/<order_number>
         order_match = re.match(r'^/api/orders/([a-zA-Z0-9_-]+)$', path)
         if order_match:
             order_num = order_match.group(1)
@@ -1478,7 +1514,11 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(404, {"error": "Order not found"})
                 return
             od = dict(order)
-            od['items'] = json.loads(od['items_json'])
+            try:
+                od['items'] = json.loads(od['items_json'])
+            except:
+                od['items'] = []
+            od['status'] = od.get('order_status') or od.get('status') or 'CONFIRMED'
             self.send_json(200, {"order": od})
             return
 
@@ -1490,7 +1530,11 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             orders = []
             for r in cursor.fetchall():
                 od = dict(r)
-                od['items'] = json.loads(od['items_json'])
+                try:
+                    od['items'] = json.loads(od['items_json'])
+                except:
+                    od['items'] = []
+                od['status'] = od.get('order_status') or od.get('status') or 'CONFIRMED'
                 orders.append(od)
             conn.close()
             self.send_json(200, {"orders": orders})
@@ -1506,6 +1550,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     od['items'] = json.loads(od['items_json'])
                 except:
                     od['items'] = []
+                od['status'] = od.get('order_status') or od.get('status') or 'CONFIRMED'
                 orders.append(od)
             conn.close()
             self.send_json(200, {"orders": orders})
@@ -2492,7 +2537,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             price_usd = float(data.get('price_usd', curr['price_usd']))
             price_try = float(data.get('price_try', curr['price_try']))
             if 'price_usd' in data and 'price_try' not in data:
-                price_try = round(price_usd * 47.0, 2)
+                price_try = round(price_usd * get_setting('usd_rate', 47.0), 2)
 
             orig_price_usd = float(data['original_price_usd']) if data.get('original_price_usd') is not None and data['original_price_usd'] != '' else curr['original_price_usd']
             orig_price_try = float(data['original_price_try']) if data.get('original_price_try') is not None and data['original_price_try'] != '' else curr['original_price_try']
@@ -2600,7 +2645,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 ''', [disc_val] + prod_ids)
 
             elif action == 'currency_sync':
-                rate = float(value) if value else 47.0
+                rate = float(value) if value else get_setting('usd_rate', 47.0)
                 cursor.execute(f'''
                     UPDATE products
                     SET price_try = ROUND(price_usd * ?, 2),
@@ -2625,7 +2670,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             category_id = data.get('category_id', 'motors')
             brand = data.get('brand', 'Pozitron')
             price_usd = float(data.get('price_usd', 29.99))
-            price_try = float(data.get('price_try', round(price_usd * 47.0, 2)))
+            active_rate = get_setting('usd_rate', 47.0)
+            price_try = float(data.get('price_try', round(price_usd * active_rate, 2)))
             stock = max(0, int(data.get('stock', 50)))
             badge = data.get('badge', 'NEW')
             image_url = data.get('image_url', 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80')
@@ -2769,6 +2815,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         # 12. Admin: Currency Sync across catalog
         if path == '/api/admin/currency-sync':
             rate = float(data.get('usd_rate', 47.0))
+            set_setting('usd_rate', rate)
+
             cat = data.get('category_id')
             brand = data.get('brand')
 
@@ -2794,6 +2842,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             count = cursor.rowcount
             conn.close()
 
+            # Automatically export static data so JSON/JS catalog bundles are synced
+            try:
+                export_static_data()
+            except Exception as e:
+                print(f"[UYARI] Currency sync export hatasi: {e}")
+
             self.send_json(200, {
                 "success": True,
                 "usd_rate": rate,
@@ -2801,7 +2855,103 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
-        # 13. Admin: Export to static data files
+        # 13. Settings Update (USD Rate, Bank, 3D Print, etc.)
+        if path == '/api/settings':
+            conn.close()
+            for k, v in data.items():
+                set_setting(k, v)
+            if 'usd_rate' in data:
+                try:
+                    export_static_data()
+                except Exception:
+                    pass
+            self.send_json(200, {
+                "success": True,
+                "message": "Ayarlar basariyla kaydedildi.",
+                "settings": get_all_settings()
+            })
+            return
+
+        # 14. Admin: Orders Status & Tracking Update
+        if path == '/api/admin/orders/update':
+            order_id = data.get('id') or data.get('order_number')
+            new_status = data.get('status')
+            tracking_number = data.get('tracking_number')
+
+            if not order_id:
+                conn.close()
+                self.send_json(400, {"error": "Order ID or order_number is required"})
+                return
+
+            cursor.execute('''
+                UPDATE orders
+                SET order_status = COALESCE(?, order_status),
+                    tracking_number = COALESCE(?, tracking_number)
+                WHERE id = ? OR order_number = ?
+            ''', (new_status, tracking_number, order_id, order_id))
+            conn.commit()
+            affected = cursor.rowcount
+
+            cursor.execute("SELECT * FROM orders WHERE id = ? OR order_number = ?", (order_id, order_id))
+            ord_row = cursor.fetchone()
+            conn.close()
+
+            self.send_json(200, {
+                "success": True,
+                "message": "Siparis durumu basariyla guncellendi.",
+                "updated": affected > 0,
+                "order": dict(ord_row) if ord_row else None
+            })
+            return
+
+        # 15. Admin: Create New User / Customer
+        if path == '/api/admin/users/create':
+            email = (data.get('email') or '').lower().strip()
+            full_name = data.get('full_name', '').strip()
+            role = data.get('role', 'customer').strip().lower()
+            password = data.get('password', 'pozitron2026')
+            phone = data.get('phone', '')
+            city = data.get('city', 'Istanbul')
+
+            if not email or not full_name:
+                conn.close()
+                self.send_json(400, {"error": "E-posta ve ad soyad zorunludur."})
+                return
+
+            cursor.execute("SELECT id FROM users WHERE LOWER(email) = ?", (email,))
+            if cursor.fetchone():
+                conn.close()
+                self.send_json(409, {"error": "Bu e-posta adresiyle kayitli bir kullanici zaten mevcut."})
+                return
+
+            user_id = f"usr_{uuid.uuid4().hex[:10]}"
+            now_iso = datetime.now().isoformat()
+            p_hash = hash_password(password)
+
+            cursor.execute('''
+                INSERT INTO users (id, email, password_hash, full_name, role, phone, city, provider, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'manual', ?)
+            ''', (user_id, email, p_hash, full_name, role, phone, city, now_iso))
+            conn.commit()
+            conn.close()
+
+            self.send_json(201, {
+                "success": True,
+                "message": "Kullanici basariyla olusturuldu.",
+                "user": {
+                    "id": user_id,
+                    "email": email,
+                    "full_name": full_name,
+                    "role": role,
+                    "phone": phone,
+                    "city": city,
+                    "provider": "manual",
+                    "created_at": now_iso
+                }
+            })
+            return
+
+        # 16. Admin: Export to static data files
         if path == '/api/admin/sync-export':
             conn.close()
             try:

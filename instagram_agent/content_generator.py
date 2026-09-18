@@ -295,6 +295,8 @@ class ContentGenerator:
         db_titles = set(get_recent_posted_titles(limit=40))
         all_recent_titles = db_titles.union(set(self._session_recent_titles[-30:]))
 
+        explicit_type = content_type if (content_type and content_type in valid_types) else None
+
         # 1. Smart Pillar Selection (prevent consecutive identical types, focus on catalog products)
         if not content_type or content_type not in valid_types:
             candidate_types = [t for t in valid_types if not (recent_types and t == recent_types[0])]
@@ -316,27 +318,30 @@ class ContentGenerator:
         # 2. Multi-attempt anti-duplicate generation loop
         content = None
         for attempt in range(5):
-            if content_type == 'product_spotlight':
+            cur_type = explicit_type or content_type
+            if cur_type == 'product_spotlight':
                 content = self._generate_product_spotlight(product_id)
-            elif content_type == 'tool_showcase':
+            elif cur_type == 'tool_showcase':
                 content = self._generate_tool_showcase()
-            elif content_type == 'deal_drop':
+            elif cur_type == 'deal_drop':
                 content = self._generate_deal_drop()
-            elif content_type == 'pilot_tip':
+            elif cur_type == 'pilot_tip':
                 content = self._generate_pilot_tip()
-            elif content_type == 'seo_article':
+            elif cur_type == 'seo_article':
                 content = self._generate_seo_article()
-            elif content_type == 'review_highlight':
+            elif cur_type == 'review_highlight':
                 content = self._generate_review_highlight()
             else:
                 content = self._generate_product_spotlight(product_id)
 
-            if content and content.get('title') and content.get('title') not in all_recent_titles:
-                break
+            if content and content.get('title'):
+                if content.get('title') not in all_recent_titles or explicit_type:
+                    break
             
-            # If candidate was recently posted, try another category or pillar
-            content_type = 'product_spotlight'
-            product_id = None
+            # If candidate was recently posted and not explicitly requested, try another category or pillar
+            if not explicit_type:
+                content_type = 'product_spotlight'
+                product_id = None
 
         if content:
             self._session_recent_titles.append(content['title'])

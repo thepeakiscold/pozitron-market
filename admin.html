@@ -602,6 +602,10 @@
             <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Platformunuza kayıt olmuş tüm pilotlar, yöneticiler ve Google OAuth ile giriş yapan müşteriler.</p>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
+            <button type="button" class="admin-btn-primary" onclick="openAddUserModal()" style="display:flex; align-items:center; gap:6px; background:#0284c7; border-color:#0284c7;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Yeni Kullanıcı Ekle</span>
+            </button>
             <button type="button" class="admin-btn-secondary" onclick="exportUsersToCSV()" style="display:flex; align-items:center; gap:6px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               <span>CSV İndir</span>
@@ -951,7 +955,7 @@
       <button type="button" class="bulk-btn" onclick="executeBulkAction('stock_increment', -5)">-5 Stok</button>
       <button type="button" class="bulk-btn" onclick="executeBulkAction('price_percent', 10)">+%10 Fiyat</button>
       <button type="button" class="bulk-btn" onclick="executeBulkAction('discount_set', 15)">%15 İndirim</button>
-      <button type="button" class="bulk-btn" onclick="executeBulkAction('currency_sync', 47.0)">Kurla Eşitle</button>
+      <button type="button" class="bulk-btn" onclick="executeBulkAction('currency_sync')">Kurla Eşitle</button>
       <button type="button" class="bulk-btn" style="background:#ef4444;" onclick="executeBulkDelete()">Seçilenleri Sil</button>
       <button type="button" class="bulk-btn" style="background:transparent; border:1px solid rgba(255,255,255,0.4);" onclick="clearAllSelection()">✕</button>
     </div>
@@ -1022,6 +1026,58 @@
         <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
           <button type="button" class="admin-btn-secondary" onclick="closeEditModal()">İptal</button>
           <button type="submit" class="admin-btn-primary">💾 Güncellemeleri Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add User Modal -->
+  <div class="modal-backdrop" id="add-user-modal-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:var(--radius-lg); width:95%; max-width:550px; max-height:90vh; overflow-y:auto; padding:28px; box-shadow:var(--shadow-lg);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+        <h3 style="font-size:1.25rem; font-weight:700; color:#0f172a; margin:0;">👤 Yeni Kullanıcı Ekle</h3>
+        <button type="button" onclick="closeAddUserModal()" style="font-size:1.5rem; color:#64748b; cursor:pointer; background:none; border:none; line-height:1;">&times;</button>
+      </div>
+
+      <form id="add-user-form" onsubmit="handleAddUserModal(event)">
+        <div class="admin-form-group" style="margin-bottom:14px;">
+          <label for="new-user-fullname" style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block;">Ad Soyad</label>
+          <input type="text" id="new-user-fullname" required placeholder="Örn: Ahmet Yılmaz" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+
+        <div class="admin-form-group" style="margin-bottom:14px;">
+          <label for="new-user-email" style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block;">E-Posta Adresi</label>
+          <input type="email" id="new-user-email" required placeholder="ahmet@example.com" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+        </div>
+
+        <div class="admin-form-row" style="display:flex; gap:12px; margin-bottom:14px;">
+          <div class="admin-form-group" style="flex:1;">
+            <label for="new-user-role" style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block;">Kullanıcı Rolü</label>
+            <select id="new-user-role" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+              <option value="customer">Müşteri / Pilot</option>
+              <option value="admin">Yönetici (Admin)</option>
+            </select>
+          </div>
+          <div class="admin-form-group" style="flex:1;">
+            <label for="new-user-city" style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block;">Şehir</label>
+            <input type="text" id="new-user-city" placeholder="İstanbul" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+          </div>
+        </div>
+
+        <div class="admin-form-row" style="display:flex; gap:12px; margin-bottom:20px;">
+          <div class="admin-form-group" style="flex:1;">
+            <label for="new-user-phone" style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block;">Telefon Numarası</label>
+            <input type="tel" id="new-user-phone" placeholder="0532 000 00 00" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+          </div>
+          <div class="admin-form-group" style="flex:1;">
+            <label for="new-user-password" style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block;">Başlangıç Şifresi</label>
+            <input type="text" id="new-user-password" value="pozitron2026" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+          <button type="button" class="admin-btn-secondary" onclick="closeAddUserModal()">İptal</button>
+          <button type="submit" class="admin-btn-primary" style="background:#0284c7; border-color:#0284c7;">➕ Kullanıcıyı Kaydet</button>
         </div>
       </form>
     </div>
@@ -1156,9 +1212,63 @@
     let selectedProductIds = new Set();
     let categoriesList = [];
     let brandsList = [];
-    let currentUsdRate = 47.0;
+    let currentUsdRate = parseFloat(localStorage.getItem('pozitron_usd_rate')) || 47.0;
 
-    // Robot Illustration Avatar Generator (Dicebear Bottts)
+    function applyCurrencyRateToUI(rate) {
+      currentUsdRate = rate;
+      const headerEl = document.getElementById('header-usd-rate');
+      if (headerEl) headerEl.textContent = rate.toFixed(2) + ' ₺';
+      const bulkInput = document.getElementById('bulk-usd-rate');
+      if (bulkInput && document.activeElement !== bulkInput) {
+        bulkInput.value = rate.toFixed(1);
+      }
+    }
+
+    async function loadAdminCurrencyRate() {
+      let rate = currentUsdRate;
+      const cached = localStorage.getItem('pozitron_usd_rate');
+      if (cached) {
+        const parsed = parseFloat(cached);
+        if (!isNaN(parsed) && parsed > 0) rate = parsed;
+      }
+      applyCurrencyRateToUI(rate);
+
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const s = await res.json();
+          if (s && s.usd_rate) {
+            const serverRate = parseFloat(s.usd_rate);
+            if (!isNaN(serverRate) && serverRate > 0) {
+              rate = serverRate;
+              localStorage.setItem('pozitron_usd_rate', rate.toString());
+              applyCurrencyRateToUI(rate);
+            }
+          }
+        }
+      } catch (err) {
+        if (window.pozitronData && window.pozitronData.usd_rate) {
+          const fallbackRate = parseFloat(window.pozitronData.usd_rate);
+          if (!isNaN(fallbackRate) && fallbackRate > 0) {
+            applyCurrencyRateToUI(fallbackRate);
+          }
+        }
+      }
+    }
+
+    async function applyCurrencyRateChange(rate) {
+      currentUsdRate = rate;
+      localStorage.setItem('pozitron_usd_rate', rate.toString());
+      applyCurrencyRateToUI(rate);
+
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usd_rate: rate })
+        });
+      } catch(e) {}
+    }
     function getRobotAvatar(u) {
       if (!u) return 'https://api.dicebear.com/7.x/bottts/svg?seed=PozitronBot&scale=90';
       const raw = typeof u === 'string' ? u : (u.avatar_url || '');
@@ -1437,6 +1547,25 @@
       // Check Cloud Backend API Health
       checkApiHealthOnInit().catch(() => {});
 
+      // Persistent Currency Rate Loading & Synchronization
+      await loadAdminCurrencyRate();
+
+      const bulkRateInput = document.getElementById('bulk-usd-rate');
+      if (bulkRateInput) {
+        bulkRateInput.addEventListener('change', async (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val) && val > 0) {
+            await applyCurrencyRateChange(val);
+          }
+        });
+        bulkRateInput.addEventListener('blur', async (e) => {
+          const val = parseFloat(e.target.value);
+          if (!isNaN(val) && val > 0) {
+            await applyCurrencyRateChange(val);
+          }
+        });
+      }
+
       // Event listener for search debounce
       let searchTimeout = null;
       const searchInput = document.getElementById('admin-search-input');
@@ -1529,8 +1658,8 @@
     // =============================================================
     // 3D PRINT PRICING & FILAMENT INVENTORY MANAGEMENT
     // =============================================================
-    function load3DAdminSettings() {
-      // 1. Pricing
+    async function load3DAdminSettings() {
+      // 1. Pricing from local cache
       const pricing = JSON.parse(localStorage.getItem('pozitron_3d_pricing') || '{}');
       if (document.getElementById('cfg-3d-setup')) document.getElementById('cfg-3d-setup').value = pricing.setupFee !== undefined ? pricing.setupFee : 50;
       if (document.getElementById('cfg-3d-pla')) document.getElementById('cfg-3d-pla').value = pricing.PLA || 1.50;
@@ -1540,11 +1669,26 @@
       if (document.getElementById('cfg-3d-asa')) document.getElementById('cfg-3d-asa').value = pricing.ASA || 2.50;
       if (document.getElementById('cfg-3d-pa6')) document.getElementById('cfg-3d-pa6').value = pricing.PA6 || 5.00;
 
-      // 2. Filament Inventory
+      // 2. Sync from backend settings API
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const s = await res.json();
+          if (s.print_setup_fee && document.getElementById('cfg-3d-setup')) document.getElementById('cfg-3d-setup').value = s.print_setup_fee;
+          if (s.print_pla_per_gram && document.getElementById('cfg-3d-pla')) document.getElementById('cfg-3d-pla').value = s.print_pla_per_gram;
+          if (s.print_petg_per_gram && document.getElementById('cfg-3d-petg')) document.getElementById('cfg-3d-petg').value = s.print_petg_per_gram;
+          if (s.print_tpu_per_gram && document.getElementById('cfg-3d-tpu')) document.getElementById('cfg-3d-tpu').value = s.print_tpu_per_gram;
+          if (s.print_abs_per_gram && document.getElementById('cfg-3d-abs')) document.getElementById('cfg-3d-abs').value = s.print_abs_per_gram;
+          if (s.print_asa_per_gram && document.getElementById('cfg-3d-asa')) document.getElementById('cfg-3d-asa').value = s.print_asa_per_gram;
+          if (s.print_pa6_per_gram && document.getElementById('cfg-3d-pa6')) document.getElementById('cfg-3d-pa6').value = s.print_pa6_per_gram;
+        }
+      } catch(e) {}
+
+      // 3. Filament Inventory
       renderFilamentStockTable();
     }
 
-    function save3DPricingSettings() {
+    async function save3DPricingSettings() {
       const setupFee = parseFloat(document.getElementById('cfg-3d-setup')?.value || 50);
       const pla = parseFloat(document.getElementById('cfg-3d-pla')?.value || 1.5);
       const petg = parseFloat(document.getElementById('cfg-3d-petg')?.value || 2.0);
@@ -1564,6 +1708,23 @@
       };
 
       localStorage.setItem('pozitron_3d_pricing', JSON.stringify(pricing));
+
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            print_setup_fee: setupFee,
+            print_pla_per_gram: pla,
+            print_petg_per_gram: petg,
+            print_tpu_per_gram: tpu,
+            print_abs_per_gram: abs,
+            print_asa_per_gram: asa,
+            print_pa6_per_gram: pa6
+          })
+        });
+      } catch(e) {}
+
       showToast('3D Baskı birim fiyatları ve hazırlık ücreti kaydedildi! 🖨️', 'success');
     }
 
@@ -1664,11 +1825,21 @@
       showToast('Yeni filament stoğu başarıyla eklendi! 🧵', 'success');
     }
 
-    function loadPaymentSettings() {
+    async function loadPaymentSettings() {
       const bankCfg = JSON.parse(localStorage.getItem('pozitron_cfg_bank') || '{}');
       if (bankCfg.owner) document.getElementById('cfg-bank-owner').value = bankCfg.owner;
       if (bankCfg.iban) document.getElementById('cfg-bank-iban').value = bankCfg.iban;
       if (bankCfg.name) document.getElementById('cfg-bank-name').value = bankCfg.name;
+
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const s = await res.json();
+          if (s.bank_owner && document.getElementById('cfg-bank-owner')) document.getElementById('cfg-bank-owner').value = s.bank_owner;
+          if (s.bank_iban && document.getElementById('cfg-bank-iban')) document.getElementById('cfg-bank-iban').value = s.bank_iban;
+          if (s.bank_name && document.getElementById('cfg-bank-name')) document.getElementById('cfg-bank-name').value = s.bank_name;
+        }
+      } catch(e) {}
 
       const iyzicoCfg = JSON.parse(localStorage.getItem('pozitron_cfg_iyzico') || '{}');
       if (iyzicoCfg.apiKey) {
@@ -1697,7 +1868,7 @@
       }
     }
 
-    function saveBankSettings() {
+    async function saveBankSettings() {
       const owner = document.getElementById('cfg-bank-owner').value.trim();
       const iban = document.getElementById('cfg-bank-iban').value.trim();
       const name = document.getElementById('cfg-bank-name').value.trim();
@@ -1708,6 +1879,19 @@
       }
 
       localStorage.setItem('pozitron_cfg_bank', JSON.stringify({ owner, iban, name }));
+
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bank_owner: owner,
+            bank_iban: iban,
+            bank_name: name
+          })
+        });
+      } catch(e) {}
+
       showToast('Banka ve FAST IBAN bilgileri başarıyla güncellendi! 🏦', 'success');
     }
 
@@ -2180,6 +2364,7 @@
     async function executeBulkAction(action, value) {
       if (selectedProductIds.size === 0) return;
       const ids = Array.from(selectedProductIds);
+      const apiValue = action === 'currency_sync' ? ((typeof value === 'number' && value > 0) ? value : currentUsdRate) : value;
 
       // Local update
       const localProds = await getLocalAdminProducts();
@@ -2193,6 +2378,9 @@
             p.price_try = Math.round((p.price_try || 0) * (1 + value / 100) * 100) / 100;
           } else if (action === 'discount_set') {
             p.discount_pct = value;
+          } else if (action === 'currency_sync') {
+            const syncRate = (typeof value === 'number' && value > 0) ? value : currentUsdRate;
+            p.price_try = Math.round((p.price_usd || 0) * syncRate * 100) / 100;
           }
         }
       });
@@ -2203,7 +2391,7 @@
         await fetch('/api/admin/products/bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product_ids: ids, action: action, value: value })
+          body: JSON.stringify({ product_ids: ids, action: action, value: apiValue })
         });
       } catch (err) {}
 
@@ -2265,8 +2453,7 @@
       const rate = parseFloat(document.getElementById('bulk-usd-rate').value) || 47.0;
       const cat = document.getElementById('bulk-rate-category').value;
 
-      currentUsdRate = rate;
-      document.getElementById('header-usd-rate').textContent = rate.toFixed(2) + ' ₺';
+      await applyCurrencyRateChange(rate);
 
       const localProds = await getLocalAdminProducts();
       let count = 0;
@@ -2743,16 +2930,32 @@
       renderAdminOrdersTable(filtered);
     }
 
-    function updateAdminOrderStatus(orderId, newStatus) {
+    async function updateAdminOrderStatus(orderId, newStatus) {
       const target = _cachedOrders.find(o => (o.id === orderId || o.order_number === orderId));
       if (target) {
         target.status = newStatus;
+        target.order_status = newStatus;
         try {
           localStorage.setItem('pozitron_orders', JSON.stringify(_cachedOrders));
         } catch(e) {}
-        showToast(`Sipariş durumu güncellendi: ${newStatus}`, 'success');
-        loadAdminOrders();
       }
+
+      try {
+        const res = await fetch('/api/admin/orders/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: orderId, status: newStatus })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(`Sipariş durumu güncellendi: ${newStatus}`, 'success');
+        } else {
+          showToast(`Sipariş durumu yerel olarak güncellendi: ${newStatus}`, 'info');
+        }
+      } catch (err) {
+        showToast(`Sipariş durumu güncellendi: ${newStatus}`, 'info');
+      }
+      loadAdminOrders();
     }
 
     function exportOrdersToCSV() {
@@ -3175,6 +3378,76 @@
 
       renderAdminUsersTable(_cachedUsers);
       showToast(`"${userEmail}" kullanıcısı başarıyla silindi.`, 'success');
+    }
+
+    function openAddUserModal() {
+      const modal = document.getElementById('add-user-modal-backdrop');
+      if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('add-user-form')?.reset();
+        const pwd = document.getElementById('new-user-password');
+        if (pwd) pwd.value = 'pozitron2026';
+      }
+    }
+
+    function closeAddUserModal() {
+      const modal = document.getElementById('add-user-modal-backdrop');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function handleAddUserModal(e) {
+      e.preventDefault();
+      const fullName = (document.getElementById('new-user-fullname')?.value || '').trim();
+      const email = (document.getElementById('new-user-email')?.value || '').trim().toLowerCase();
+      const role = document.getElementById('new-user-role')?.value || 'customer';
+      const city = (document.getElementById('new-user-city')?.value || '').trim() || 'İstanbul';
+      const phone = (document.getElementById('new-user-phone')?.value || '').trim();
+      const password = (document.getElementById('new-user-password')?.value || '').trim() || 'pozitron2026';
+
+      if (!fullName || !email) {
+        showToast('Lütfen ad soyad ve e-posta alanlarını doldurun.', 'error');
+        return;
+      }
+
+      // 1. Try Backend API
+      try {
+        const res = await fetch('/api/admin/users/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            full_name: fullName,
+            email: email,
+            role: role,
+            city: city,
+            phone: phone,
+            password: password
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(`"${fullName}" kullanıcısı başarıyla oluşturuldu!`, 'success');
+        } else {
+          showToast(data.error || 'Kullanıcı oluşturulurken bir hata oluştu.', 'error');
+        }
+      } catch (err) {
+        // Fallback to local
+        let localUsers = JSON.parse(localStorage.getItem('pozitron_users_db') || '[]');
+        localUsers.push({
+          id: 'usr_' + Date.now().toString(36),
+          full_name: fullName,
+          email: email,
+          role: role,
+          city: city,
+          phone: phone,
+          provider: 'manual',
+          created_at: new Date().toISOString()
+        });
+        localStorage.setItem('pozitron_users_db', JSON.stringify(localUsers));
+        showToast(`"${fullName}" kullanıcısı yerel olarak eklendi.`, 'success');
+      }
+
+      closeAddUserModal();
+      await loadAdminUsers();
     }
 
   </script>

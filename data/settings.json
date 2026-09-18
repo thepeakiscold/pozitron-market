@@ -1,0 +1,15 @@
+{
+  "usd_rate": 50.0,
+  "site_name": "Pozitron Market",
+  "support_email": "destek@pozitronmarket.com",
+  "bank_owner": "Pozitron FPV Drone Teknolojileri",
+  "bank_iban": "TR990006200000012345678901",
+  "bank_name": "Garanti BBVA Ataşehir",
+  "3d_setup_fee": 50.0,
+  "3d_price_pla": 1.5,
+  "3d_price_petg": 2.0,
+  "3d_price_tpu": 3.5,
+  "3d_price_abs": 2.25,
+  "3d_price_asa": 2.5,
+  "3d_price_pa6": 5.0
+}
