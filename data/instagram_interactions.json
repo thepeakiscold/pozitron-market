@@ -1,5 +1,5 @@
 {
-  "today_date": "2026-09-17",
+  "today_date": "2026-09-18",
   "today_follows_count": 10,
   "today_comments_count": 10,
   "max_daily_limit": 10,
@@ -54,7 +54,17 @@
     "10160638339",
     "68932795649",
     "6915194263",
-    "53185115751"
+    "53185115751",
+    "22409024481",
+    "35413103507",
+    "62489810772",
+    "300362554",
+    "268873571",
+    "5394465138",
+    "73371227964",
+    "1547361452",
+    "50039064762",
+    "421878880"
   ],
   "commented_media_ids": [
     "3983912198478190450_73181351103",
@@ -107,7 +117,17 @@
     "3987284392652860656_63761085137",
     "3987532689074607656_10160638339",
     "3985538396007211969_68932795649",
-    "3987480558657440700_6915194263"
+    "3987480558657440700_6915194263",
+    "2441307901448349018_22409024481",
+    "3980846012482388791_35413103507",
+    "3986218559168002130_62489810772",
+    "3317330810103810242_300362554",
+    "3756446419289671548_268873571",
+    "3988368334671637537_177221987",
+    "3985984717592265841_5394465138",
+    "3985798290342221988_73371227964",
+    "3987248346345945966_73371227964",
+    "3988407968591193208_73371227964"
   ],
   "history": [
     {
@@ -975,6 +995,176 @@
       "username": "kardelencocukdr",
       "user_id": "53185115751",
       "timestamp": "2026-09-17T04:48:50.227216",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gadgetze",
+      "user_id": "22409024481",
+      "timestamp": "2026-09-18T04:47:02.765996",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "gadgetze",
+      "user_id": "22409024481",
+      "media_id": "2441307901448349018_22409024481",
+      "media_code": "CHhRJoNLuVa",
+      "comment": "Geçmiş olsun, toparlayıp en kısa sürede tekrar gökyüzüne dönmeniz dileğiyle.",
+      "timestamp": "2026-09-18T04:47:11.839128",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "aktofpv",
+      "user_id": "35413103507",
+      "timestamp": "2026-09-18T04:47:37.466916",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "aktofpv",
+      "user_id": "35413103507",
+      "media_id": "3980846012482388791_35413103507",
+      "media_code": "Dc-zltfiwM3",
+      "comment": "Setup ve motor tepkisi çok iyi görünüyor, elinize sağlık!",
+      "timestamp": "2026-09-18T04:47:47.282499",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "serbest_fpv",
+      "user_id": "62489810772",
+      "timestamp": "2026-09-18T04:48:18.929697",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "serbest_fpv",
+      "user_id": "62489810772",
+      "media_id": "3986218559168002130_62489810772",
+      "media_code": "DdR5KjgRzhS",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı keyifli uçuşlar dileriz!",
+      "timestamp": "2026-09-18T04:48:27.834199",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "tutkusezgin",
+      "user_id": "300362554",
+      "timestamp": "2026-09-18T04:48:55.909079",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "tutkusezgin",
+      "user_id": "300362554",
+      "media_id": "3317330810103810242_300362554",
+      "media_code": "C4Jhsu6skjC",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-09-18T04:49:07.605337",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "erhn_hrmnc",
+      "user_id": "268873571",
+      "timestamp": "2026-09-18T04:49:35.916199",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "erhn_hrmnc",
+      "user_id": "268873571",
+      "media_id": "3756446419289671548_268873571",
+      "media_code": "DQhlB2njId8",
+      "comment": "Setup ve motor tepkisi çok iyi görünüyor, elinize sağlık!",
+      "timestamp": "2026-09-18T04:49:47.720037",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "armagancakirr",
+      "user_id": "177221987",
+      "media_id": "3988368334671637537_177221987",
+      "media_code": "DdZh959hOwh",
+      "comment": "Setup ve motor tepkisi çok iyi görünüyor, elinize sağlık!",
+      "timestamp": "2026-09-18T04:50:17.695850",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "resat.fpv",
+      "user_id": "5394465138",
+      "timestamp": "2026-09-18T04:50:44.257259",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "resat.fpv",
+      "user_id": "5394465138",
+      "media_id": "3985984717592265841_5394465138",
+      "media_code": "DdRD_tkOQRx",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-09-18T04:50:54.545717",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "erenfpv_",
+      "user_id": "73371227964",
+      "timestamp": "2026-09-18T04:51:17.552372",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "erenfpv_",
+      "user_id": "73371227964",
+      "media_id": "3985798290342221988_73371227964",
+      "media_code": "DdQZm1qNRik",
+      "comment": "Elinize sağlık, lehimler ve kablolama gayet temiz görünüyor. İlk uçuşta başarılar!",
+      "timestamp": "2026-09-18T04:51:26.430124",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "erenfpv_",
+      "user_id": "73371227964",
+      "media_id": "3987248346345945966_73371227964",
+      "media_code": "DdVjT7jNrtu",
+      "comment": "Build çok şık ve düzenli duruyor, gökyüzünde kırımsız uçuşlar dileriz!",
+      "timestamp": "2026-09-18T04:51:50.360992",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "erenfpv_",
+      "user_id": "73371227964",
+      "media_id": "3988407968591193208_73371227964",
+      "media_code": "DdZq-p7NyR4",
+      "comment": "Çok temiz ve özenli bir build olmuş, elinize sağlık! Maiden uçuşunda başarılar.",
+      "timestamp": "2026-09-18T04:52:11.526624",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "zulkufozkul",
+      "user_id": "1547361452",
+      "timestamp": "2026-09-18T04:52:41.246554",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "drontic",
+      "user_id": "50039064762",
+      "timestamp": "2026-09-18T04:53:02.351647",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "halilbakirli",
+      "user_id": "421878880",
+      "timestamp": "2026-09-18T04:53:26.775821",
       "status": "success"
     }
   ]

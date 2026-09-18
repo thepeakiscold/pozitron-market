@@ -149,6 +149,7 @@ class ImageGenerator:
             'tool_showcase': 'ONLINE DRONE ARACLARI',
             'deal_drop': 'HAFTANIN KAMPANYASI',
             'pilot_tip': 'FPV PILOT AKADEMISI',
+            'seo_article': 'TEKNIK MUHENDISLIK REHBERI',
             'review_highlight': 'DOGRULANMIS PILOT YORUMU'
         }
         tag_text = type_labels.get(content_type, 'PRO FPV DONANIM')

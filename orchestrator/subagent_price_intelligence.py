@@ -61,22 +61,22 @@ class PriceIntelligenceAgent:
             stock = int(p['stock'])
 
             seed_val = sum(ord(c) for c in sku)
-            random.seed(seed_val + 2026)
+            local_rng = random.Random(seed_val + 2026)
 
             margin_tier = (seed_val % 100)
             if margin_tier < 42:
                 # Pozitron is CHEAPER (Price Advantage: 5% - 25% lower than market min)
-                min_multiplier = round(random.uniform(1.05, 1.25), 2)
-                avg_multiplier = round(min_multiplier * random.uniform(1.04, 1.15), 2)
+                min_multiplier = round(local_rng.uniform(1.05, 1.25), 2)
+                avg_multiplier = round(min_multiplier * local_rng.uniform(1.04, 1.15), 2)
                 status = "CHEAPER"
             elif margin_tier < 75:
                 # Market EQUAL (within ±3%)
-                min_multiplier = round(random.uniform(0.98, 1.02), 2)
+                min_multiplier = round(local_rng.uniform(0.98, 1.02), 2)
                 avg_multiplier = round(min_multiplier * 1.03, 2)
                 status = "EQUAL"
             else:
                 # Pozitron EXPENSIVE (Review needed)
-                min_multiplier = round(random.uniform(0.85, 0.95), 2)
+                min_multiplier = round(local_rng.uniform(0.85, 0.95), 2)
                 avg_multiplier = round(min_multiplier * 1.05, 2)
                 status = "EXPENSIVE"
 

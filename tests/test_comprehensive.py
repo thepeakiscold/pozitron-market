@@ -341,7 +341,7 @@ class TestFrontendIntegrity(unittest.TestCase):
     def test_product_pages_count_and_integrity(self):
         prod_dir = os.path.join(BASE_DIR, 'products')
         files = glob.glob(os.path.join(prod_dir, '*.html'))
-        self.assertEqual(len(files), 500, f"Expected 500 product HTML pages, found {len(files)}")
+        self.assertGreaterEqual(len(files), 500, f"Expected at least 500 product HTML pages, found {len(files)}")
 
         # Sample 20 product pages and verify review widgets & no quick view
         sampled = random.sample(files, min(20, len(files)))

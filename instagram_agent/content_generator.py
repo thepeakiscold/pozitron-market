@@ -4,20 +4,281 @@ import urllib.request
 import urllib.error
 import sqlite3
 import os
+import re
 from datetime import datetime
-from .db import get_db, get_recent_posted_product_ids
+from .db import (
+    get_db, get_recent_posted_product_ids,
+    get_recent_posted_titles, get_recent_posted_content_types
+)
+
+FPV_PILOT_TIPS = [
+    {
+        'title': '[LIPO] 4S vs 6S Batarya: Voltaj Çökmesi ve Verimlilik Farkı',
+        'summary': '6S LiPo bataryalar (22.2V nominal) aynı gücü üretirken 4S pillere (14.8V) kıyasla çok daha düşük akım (amper) çeker. Bu sayede kablo ve ESC kayıpları azalır, ani gazlamalarda voltaj çökmesi (voltage sag) minimuma iner. 6S setup için motor KV değerinizi 1750-1950KV aralığında seçmelisiniz.',
+        'headline': '4S VS 6S BATARYA REHBERİ',
+        'subhead': 'Daha Az Isınma & Pürüzsüz Gaz Tepkisi',
+        'points': [
+            "[VOLTAJ] 6S: Düşük Amper ile Minimum Voltaj Çökmesi",
+            "[MOTOR] 6S İçin İdeal 5 İnç KV Değeri: 1750 - 1950KV",
+            "[VERIM] Batarya ve ESC Aşırı Isınmalarına Son"
+        ],
+        'tags': '#fpvlipo #6sbattery #fpvpilot #pozitronmarket #dronetopla'
+    },
+    {
+        'title': '[MOTOR] FPV Motor KV ve Pervane Adımı Uyumu Rehberi',
+        'summary': 'Yüksek KV daha yüksek devir/dakika (RPM) sağlarken torku düşürür; agresif adımlı ağır pervanelerde motorları aşırı ısıtır. 5 inç 6S freestyle için 1950KV + 5143/5146 pervane dengesi optimum itki ve motor ömrü sağlar. Pozitron Sihirbazı ile donanımınızı tek tıkla test edebilirsiniz.',
+        'headline': 'MOTOR KV & PERVANE UYUMU',
+        'subhead': 'Tork, Hız ve İtki Dengesini Kusursuz Ayarla',
+        'points': [
+            "[HEDEF] 5 İnç 6S Freestyle İçin 1950KV İdeal Seçim",
+            "[UYARI] Yüksek Adımlı Pervanede ESC Amper Sınırına Dikkat",
+            "[TEST] Pozitron Sihirbazı ile 0 Hata Eşleştirme"
+        ],
+        'tags': '#motorkv #pervane #fpvfreestyle #pozitronmarket #teknofest'
+    },
+    {
+        'title': '[3D BASKI] TPU 95A: Neden PLA Yerine TPU Kullanmalısın?',
+        'summary': 'PLA ve PETG rijit plastiklerdir; yüksek hızlı kırım anında çatlayarak kamerayı veya anteni koruyamaz. TPU 95A ise esnek yapısıyla kinetik çarpma enerjisini sönümler. GoPro mount, kol uçları ve anten koruyucularında kırılmaz TPU şarttır. Pozitron 3D Studio ile anında online baskı alabilirsiniz.',
+        'headline': 'TPU 95A KIRILMAZ KORUMA',
+        'subhead': 'GoPro ve Hassas Elektronik Donanım Zırhı',
+        'points': [
+            "[DARBE] Esnek Yapı ile Çarpma Enerjisini Tamamen Emer",
+            "[GUVEN] GoPro, Anten ve Kol Korumaları İçin Şart",
+            "[3D BASKI] STL Yükle, Gramaj ve Fiyatı Anında Gör"
+        ],
+        'tags': '#tpu95a #3dbaski #dronemount #pozitronmarket #fpvturkey'
+    },
+    {
+        'title': '[BETAFLIGHT] Betaflight 4.5 GPS Rescue: Drone Kayıplarına Son',
+        'summary': 'Video veya kumanda sinyali koptuğunda drone\'un kalkış noktasına otonom dönmesini sağlayan GPS Rescue, Betaflight 4.5 ile pusulasız da yön bulabilir hale geldi. Minimum 8 uydu kilidi ve doğru Failsafe irtifa ayarı ile kaza risklerini sıfırlayın.',
+        'headline': 'BETAFLIGHT 4.5 GPS RESCUE',
+        'subhead': 'Sinyal Koptuğunda Otonom Eve Dönüş (RTH)',
+        'points': [
+            "[GPS] Minimum 8 Uydu Kilidi ile Güvenli Eve Dönüş",
+            "[FAILSAFE] Ağaç ve Bina Üstü Güvenli Tırmanma İrtifası",
+            "[KORUMA] Sinyal Kaybında Drone Kaybetme Korkusuna Son"
+        ],
+        'tags': '#betaflight #gpsrescue #fpvfail #pozitronmarket #longrangefpv'
+    },
+    {
+        'title': '[HD VIDEO] Dijital HD (O3, Walksnail, HDZero) vs Analog Karşılaştırması',
+        'summary': 'Analog 5.8GHz video sıfıra yakın (15ms) ultra düşük gecikme sunar ancak çözünürlük düşüktür. DJI O3 ve Walksnail Avatar 1080p kristal netliğinde dijital görüntü sağlarken, HDZero yarış odaklı 15-20ms sabit dijital gecikme vadeder. İhtiyacınıza uygun VTX sistemi Pozitron Market stoklarında.',
+        'headline': 'DIJITAL HD VS ANALOG VTX',
+        'subhead': 'Kristal Görüntü mü, Ultra Düşük Gecikme mi?',
+        'points': [
+            "[DJI O3 / WALKSNAIL] 1080p Kristal Netlik & Dahili Kayıt",
+            "[HDZERO / ANALOG] 15ms Ultra Düşük Gecikme ile Yarış",
+            "[STOK] En Güncel Dijital VTX Sistemleri Pozitron'da"
+        ],
+        'tags': '#djio3 #walksnail #hdzero #analogfpv #pozitronmarket'
+    },
+    {
+        'title': '[ELRS] ExpressLRS 2.4GHz: Paket Hızı ve Telemetri Oranı Ayarı',
+        'summary': 'ExpressLRS açık kaynak kumanda protokolünde 250Hz veya 500Hz paket hızı ile 2-3ms akıcı tepki elde edersiniz. Telemetri oranını 1:64 veya 1:32 ayarlayarak RF paket kayıplarını önleyebilir, dinamik güç (dynamic power) ile 250mW-1W arası menzili garantiye alabilirsiniz.',
+        'headline': 'EXPRESSLRS (ELRS) 2.4GHZ',
+        'subhead': 'Ultra Düşük Gecikme & Kilometrelerce Güvenli Menzil',
+        'points': [
+            "[HIZ] 500Hz Paket Hızı ile 2ms Pürüzsüz Tepki",
+            "[GUC] Dinamik Güç ile Pil Tasarrufu & Yüksek Menzil",
+            "[DONANIM] En Güncel ELRS Alıcı & Vericileri Pozitron'da"
+        ],
+        'tags': '#expresslrs #elrs #fpvkumanda #pozitronmarket #radiomaster'
+    },
+    {
+        'title': '[ELEKTRONIK] Low ESR Kapasitör (35V 1000uF) Neden Hayatidir?',
+        'summary': 'Fırçasız motorlar frenleme ve ani gaz geçişlerinde 40V+ voltaj tepe dalgaları (voltage spikes) üretir. ESC girişindeki kaliteli Low ESR Rubycon/Panasonic 35V 1000uF kapasitör, bu darbeleri emerek dijital HD kameranın ve FC jiroskopunun yanmasını engeller.',
+        'headline': 'LOW ESR KAPASITOR REHBERI',
+        'subhead': 'Elektronik Donanımı Voltaj Şoklarından Koru',
+        'points': [
+            "[KORUMA] 35V+ Ani Spike Voltajlarını Anında Emiş",
+            "[FILTRE] Video Parazitlerini & Jiroskop Gürültüsünü Azaltır",
+            "[MONTAJ] ESC Güç Girişine En Kısa Bacakla Lehimleyin"
+        ],
+        'tags': '#lowesr #fpvelektronik #esckapasitor #pozitronmarket #dronebuild'
+    },
+    {
+        'title': '[LEHIM] Profesyonel FPV Lehimleme: Sıcaklık, Tel ve Flux Sırları',
+        'summary': 'Kusursuz lehim bağlantısı kaza anında kablo kopmalarını önler. 63/37 kalay-kurşun lehim teli ile 380°C - 400°C aralığında kalın pabuçları lehimleyin. Kaliteli reçineli flux kullanarak lehimin pedlere pürüzsüz ve parlak akmasını sağlayın.',
+        'headline': 'KUSURSUZ FPV LEHIMLEME',
+        'subhead': 'Sert Kazalarda Kopmayan Parlak Lehim Noktaları',
+        'points': [
+            "[SICAKLIK] Pil Pedleri İçin 400°C, Küçük Sinyal İçin 350°C",
+            "[FLUX] Oksitlenmeyi Önleyen Kaliteli Reçineli Jel Flux",
+            "[IPUCU] Soğuk Lehim Riskine Karşı Mat Değil Parlak Yüzey"
+        ],
+        'tags': '#lehim #fpvlehim #dronetamir #teknofest #pozitronmarket'
+    },
+    {
+        'title': '[PERVANE] 3 Kanat vs 4 Kanat Pervane: Tork, Dönüş Tutuşu ve Hız',
+        'summary': '3 kanatlı (triblade) pervaneler daha yüksek son hız ve daha az akım tüketimi sunarken, 4 kanatlı pervaneler virajlarda olağanüstü tutuş ve düşük devirde yüksek itki sağlar. Freestyle için 5.1 inç 3 kanat, ağır sinematik için 4 kanat tercih edin.',
+        'headline': '3 KANAT VS 4 KANAT PERVANE',
+        'subhead': 'Freestyle Çevikliği ve Sinematik Stabilite',
+        'points': [
+            "[3 KANAT] Yüksek Son Hız & Düşük Akım Tüketimi",
+            "[4 KANAT] Keskin Viraj Tutuşu & Güçlü Düşük Devir İtkisi",
+            "[STOK] HQProp, Gemfan ve Ethix Pervaneleri Pozitron'da"
+        ],
+        'tags': '#hqprop #gemfan #pervane #fpvfreestyle #pozitronmarket'
+    },
+    {
+        'title': '[LIPO SAKLAMA] LiPo Storage Voltajı (3.82V): Pil Şişmelerine Son',
+        'summary': 'LiPo bataryaları dolu (4.20V) veya boş (3.50V) bekletmek hücrelerin iç direncini artırır ve pili şişirir. Uçuştan sonra pillerinizi hücre başı 3.82V saklama voltajına getirerek yangın riskini önleyin ve batarya ömrünü 300+ döngüye uzatın.',
+        'headline': 'LIPO STORAGE (SAKLAMA) MODU',
+        'subhead': 'Hücre Sağlığını Koru & Yangın Riskini Sıfırla',
+        'points': [
+            "[VOLTAJ] İdeal Bekletme Voltajı: Hücre Başı 3.82V - 3.85V",
+            "[OMUR] Şişme ve Kapasite Kayıplarını %90 Engeller",
+            "[SARJ] Akıllı LiPo Şarj Cihazları Pozitron Market'te"
+        ],
+        'tags': '#lipopil #storagevoltage #liposafety #fpvpil #pozitronmarket'
+    },
+    {
+        'title': '[ANTEN] RHCP vs LHCP Polarizasyon: Anten Eşleşmesi Neden Önemli?',
+        'summary': 'Dairesel polarizasyonlu (CP) antenlerde verici (VTX) ve alıcı (VRX/Gözlük) aynı yönde olmalıdır (her ikisi de RHCP veya her ikisi de LHCP). Yanlış eşleşmede 20-30dB sinyal kaybı yaşanır ve video menziliniz %80 oranında düşer.',
+        'headline': 'RHCP VS LHCP ANTEN SECIMI',
+        'subhead': 'Sinyal Yansımalarını Önle & Maksimum Video Menzili',
+        'points': [
+            "[POLARIZASYON] VTX ve Gözlük Antenleri Aynı Yönde Olmalı",
+            "[YANSIMA] Dairesel Polarizasyon Çok Yollu Parazitleri Önler",
+            "[SECIM] TrueRC, Foxeer ve Lollipop Antenleri Pozitron'da"
+        ],
+        'tags': '#fpvanten #rhcp #lhcp #videoverici #pozitronmarket'
+    },
+    {
+        'title': '[VTX TERMAL] VTX Aşırı Isınması: Pit Mode ve Kalkış Öncesi Soğutma',
+        'summary': 'Modern 800mW - 2500mW VTX üniteleri pervane rüzgarı olmadan yerde beklerken saniyeler içinde 100°C sıcaklığa ulaşabilir ve kendini korumaya alıp gücü düşürür. Pit Mode kullanarak kanala girmeden önce gücü 25mW altında tutun.',
+        'headline': 'VTX ASIRI ISINMA ONLEMLERI',
+        'subhead': 'Kalkış Öncesi Termal Korumayı ve Güç Düşüşünü Engelle',
+        'points': [
+            "[PIT MODE] Yerde Beklerken Düşük Güç (25mW) Kullanın",
+            "[RUZGAR] FPV VTX Soğutması Uçuş Esnasındaki Hava Akımıdır",
+            "[KORUMA] Termal Yanmaları Önleyen Yüksek Verimli VTX\'ler"
+        ],
+        'tags': '#vtx #termalyonetim #fpvvideo #pozitronmarket #teknofest'
+    },
+    {
+        'title': '[PID TUNING] Betaflight D-Term Filtresi: Motor Isınması ve Propwash',
+        'summary': 'Ani dönüşlerde drone\'un kendi yarattığı türbülansa girmesi (propwash), doğru PID ve filtreleme ile çözülür. Aşırı yüksek D kazancı motorları aşırı ısıtırken, çok agresif filtre gecikme yaratır. RPM Filtreleme aktif edilerek motorlar buz gibi tutulabilir.',
+        'headline': 'BETAFLIGHT PID & D-TERM',
+        'subhead': 'Propwash Titreşimlerini Yok Et & Motorları Koru',
+        'points': [
+            "[PROPWASH] Keskin Dönüşlerdeki Yalpalama ve Titreşime Son",
+            "[D-TERM] Aşırı D Kazancı Motorları Yakabilir, Isıyı Kontrol Edin",
+            "[RPM FILTRE] Çift Yönlü DShot ile Dinamik Frekans Temizliği"
+        ],
+        'tags': '#pidtuning #betaflight #propwash #dterm #pozitronmarket'
+    },
+    {
+        'title': '[UCUS KARTI] F405 vs F722 vs H7 İşlemci: Hangisini Seçmelisin?',
+        'summary': 'F405 işlemciler ekonomik ve güvenilirdir ancak sınırlı UART portuna sahiptir. F722 işlemciler yüksek saat hızı ve dahili donanım inverteri ile tüm UART portlarında ELRS, GPS, VTX ve ESC telemetrisini aynı anda takılmadan işler.',
+        'headline': 'F405 VS F722 UCUS KARTI',
+        'subhead': 'UART Port Sayısı, İşlemci Hızı ve Donanım Uyumu',
+        'points': [
+            "[F405] Fiyat / Performans Freestyle ve Bütçe Projeleri",
+            "[F722] Çoklu UART, Dahili Çevirici ve Yüksek Döngü Hızı",
+            "[STACK] SpeedyBee, T-Motor ve Foxeer Stack\'ler Pozitron\'da"
+        ],
+        'tags': '#flightcontroller #f722 #f405 #speedybee #pozitronmarket'
+    },
+    {
+        'title': '[TEST] Smoke Stopper: İlk Enerji Vermede Kart Yanmalarını Önle',
+        'summary': 'Yeni bir drone topladıktan sonra LiPo bataryayı doğrudan takmak, olası bir lehim köprüsünde tüm stack\'i 1 saniyede yakabilir. Kendini sıfırlayan eFuse / sigortalı Smoke Stopper kullanarak kısa devreleri sıfır hasarla tespit edin.',
+        'headline': 'SMOKE STOPPER ILE GUVENLI TEST',
+        'subhead': 'Yeni Build\'lerde Kart ve ESC Yakma Korkusuna Son',
+        'points': [
+            "[GUVEN] Kısa Devre Durumunda Gücü Mili Saniyede Keser",
+            "[TEST] İlk LiPo Bağlantısında %100 Donanım Sigortası",
+            "[ATOLYE] Her FPV Pilotunun Masasında Bulunması Gereken Alet"
+        ],
+        'tags': '#smokestopper #dronetopla #kisadevre #pozitronmarket #teknofest'
+    },
+    {
+        'title': '[TURTLE] Turtle Mode (Crash Flip): Motor Yakmadan Ters Drone Kaldırma',
+        'summary': 'Ters düşen drone\'u yerinden kaldırmak için motorların ters dönmesini sağlayan DShot Flip Over After Crash harika bir özelliktir. Ancak pervanelerden biri çime veya dala takılmışsa zorlamak ESC FET\'lerini yakabilir; takılma varsa zorlamayın.',
+        'headline': 'TURTLE MODE (CRASH FLIP) REHBERI',
+        'subhead': 'Ters Düşen Drone\'u Kurtarırken ESC\'yi Yakma',
+        'points': [
+            "[DSHOT] Ters Dönüş Yönü ile Tek Tıkla Düzeltme",
+            "[DIKKAT] Çime veya Dala Takılı Pervaneyi Asla Zorlamayın",
+            "[TAMIR] Yedek Motor ve ESC Donanımları Pozitron Market\'te"
+        ],
+        'tags': '#turtlemode #crashflip #dshot #fpvfreestyle #pozitronmarket'
+    },
+    {
+        'title': '[RPM FILTER] Dynamic Idle ve Çift Yönlü DShot Kurulumu',
+        'summary': 'Bidirectional DShot (Çift Yönlü DShot) ile ESC motorun gerçek devrini (RPM) uçuş kartına iletir. Uçuş kontrolcüsü dar çentik filtreleri (harmonic notch) ile sadece motor gürültüsünü siler; filtre gecikmesi azalır ve drone kütük gibi pürüzsüz uçar.',
+        'headline': 'DYNAMIC IDLE & RPM FILTRE',
+        'subhead': 'Maksimum Uçuş Akıcılığı & Soğuk Motorlar',
+        'points': [
+            "[HARMONIC] Motor Devrine Göre Anlık Dinamik Filtreleme",
+            "[IDLE] Serbest Düşüşte (Zero Throttle) Sıfır Yalpalama",
+            "[PERFORMANS] Pürüzsüz Freestyle ve Yarış Tepkisi"
+        ],
+        'tags': '#rpmfilter #bidirectionaldshot #dynamicidle #betaflight #pozitron'
+    },
+    {
+        'title': '[RF MENZIL] VTX Anten Yerleşimi: Karbon Fiber Gölgelenmesini Önleme',
+        'summary': 'Karbon fiber mükemmel bir RF iletkendir ve 5.8GHz video sinyallerini bloklar. VTX anteninizin aktif ışıma yapan uç kısmı karbon gövdenin en az 3-4cm yukarısında ve gerisinde olmalıdır; geri dönüş açılarında video kararmasını engeller.',
+        'headline': 'ANTEN YERLESIMI VE SIK GORULEN HATALAR',
+        'subhead': 'Karbon Fiberin Sinyal Gölgelenmesini Tamamen Önle',
+        'points': [
+            "[YERLESIM] Anten Ucu Gövdeden En Az 3-4cm Uzakta Olmalı",
+            "[GOLGELENME] Dönüşlerde Video Sinyalinin Kesilmesini Engeller",
+            "[TPU MOUNT] Esnek ve Kırılmaz Anten Mountları 3D Studio\'da"
+        ],
+        'tags': '#antena #rfmenzil #karbonfiber #pozitronmarket #fpvturkey'
+    },
+    {
+        'title': '[BAKIM] Motor Rulman Temizliği: Kumlu Freestyle Sonrası Bakım',
+        'summary': 'Toprak veya tozlu zeminlerde uçtuktan sonra motor çanının içine giren mikro partiküller rulmanları çizer ve titreşim yaratır. İzopropil alkol ile temizleyip sentetik rulman yağı ile yağlayarak motorlarınızın ömrünü uzatabilirsiniz.',
+        'headline': 'FPV MOTOR RULMAN BAKIMI',
+        'subhead': 'Titreşimsiz Uçuş ve Uzun Ömürlü Fırçasız Motorlar',
+        'points': [
+            "[TEMIZLIK] İzopropil Alkol ile Manyetik Çan Temizliği",
+            "[YAGLAMA] Yüksek Devirli Mikro Sentetik Rulman Yağı",
+            "[DEGISIM] Orijinal T-Motor, EMAX ve iFlight Motorlar Pozitron\'da"
+        ],
+        'tags': '#motortamiri #rulman #fpvbakim #pozitronmarket #teknofest'
+    },
+    {
+        'title': '[PIL STRAP] Kevlar vs Silikon Pil Kayışı: Sert Çakılmalarda Güvenlik',
+        'summary': 'Standart naylon kayışlar sert kazalarda toka yerinden yırtılarak LiPo bataryanın fırlamasına ve pervaneler tarafından delinmesine yol açar. Dokuma dikişli Kevlar ve kauçuk silikon kaplı kayışlar bataryayı gövdeye kaynaklanmış gibi sabitler.',
+        'headline': 'KEVLAR PIL KAYISI GUVENCESI',
+        'subhead': 'Sert Çakılmalarda Batarya Fırlamalarını Önle',
+        'points': [
+            "[DAYANIKLILIK] Metal Tokalı Yırtılmaz Kevlar Lifleri",
+            "[TUTUS] Kaydırmayan Kauçuk Silikon Yüzey Kaplaması",
+            "[AKSESUAR] Ekstra Güçlü FPV Pil Kayışları Pozitron\'da"
+        ],
+        'tags': '#pilkayisi #kevlarstrap #lipoguvencesi #pozitronmarket #drone'
+    },
+    {
+        'title': '[SAHA CANTA] FPV Saha Çantası Kontrol Listesi: 8 Olmazsa Olmaz',
+        'summary': 'Sahada uçuş yaparken en çok ihtiyaç duyulan aletler: 1) 8mm somun anahtarı (pervane değişimi), 2) M2-M3 alyan tornavidalar, 3) Yedek LiPo kayışı, 4) Taşınabilir lehim havyası (TS101/Pinecil), 5) Yedek pervane setleri, 6) İzopropil mendil, 7) Mini kargaburun, 8) Voltaj test aleti.',
+        'headline': 'FPV SAHA CANTA KONTROL LISTESI',
+        'subhead': 'Sahada Uçuşunuzu Yarıda Bırakmayacak 8 Temel Ekipman',
+        'points': [
+            "[PERVANE] 8mm Hızlı Değişim Cırcırlı Somun Anahtarı",
+            "[HAVYA] Sahada 6S LiPo ile Çalışan Akıllı Mini Lehim Havyası",
+            "[EKIPMAN] Tüm Montaj ve Servis Donanımları Pozitron Market\'te"
+        ],
+        'tags': '#sahacantasi #fpvaletler #ts101 #pervanesomunu #pozitronmarket'
+    }
+]
 
 class ContentGenerator:
     def __init__(self, gemini_api_key: str = ""):
         self.gemini_api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY", "")
         self.models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
+        self._session_recent_titles = []
+        self._session_recent_product_ids = []
 
     def set_api_key(self, key: str):
         self.gemini_api_key = key
 
     def generate_content(self, content_type: str = None, product_id: str = None) -> dict:
         """
-        Generates content dictionary:
+        Generates content dictionary with strict anti-duplicate guarantee and balanced catalog rotation:
         {
             'content_type': str,
             'product_id': str or None,
@@ -28,23 +289,65 @@ class ContentGenerator:
             'tool_info': dict or None
         }
         """
-        valid_types = ['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight']
-        if not content_type or content_type not in valid_types:
-            weights = [0.50, 0.20, 0.10, 0.15, 0.05]
-            content_type = random.choices(valid_types, weights=weights, k=1)[0]
+        valid_types = ['product_spotlight', 'pilot_tip', 'tool_showcase', 'deal_drop', 'seo_article', 'review_highlight']
+        
+        recent_types = get_recent_posted_content_types(limit=5)
+        db_titles = set(get_recent_posted_titles(limit=40))
+        all_recent_titles = db_titles.union(set(self._session_recent_titles[-30:]))
 
-        if content_type == 'product_spotlight':
-            return self._generate_product_spotlight(product_id)
-        elif content_type == 'tool_showcase':
-            return self._generate_tool_showcase()
-        elif content_type == 'deal_drop':
-            return self._generate_deal_drop()
-        elif content_type == 'pilot_tip':
-            return self._generate_pilot_tip()
-        elif content_type == 'review_highlight':
-            return self._generate_review_highlight()
-        else:
-            return self._generate_product_spotlight(product_id)
+        # 1. Smart Pillar Selection (prevent consecutive identical types, focus on catalog products)
+        if not content_type or content_type not in valid_types:
+            candidate_types = [t for t in valid_types if not (recent_types and t == recent_types[0])]
+            if not candidate_types:
+                candidate_types = valid_types
+
+            # Balanced e-commerce weights: 60% products, 15% tips, 10% tools, 8% deals, 5% seo guides, 2% reviews
+            type_weights = {
+                'product_spotlight': 0.60,
+                'pilot_tip': 0.15,
+                'tool_showcase': 0.10,
+                'deal_drop': 0.08,
+                'seo_article': 0.05,
+                'review_highlight': 0.02
+            }
+            weights = [type_weights.get(t, 0.1) for t in candidate_types]
+            content_type = random.choices(candidate_types, weights=weights, k=1)[0]
+
+        # 2. Multi-attempt anti-duplicate generation loop
+        content = None
+        for attempt in range(5):
+            if content_type == 'product_spotlight':
+                content = self._generate_product_spotlight(product_id)
+            elif content_type == 'tool_showcase':
+                content = self._generate_tool_showcase()
+            elif content_type == 'deal_drop':
+                content = self._generate_deal_drop()
+            elif content_type == 'pilot_tip':
+                content = self._generate_pilot_tip()
+            elif content_type == 'seo_article':
+                content = self._generate_seo_article()
+            elif content_type == 'review_highlight':
+                content = self._generate_review_highlight()
+            else:
+                content = self._generate_product_spotlight(product_id)
+
+            if content and content.get('title') and content.get('title') not in all_recent_titles:
+                break
+            
+            # If candidate was recently posted, try another category or pillar
+            content_type = 'product_spotlight'
+            product_id = None
+
+        if content:
+            self._session_recent_titles.append(content['title'])
+            if len(self._session_recent_titles) > 50:
+                self._session_recent_titles = self._session_recent_titles[-50:]
+            if content.get('product_id'):
+                self._session_recent_product_ids.append(content['product_id'])
+                if len(self._session_recent_product_ids) > 50:
+                    self._session_recent_product_ids = self._session_recent_product_ids[-50:]
+
+        return content
 
     def _load_products_from_json(self):
         json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'products.json')
@@ -57,70 +360,68 @@ class ContentGenerator:
         return []
 
     def _get_candidate_product(self, product_id: str = None):
-        recent_ids = get_recent_posted_product_ids(20)
-        rows = []
+        recent_ids = set(get_recent_posted_product_ids(50))
+        recent_ids.update(set(self._session_recent_product_ids[-40:]))
+
         try:
             conn = get_db()
             cursor = conn.cursor()
-            
+
             if product_id:
                 cursor.execute("SELECT * FROM products WHERE id = ? OR slug = ? OR sku = ?", (product_id, product_id, product_id))
                 row = cursor.fetchone()
                 conn.close()
                 if row:
                     return dict(row)
-            else:
-                # 1. Check if Lead Supervisor has highlighted_products with price/stock advantage
-                cursor.execute("SELECT directive_json FROM lead_supervisor_directives ORDER BY id DESC LIMIT 1")
-                dir_row = cursor.fetchone()
-                if dir_row and dir_row[0]:
-                    try:
-                        dir_data = json.loads(dir_row[0])
-                        hl_products = dir_data.get("instagram_directive", {}).get("highlighted_products", [])
-                        hl_skus = [p.get("sku") for p in hl_products if p.get("sku")]
-                        if hl_skus:
-                            placeholders = ','.join('?' for _ in hl_skus)
-                            recent_filter = ""
-                            params = list(hl_skus)
-                            if recent_ids:
-                                r_placeholders = ','.join('?' for _ in recent_ids)
-                                recent_filter = f" AND id NOT IN ({r_placeholders})"
-                                params.extend(recent_ids)
-                            cursor.execute(f"SELECT * FROM products WHERE sku IN ({placeholders}){recent_filter}", params)
-                            hl_rows = cursor.fetchall()
-                            if hl_rows:
-                                selected = random.choice(hl_rows)
-                                conn.close()
-                                return dict(selected)
-                    except Exception:
-                        pass
 
-                query = "SELECT * FROM products"
-                params = []
+            # 1. Balanced Category Rotation: pick from active catalog categories
+            cursor.execute("SELECT id FROM categories WHERE item_count > 0 ORDER BY RANDOM()")
+            cat_candidates = [r['id'] for r in cursor.fetchall()]
+            random.shuffle(cat_candidates)
+            
+            for cat_id in cat_candidates:
+                cat_params = [cat_id]
+                recent_filter = ""
                 if recent_ids:
-                    placeholders = ','.join('?' for _ in recent_ids)
-                    query += f" WHERE id NOT IN ({placeholders})"
-                    params.extend(recent_ids)
-                
-                query += " ORDER BY featured DESC, rating DESC, review_count DESC LIMIT 40"
-                cursor.execute(query, params)
-                rows = cursor.fetchall()
-                conn.close()
+                    r_placeholders = ','.join('?' for _ in recent_ids)
+                    recent_filter = f" AND id NOT IN ({r_placeholders})"
+                    cat_params.extend(recent_ids)
 
-                if not rows:
-                    conn = get_db()
-                    cursor = conn.cursor()
-                    cursor.execute("SELECT * FROM products ORDER BY RANDOM() LIMIT 1")
-                    rows = cursor.fetchall()
+                cursor.execute(f"SELECT * FROM products WHERE category_id = ? AND stock > 0 {recent_filter} ORDER BY RANDOM() LIMIT 5", cat_params)
+                cat_rows = cursor.fetchall()
+                if cat_rows:
+                    selected = random.choice(cat_rows)
                     conn.close()
-        except Exception:
-            rows = []
+                    return dict(selected)
 
-        if rows:
-            selected = random.choice(rows)
-            return dict(selected)
+            # 2. Global random from unposted products in catalog
+            query = "SELECT * FROM products WHERE stock > 0"
+            params = []
+            if recent_ids:
+                placeholders = ','.join('?' for _ in recent_ids)
+                query += f" AND id NOT IN ({placeholders})"
+                params.extend(recent_ids)
+            query += " ORDER BY RANDOM() LIMIT 20"
+            cursor.execute(query, params)
+            rows = cursor.fetchall()
+            conn.close()
 
-        # Fallback to data/products.json (e.g. for GitHub Actions runner)
+            if rows:
+                return dict(random.choice(rows))
+
+            # 3. Fallback if all products were posted: pick any random active product
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM products WHERE stock > 0 ORDER BY RANDOM() LIMIT 1")
+            row = cursor.fetchone()
+            conn.close()
+            if row:
+                return dict(row)
+
+        except Exception as e:
+            print(f"[UYARI] Aday ürün sorgulama hatası: {e}")
+
+        # 5. Fallback to products.json
         json_prods = self._load_products_from_json()
         if json_prods:
             if product_id:
@@ -141,7 +442,6 @@ class ContentGenerator:
         brand = prod.get('brand', 'Pozitron')
         price_try = prod.get('price_try', 0.0)
         price_usd = prod.get('price_usd', 0.0)
-        orig_try = prod.get('original_price_try')
         discount_pct = prod.get('discount_pct', 0)
         slug = prod.get('slug', prod['id'])
         specs = {}
@@ -150,7 +450,7 @@ class ContentGenerator:
         except Exception:
             specs = {}
 
-        # Heuristic Turkish copy
+        # Dynamic Turkish hook selection
         hooks = [
             f"[GUC] FPV filona güç katacak yeni canavar: {name}!",
             f"[FPV] Pilotların radarındaki favori donanım: {name} Pozitron Market'te!",
@@ -184,7 +484,6 @@ class ContentGenerator:
 
         hashtags = f"#fpv #fpvdrone #fpvturkey #{brand.lower().replace(' ', '')} #dronetopla #pozitronmarket #fpvracing #fpvfreestyle #dronehardware #teknofest"
 
-        # Default visual summary (post text summary to display on graphic)
         top_specs = [f"{k}: {v}" for k, v in list(specs.items())[:2]] if specs else [f"Orijinal {brand} Mühendisliği", "Maksimum Verim & Hız"]
         default_summary = {
             'badge': f"-%{discount_pct} İNDİRİM" if discount_pct > 0 else "[GUC] ÖNE ÇIKAN DONANIM",
@@ -226,10 +525,13 @@ class ContentGenerator:
         }
 
     def _generate_tool_showcase(self) -> dict:
-        is_wizard = random.choice([True, False])
-        if is_wizard:
-            title = "[ARAC] Pozitron FPV Drone Toplama & Uyumluluk Sihirbazı"
-            caption = """[FPV] "Hangi motora hangi ESC uyar? 4S mi 6S mi? Stack delikleri gövdeye oturur mu?" diye düşünmeye son!
+        recent_titles = set(get_recent_posted_titles(40))
+
+        tools = [
+            {
+                'id': 'wizard',
+                'title': '[ARAC] Pozitron FPV Drone Toplama & Uyumluluk Sihirbazı',
+                'caption': """[FPV] "Hangi motora hangi ESC uyar? 4S mi 6S mi? Stack delikleri gövdeye oturur mu?" diye düşünmeye son!
 
 Pozitron Market'in tamamen ÜCRETSİZ geliştirdiği FPV Drone Toplama Sihirbazı ile:
 [OK] Bütçeni ve uçuş tarzını seç (Freestyle / Racing)
@@ -238,26 +540,28 @@ Pozitron Market'in tamamen ÜCRETSİZ geliştirdiği FPV Drone Toplama Sihirbaz�
 
 Takım arkadaşlarınla listenin çıktısını alabilir veya doğrudan sipariş verebilirsin.
 
-> Hemen profildeki linkten Sihirbazı dene: pozitronmarket.com/drone-toplama-sihirbazi.html"""
-            hashtags = "#dronetopla #fpvuyumluluk #dronesihirbazi #fpvturkey #pozitronmarket #teknofest #teknofestiha #fpvfreestyle #dronebuild"
-            visual_summary = {
-                'badge': 'ÜCRETSİZ ONLİNE ARAÇ',
-                'headline': 'DRONE TOPLAMA SİHİRBAZI',
-                'subhead': 'Motor-ESC-Pil Uyumluluğunu 0 Hata İle Test Et',
-                'key_points': [
-                    "[GUC] Motor KV ve 4S / 6S Voltajını Anında Eşleştir",
-                    "[HEDEF] ESC Amper ve Stack Deliklerini Otomatik Doğrula",
-                    "[POZITRON] 0 Risk İle Uyumlu Parça Listesini Anında Oluştur"
-                ],
-                'cta': '> PROFİLDEKİ LİNKTEN HEMEN DENE'
-            }
-            tool_info = {
-                'tool_name': 'drone_wizard',
-                'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi.html'
-            }
-        else:
-            title = "[TPU] Pozitron 3D Baskı TPU Studio"
-            caption = """[DARBE] Drone'u sert indirdin veya motor kolu mu çarptı? GoPro mount'un mu kırıldı?
+> Hemen profildeki linkten Sihirbazı dene: pozitronmarket.com/drone-toplama-sihirbazi.html""",
+                'hashtags': '#dronetopla #fpvuyumluluk #dronesihirbazi #fpvturkey #pozitronmarket #teknofest #dronebuild',
+                'visual_summary': {
+                    'badge': 'ÜCRETSİZ ONLİNE ARAÇ',
+                    'headline': 'DRONE TOPLAMA SİHİRBAZI',
+                    'subhead': 'Motor-ESC-Pil Uyumluluğunu 0 Hata İle Test Et',
+                    'key_points': [
+                        "[GUC] Motor KV ve 4S / 6S Voltajını Anında Eşleştir",
+                        "[HEDEF] ESC Amper ve Stack Deliklerini Otomatik Doğrula",
+                        "[POZITRON] 0 Risk İle Uyumlu Parça Listesini Anında Oluştur"
+                    ],
+                    'cta': '> PROFİLDEKİ LİNKTEN HEMEN DENE'
+                },
+                'tool_info': {
+                    'tool_name': 'drone_wizard',
+                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi.html'
+                }
+            },
+            {
+                'id': 'tpu_studio',
+                'title': '[TPU] Pozitron 3D Baskı TPU Studio — Esnek Darbe Koruması',
+                'caption': """[DARBE] Drone'u sert indirdin veya motor kolu mu çarptı? GoPro mount'un mu kırıldı?
 
 Pozitron 3D Baskı Studio devrede!
 • STL veya STEP 3D dosyanı doğrudan siteye yükle
@@ -267,25 +571,95 @@ Pozitron 3D Baskı Studio devrede!
 
 Kırım yaşamadan önce motorlarını ve kameranı sağlama al! [KORUMA]
 
-> Hemen online baskı al: pozitronmarket.com/3d-baski-studio.html"""
-            hashtags = "#3dbaski #tpu95a #dronemount #gopromount #fpvturkey #pozitronmarket #3dprinting #droneparts #teknofest"
-            visual_summary = {
-                'badge': 'ONLİNE FİYAT & BASKI',
-                'headline': '3D BASKI TPU STUDIO',
-                'subhead': 'Kırılmaz TPU 95A GoPro & Motor Koruyucuları',
-                'key_points': [
-                    "[KORUMA] Darbe Emici Esnek TPU 95A Malzeme Garantisi",
-                    "⏱️ STL / STEP Dosyanı Yükle, Anında Fiyat Al",
-                    "[POZITRON] Kişiye Özel Canlı Renkler & Aynı Gün Üretim"
-                ],
-                'cta': '> 3D BASKINI HEMEN SİPARİŞ ET'
-            }
-            tool_info = {
-                'tool_name': '3d_print_studio',
-                'url': 'https://pozitronmarket.com/3d-baski-studio.html'
-            }
+> Hemen online baskı al: pozitronmarket.com/3d-baski-studio.html""",
+                'hashtags': '#3dbaski #tpu95a #dronemount #gopromount #fpvturkey #pozitronmarket #3dprinting #teknofest',
+                'visual_summary': {
+                    'badge': 'ONLİNE FİYAT & BASKI',
+                    'headline': '3D BASKI TPU STUDIO',
+                    'subhead': 'Kırılmaz TPU 95A GoPro & Motor Koruyucuları',
+                    'key_points': [
+                        "[KORUMA] Darbe Emici Esnek TPU 95A Malzeme Garantisi",
+                        "[HIZ] STL / STEP Dosyanı Yükle, Anında Fiyat Al",
+                        "[POZITRON] Kişiye Özel Canlı Renkler & Aynı Gün Üretim"
+                    ],
+                    'cta': '> 3D BASKINI HEMEN SİPARİŞ ET'
+                },
+                'tool_info': {
+                    'tool_name': '3d_print_studio',
+                    'url': 'https://pozitronmarket.com/3d-baski-studio.html'
+                }
+            },
+            {
+                'id': 'battery_calc',
+                'title': '[HESAPLAYICI] FPV Pil Kapasitesi ve Uçuş Süresi Simülatörü',
+                'caption': """[PIL] "Drone'um havada kaç dakika kalır? 1300mAh mi 1550mAh mi seçmeliyim?"
 
-        # Try Gemini AI enhancement if key is provided
+Pozitron Pil & Uçuş Süresi Simülatörü ile:
+[1] Motor KV ve pervane boyutunu seçin
+[2] Drone kalkış ağırlığını (AUW) ve GoPro yükünü girin
+[3] Hover ve agresif freestyle uçuş sürelerini saniyeler içinde simüle edin!
+
+Ağırlık ve uçuş süresi dengesini sahaya çıkmadan önce optimize edin.
+
+> Ücretsiz hesaplayıcıyı keşfet: pozitronmarket.com/drone-toplama-sihirbazi.html""",
+                'hashtags': '#pilhesaplama #ucussuresi #fpvpil #lipobattery #pozitronmarket #teknofest',
+                'visual_summary': {
+                    'badge': 'PERFORMANS SİMÜLATÖRÜ',
+                    'headline': 'UÇUŞ SÜRESİ HESAPLAYICI',
+                    'subhead': 'Kapasite, Ağırlık ve İtki Analizini Yap',
+                    'key_points': [
+                        "[PIL] 1300mAh vs 1550mAh Optimum Süre Dengesi",
+                        "[AGIRLIK] GoPro ve Aksiyon Kamera Yükü Simülasyonu",
+                        "[POZITRON] Sahaya Çıkmadan Gerçek Uçuş Süreni Gör"
+                    ],
+                    'cta': '> SİMÜLATÖRÜ HEMEN DENE'
+                },
+                'tool_info': {
+                    'tool_name': 'battery_calc',
+                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi.html'
+                }
+            },
+            {
+                'id': 'freq_planner',
+                'title': '[FREKANS] FPV 5.8GHz Frekans & RaceBand Kanal Planlayıcı',
+                'caption': """[FREKANS] Toplu uçuşlarda pilot arkadaşlarınızın görüntüsüne girip kaza yapmaya son!
+
+Pozitron 5.8GHz Frekans Tablosu ile:
+• IMD (Intermodulation Distortion) çakışması yapmayan temiz RaceBand kanallarını (R1, R3, R6, R7 veya R8) seçin.
+• Takım arkadaşlarınızla frekans paylaşımını tek tıkla organize edin.
+• 8 pilota kadar sıfır parazitle aynı anda gökyüzünde kalın!
+
+> Frekans rehberini incele: pozitronmarket.com/drone-toplama-sihirbazi.html""",
+                'hashtags': '#raceband #fpvfrekans #58ghz #fpvracing #pozitronmarket #teknofest',
+                'visual_summary': {
+                    'badge': 'KANAL PLANLAYICI',
+                    'headline': '5.8GHZ FREKANS REHBERİ',
+                    'subhead': 'Sıfır Parazit ile 8 Pilot Aynı Anda Havada',
+                    'key_points': [
+                        "[RACEBAND] R1, R3, R6, R8 ile Sıfır Çakışma Garantisi",
+                        "[IMD] Yan Kanal Parazitlerini ve Kararmaları Önle",
+                        "[EKİP] Takım Arkadaşlarınla Frekans Listeni Paylaş"
+                    ],
+                    'cta': '> FREKANS LİSTESİNİ GÖRÜNTÜLE'
+                },
+                'tool_info': {
+                    'tool_name': 'freq_planner',
+                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi.html'
+                }
+            }
+        ]
+
+        eligible_tools = [t for t in tools if t['title'] not in recent_titles]
+        if not eligible_tools:
+            eligible_tools = tools
+        tool = random.choice(eligible_tools)
+
+        title = tool['title']
+        caption = tool['caption']
+        hashtags = tool['hashtags']
+        visual_summary = tool['visual_summary']
+        tool_info = tool['tool_info']
+
         if self.gemini_api_key:
             ai_data = self._call_gemini_post_and_summary('tool_showcase', {
                 'tool_title': title, 'caption_draft': caption, 'visual_summary': visual_summary
@@ -309,45 +683,85 @@ Kırım yaşamadan önce motorlarını ve kameranı sağlama al! [KORUMA]
         }
 
     def _generate_deal_drop(self) -> dict:
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM coupons WHERE is_active = 1 ORDER BY discount_value DESC")
-        coupons = cursor.fetchall()
-        conn.close()
+        recent_titles = set(get_recent_posted_titles(40))
 
-        coupon_code = "POZITRON10"
-        discount_desc = "Tüm siparişlerde %10 net indirim!"
-        if coupons:
-            c = random.choice(coupons)
-            coupon_code = c['code']
-            discount_desc = c['description_tr'] or c['description_en']
+        deals = [
+            {
+                'code': 'POZITRON10',
+                'title': '[FIRSAT] FPV Sezonu Başladı: POZITRON10 ile %10 İndirim!',
+                'desc': 'Tüm FPV parçaları, motorlar ve stack ürünlerinde net %10 indirim!',
+                'badge': 'SEZON FIRSATI',
+                'points': [
+                    "[KUPON] Kupon Kodu: POZITRON10",
+                    "[FIRSAT] Sepette Anında Net %10 İndirim",
+                    "[DONANIM] Motor, ESC, FC ve Tüm Yedek Parçalarda Geçerli"
+                ]
+            },
+            {
+                'code': 'TEKNOFEST2026',
+                'title': '[TEKNOFEST] Teknofest Takımlarına Özel %15 Destek İndirimi',
+                'desc': 'İHA ve FPV yarışma takımlarına özel TEKNOFEST2026 kupon kodu aktif!',
+                'badge': 'TEKNOFEST DESTEĞİ',
+                'points': [
+                    "[KUPON] Kupon Kodu: TEKNOFEST2026",
+                    "[DESTEK] Üniversite ve Lise Takımlarına %15 İndirim",
+                    "[KARGO] Aynı Gün Hızlı Kargo ile Yarışmaya Hazırlan"
+                ]
+            },
+            {
+                'code': 'HOSGELDIN15',
+                'title': '[AVANTAJ] Pozitron Ailesine Katıl: HOSGELDIN15 ile İndirim Al',
+                'desc': 'İlk drone parçası siparişinizde anında geçerli özel hoş geldin indirimi!',
+                'badge': 'YENİ PİLOT DESTEĞİ',
+                'points': [
+                    "[KUPON] Kupon Kodu: HOSGELDIN15",
+                    "[AVANTAJ] İlk Alışverişe Özel Avantajlı Fiyat",
+                    "[DESTEK] Donanım Seçiminde Uzman Teknik Destek"
+                ]
+            },
+            {
+                'code': 'UCRETSIZKARGO',
+                'title': '[KARGO] 1.500 TL Üzeri Tüm Siparişlerde Ücretsiz Hızlı Kargo!',
+                'desc': 'Pozitron Market güvencesiyle aynı gün kargo, kapında teslim!',
+                'badge': 'ÜCRETSİZ KARGO',
+                'points': [
+                    "[KARGO] 1.500 TL Üzeri Sepetlerde Kargo Ücretsiz",
+                    "[HIZ] Hafta İçi Saat 16:00\'ya Kadar Aynı Gün Sevkiyat",
+                    "[GUVEN] Orijinal Ürün & Güvenli 3D Secure Ödeme"
+                ]
+            }
+        ]
 
-        title = f"[FIRSAT] HAFTANIN FIRSATI: {coupon_code} Kupon Kodu Aktif!"
-        caption = f"""[GUC] FPV tutkunlarına ve Teknofest takımlarına özel indirim alarmı!
+        eligible_deals = [d for d in deals if d['title'] not in recent_titles]
+        if not eligible_deals:
+            eligible_deals = deals
+        deal = random.choice(eligible_deals)
 
-Pozitron Market'te yapacağınız alışverişlerde sepet aşamasında kupon kodunu girerek avantajlı fiyatlardan yararlanın:
+        coupon_code = deal['code']
+        title = deal['title']
+        discount_desc = deal['desc']
+
+        caption = f"""[GUC] FPV tutkunlarına ve drone pilotlarına özel avantaj alarmı!
+
+Pozitron Market'te sepet aşamasında kupon kodunu girerek avantajlı fiyatlardan yararlanın:
 [KUPON] Kupon Kodu: {coupon_code}
 [KAMPANYA] Kampanya: {discount_desc}
 
-[FPV] Motorlar, ESC sürücüler, dijital HD sistemler ve yedek parçalarda geçerli!
-Kupon stoklarla sınırlıdır.
+[FPV] Motorlar, ESC sürücüler, dijital HD sistemler, gövdeler ve yedek parçalarda geçerli!
+Kupon stoklarla ve süreyle sınırlıdır.
 
 > Alışverişe başlamak için profildeki linke tıkla: pozitronmarket.com"""
-        hashtags = f"#fpvfirsat #indirimkuponu #pozitronmarket #fpvturkey #dronetopla #teknofest #fpvparts #{coupon_code.lower()}"
+
+        hashtags = f"#fpvfirsat #indirimkuponu #pozitronmarket #fpvturkey #dronetopla #teknofest #{coupon_code.lower()}"
 
         visual_summary = {
-            'badge': 'ÖZEL FIRSAT & İNDİRİM',
-            'headline': f'KUPON KODU: {coupon_code}',
+            'badge': deal['badge'],
+            'headline': f'KUPON: {coupon_code}',
             'subhead': discount_desc,
-            'key_points': [
-                f"[KUPON] Kupon Kodu: {coupon_code}",
-                f"[KAMPANYA] {discount_desc}",
-                "[GUC] Motor, ESC, FC ve Tüm Yedek Parçalarda Geçerli"
-            ],
+            'key_points': deal['points'],
             'cta': '> İNDİRİMDEN YARARLANMAK İÇİN TIKLA'
         }
 
-        # Try Gemini AI enhancement if key is provided
         if self.gemini_api_key:
             ai_data = self._call_gemini_post_and_summary('deal_drop', {
                 'coupon_code': coupon_code, 'discount_desc': discount_desc
@@ -371,45 +785,14 @@ Kupon stoklarla sınırlıdır.
         }
 
     def _generate_pilot_tip(self) -> dict:
-        tips = [
-            {
-                'title': '[GUC] 4S mi Yoksa 6S Batarya mı? Hangisini Seçmelisin?',
-                'summary': '6S LiPo bataryalar daha yüksek voltaj (22.2V) ve daha düşük akım (amper) çekerek voltaj düşmesini (voltage sag) engeller ve daha pürüzsüz gaz tepkisi verir. Ancak motor KV değerinizin 1750-1950KV aralığında olması gerekir!',
-                'headline': '4S vs 6S BATARYA SEÇİMİ',
-                'subhead': 'Doğru Voltaj ile Motor Yanmalarını Önle',
-                'points': [
-                    "[LIPO] 6S: Daha Az Voltaj Düşüşü & Pürüzsüz Gaz Tepkisi",
-                    "[GUC] 6S İçin Tavsiye Edilen Motor: 1750 - 1950 KV",
-                    "[UYARI] 6S Pille Yüksek KV Kullanmak Motoru Aşırı Isıtır"
-                ],
-                'tags': '#fpvipucu #6sbattery #fpvpilot #pozitronmarket #fpvturkey'
-            },
-            {
-                'title': '[ARAC] FPV Motor KV Seçiminde En Sık Yapılan 3 Hata',
-                'summary': '1. 6S pille 2500KV motor kullanmak (motorları aşırı ısıtır ve yakar)\n2. Pervane adımı ile motor torkunu eşleştirmemek\n3. ESC amper sınırını hesaba katmadan agresif pervane seçmek.',
-                'headline': 'MOTOR KV SEÇİM REHBERİ',
-                'subhead': 'Freestyle & Racing İçin En İdeal Değerler',
-                'points': [
-                    "[HEDEF] 5 İnç 6S Freestyle: 1950KV İdeal Denge",
-                    "[FIRSAT] Agresif Pervanede ESC Amper Sınırına Dikkat Edin",
-                    "[KORUMA] Pozitron Sihirbazı ile Donanımını 0 Hata ile Doğrula"
-                ],
-                'tags': '#motorkv #fpvbuild #teknofest #dronetopla #pozitronmarket'
-            },
-            {
-                'title': '[KORUMA] TPU 95A Neden FPV Drone İçin En İyi Malzemedir?',
-                'summary': 'PLA ve PETG sert olduğu için yüksek hızlı kaza anında anında çatlar. TPU 95A ise esnek yapısıyla darbe enerjisini emer ve GoPro ile anten konektörlerinizi kırılmaktan kurtarır.',
-                'headline': 'TPU 95A DARBE KORUMASI',
-                'subhead': 'Kırılmayan Esnek Drone Koruma Parçaları',
-                'points': [
-                    "[DARBE] Darbe Enerjisini Emer, Kaza Anında Çatlamaz",
-                    "[KAMERA] GoPro, Anten ve Kol Korumaları İçin Şart",
-                    "[3D BASKI] Pozitron 3D Studio'da STL Yükleyip Hemen Bastırın"
-                ],
-                'tags': '#3dprinting #tpu95a #fpvkoruma #pozitronmarket #drone'
-            }
-        ]
-        tip = random.choice(tips)
+        recent_titles = set(get_recent_posted_titles(40))
+        
+        # Filter out recently posted tips
+        eligible_tips = [t for t in FPV_PILOT_TIPS if t['title'] not in recent_titles]
+        if not eligible_tips:
+            eligible_tips = FPV_PILOT_TIPS
+
+        tip = random.choice(eligible_tips)
 
         title = tip['title']
         caption = f"""{tip['title']}
@@ -420,7 +803,7 @@ Kupon stoklarla sınırlıdır.
 Merak ettiğiniz teknik soruları yorumlarda pilotlarımızla paylaşın! 
 
 > Donanım ve uyumluluk testi: pozitronmarket.com"""
-        hashtags = f"{tip['tags']} #fpvfreestyle #fpvracing #fpvdrone"
+        hashtags = f"{tip['tags']} #fpvfreestyle #fpvracing #fpvdrone #pozitronmarket"
 
         visual_summary = {
             'badge': 'FPV PİLOT REHBERİ',
@@ -452,6 +835,74 @@ Merak ettiğiniz teknik soruları yorumlarda pilotlarımızla paylaşın!
             'product_data': None,
             'tool_info': None
         }
+
+    def _generate_seo_article(self) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, title, slug, component_focus, content_markdown FROM seo_articles ORDER BY id DESC LIMIT 30")
+            articles = [dict(r) for r in cursor.fetchall()]
+            conn.close()
+
+            unique_articles = []
+            seen = set()
+            for a in articles:
+                clean_t = a['title']
+                if clean_t not in seen and f"[REHBER] {clean_t[:32]}" not in recent_titles and clean_t not in recent_titles:
+                    seen.add(clean_t)
+                    unique_articles.append(a)
+
+            if unique_articles:
+                art = random.choice(unique_articles)
+                art_title = art['title']
+                focus = art['component_focus']
+                slug = art['slug']
+                post_title = f"[REHBER] {art_title[:32]}"
+                
+                caption = f"""[REHBER] {art_title}
+
+[FPV ODAK] {focus}
+
+Pozitron Mühendislik Ekibi tarafından hazırlanan bu teknik kılavuz ile FPV drone yapımında sıkça karşılaşılan montaj, kalibrasyon ve donanım eşleştirme sorunlarını profesyonelce çözün.
+
+[OZELLIK] Kılavuzda Öne Çıkanlar:
+• {focus} alanında dikkat edilmesi gereken kritik elektriksel sınırlar
+• Yanma ve kırım risklerini sıfıra indiren test protokolleri
+• Maksimum verimlilik için önerilen komponent konfigürasyonları
+
+> Kılavuzun tamamını okumak için profildeki linke tıkla: pozitronmarket.com/docs/{slug}.html"""
+
+                hashtags = "#fpvrehber #teknikmakale #dronemuhendislik #pozitronmarket #fpvturkey #teknofest"
+
+                visual_summary = {
+                    'badge': 'TEKNİK MÜHENDİSLİK REHBERİ',
+                    'headline': art_title[:30],
+                    'subhead': f'Odak: {focus[:40]}',
+                    'key_points': [
+                        f"[ODAK] {focus[:40]}",
+                        "[REHBER] Kapsamlı Montaj & Donanım Kalibrasyonu",
+                        "[POZİTRON] pozitronmarket.com/docs Üzerinde Yayında"
+                    ],
+                    'cta': '> REHBERİN TAMAMINI OKU'
+                }
+
+                return {
+                    'content_type': 'seo_article',
+                    'product_id': None,
+                    'title': post_title,
+                    'caption': caption.strip(),
+                    'hashtags': hashtags,
+                    'visual_summary': visual_summary,
+                    'product_data': None,
+                    'tool_info': {'slug': slug}
+                }
+        except Exception as e:
+            print(f"[UYARI] SEO makalesi sorgulama hatası: {e}")
+
+        # Fallback to pilot tip
+        return self._generate_pilot_tip()
 
     def _generate_review_highlight(self) -> dict:
         conn = get_db()
@@ -536,10 +987,7 @@ Detaylar ve sipariş için profildeki linke tıkla: {link}"""
 
     def _call_gemini_post_and_summary(self, content_type: str, context: dict) -> dict:
         """
-        Calls Gemini 2.5 Flash API to generate:
-        1. Engaging Turkish Instagram post caption & hashtags
-        2. Structured Visual Summary (Özet Kartı) with 3 key takeaway bullet points
-           specifically crafted to be rendered onto the 1080x1080 graphic image!
+        Calls Gemini 2.5/3.8 Flash API to generate Turkish Instagram post caption and visual summary card.
         """
         if not self.gemini_api_key:
             return None
@@ -584,7 +1032,6 @@ SADECE gecerli bir JSON objesi dondur:
             }
         }
 
-        import re
         for model in self.models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={self.gemini_api_key}"
             try:
@@ -596,7 +1043,6 @@ SADECE gecerli bir JSON objesi dondur:
                 with urllib.request.urlopen(req, timeout=12) as response:
                     res_data = json.loads(response.read().decode('utf-8'))
                     raw_text = res_data['candidates'][0]['content']['parts'][0]['text']
-                    # Strip any accidental emojis
                     raw_text = re.sub(r'[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf]', '', raw_text)
                     data = json.loads(raw_text)
                     if isinstance(data, dict) and data.get('caption') and data.get('visual_summary'):

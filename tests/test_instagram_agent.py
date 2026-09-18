@@ -21,6 +21,17 @@ class TestInstagramPRAgent(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         init_instagram_tables()
+        cls.original_config = get_agent_config()
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.original_config:
+            update_agent_config({
+                'posting_frequency_hours': cls.original_config.get('posting_frequency_hours', 6),
+                'dry_run_mode': cls.original_config.get('dry_run_mode', 0),
+                'preferred_language': cls.original_config.get('preferred_language', 'tr'),
+                'is_autonomous_enabled': cls.original_config.get('is_autonomous_enabled', 1)
+            })
 
     def test_01_db_config(self):
         cfg = get_agent_config()
@@ -30,9 +41,6 @@ class TestInstagramPRAgent(unittest.TestCase):
         updated = update_agent_config({'posting_frequency_hours': 8, 'preferred_language': 'tr'})
         self.assertEqual(updated['posting_frequency_hours'], 8)
         self.assertEqual(updated['preferred_language'], 'tr')
-
-        # restore
-        update_agent_config({'posting_frequency_hours': 12})
 
     def test_02_content_generation_all_pillars(self):
         cg = ContentGenerator()

@@ -1,7 +1,7 @@
 {
   "posting_frequency_hours": 6,
   "daily_engagement_limit": 10,
-  "is_autonomous_enabled": true,
+  "is_autonomous_enabled": 1,
   "dry_run_mode": 0,
   "public_base_url": "https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main",
   "preferred_language": "tr",
@@ -18,7 +18,7 @@
     "fpvfreestyle",
     "fpvracing"
   ],
-  "updated_at": "2026-09-17T22:45:49.386406",
-  "last_run_at": "2026-09-17T22:45:49.343481",
-  "next_run_at": "2026-09-18T04:45:49.384164"
+  "updated_at": "2026-09-18T22:49:25.984667",
+  "last_run_at": "2026-09-18T22:49:25.225679",
+  "next_run_at": "2026-09-19T04:49:25.228564"
 }

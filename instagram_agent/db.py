@@ -290,11 +290,29 @@ def delete_instagram_post(post_id: str):
         sync_posts_to_json()
     return count > 0
 
-def get_recent_posted_product_ids(limit: int = 30):
+def get_recent_posted_product_ids(limit: int = 50):
     init_instagram_tables()
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT product_id FROM instagram_posts WHERE product_id IS NOT NULL AND status IN ('published', 'draft', 'scheduled') ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [r[0] for r in rows if r[0]]
+
+def get_recent_posted_titles(limit: int = 40) -> list:
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT title FROM instagram_posts WHERE status IN ('published', 'draft', 'scheduled') ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [r[0] for r in rows if r[0]]
+
+def get_recent_posted_content_types(limit: int = 10) -> list:
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT content_type FROM instagram_posts WHERE status IN ('published', 'draft', 'scheduled') ORDER BY created_at DESC LIMIT ?", (limit,))
     rows = cursor.fetchall()
     conn.close()
     return [r[0] for r in rows if r[0]]

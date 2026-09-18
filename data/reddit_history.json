@@ -11,11 +11,11 @@
     "permalink": "https://reddit.com/r/bilim/comments/z8p5ha/drone_wifi_connection_problem/",
     "question_summary": "drone wifi connection problem",
     "gemini_reply": "Selamlar! FPV donanım ve yazılım arızalarında adım adım çözüm adımları:\n\n1. **Bağlantılar & Donanım:** Multimetre ile kısa devre (continuity) kontrolü yap. Lehim noktalarının parlak, temiz ve komşu pinlerle temas etmediğinden emin ol.\n2. **Betaflight Ports & Alıcı:** Ports sekmesinde alıcının bağlı olduğu UART portunda 'Serial RX' açık olmalı. Receiver sekmesinde doğru protokolün (CRSF/SBUS vb.) seçildiğini doğrula.\n3. **Güç & Duman Testi:** İlk güç vermeden önce mutlaka duman önleyici (Smoke Stopper) kullan. Parçaların çalışma voltaj aralığının (örn. 1S-6S) besleme kaynağıyla tam uyumlu olduğunu kontrol et.\n\nKullandığın uçuş kartı modelini veya hata detayını paylaşırsan adım adım çözüme ulaşabiliriz.\n\n*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*",
-    "status": "draft",
+    "status": "published",
     "confidence_score": 88,
     "upvotes": 1,
     "error_message": null,
-    "published_at": null,
+    "published_at": "2026-09-17T22:47:14.416509",
     "created_at": "2026-09-13T21:43:03.980181"
   },
   {
@@ -30,11 +30,11 @@
     "permalink": "https://reddit.com/r/teknoloji/comments/1vdsv9r/drone_almak_mantıklı_mı/",
     "question_summary": "Drone almak mantıklı mı?",
     "gemini_reply": "Selamlar! Drone dünyasına adım atarken ya da bütçene en uygun tercihi yaparken dikkat etmeni önereceğim temel noktalar:\n\n1. **Kullanım Amacı & Sınıf:** Amacın sabit kadraj, manzara ve pratik video çekimi ise hazır GPS/gimbal donanımlı modeller (örneğin DJI Mini serisi) uygundur. Eğer serbest akrobasi, hız ve tam kontrol (FPV) istiyorsan kapalı mekanlarda kırılmadan antrenman yaptıran bir Whoop kiti (örneğin BetaFPV Cetus / Meteor serisi) çok daha doğru bir ilk adımdır.\n2. **Simülatör Önceliği:** FPV uçuşu düşünüyorsan drone'dan önce bilgisayara bağlanan ELRS destekli bir kumanda edinip (RadioMaster Pocket vb.) simülatörde (Velocidrone, Liftoff) 15-20 saat uçmak kırım masraflarını sıfıra indirir.\n3. **500 Gram Kuralı:** 500g altı mikro modeller hobi uçuşlarında SHGM kayıt zorunluluğu bakımından çok daha esnektir.\n\nTam olarak bütçeni ve nasıl bir uçuş deneyimi hedeflediğini paylaşırsan doğrudan parça veya model bazında liste çıkarabilirim.\n\n*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*",
-    "status": "draft",
+    "status": "published",
     "confidence_score": 88,
     "upvotes": 1,
     "error_message": null,
-    "published_at": null,
+    "published_at": "2026-09-17T23:17:29.464963",
     "created_at": "2026-09-13T21:43:03.058907"
   },
   {
@@ -49,10 +49,10 @@
     "permalink": "https://reddit.com/r/AskTurkey/comments/1mniir6/has_anyone_brought_a_dji_drone_to_antalya_turkey/",
     "question_summary": "Has anyone brought a DJI drone to Antalya, Turkey? Customs &amp; registration experience?",
     "gemini_reply": "Selamlar! Türkiye'de drone uçuş kuralları ve SHGM mevzuatı hakkında temel rehber:\n\n1. **500 Gram Sınırı:** Azami kalkış ağırlığı 500 gram ve üzeri olan tüm cihazlar ve pilotları SHGM İHA Kayıt Sistemi'ne (iha.shgm.gov.tr) kaydolmak zorundadır. 500g altındaki mikro cihazlar kayıt gerektirmese de genel uçuş kurallarına tabidir.\n2. **Hava Sahası & İzinler:** SHGM haritasındaki kırmızı/uçuşa yasak bölgelerde (havalimanı yaklaşma hatları, askeri üsler, kamu binaları) izinsiz uçuş kesinlikle yasaktır. Yeşil alanlarda hobi amaçlı görerek uçuş (VLOS) yapılabilir.\n3. **Maksimum İrtifa:** Yasal tavan irtifası 120 metredir (400 feet). Kalabalıkların ve otoyolların doğrudan üzerinden uçulmamalıdır.\n\n*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*",
-    "status": "draft",
+    "status": "failed",
     "confidence_score": 85,
     "upvotes": 1,
-    "error_message": null,
+    "error_message": "Reddit Yanıt Kodu 401: {\"success\":false,\"error\":{\"reason\":\"UNAUTHORIZED\",\"explanation\":\"This server could not verify that you are authorized to access the document you requested.\"}}\n",
     "published_at": null,
     "created_at": "2026-09-13T21:43:05.304167"
   },
@@ -68,11 +68,11 @@
     "permalink": "https://reddit.com/r/teknoloji/comments/1sbswg4/uygun_fiyatlı_drone_önerisi/",
     "question_summary": "Uygun fiyatlı drone önerisi",
     "gemini_reply": "Selamlar! Drone dünyasına adım atarken ya da bütçene en uygun tercihi yaparken dikkat etmeni önereceğim temel noktalar:\n\n1. **Kullanım Amacı & Sınıf:** Amacın sabit kadraj, manzara ve pratik video çekimi ise hazır GPS/gimbal donanımlı modeller (örneğin DJI Mini serisi) uygundur. Eğer serbest akrobasi, hız ve tam kontrol (FPV) istiyorsan kapalı mekanlarda kırılmadan antrenman yaptıran bir Whoop kiti (örneğin BetaFPV Cetus / Meteor serisi) çok daha doğru bir ilk adımdır.\n2. **Simülatör Önceliği:** FPV uçuşu düşünüyorsan drone'dan önce bilgisayara bağlanan ELRS destekli bir kumanda edinip (RadioMaster Pocket vb.) simülatörde (Velocidrone, Liftoff) 15-20 saat uçmak kırım masraflarını sıfıra indirir.\n3. **500 Gram Kuralı:** 500g altı mikro modeller hobi uçuşlarında SHGM kayıt zorunluluğu bakımından çok daha esnektir.\n\nTam olarak bütçeni ve nasıl bir uçuş deneyimi hedeflediğini paylaşırsan doğrudan parça veya model bazında liste çıkarabilirim.\n\n*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*",
-    "status": "draft",
+    "status": "published",
     "confidence_score": 88,
     "upvotes": 1,
     "error_message": null,
-    "published_at": null,
+    "published_at": "2026-09-17T23:02:21.981260",
     "created_at": "2026-09-13T21:43:03.074955"
   },
   {
@@ -87,10 +87,10 @@
     "permalink": "https://reddit.com/r/AskTurkey/comments/1fdgjes/drones_in_istanbul/",
     "question_summary": "Drones in Istanbul",
     "gemini_reply": "Selamlar! FPV donanım ve yazılım arızalarında adım adım çözüm adımları:\n\n1. **Bağlantılar & Donanım:** Multimetre ile kısa devre (continuity) kontrolü yap. Lehim noktalarının parlak, temiz ve komşu pinlerle temas etmediğinden emin ol.\n2. **Betaflight Ports & Alıcı:** Ports sekmesinde alıcının bağlı olduğu UART portunda 'Serial RX' açık olmalı. Receiver sekmesinde doğru protokolün (CRSF/SBUS vb.) seçildiğini doğrula.\n3. **Güç & Duman Testi:** İlk güç vermeden önce mutlaka duman önleyici (Smoke Stopper) kullan. Parçaların çalışma voltaj aralığının (örn. 1S-6S) besleme kaynağıyla tam uyumlu olduğunu kontrol et.\n\nKullandığın uçuş kartı modelini veya hata detayını paylaşırsan adım adım çözüme ulaşabiliriz.\n\n*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*",
-    "status": "draft",
+    "status": "failed",
     "confidence_score": 88,
     "upvotes": 0,
-    "error_message": null,
+    "error_message": "Reddit Yanıt Kodu 401: {\"success\":false,\"error\":{\"reason\":\"UNAUTHORIZED\",\"explanation\":\"This server could not verify that you are authorized to access the document you requested.\"}}\n",
     "published_at": null,
     "created_at": "2026-09-13T21:43:05.311883"
   },
@@ -106,11 +106,11 @@
     "permalink": "https://reddit.com/r/teknoloji/comments/1vvditl/ilk_drone_için_tercihiniz_hangisi_olurdu_maalesef/",
     "question_summary": "İlk drone için tercihiniz hangisi olurdu? Maalesef ikisinin kontrolcüsünde de görüntü için ekran yok",
     "gemini_reply": "Selamlar! Drone dünyasına adım atarken ya da bütçene en uygun tercihi yaparken dikkat etmeni önereceğim temel noktalar:\n\n1. **Kullanım Amacı & Sınıf:** Amacın sabit kadraj, manzara ve pratik video çekimi ise hazır GPS/gimbal donanımlı modeller (örneğin DJI Mini serisi) uygundur. Eğer serbest akrobasi, hız ve tam kontrol (FPV) istiyorsan kapalı mekanlarda kırılmadan antrenman yaptıran bir Whoop kiti (örneğin BetaFPV Cetus / Meteor serisi) çok daha doğru bir ilk adımdır.\n2. **Simülatör Önceliği:** FPV uçuşu düşünüyorsan drone'dan önce bilgisayara bağlanan ELRS destekli bir kumanda edinip (RadioMaster Pocket vb.) simülatörde (Velocidrone, Liftoff) 15-20 saat uçmak kırım masraflarını sıfıra indirir.\n3. **500 Gram Kuralı:** 500g altı mikro modeller hobi uçuşlarında SHGM kayıt zorunluluğu bakımından çok daha esnektir.\n\nTam olarak bütçeni ve nasıl bir uçuş deneyimi hedeflediğini paylaşırsan doğrudan parça veya model bazında liste çıkarabilirim.\n\n*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*",
-    "status": "draft",
+    "status": "published",
     "confidence_score": 88,
     "upvotes": 1,
     "error_message": null,
-    "published_at": null,
+    "published_at": "2026-09-17T22:46:23.108294",
     "created_at": "2026-09-13T21:43:03.056345"
   }
 ]

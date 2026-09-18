@@ -150,7 +150,11 @@ class InstagramPRAgent:
         
         # 1. Generate text and metadata
         content = self.content_gen.generate_content(content_type=content_type, product_id=product_id)
-        
+        if not content:
+            return {"success": False, "error": "İçerik üretilemedi veya aday ürün bulunamadı."}
+
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Yeni gönderi hazırlandı: {content['title']} (Tip: {content['content_type']})")
+
         # 2. Generate visual banner (1080x1080)
         temp_post_data = {
             'id': post_id,
@@ -161,6 +165,7 @@ class InstagramPRAgent:
             'hashtags': content['hashtags'],
             'product_data': content.get('product_data'),
             'tool_info': content.get('tool_info'),
+            'visual_summary': content.get('visual_summary'),
             'created_at': datetime.now().isoformat()
         }
         img_rel_path = self.image_gen.generate_post_image(temp_post_data)
