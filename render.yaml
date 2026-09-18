@@ -10,3 +10,8 @@ services:
     startCommand: "python3 server.py"
     healthCheckPath: /api/health
     autoDeploy: true
+    envVars:
+      - key: POZITRON_ENV
+        value: production
+      - key: ADMIN_API_KEY
+        value: pzt_adm_sec_9941a87b32c

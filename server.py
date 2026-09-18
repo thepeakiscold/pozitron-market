@@ -296,9 +296,11 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if user:
             return user
 
-        # Local development convenience fallback if running locally
+        # Local development convenience fallback ONLY if strictly running locally (not in cloud or proxied)
+        is_cloud = bool(os.environ.get('RENDER') or os.environ.get('PORT'))
+        is_proxied = bool(self.headers.get('X-Forwarded-For') or self.headers.get('CF-Connecting-IP'))
         client_ip = self.client_address[0] if self.client_address else ""
-        if client_ip in ('127.0.0.1', 'localhost', '::1') and os.environ.get('POZITRON_ENV') != 'production':
+        if not is_cloud and not is_proxied and client_ip in ('127.0.0.1', 'localhost', '::1') and os.environ.get('POZITRON_ENV') != 'production':
             return {"uid": "local_dev", "email": "furkaniusprimes@gmail.com", "role": "admin"}
 
         return None
@@ -2075,7 +2077,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 'ahmet@pozitron.market'
             ]
             is_whitelisted = (email in ADMIN_EMAILS) or email.endswith('@pozitron.market')
-            is_local = (self.client_address[0] in ('127.0.0.1', 'localhost', '::1')) if self.client_address else False
+            is_cloud = bool(os.environ.get('RENDER') or os.environ.get('PORT'))
+            is_proxied = bool(self.headers.get('X-Forwarded-For') or self.headers.get('CF-Connecting-IP'))
+            is_local = bool(not is_cloud and not is_proxied and self.client_address and self.client_address[0] in ('127.0.0.1', 'localhost', '::1') and os.environ.get('POZITRON_ENV') != 'production')
             has_admin_key = (self.headers.get('X-Admin-Key') == ADMIN_API_KEY) or (self.headers.get('Authorization') == f"Bearer {ADMIN_API_KEY}")
 
             # Admin escalation is protected: requires whitelisted email + cryptographic proof OR admin key
