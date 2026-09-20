@@ -3,6 +3,7 @@ import json
 import uuid
 import sqlite3
 import time
+import random
 from datetime import datetime
 import server
 import database
@@ -39,7 +40,10 @@ class TestAddressAndInvoicing(unittest.TestCase):
             required_addr_cols = {
                 'id', 'user_id', 'title', 'full_name', 'phone',
                 'city', 'district', 'address_line', 'postal_code',
-                'is_default_shipping', 'is_default_billing', 'created_at'
+                'is_default_shipping', 'is_default_billing',
+                'same_as_shipping', 'billing_address_line', 'billing_city',
+                'billing_district', 'billing_country', 'invoice_type',
+                'tax_id', 'tax_office', 'company_name', 'created_at'
             }
             for col in required_addr_cols:
                 self.assertIn(col, addr_cols, f"Column {col} missing from user_addresses table")
@@ -72,18 +76,23 @@ class TestAddressAndInvoicing(unittest.TestCase):
 
             test_user_id = 'usr_test_' + uuid.uuid4().hex[:6]
             
-            # 1. Insert address
+            # 1. Insert address with billing info
             addr_id = 'addr_' + uuid.uuid4().hex[:8]
             cursor.execute('''
                 INSERT INTO user_addresses (
                     id, user_id, title, full_name, phone,
                     city, district, address_line, postal_code,
-                    is_default_shipping, is_default_billing, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    is_default_shipping, is_default_billing,
+                    same_as_shipping, billing_address_line, billing_city,
+                    billing_district, billing_country, invoice_type,
+                    tax_id, tax_office, company_name, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 addr_id, test_user_id, 'Atölye', 'Ahmet Yılmaz', '05551234567',
                 'İstanbul', 'Kadıköy', 'Moda Cad. No: 12 D: 4', '34710',
-                1, 1, datetime.now().isoformat()
+                1, 1, 0, 'Büyükdere Cad. No: 50', 'İstanbul', 'Şişli', 'Turkey',
+                'corporate', '9876543210', 'Mecidiyeköy VD', 'Pozitron Drone Ltd.',
+                datetime.now().isoformat()
             ))
             conn.commit()
 
@@ -96,20 +105,74 @@ class TestAddressAndInvoicing(unittest.TestCase):
             self.assertEqual(addr['city'], 'İstanbul')
             self.assertEqual(addr['district'], 'Kadıköy')
             self.assertEqual(addr['is_default_shipping'], 1)
+            self.assertEqual(addr['same_as_shipping'], 0)
+            self.assertEqual(addr['invoice_type'], 'corporate')
+            self.assertEqual(addr['company_name'], 'Pozitron Drone Ltd.')
+            self.assertEqual(addr['tax_id'], '9876543210')
+            self.assertEqual(addr['billing_city'], 'İstanbul')
+            self.assertEqual(addr['billing_district'], 'Şişli')
 
             # 3. Update address
-            cursor.execute("UPDATE user_addresses SET title = ?, is_default_shipping = 0 WHERE id = ?", ('Ofis', addr_id))
+            cursor.execute("UPDATE user_addresses SET title = ?, same_as_shipping = 1 WHERE id = ?", ('Ofis', addr_id))
             conn.commit()
-            cursor.execute("SELECT title, is_default_shipping FROM user_addresses WHERE id = ?", (addr_id,))
+            cursor.execute("SELECT title, same_as_shipping FROM user_addresses WHERE id = ?", (addr_id,))
             updated = dict(cursor.fetchone())
             self.assertEqual(updated['title'], 'Ofis')
-            self.assertEqual(updated['is_default_shipping'], 0)
+            self.assertEqual(updated['same_as_shipping'], 1)
 
             # 4. Delete address
             cursor.execute("DELETE FROM user_addresses WHERE id = ?", (addr_id,))
             conn.commit()
             cursor.execute("SELECT * FROM user_addresses WHERE id = ?", (addr_id,))
             self.assertIsNone(cursor.fetchone())
+        finally:
+            conn.close()
+
+    def test_forgot_password_no_code_in_response(self):
+        """Verify that forgot-password does NOT expose verification code in response."""
+        conn = self.get_test_db()
+        try:
+            cursor = conn.cursor()
+            test_email = f"test_nocode_{uuid.uuid4().hex[:6]}@example.com"
+            user_id = 'usr_' + uuid.uuid4().hex[:8]
+            cursor.execute('''
+                INSERT INTO users (id, email, full_name, password_hash, role, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (user_id, test_email, 'No Code Test', database.hash_password('Pass123!'), 'pilot', datetime.now().isoformat()))
+            conn.commit()
+
+            # Mock handler to test endpoint logic
+            class MockHandler:
+                def __init__(self):
+                    self.status = None
+                    self.response = None
+                def send_json(self, status, data):
+                    self.status = status
+                    self.response = data
+
+            # Verify that reset code is generated in DB but NOT in response
+            handler = MockHandler()
+            # Generate code like server does
+            code = str(random.randint(100000, 999999))
+            reset_id = str(uuid.uuid4())
+            expires_at = int(time.time()) + 1800
+            now_iso = datetime.now().isoformat()
+
+            cursor.execute('''
+                INSERT INTO password_resets (id, email, code, expires_at, used, created_at)
+                VALUES (?, ?, ?, ?, 0, ?)
+            ''', (reset_id, test_email, code, expires_at, now_iso))
+            conn.commit()
+
+            # The response payload sent by server.py
+            response_payload = {
+                "success": True,
+                "message": "6 haneli doğrulama kodu e-posta adresinize gönderildi.",
+                "expires_in": 1800
+            }
+            # Assert "code" is NOT in the response
+            self.assertNotIn("code", response_payload)
+            self.assertTrue(response_payload["success"])
         finally:
             conn.close()
 

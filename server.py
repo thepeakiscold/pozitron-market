@@ -16,6 +16,9 @@ import threading
 import hmac
 import hashlib
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from database import get_db, init_db, hash_password, get_setting, set_setting, get_all_settings
 from seed_data import seed_database
 from export_data import export_static_data
@@ -85,6 +88,81 @@ def verify_auth_token(token: str) -> dict:
         return payload
     except Exception:
         return None
+
+def send_verification_email(to_email: str, code: str) -> bool:
+    """Sends a 6-digit password reset verification code to user email."""
+    smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+    smtp_port = int(os.environ.get('SMTP_PORT', 587))
+    smtp_user = os.environ.get('SMTP_USER', '')
+    smtp_password = os.environ.get('SMTP_PASSWORD', '')
+    smtp_from = os.environ.get('SMTP_FROM', smtp_user or 'noreply@pozitronmarket.com')
+
+    subject = f"[Pozitron Market] Şifre Sıfırlama Doğrulama Kodu: {code}"
+    
+    text_content = f"""Merhaba,
+
+Pozitron Market hesabınızın şifresini sıfırlamak için talepte bulundunuz.
+
+6 haneli doğrulama kodunuz: {code}
+
+Bu kod 30 dakika boyunca geçerlidir.
+Eğer bu talebi siz yapmadıysanız, bu e-postayı güvenle dikkate almayabilirsiniz.
+
+Saygılarımızla,
+Pozitron Market Ekibi
+https://pozitronmarket.com
+"""
+
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 30px 10px;">
+  <div style="max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+    <div style="background: linear-gradient(135deg, #0f172a, #1e293b); padding: 24px; text-align: center;">
+      <h1 style="color: #38bdf8; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px;">POZITRON MARKET</h1>
+      <p style="color: #94a3b8; margin: 6px 0 0; font-size: 13px;">FPV &amp; Robotik Mağazası</p>
+    </div>
+    <div style="padding: 30px 24px; color: #334155; line-height: 1.6;">
+      <p style="font-size: 16px; margin: 0 0 16px; font-weight: 600; color: #0f172a;">Merhaba,</p>
+      <p style="font-size: 14px; margin: 0 0 20px;">Pozitron Market hesabınızın şifresini yenilemek için bir talep aldık. Aşağıdaki 6 haneli doğrulama kodunu şifre sıfırlama ekranına giriniz:</p>
+      <div style="text-align: center; margin: 28px 0;">
+        <div style="display: inline-block; background: #f0f9ff; border: 2px dashed #0284c7; border-radius: 10px; padding: 14px 32px; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #0369a1; font-family: monospace;">
+          {code}
+        </div>
+        <p style="font-size: 12px; color: #64748b; margin-top: 10px;">Bu kod <strong>30 dakika</strong> süreyle geçerlidir.</p>
+      </div>
+      <p style="font-size: 13px; color: #64748b; margin: 24px 0 0; border-top: 1px solid #f1f5f9; padding-top: 16px;">Eğer şifre sıfırlama talebinde bulunmadıysanız bu e-postayı dikkate almayınız. Hesabınız güvendedir.</p>
+    </div>
+    <div style="background: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+      &copy; {datetime.now().year} Pozitron Market &bull; <a href="https://pozitronmarket.com" style="color: #0284c7; text-decoration: none;">pozitronmarket.com</a>
+    </div>
+  </div>
+</body>
+</html>"""
+
+    if not smtp_user or not smtp_password:
+        print(f"[AUTH EMAIL] SMTP credentials not set. Reset code for {to_email}: {code}")
+        return False
+
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = smtp_from
+        msg['To'] = to_email
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server_conn:
+            server_conn.ehlo()
+            server_conn.starttls()
+            server_conn.ehlo()
+            server_conn.login(smtp_user, smtp_password)
+            server_conn.send_message(msg)
+        print(f"[AUTH EMAIL] Verification code email sent successfully to {to_email}")
+        return True
+    except Exception as e:
+        print(f"[AUTH EMAIL ERROR] Failed to send email to {to_email}: {e}")
+        return False
 
 # Ensure database tables and initial data exist (Crucial for fresh cloud deployments like Render)
 def ensure_database_ready():
@@ -2817,10 +2895,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             print(f"[AUTH PASSWORD RESET] Code generated for {email}: {code} (expires in 30m)")
 
+            # Send verification email in background thread
+            email_thread = threading.Thread(target=send_verification_email, args=(email, code), daemon=True)
+            email_thread.start()
+
             self.send_json(200, {
                 "success": True,
                 "message": "6 haneli doğrulama kodu e-posta adresinize gönderildi.",
-                "code": code,
                 "expires_in": 1800
             })
             return
@@ -2854,20 +2935,24 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(400, {"error": "Geçersiz veya süresi dolmuş doğrulama kodu."})
                 return
 
-            pw_hash = hash_password(new_password)
-            cursor.execute("UPDATE users SET password_hash = ? WHERE LOWER(email) = ?", (pw_hash, email))
-            cursor.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (reset_row[0],))
+            reset_id = reset_row[0]
+            cursor.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (reset_id,))
+
+            new_hash = hash_password(new_password)
+            cursor.execute("UPDATE users SET password_hash = ? WHERE LOWER(email) = ?", (new_hash, email))
             conn.commit()
 
             cursor.execute("SELECT id, email, full_name, avatar_url, provider, role, phone, address, city, country FROM users WHERE LOWER(email) = ?", (email,))
             user_row = cursor.fetchone()
-            user_dict = dict(user_row) if user_row else {"email": email}
+            user_dict = dict(user_row) if user_row else None
+            token = create_auth_token(user_dict) if user_dict else None
             conn.close()
 
-            token = create_auth_token(user_dict)
+            print(f"[AUTH PASSWORD RESET] Password reset successfully for {email}")
+
             self.send_json(200, {
                 "success": True,
-                "message": "Şifreniz başarıyla güncellendi! Giriş yapıldı.",
+                "message": "Şifreniz başarıyla güncellendi! Yeni şifrenizle giriş yapabilirsiniz.",
                 "user": user_dict,
                 "token": token
             })
@@ -2887,6 +2972,16 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             is_default_shipping = 1 if (data.get('is_default_shipping') or data.get('is_default')) else 0
             is_default_billing = 1 if (data.get('is_default_billing') or data.get('is_default')) else 0
 
+            same_as_shipping = 1 if data.get('same_as_shipping', 1) in (1, '1', True, 'true') else 0
+            billing_address_line = data.get('billing_address_line', '').strip()
+            billing_city = data.get('billing_city', '').strip()
+            billing_district = data.get('billing_district', '').strip()
+            billing_country = data.get('billing_country', 'Turkey').strip()
+            invoice_type = data.get('invoice_type', 'individual').strip()
+            tax_id = data.get('tax_id', '').strip()
+            tax_office = data.get('tax_office', '').strip()
+            company_name = data.get('company_name', '').strip()
+
             if not user_id or not full_name or not phone or not city or not address_line:
                 conn.close()
                 self.send_json(400, {"error": "Zorunlu adres alanlarını eksiksiz doldurunuz."})
@@ -2902,17 +2997,26 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 cursor.execute('''
                     UPDATE user_addresses 
                     SET title = ?, full_name = ?, phone = ?, city = ?, district = ?, 
-                        address_line = ?, postal_code = ?, is_default_shipping = ?, is_default_billing = ?
+                        address_line = ?, postal_code = ?, is_default_shipping = ?, is_default_billing = ?,
+                        same_as_shipping = ?, billing_address_line = ?, billing_city = ?, billing_district = ?,
+                        billing_country = ?, invoice_type = ?, tax_id = ?, tax_office = ?, company_name = ?
                     WHERE id = ?
-                ''', (title, full_name, phone, city, district, address_line, postal_code, is_default_shipping, is_default_billing, addr_id))
+                ''', (title, full_name, phone, city, district, address_line, postal_code, is_default_shipping, is_default_billing,
+                      same_as_shipping, billing_address_line, billing_city, billing_district,
+                      billing_country, invoice_type, tax_id, tax_office, company_name, addr_id))
             else:
                 now_iso = datetime.now().isoformat()
                 cursor.execute('''
                     INSERT INTO user_addresses (
                         id, user_id, title, full_name, phone, city, district, 
-                        address_line, postal_code, is_default_shipping, is_default_billing, created_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (addr_id, user_id, title, full_name, phone, city, district, address_line, postal_code, is_default_shipping, is_default_billing, now_iso))
+                        address_line, postal_code, is_default_shipping, is_default_billing,
+                        same_as_shipping, billing_address_line, billing_city, billing_district,
+                        billing_country, invoice_type, tax_id, tax_office, company_name, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (addr_id, user_id, title, full_name, phone, city, district,
+                      address_line, postal_code, is_default_shipping, is_default_billing,
+                      same_as_shipping, billing_address_line, billing_city, billing_district,
+                      billing_country, invoice_type, tax_id, tax_office, company_name, now_iso))
 
             conn.commit()
             cursor.execute("SELECT * FROM user_addresses WHERE id = ?", (addr_id,))

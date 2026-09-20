@@ -1026,6 +1026,77 @@
             <input type="checkbox" id="addr-is-default" style="width:16px; height:16px; accent-color:var(--brand-primary); cursor:pointer;">
             <label for="addr-is-default" style="cursor:pointer; font-size:0.85rem; margin:0;" data-i18n="is_default_address">Varsayılan adres olarak kaydet</label>
           </div>
+
+          <!-- Invoicing & Billing Section for Address Book -->
+          <div style="border-top:1px solid var(--border-color, #e2e8f0); margin-top:14px; padding-top:12px;">
+            <div class="form-group" style="margin-bottom:10px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer; user-select:none;">
+                <input type="checkbox" id="addr-same-billing" checked onchange="window.app && window.app.toggleAddressFormBilling(this.checked)" style="width:16px; height:16px; accent-color:var(--brand-primary); cursor:pointer;">
+                <span data-i18n="same_as_shipping" style="font-weight:500;">Fatura adresim teslimat adresi ile aynı</span>
+              </label>
+            </div>
+
+            <!-- Invoice Type & Details (Shown if same_as_shipping is unchecked) -->
+            <div id="addr-billing-section" style="display:none; background:var(--bg-card, #ffffff); border:1px solid var(--border-color, #e2e8f0); border-radius:6px; padding:12px; margin-top:10px;">
+              <h5 style="margin-bottom:10px; font-size:0.85rem; font-weight:600;" data-i18n="invoice_heading">Fatura Bilgileri</h5>
+
+              <!-- Invoice Type (Bireysel vs Kurumsal) -->
+              <div id="addr-invoice-type-selector" style="display:flex; gap:16px; margin-bottom:12px; font-size:0.85rem;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+                  <input type="radio" name="addr_invoice_type" value="individual" checked onchange="window.app && window.app.setAddressInvoiceType('individual')">
+                  <span data-i18n="invoice_individual">Bireysel Fatura</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+                  <input type="radio" name="addr_invoice_type" value="corporate" onchange="window.app && window.app.setAddressInvoiceType('corporate')">
+                  <span data-i18n="invoice_corporate">Kurumsal Fatura</span>
+                </label>
+              </div>
+
+              <!-- Individual Invoice Fields -->
+              <div id="addr-invoice-individual-fields">
+                <div class="form-group">
+                  <label for="addr-tckn" data-i18n="tckn_label">T.C. Kimlik No (TCKN)</label>
+                  <input type="text" id="addr-tckn" class="form-input" placeholder="11 haneli TCKN (veya 11111111111)" maxlength="11">
+                  <small style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:2px;" data-i18n="tckn_hint">Şahıs / Bireysel e-Arşiv faturaları için gereklidir.</small>
+                </div>
+              </div>
+
+              <!-- Corporate Invoice Fields -->
+              <div id="addr-invoice-corporate-fields" style="display:none;">
+                <div class="form-group">
+                  <label for="addr-company-name" data-i18n="company_name">Şirket / Firma Ünvanı</label>
+                  <input type="text" id="addr-company-name" class="form-input" placeholder="Şirket Tam Ünvanı">
+                </div>
+                <div class="form-row">
+                  <div class="form-group col-half">
+                    <label for="addr-tax-office" data-i18n="tax_office">Vergi Dairesi</label>
+                    <input type="text" id="addr-tax-office" class="form-input" placeholder="Örn: Maslak VD">
+                  </div>
+                  <div class="form-group col-half">
+                    <label for="addr-vkn" data-i18n="tax_id">Vergi Kimlik No (VKN)</label>
+                    <input type="text" id="addr-vkn" class="form-input" placeholder="10 haneli VKN" maxlength="10">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Separate Billing Address Details -->
+              <div class="form-row" style="margin-top:10px;">
+                <div class="form-group col-half">
+                  <label for="addr-billing-city" data-i18n="billing_city_label">Fatura İli</label>
+                  <select id="addr-billing-city" class="form-input form-select"></select>
+                </div>
+                <div class="form-group col-half">
+                  <label for="addr-billing-district" data-i18n="billing_district_label">Fatura İlçesi</label>
+                  <input type="text" id="addr-billing-district" class="form-input" placeholder="İlçe">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="addr-billing-line" data-i18n="billing_address_label">Fatura Açık Adresi</label>
+                <textarea id="addr-billing-line" class="form-input form-textarea" rows="2" placeholder="Fatura adresi"></textarea>
+              </div>
+            </div>
+          </div>
+
           <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
             <button type="button" class="btn-secondary" style="padding:6px 14px; font-size:0.82rem;" onclick="window.app && window.app.hideAddressForm()">İptal</button>
             <button type="submit" class="btn-primary" style="padding:6px 14px; font-size:0.82rem;" id="addr-save-btn">Kaydet</button>

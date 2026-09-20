@@ -141,9 +141,36 @@ def init_db():
             postal_code TEXT,
             is_default_shipping INTEGER DEFAULT 0,
             is_default_billing INTEGER DEFAULT 0,
+            same_as_shipping INTEGER DEFAULT 1,
+            billing_address_line TEXT,
+            billing_city TEXT,
+            billing_district TEXT,
+            billing_country TEXT DEFAULT 'Turkey',
+            invoice_type TEXT DEFAULT 'individual',
+            tax_id TEXT,
+            tax_office TEXT,
+            company_name TEXT,
             created_at TEXT NOT NULL
         )
     ''')
+
+    # Migration: Ensure billing and invoice columns exist on user_addresses
+    cursor.execute("PRAGMA table_info(user_addresses)")
+    existing_addr_cols = [col[1] for col in cursor.fetchall()]
+    addr_billing_migrations = [
+        ('same_as_shipping', 'INTEGER DEFAULT 1'),
+        ('billing_address_line', 'TEXT'),
+        ('billing_city', 'TEXT'),
+        ('billing_district', 'TEXT'),
+        ('billing_country', "TEXT DEFAULT 'Turkey'"),
+        ('invoice_type', "TEXT DEFAULT 'individual'"),
+        ('tax_id', 'TEXT'),
+        ('tax_office', 'TEXT'),
+        ('company_name', 'TEXT')
+    ]
+    for col_name, col_type in addr_billing_migrations:
+        if col_name not in existing_addr_cols:
+            cursor.execute(f"ALTER TABLE user_addresses ADD COLUMN {col_name} {col_type}")
 
     # Password Resets Table (Şifremi Unuttum)
     cursor.execute('''

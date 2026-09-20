@@ -433,6 +433,13 @@ class PozitronApp {
       }
     });
 
+    // Global ESC key listener to close modals, drawers and dropdowns
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc' || e.keyCode === 27) {
+        this.handleEscapeKey();
+      }
+    });
+
     // Cart Drawer Toggle
     const cartDrawerBtn = document.getElementById('cart-drawer-btn');
     const closeCartBtn = document.getElementById('close-cart-btn');
@@ -2581,13 +2588,14 @@ class PozitronApp {
         if (sendForm) sendForm.style.display = 'none';
         if (resetForm) resetForm.style.display = 'block';
         if (noticeEl) {
-          noticeEl.innerHTML = `<strong>Doğrulama Kodu:</strong> ${data.code ? `<span style="font-size:1.1rem; font-weight:800; letter-spacing:2px; color:#1d4ed8;">${data.code}</span><br>` : ''}Şifre sıfırlama kodunuz oluşturuldu (30 dakika geçerlidir).`;
+          noticeEl.innerHTML = `<strong>6 Haneli Doğrulama Kodu Gönderildi!</strong><br>Lütfen <strong>${this.escapeHTML(email)}</strong> adresli e-postanızı (ve spam klasörünü) kontrol ediniz. Kod 30 dakika geçerlidir.`;
         }
         const codeInput = document.getElementById('reset-code');
-        if (codeInput && data.code) {
-          codeInput.value = data.code;
+        if (codeInput) {
+          codeInput.value = '';
+          codeInput.focus();
         }
-        this.showToast('Şifre sıfırlama kodu oluşturuldu!', 'success');
+        this.showToast('Doğrulama kodu e-posta adresinize gönderildi!', 'success');
       } else {
         if (errEl) {
           errEl.textContent = data.error || 'Şifre sıfırlama kodu gönderilemedi.';
@@ -2677,7 +2685,7 @@ class PozitronApp {
   // USER ADDRESS BOOK MANAGEMENT (ADRESLERİM)
   // ==========================================
   populateTurkishCities() {
-    const citySelects = ['chk-city', 'chk-billing-city', 'addr-city'];
+    const citySelects = ['chk-city', 'chk-billing-city', 'addr-city', 'addr-billing-city'];
     citySelects.forEach(selId => {
       const sel = document.getElementById(selId);
       if (sel && sel.options.length <= 1) {
@@ -2687,6 +2695,23 @@ class PozitronApp {
         if (currentVal) sel.value = currentVal;
       }
     });
+  }
+
+  toggleAddressFormBilling(sameAsShipping) {
+    const box = document.getElementById('addr-billing-section');
+    if (box) {
+      box.style.display = sameAsShipping ? 'none' : 'block';
+      if (!sameAsShipping) {
+        this.populateTurkishCities();
+      }
+    }
+  }
+
+  setAddressInvoiceType(type) {
+    const indBox = document.getElementById('addr-invoice-individual-fields');
+    const corpBox = document.getElementById('addr-invoice-corporate-fields');
+    if (indBox) indBox.style.display = (type === 'individual') ? 'block' : 'none';
+    if (corpBox) corpBox.style.display = (type === 'corporate') ? 'block' : 'none';
   }
 
   async openAddressesModal() {
@@ -2806,16 +2831,43 @@ class PozitronApp {
     const lineInput = document.getElementById('addr-line');
     const defInput = document.getElementById('addr-is-default');
 
+    const sameBillingCheck = document.getElementById('addr-same-billing');
+    const tcknInput = document.getElementById('addr-tckn');
+    const compInput = document.getElementById('addr-company-name');
+    const taxOffInput = document.getElementById('addr-tax-office');
+    const vknInput = document.getElementById('addr-vkn');
+    const bCityInput = document.getElementById('addr-billing-city');
+    const bDistInput = document.getElementById('addr-billing-district');
+    const bLineInput = document.getElementById('addr-billing-line');
+
     if (addr) {
       if (titleEl) titleEl.textContent = window.i18n ? window.i18n.t('edit_address') : 'Adresi Düzenle';
       if (idEl) idEl.value = addr.id || '';
       if (titleInput) titleInput.value = addr.title || '';
-      if (recInput) recInput.value = addr.recipient_name || '';
+      if (recInput) recInput.value = addr.recipient_name || addr.full_name || '';
       if (phoneInput) phoneInput.value = addr.phone || '';
       if (cityInput) cityInput.value = addr.city || 'İstanbul';
       if (distInput) distInput.value = addr.district || '';
       if (lineInput) lineInput.value = addr.address_line || '';
       if (defInput) defInput.checked = !!addr.is_default;
+
+      // Billing & Invoicing
+      const isSame = (addr.same_as_shipping !== 0 && addr.same_as_shipping !== false && addr.same_as_shipping !== '0');
+      if (sameBillingCheck) sameBillingCheck.checked = isSame;
+      this.toggleAddressFormBilling(isSame);
+
+      const invType = addr.invoice_type || 'individual';
+      const r = document.querySelector(`input[name="addr_invoice_type"][value="${invType}"]`);
+      if (r) r.checked = true;
+      this.setAddressInvoiceType(invType);
+
+      if (tcknInput) tcknInput.value = (invType === 'individual' ? (addr.tax_id || '') : '');
+      if (compInput) compInput.value = addr.company_name || '';
+      if (taxOffInput) taxOffInput.value = addr.tax_office || '';
+      if (vknInput) vknInput.value = (invType === 'corporate' ? (addr.tax_id || '') : '');
+      if (bCityInput) bCityInput.value = addr.billing_city || '';
+      if (bDistInput) bDistInput.value = addr.billing_district || '';
+      if (bLineInput) bLineInput.value = addr.billing_address_line || '';
     } else {
       if (titleEl) titleEl.textContent = window.i18n ? window.i18n.t('add_new_address') : 'Yeni Adres Ekle';
       if (idEl) idEl.value = '';
@@ -2827,6 +2879,22 @@ class PozitronApp {
       if (distInput) distInput.value = '';
       if (lineInput) lineInput.value = '';
       if (defInput) defInput.checked = (!this._cachedAddresses || this._cachedAddresses.length === 0);
+
+      // Default: same as shipping checked = true
+      if (sameBillingCheck) sameBillingCheck.checked = true;
+      this.toggleAddressFormBilling(true);
+
+      const r = document.querySelector('input[name="addr_invoice_type"][value="individual"]');
+      if (r) r.checked = true;
+      this.setAddressInvoiceType('individual');
+
+      if (tcknInput) tcknInput.value = '';
+      if (compInput) compInput.value = '';
+      if (taxOffInput) taxOffInput.value = '';
+      if (vknInput) vknInput.value = '';
+      if (bCityInput) bCityInput.value = '';
+      if (bDistInput) bDistInput.value = '';
+      if (bLineInput) bLineInput.value = '';
     }
 
     form.style.display = 'block';
@@ -2850,8 +2918,22 @@ class PozitronApp {
     const address_line = document.getElementById('addr-line')?.value.trim() || '';
     const is_default = document.getElementById('addr-is-default')?.checked ? 1 : 0;
 
+    const same_as_shipping = document.getElementById('addr-same-billing')?.checked ? 1 : 0;
+    const invoice_type = document.querySelector('input[name="addr_invoice_type"]:checked')?.value || 'individual';
+    const tax_id = (invoice_type === 'individual' ? document.getElementById('addr-tckn')?.value.trim() : document.getElementById('addr-vkn')?.value.trim()) || '';
+    const company_name = document.getElementById('addr-company-name')?.value.trim() || '';
+    const tax_office = document.getElementById('addr-tax-office')?.value.trim() || '';
+    const billing_city = document.getElementById('addr-billing-city')?.value || '';
+    const billing_district = document.getElementById('addr-billing-district')?.value.trim() || '';
+    const billing_address_line = document.getElementById('addr-billing-line')?.value.trim() || '';
+
     if (!recipient_name || !phone || !city || !district || !address_line) {
       this.showToast('Lütfen tüm adres bilgilerini eksiksiz doldurunuz.', 'error');
+      return;
+    }
+
+    if (!same_as_shipping && (!billing_city || !billing_district || !billing_address_line)) {
+      this.showToast('Lütfen fatura adresi bilgilerini doldurunuz veya "Fatura adresim teslimat adresi ile aynı" seçeneğini işaretleyiniz.', 'error');
       return;
     }
 
@@ -2867,7 +2949,15 @@ class PozitronApp {
       district,
       country,
       address_line,
-      is_default
+      is_default,
+      same_as_shipping,
+      invoice_type,
+      tax_id,
+      company_name,
+      tax_office,
+      billing_city,
+      billing_district,
+      billing_address_line
     };
 
     const headers = { 'Content-Type': 'application/json' };
@@ -2970,11 +3060,43 @@ class PozitronApp {
     const distEl = document.getElementById('chk-district');
     const addrEl = document.getElementById('chk-address');
 
-    if (nameEl && addr.recipient_name) nameEl.value = addr.recipient_name;
+    if (nameEl && (addr.recipient_name || addr.full_name)) nameEl.value = addr.recipient_name || addr.full_name;
     if (phoneEl && addr.phone) phoneEl.value = addr.phone;
     if (cityEl && addr.city) cityEl.value = addr.city;
     if (distEl && addr.district) distEl.value = addr.district;
     if (addrEl && addr.address_line) addrEl.value = addr.address_line;
+
+    // Pre-fill Billing & Invoicing Preferences from saved address
+    const isSame = (addr.same_as_shipping !== 0 && addr.same_as_shipping !== false && addr.same_as_shipping !== '0');
+    const sameChk = document.getElementById('chk-same-billing');
+    if (sameChk) sameChk.checked = isSame;
+    this.toggleBillingAddress(isSame);
+
+    if (!isSame) {
+      const bCity = document.getElementById('chk-billing-city');
+      const bDist = document.getElementById('chk-billing-district');
+      const bLine = document.getElementById('chk-billing-address');
+      if (bCity && addr.billing_city) bCity.value = addr.billing_city;
+      if (bDist && addr.billing_district) bDist.value = addr.billing_district;
+      if (bLine && addr.billing_address_line) bLine.value = addr.billing_address_line;
+    }
+
+    const invType = addr.invoice_type || 'individual';
+    const invRadio = document.querySelector(`input[name="chk_invoice_type"][value="${invType}"]`);
+    if (invRadio) invRadio.checked = true;
+    this.setInvoiceType(invType);
+
+    if (invType === 'corporate') {
+      const cName = document.getElementById('chk-company-name');
+      const tOff = document.getElementById('chk-tax-office');
+      const vknEl = document.getElementById('chk-vkn');
+      if (cName) cName.value = addr.company_name || '';
+      if (tOff) tOff.value = addr.tax_office || '';
+      if (vknEl) vknEl.value = addr.tax_id || '';
+    } else {
+      const tcknEl = document.getElementById('chk-tckn');
+      if (tcknEl) tcknEl.value = addr.tax_id || '';
+    }
   }
 
   // ==========================================
@@ -3091,6 +3213,113 @@ class PozitronApp {
   closeCheckoutModal() {
     const modal = document.getElementById('checkout-modal-backdrop');
     if (modal) modal.style.display = 'none';
+  }
+
+  // Handle ESC (Escape) key globally across all open modals, drawers, and menus
+  handleEscapeKey() {
+    // 1. If 3D Secure iframe modal is open
+    const sec3d = document.getElementById('secure-3d-modal-backdrop');
+    if (sec3d && sec3d.style.display !== 'none') {
+      sec3d.style.display = 'none';
+      return;
+    }
+
+    // 2. If Studio 3D modal is open
+    const studio3d = document.getElementById('studio-3d-modal-backdrop');
+    if (studio3d && studio3d.style.display !== 'none') {
+      studio3d.style.display = 'none';
+      return;
+    }
+
+    // 3. If Success modal is open
+    const succ = document.getElementById('success-modal-backdrop');
+    if (succ && succ.style.display !== 'none') {
+      succ.style.display = 'none';
+      return;
+    }
+
+    // 4. If Comment modal is open
+    const comment = document.getElementById('comment-modal-backdrop');
+    if (comment && comment.style.display !== 'none') {
+      this.closeCommentModal();
+      return;
+    }
+
+    // 5. If Stock Alert modal is open
+    const stockAlert = document.getElementById('stock-alert-modal-backdrop');
+    if (stockAlert && stockAlert.style.display !== 'none') {
+      this.closeStockAlertModal();
+      return;
+    }
+
+    // 6. If Address modal is open
+    const addrModal = document.getElementById('addresses-modal-backdrop');
+    if (addrModal && addrModal.style.display !== 'none') {
+      const addrForm = document.getElementById('user-address-form');
+      if (addrForm && addrForm.style.display !== 'none') {
+        this.hideAddressForm();
+      } else {
+        this.closeAddressesModal();
+      }
+      return;
+    }
+
+    // 7. If Orders modal is open
+    const ordersModal = document.getElementById('orders-modal-backdrop');
+    if (ordersModal && ordersModal.style.display !== 'none') {
+      this.closeOrdersModal();
+      return;
+    }
+
+    // 8. If Checkout modal is open
+    const chkModal = document.getElementById('checkout-modal-backdrop');
+    if (chkModal && chkModal.style.display !== 'none') {
+      this.closeCheckoutModal();
+      return;
+    }
+
+    // 9. If Auth modal is open
+    const authModal = document.getElementById('auth-modal-backdrop');
+    if (authModal && authModal.style.display !== 'none') {
+      this.closeAuthModal();
+      return;
+    }
+
+    // 10. If Drone Builder modal is open
+    const builderModal = document.getElementById('builder-modal-backdrop');
+    if (builderModal && builderModal.style.display !== 'none') {
+      builderModal.style.display = 'none';
+      return;
+    }
+
+    // 11. If Cart Drawer is open
+    const cartBackdrop = document.getElementById('cart-backdrop');
+    if (cartBackdrop && cartBackdrop.classList.contains('open')) {
+      this.closeCartDrawer();
+      return;
+    }
+
+    // 12. If User Dropdown Menu is open
+    const userDrop = document.getElementById('user-dropdown-menu');
+    if (userDrop && userDrop.style.display !== 'none' && userDrop.style.display !== '') {
+      userDrop.style.display = 'none';
+      return;
+    }
+
+    // 13. Fallback: Any other visible .modal-backdrop
+    const openBackdrops = Array.from(document.querySelectorAll('.modal-backdrop')).filter(el => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    if (openBackdrops.length > 0) {
+      const topBackdrop = openBackdrops[openBackdrops.length - 1];
+      const closeBtn = topBackdrop.querySelector('.modal-close-btn');
+      if (closeBtn) {
+        closeBtn.click();
+      } else {
+        topBackdrop.style.display = 'none';
+      }
+    }
   }
 
   setPaymentMethod(method) {
