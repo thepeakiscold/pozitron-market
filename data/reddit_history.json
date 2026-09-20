@@ -171,6 +171,25 @@
     "created_at": "2026-09-20T08:13:01.739841"
   },
   {
+    "id": "c3679aea1f01",
+    "reddit_id": "t3_1wli90f",
+    "reddit_type": "submission",
+    "title": "Hey reddit, is my soldering good enough?",
+    "body": "First time building a drone and wondering if based on this soldering job I am ready to solder the real esc",
+    "author": "Impressive_Board_849",
+    "subreddit": "fpv",
+    "url": "https://i.redd.it/3sbsuw7oooqh1.jpeg",
+    "permalink": "https://reddit.com/r/fpv/comments/1wli90f/hey_reddit_is_my_soldering_good_enough/",
+    "question_summary": "Hey reddit, is my soldering good enough?",
+    "gemini_reply": "Hey! For FPV hardware & Betaflight troubleshooting, here are the step-by-step checks:\n\n1. **Continuity & Soldering:** Check with a multimeter continuity buzzer to ensure no solder bridges between VTX, ESC, or battery pads.\n2. **Betaflight Ports & Receiver:** Verify that 'Serial RX' is enabled on the exact UART port the receiver is wired to (TX to RX, RX to TX). Check that CRSF/ELRS protocol is selected in the Receiver tab.\n3. **Power & Smoke Stopper:** Always use a smoke stopper on the first power-up. Check that your FC and ESC firmware match your hardware target.\n\nLet us know your FC/ESC model or what error you see if you need more help!\n\n*Fly safe and happy flying! [POZITRON MARKET]*",
+    "status": "failed",
+    "confidence_score": 88,
+    "upvotes": 0,
+    "error_message": "Gönderim hatası: [Errno 2] No such file or directory: 'node'",
+    "published_at": null,
+    "created_at": "2026-09-20T17:22:07.654159"
+  },
+  {
     "id": "bedaa9279610",
     "reddit_id": "t3_1wi7ev1",
     "reddit_type": "submission",
@@ -891,6 +910,25 @@
     "error_message": "Gönderim hatası: [Errno 2] No such file or directory: 'node'",
     "published_at": null,
     "created_at": "2026-09-20T10:12:36.989616"
+  },
+  {
+    "id": "20776faa98c9",
+    "reddit_id": "t3_1wlj36z",
+    "reddit_type": "submission",
+    "title": "Maiden Seeker 35 flight",
+    "body": "Recently i finished building my Seeker 35 DC with stock Aether 2006 2550kv motors , gokuf743 mini stack 45A , goku nano m10 gps , 3520 gemfan T mount props (only available props) , RM xr3 Elrs 2.4 , 6s (1200mah , 1300mah , 1550mah) \n\nThat’s my built. I did a maiden flight today and wow how smooth and locked in it feels just using preset pids no propwash on recovery. \n\nOn 1200mah i got around 9 mins of smooth flying , aggressive punch out lasts around 6-7 mins. I am not into freestyle tricks but for cinematic flying it felt really good. I m not sure if it’s motors or props (officially they supply 3630 i have 3520) \n\nNo jittery footage on o4 pro which is compared to my pavo20 pro which runs on same air unit is way to smooth even on goggle.\n\nI am not that experienced in hobby but this quad feels more locked in and flys in sweet spot of compact size and power of my 2.5inch pavo 20 pro ans 5inch mario. I guess i will be flying this one a lot. ",
+    "author": "DangerousAdvance9276",
+    "subreddit": "fpv",
+    "url": "https://v.redd.it/vkhsaofquoqh1",
+    "permalink": "https://reddit.com/r/fpv/comments/1wlj36z/maiden_seeker_35_flight/",
+    "question_summary": "Maiden Seeker 35 flight",
+    "gemini_reply": "Hey! For LiPo battery safety and longevity, keep these guidelines in mind:\n\n1. **Per-Cell Voltage:** Never discharge below 3.5V per cell (aim to land around 3.6V-3.7V). Full charge is 4.20V (or 4.35V for LiHV).\n2. **Storage Charge:** Don't leave packs fully charged or depleted for more than 48 hours. Charge or discharge them to 3.80V-3.85V per cell.\n3. **Charge Rate:** Stick to 1C charge rate for longest cycle life (e.g. 1.5A for a 1500mAh pack).\n\n*Fly safe and happy flying! [POZITRON MARKET]*",
+    "status": "failed",
+    "confidence_score": 88,
+    "upvotes": 1,
+    "error_message": "Gönderim hatası: [Errno 2] No such file or directory: 'node'",
+    "published_at": null,
+    "created_at": "2026-09-20T17:54:56.941970"
   },
   {
     "id": "1f83dfbba02c",

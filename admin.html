@@ -78,10 +78,11 @@
         </div>
 
         <div class="admin-header-actions">
-          <!-- Live USD/TRY Indicator -->
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:5px 12px; border-radius:20px; font-size:0.8rem; font-weight:600; display:flex; align-items:center; gap:6px; color:#475569;">
+          <!-- Live USD/TRY Indicator (Clickable Quick Edit) -->
+          <button type="button" id="btn-header-usd-rate" onclick="openCurrencyRateModal()" style="background:#f8fafc; border:1px solid #cbd5e1; padding:5px 12px; border-radius:20px; font-size:0.8rem; font-weight:600; display:flex; align-items:center; gap:6px; color:#334155; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.borderColor='#0284c7';" onmouseout="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';" title="Döviz kurunu hızlıca güncellemek için tıklayın">
             <span style="color:#16a34a; font-size:0.7rem;">●</span> USD: <strong id="header-usd-rate" style="color:#0f172a;">--.-- ₺</strong>
-          </div>
+            <span style="font-size:0.75rem; color:#0284c7; margin-left:2px;" title="Düzenle">✏️</span>
+          </button>
 
           <!-- Sync to Static Bundle Button -->
           <button type="button" class="admin-btn-secondary" id="btn-sync-export" style="display:flex; align-items:center; gap:6px; font-size:0.82rem; padding:6px 12px;" title="GitHub Pages statik verilerini yenile">
@@ -1151,6 +1152,40 @@
           <button type="button" class="admin-btn-secondary" onclick="closeAddUserModal()">İptal</button>
           <button type="submit" class="admin-btn-primary" style="background:#0284c7; border-color:#0284c7;">➕ Kullanıcıyı Kaydet</button>
         </div>
+  <!-- Currency Rate Quick Edit Modal -->
+  <div class="modal-backdrop" id="currency-modal-backdrop" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:var(--radius-lg); width:95%; max-width:440px; padding:24px; box-shadow:var(--shadow-lg);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; border-bottom:1px solid var(--border-subtle); padding-bottom:12px;">
+        <h3 style="font-size:1.2rem; font-weight:700; color:#0f172a; margin:0; display:flex; align-items:center; gap:8px;">
+          <span>💱</span> Döviz Kurunu Güncelle
+        </h3>
+        <button type="button" onclick="closeCurrencyRateModal()" style="font-size:1.5rem; color:#64748b; cursor:pointer; background:none; border:none; line-height:1;">&times;</button>
+      </div>
+
+      <p style="margin:0 0 16px; font-size:0.85rem; color:#64748b; line-height:1.5;">
+        Sistemdeki 1 USD karşılığı TL kurunu belirleyin. Kur kaydedildiğinde tüm ürün fiyatları otomatik olarak güncellenir.
+      </p>
+
+      <form id="currency-rate-form" onsubmit="handleCurrencyRateModalSubmit(event)">
+        <div class="admin-form-group" style="margin-bottom:16px;">
+          <label for="modal-usd-rate-input" style="font-weight:600; font-size:0.85rem; margin-bottom:6px; display:block;">Döviz Kuru (1 USD = ? TRY)</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="number" id="modal-usd-rate-input" step="0.1" required style="flex:1; padding:10px 14px; font-size:1.25rem; font-weight:700; color:#0284c7; border:2px solid #e2e8f0; border-radius:8px; outline:none;">
+            <span style="font-size:1.1rem; font-weight:700; color:#475569;">₺</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom:20px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
+          <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.85rem; color:#1e293b; cursor:pointer;">
+            <input type="checkbox" id="modal-usd-sync-prods" checked style="width:16px; height:16px; margin-top:2px; accent-color:#0284c7;">
+            <span><strong>Tüm ürünlerin TL fiyatlarını</strong> bu kura göre otomatik güncelle ve senkronize et</span>
+          </label>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="admin-btn-secondary" onclick="closeCurrencyRateModal()">İptal</button>
+          <button type="submit" id="btn-save-currency-modal" class="admin-btn-primary" style="background:#0284c7; border-color:#0284c7; padding:8px 18px;">💾 Kuru Kaydet ve Senkronize Et</button>
+        </div>
       </form>
     </div>
   </div>
@@ -1274,7 +1309,7 @@
     let categoriesList = [];
     let brandsList = [];
     let currentUsdRate = parseFloat(localStorage.getItem('pozitron_usd_rate')) || 
-      (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 50.0);
+      ((window.pozitronData || window.__POZITRON_DATA__) && (window.pozitronData || window.__POZITRON_DATA__).usd_rate ? parseFloat((window.pozitronData || window.__POZITRON_DATA__).usd_rate) : 50.0);
 
     function applyCurrencyRateToUI(rate) {
       if (isNaN(rate) || rate <= 0) return;
@@ -1285,22 +1320,18 @@
       if (bulkInput && document.activeElement !== bulkInput) {
         bulkInput.value = rate.toFixed(1);
       }
+      const modalInput = document.getElementById('modal-usd-rate-input');
+      if (modalInput && document.activeElement !== modalInput) {
+        modalInput.value = rate.toFixed(2);
+      }
     }
 
     async function loadAdminCurrencyRate() {
       let rate = currentUsdRate;
-      const cached = localStorage.getItem('pozitron_usd_rate');
-      if (cached) {
-        const parsed = parseFloat(cached);
-        if (!isNaN(parsed) && parsed > 0) rate = parsed;
-      } else if (window.pozitronData && window.pozitronData.usd_rate) {
-        const fallback = parseFloat(window.pozitronData.usd_rate);
-        if (!isNaN(fallback) && fallback > 0) rate = fallback;
-      }
-      applyCurrencyRateToUI(rate);
 
+      // 1. Prioritize Server Live Settings (Single Source of Truth)
       try {
-        const res = await fetch('/api/settings');
+        const res = await fetch(`/api/settings?t=${Date.now()}`);
         if (res.ok) {
           const s = await res.json();
           if (s && s.usd_rate) {
@@ -1317,19 +1348,24 @@
         console.warn('loadAdminCurrencyRate fetch error:', err);
       }
 
-      // Fallback to static catalog data bundle if server wasn't reachable
-      if (window.pozitronData && window.pozitronData.usd_rate) {
-        const fallbackRate = parseFloat(window.pozitronData.usd_rate);
-        if (!isNaN(fallbackRate) && fallbackRate > 0) {
-          rate = fallbackRate;
-          localStorage.setItem('pozitron_usd_rate', rate.toString());
-          applyCurrencyRateToUI(rate);
+      // 2. Fallback to LocalStorage
+      const cached = localStorage.getItem('pozitron_usd_rate');
+      if (cached) {
+        const parsed = parseFloat(cached);
+        if (!isNaN(parsed) && parsed > 0) rate = parsed;
+      } else {
+        const bundle = window.pozitronData || window.__POZITRON_DATA__;
+        if (bundle && bundle.usd_rate) {
+          const fallback = parseFloat(bundle.usd_rate);
+          if (!isNaN(fallback) && fallback > 0) rate = fallback;
         }
       }
+
+      applyCurrencyRateToUI(rate);
       return rate;
     }
 
-    async function applyCurrencyRateChange(rate) {
+    async function applyCurrencyRateChange(rate, syncProducts = true) {
       if (isNaN(rate) || rate <= 0) return false;
       currentUsdRate = rate;
       localStorage.setItem('pozitron_usd_rate', rate.toString());
@@ -1337,18 +1373,74 @@
 
       let savedOk = false;
       try {
-        const res = await fetch('/api/settings', {
+        const endpoint = syncProducts ? '/api/admin/currency-sync' : '/api/settings';
+        const bodyPayload = syncProducts 
+          ? JSON.stringify({ usd_rate: rate, category_id: 'all' })
+          : JSON.stringify({ usd_rate: rate, sync_products: false });
+
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usd_rate: rate })
+          body: bodyPayload
         });
         if (res.ok) {
           savedOk = true;
+          // Clear cached local products so fresh calculated prices load immediately
+          _adminMemoryProducts = null;
+          try { localStorage.removeItem('pozitron_admin_products'); } catch(e) {}
         }
       } catch(e) {
         console.warn('applyCurrencyRateChange fetch error:', e);
       }
       return savedOk;
+    }
+
+    // Header Quick-Edit Modal Controls
+    function openCurrencyRateModal() {
+      const modal = document.getElementById('currency-modal-backdrop');
+      const input = document.getElementById('modal-usd-rate-input');
+      if (input) input.value = currentUsdRate.toFixed(2);
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeCurrencyRateModal() {
+      const modal = document.getElementById('currency-modal-backdrop');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function handleCurrencyRateModalSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('modal-usd-rate-input');
+      const syncChbox = document.getElementById('modal-usd-sync-prods');
+      const btn = document.getElementById('btn-save-currency-modal');
+      const rate = parseFloat(input?.value);
+
+      if (isNaN(rate) || rate <= 0) {
+        showToast('Lütfen geçerli bir döviz kuru girin.', 'error');
+        return;
+      }
+
+      if (btn) {
+        btn.textContent = '⏳ Uygulanıyor...';
+        btn.disabled = true;
+      }
+
+      const syncProducts = syncChbox ? syncChbox.checked : true;
+      const ok = await applyCurrencyRateChange(rate, syncProducts);
+
+      if (ok) {
+        showToast(`Döviz kuru 1 USD = ${rate.toFixed(2)} ₺ olarak kaydedildi ve ürün fiyatları güncellendi!`, 'success');
+        closeCurrencyRateModal();
+        await loadAdminStats();
+        await loadAdminProducts(currentPage);
+      } else {
+        showToast('Kur kaydedilirken hata oluştu. Lütfen bağlantınızı kontrol edin.', 'error');
+      }
+
+      if (btn) {
+        btn.textContent = '💾 Kuru Kaydet ve Senkronize Et';
+        btn.disabled = false;
+      }
     }
 
     async function saveCurrencyRateOnly() {
@@ -1362,13 +1454,14 @@
       if (indicator) {
         indicator.style.display = 'inline-block';
         indicator.style.color = '#0284c7';
-        indicator.textContent = '⏳ Kaydediliyor...';
+        indicator.textContent = '⏳ Kaydediliyor ve ürünler güncelleniyor...';
       }
-      const ok = await applyCurrencyRateChange(rate);
+      // Always sync products automatically so user sees prices updated immediately
+      const ok = await applyCurrencyRateChange(rate, true);
       if (indicator) {
         if (ok) {
           indicator.style.color = '#16a34a';
-          indicator.textContent = `✓ Kur başarıyla kaydedildi (${rate.toFixed(2)} ₺)`;
+          indicator.textContent = `✓ Kur ve ürün fiyatları başarıyla güncellendi (${rate.toFixed(2)} ₺)`;
         } else {
           indicator.style.color = '#dc2626';
           indicator.textContent = '✕ Kaydedilirken hata oluştu';
@@ -1377,7 +1470,9 @@
           if (indicator) indicator.style.display = 'none';
         }, 3500);
       }
-      showToast(`Döviz kuru 1 USD = ${rate.toFixed(2)} ₺ olarak kaydedildi.`, ok ? 'success' : 'warning');
+      showToast(`Döviz kuru 1 USD = ${rate.toFixed(2)} ₺ olarak kaydedildi ve ürünler güncellendi.`, ok ? 'success' : 'warning');
+      await loadAdminStats();
+      await loadAdminProducts(currentPage);
     }
     function getRobotAvatar(u) {
       if (!u) return 'https://api.dicebear.com/7.x/bottts/svg?seed=PozitronBot&scale=90';
@@ -2578,8 +2673,9 @@
       }
 
       // Try Backend API
+      let apiSuccess = false;
       try {
-        await fetch('/api/admin/products/update', {
+        const res = await fetch('/api/admin/products/update', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -2590,11 +2686,22 @@
             discount_pct: discount
           })
         });
-      } catch (err) {}
+        if (res.ok) {
+          const d = await res.json();
+          if (d && d.success) apiSuccess = true;
+        }
+      } catch (err) {
+        console.warn('saveRowProduct error:', err);
+      }
 
-      showToast('Ürün başarıyla güncellendi!', 'success');
+      if (apiSuccess) {
+        showToast('Ürün başarıyla güncellendi!', 'success');
+        if (btn) btn.textContent = '✅ Kaydedildi';
+      } else {
+        showToast('Ürün kaydedilirken sunucu hatası oluştu!', 'error');
+        if (btn) btn.textContent = '❌ Hata';
+      }
       loadAdminStats();
-      if (btn) btn.textContent = '✅ Kaydedildi';
       setTimeout(() => {
         if (btn) {
           btn.textContent = '💾 Kaydet';
@@ -3094,7 +3201,7 @@
       let shippingCount = 0;
 
       _cachedOrders.forEach(o => {
-        const val = parseFloat(o.total_try || o.total_amount_try || (parseFloat(o.total_usd || 0) * 47.0) || 0);
+        const val = parseFloat(o.total_try || o.total_amount_try || (parseFloat(o.total_usd || 0) * (currentUsdRate || 50.0)) || 0);
         totalRevenue += val;
         const st = (o.status || 'CONFIRMED').toUpperCase();
         if (st === 'CONFIRMED' || st === 'ONAYLANDI') confirmedCount++;

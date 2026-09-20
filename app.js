@@ -709,7 +709,7 @@ class PozitronApp {
   }
 
   formatPrice(priceUSD, priceTRY) {
-    const rate = this.usdRate || 47.0;
+    const rate = this.usdRate || 50.0;
     let tryVal = priceTRY;
     let usdVal = priceUSD;
 
@@ -1765,7 +1765,7 @@ class PozitronApp {
       if (isFreeShipping) {
         progressText.innerHTML = window.i18n.t('free_shipping_earned');
       } else {
-        const remaining = this.formatPrice((freeShippingTargetTRY - subtotalTRY) / 47.0, freeShippingTargetTRY - subtotalTRY);
+        const remaining = this.formatPrice((freeShippingTargetTRY - subtotalTRY) / (this.usdRate || 50.0), freeShippingTargetTRY - subtotalTRY);
         progressText.innerHTML = `${remaining} daha ekleyin, <strong>Ücretsiz Kargo</strong> kazanın!`;
       }
     }
@@ -3132,7 +3132,7 @@ class PozitronApp {
     const lang = window.i18n.currentLang;
     const st = this.builderState;
     const curSymbol = this.currency === 'USD' ? '$' : '₺';
-    const rate = this.usdRate || 47.0;
+    const rate = this.usdRate || 50.0;
     const budgetVal = st.budget;
 
     body.innerHTML = `
@@ -3644,16 +3644,16 @@ class PozitronApp {
         <div class="build-summary-banner">
           <div class="build-summary-stat">
             <span class="stat-label">${lang === 'tr' ? 'Seçilen Bütçe' : 'Target Budget'}</span>
-            <span style="font-size:1.15rem; font-weight:700; color:#e2e8f0;">${this.formatPrice(b.targetBudget / (this.usdRate || 47.0), b.targetBudget)}</span>
+            <span style="font-size:1.15rem; font-weight:700; color:#e2e8f0;">${this.formatPrice(b.targetBudget / (this.usdRate || 50.0), b.targetBudget)}</span>
           </div>
           <div class="build-summary-stat">
             <span class="stat-label">${lang === 'tr' ? 'Toplam Parça Tutarı' : 'Total Package Price'}</span>
-            <span class="stat-val">${this.formatPrice(b.totalPrice / (this.usdRate || 47.0), b.totalPrice)}</span>
+            <span class="stat-val">${this.formatPrice(b.totalPrice / (this.usdRate || 50.0), b.totalPrice)}</span>
           </div>
           <div class="build-summary-stat">
             <span class="stat-label">${isUnderBudget ? (lang === 'tr' ? 'Kalan Bütçe' : 'Remaining Budget') : (lang === 'tr' ? 'Bütçe Farkı' : 'Difference')}</span>
             <span style="font-size:1.15rem; font-weight:800; color:${isUnderBudget ? '#4ade80' : '#fb923c'};">
-              ${isUnderBudget ? '+' : ''}${this.formatPrice(diff / (this.usdRate || 47.0), diff)}
+              ${isUnderBudget ? '+' : ''}${this.formatPrice(diff / (this.usdRate || 50.0), diff)}
             </span>
           </div>
         </div>
@@ -3674,7 +3674,7 @@ class PozitronApp {
         <div class="build-items-list">
           ${b.items.map(it => {
             const p = it.product;
-            const unitTRY = Number(p.price_try) || (Number(p.price_usd) * (this.usdRate || 47.0)) || 0;
+            const unitTRY = Number(p.price_try) || (Number(p.price_usd) * (this.usdRate || 50.0)) || 0;
             const subtotalTRY = unitTRY * it.qty;
             const rawTitle = (lang === 'tr' ? p.name_tr : p.name_en) || p.title || '';
             const brandStr = p.brand || '';
@@ -3693,8 +3693,8 @@ class PozitronApp {
                   <div class="build-item-title">${displayTitle}</div>
                 </div>
                 <div class="build-item-price">
-                  ${this.formatPrice(subtotalTRY / (this.usdRate || 47.0), subtotalTRY)}
-                  ${it.qty > 1 ? `<div style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">(Birim: ${this.formatPrice(unitTRY / (this.usdRate || 47.0), unitTRY)})</div>` : ''}
+                  ${this.formatPrice(subtotalTRY / (this.usdRate || 50.0), subtotalTRY)}
+                  ${it.qty > 1 ? `<div style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">(Birim: ${this.formatPrice(unitTRY / (this.usdRate || 50.0), unitTRY)})</div>` : ''}
                 </div>
               </div>
             `;
@@ -3752,7 +3752,7 @@ class PozitronApp {
     const lang = window.i18n.currentLang;
     const ids = b.items.map(it => `${it.product.id}:${it.qty}`).join(',');
     const shareUrl = `${window.location.origin}/#build=${encodeURIComponent(ids)}`;
-    const formattedTotal = this.formatPrice(b.totalPrice / (this.usdRate || 47.0), b.totalPrice);
+    const formattedTotal = this.formatPrice(b.totalPrice / (this.usdRate || 50.0), b.totalPrice);
 
     const itemsText = b.items.map((it, idx) => {
       const name = (lang === 'tr' ? it.product.name_tr : it.product.name_en) || it.product.title;
@@ -3780,7 +3780,7 @@ class PozitronApp {
         const qty = parseInt(qtyStr, 10) || 1;
         const prod = allProducts.find(p => p.id === pId || p.slug === pId);
         if (prod) {
-          const unitTRY = Number(prod.price_try) || (Number(prod.price_usd) * (this.usdRate || 47.0)) || 0;
+          const unitTRY = Number(prod.price_try) || (Number(prod.price_usd) * (this.usdRate || 50.0)) || 0;
           totalPrice += unitTRY * qty;
           validItems.push({ product: prod, qty });
         }
@@ -5594,7 +5594,7 @@ class PozitronApp {
     }
 
     const itemPriceTRY = this._3dConfig.unitPriceTRY;
-    const itemPriceUSD = itemPriceTRY / (this.currencyRates?.TRY || 47.0);
+    const itemPriceUSD = itemPriceTRY / (this.currencyRates?.TRY || this.usdRate || 50.0);
 
     const customCartItem = {
       id: 'custom_3d_' + Date.now().toString(36),

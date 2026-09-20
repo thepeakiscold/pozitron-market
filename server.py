@@ -1506,7 +1506,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             stock_status = query.get('stock_status', ['all'])[0]
             sort_by = query.get('sort', ['id_asc'])[0]
             page = max(1, int(query.get('page', [1])[0]))
-            limit = min(500, max(1, int(query.get('limit', [50])[0])))
+            limit = min(2000, max(1, int(query.get('limit', [50])[0])))
 
             where_clauses = ["1=1"]
             params = []
@@ -2959,6 +2959,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             updated_prod['gallery'] = json.loads(updated_prod['gallery_json'] or '[]')
             conn.close()
 
+            # Auto-export static JSON/JS bundles so static catalog and admin stay in sync
+            try:
+                export_static_data()
+            except Exception as e:
+                print(f"[UYARI] Product update export hatasi: {e}")
+
             self.send_json(200, {
                 "success": True,
                 "message": "Product updated successfully",
@@ -3028,6 +3034,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             conn.commit()
             conn.close()
 
+            # Auto-export static JSON/JS bundles so static catalog stays in sync
+            try:
+                export_static_data()
+            except Exception as e:
+                print(f"[UYARI] Bulk update export hatasi: {e}")
+
             self.send_json(200, {
                 "success": True,
                 "action": action,
@@ -3093,6 +3105,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as pe:
                 print(f"Failed to auto-generate static page for new product {slug}: {pe}")
 
+            # Auto-export static JSON/JS bundles
+            try:
+                export_static_data()
+            except Exception as e:
+                print(f"[UYARI] Product create export hatasi: {e}")
+
             self.send_json(201, {
                 "success": True,
                 "message": "Product created successfully",
@@ -3126,6 +3144,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                             pass
 
             conn.close()
+
+            # Auto-export static JSON/JS bundles
+            try:
+                export_static_data()
+            except Exception as e:
+                print(f"[UYARI] Product delete export hatasi: {e}")
+
             self.send_json(200, {"success": True, "deleted_id": prod_id})
             return
 
@@ -3250,16 +3275,32 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         # 13. Settings Update (USD Rate, Bank, 3D Print, etc.)
         if path == '/api/settings':
             conn.close()
+            sync_products = data.get('sync_products', True)
             for k, v in data.items():
-                set_setting(k, v)
+                if k != 'sync_products':
+                    set_setting(k, v)
             if 'usd_rate' in data:
                 try:
+                    rate = float(data['usd_rate'])
+                    if sync_products and rate > 0:
+                        c2 = get_db()
+                        cur2 = c2.cursor()
+                        cur2.execute('''
+                            UPDATE products
+                            SET price_try = ROUND(price_usd * ?, 2),
+                                original_price_try = CASE WHEN original_price_usd IS NOT NULL THEN ROUND(original_price_usd * ?, 2) ELSE NULL END
+                        ''', (rate, rate))
+                        c2.commit()
+                        c2.close()
+                except Exception as e:
+                    print(f"[UYARI] Settings currency sync hatasi: {e}")
+                try:
                     export_static_data()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[UYARI] Settings export hatasi: {e}")
             self.send_json(200, {
                 "success": True,
-                "message": "Ayarlar basariyla kaydedildi.",
+                "message": "Ayarlar ve ürün fiyatları başarıyla kaydedildi.",
                 "settings": get_all_settings()
             })
             return
