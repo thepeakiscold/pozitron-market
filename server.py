@@ -89,8 +89,16 @@ def verify_auth_token(token: str) -> dict:
     except Exception:
         return None
 
+LAST_EMAIL_STATUS = {
+    "timestamp": None,
+    "to": None,
+    "success": None,
+    "status": "Initialized"
+}
+
 def send_verification_email(to_email: str, code: str) -> bool:
     """Sends a 6-digit password reset verification code to user email."""
+    global LAST_EMAIL_STATUS
     smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.environ.get('SMTP_PORT', 587))
     smtp_user = os.environ.get('SMTP_USER', 'noreply@pozitronmarkets.com').strip().lower()
@@ -157,9 +165,22 @@ https://pozitronmarket.com
                 server_conn.login(smtp_user, smtp_password)
                 server_conn.send_message(msg)
             print(f"[AUTH EMAIL] Verification code email sent successfully via SMTP to {to_email}")
+            LAST_EMAIL_STATUS = {
+                "timestamp": datetime.now().isoformat(),
+                "to": to_email,
+                "success": True,
+                "status": f"Sent successfully via SMTP ({smtp_user})"
+            }
             return True
         except Exception as e:
-            print(f"[AUTH EMAIL ERROR] Failed to send email via SMTP to {to_email}: {e}")
+            err_str = str(e)
+            print(f"[AUTH EMAIL ERROR] Failed to send email via SMTP to {to_email}: {err_str}")
+            LAST_EMAIL_STATUS = {
+                "timestamp": datetime.now().isoformat(),
+                "to": to_email,
+                "success": False,
+                "status": f"SMTP Error: {err_str}"
+            }
 
     # 2. Relay via Google Apps Script Webhook
     gas_url = os.environ.get('GAS_RELAY_URL', 'https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec')
@@ -174,11 +195,23 @@ https://pozitronmarket.com
         with urllib.request.urlopen(gas_req, timeout=12) as gas_resp:
             gas_result = gas_resp.read().decode('utf-8')
             print(f"[AUTH EMAIL] GAS Relay sent for {to_email}. Response: {gas_result[:200]}")
+            LAST_EMAIL_STATUS = {
+                "timestamp": datetime.now().isoformat(),
+                "to": to_email,
+                "success": True,
+                "status": "Sent via GAS Relay"
+            }
             return True
     except Exception as gas_e:
         print(f"[AUTH EMAIL] GAS Relay notice for {to_email}: {gas_e}")
 
     print(f"[AUTH EMAIL NOTICE] Email delivery not configured. Reset code for {to_email}: {code}")
+    LAST_EMAIL_STATUS = {
+        "timestamp": datetime.now().isoformat(),
+        "to": to_email,
+        "success": False,
+        "status": "Delivery failed: SMTP and fallback unavailable"
+    }
     return False
 
 # Ensure database tables and initial data exist (Crucial for fresh cloud deployments like Render)
@@ -1175,8 +1208,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {
                 "status": "healthy",
                 "service": "pozitron-cloud-api",
+                "version": "2026.09.20.2",
                 "timestamp": datetime.now().isoformat()
             })
+            return
+
+        # Email Delivery Diagnostic Endpoint
+        if path == '/api/auth/email-status':
+            self.send_json(200, LAST_EMAIL_STATUS)
             return
 
         # Settings & Currency Rate Endpoints
