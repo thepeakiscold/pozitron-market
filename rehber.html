@@ -139,20 +139,20 @@
       gap: 8px;
     }
 
-    .search-input {
+    .rehber-filter-input {
       flex: 1;
       background: #ffffff;
       border: 1px solid var(--border-hover);
-      border-radius: 10px;
-      padding: 12px 18px;
+      border-radius: 12px;
+      padding: 12px 20px;
       color: var(--text-main);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       outline: none;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
-    .search-input:focus {
+    .rehber-filter-input:focus {
       border-color: var(--brand-primary);
       box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
     }
@@ -495,14 +495,15 @@
 <body>
 
   <!-- Top Announcement Bar -->
-  <div class="announcement-bar" role="region" aria-label="Duyuru">
-    <div class="container announcement-container">
+  <div class="announcement-bar" role="banner">
+    <div class="container announcement-inner">
       <div class="announcement-text">
-        <span class="badge-flash">AYNI GÜN KARGO</span>
+        <span class="badge-dot"></span>
+        <strong style="color:var(--text-primary);">AYNI GÜN KARGO:</strong>
         <span>Saat 16:00'a kadar verilen tüm FPV ve drone siparişleriniz aynı gün kargoda!</span>
       </div>
       <div class="announcement-actions">
-        <a href="/" style="color:rgba(255,255,255,0.9); text-decoration:none; font-size:0.8rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+        <a href="/" style="color:var(--brand-primary); text-decoration:none; font-size:0.82rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
           &larr; Pozitron Market Mağaza
         </a>
       </div>
@@ -575,7 +576,7 @@
         <input 
           type="text" 
           id="rehber-search" 
-          class="search-input" 
+          class="rehber-filter-input" 
           placeholder="Rehber veya bileşen ara (Örn: UART, Betaflight, LiPo, ESC)..." 
           oninput="filterArticles()"
         >
