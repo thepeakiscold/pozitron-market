@@ -799,9 +799,9 @@ class TechnicalSeoAgent:
             # Semantic keyword overlap
             exist_keywords = normalize_topic_keywords(f"{art.get('title', '')} {art.get('component_focus', '')}")
             if candidate_keywords and exist_keywords:
-                overlap = len(candidate_keywords.intersection(exist_keywords))
+                overlap = candidate_keywords.intersection(exist_keywords)
                 total_min = min(len(candidate_keywords), len(exist_keywords))
-                if total_min > 0 and (overlap / total_min) >= 0.70:
+                if total_min >= 3 and len(overlap) >= 3 and (len(overlap) / total_min) >= 0.80:
                     return True
 
         return False
@@ -815,17 +815,39 @@ class TechnicalSeoAgent:
             if not self.is_topic_covered(topic["component_focus"], topic["title"]):
                 return topic
 
-        # If all predefined topics are covered, generate an advanced specialized topic
+        # Advanced diverse technical topics catalog
+        advanced_catalog = [
+            ("EdgeTX Lua Scriptleri ve ELRS V3 Ayarları", "EdgeTX Kumanda Yapılandırması", "Kumanda", ["EdgeTX", "Lua script", "kumanda ayarları"]),
+            ("FPV Blackbox Log İnceleme ve Jiroskop Gürültü Grafikleri", "Blackbox Veri Analizi", "Uçuş", ["Blackbox log", "jiroskop gürültüsü", "PID analizi"]),
+            ("Foxeer Predator vs RunCam Phoenix 2 Kamera İncelemesi", "FPV Gece Kameraları", "Kamera", ["Foxeer Predator", "RunCam Phoenix", "gece kamerası"]),
+            ("3D Baskı TPU Parçalar: Kamera Açısı ve Titreşim İzolasyonu", "3D Baskı ve Aksesuarlar", "Aksesuar", ["TPU baskı", "kamera yuvası", "titreşim sönümleme"]),
+            ("Tinywhoop 1S Kürdan Drone Toplama ve AIO Kart Kurulumu", "Tinywhoop Mikro Drone", "Gövde", ["Tinywhoop", "1S drone", "AIO kart"]),
+            ("Dijital OSD Kişiselleştirme: Canvas Mode ve Batarya Tüketimi", "OSD Telemetri Arayüzü", "Uçuş", ["Canvas mode", "OSD ayarları", "batarya telemetrisi"]),
+            ("Li-Ion 21700 Batarya Paketi Punta Kaynağı ve Güvenliği", "Li-Ion Batarya İmalatı", "Batarya", ["21700 Li-Ion", "punta kaynağı", "batarya paketi"]),
+            ("Analog VTX Filtreleme: LC Filtre ve Parazit Önleme Çözümleri", "Analog Video İletimi", "VTX", ["LC filtre", "video parazit", "VTX filtresi"]),
+            ("ExpressLRS PWM Alıcı ile Sabit Kanat Uçak Kurulumu", "ELRS Sabit Kanat Alıcı", "Alıcı", ["ELRS PWM alıcı", "sabit kanat", "servolar"]),
+            ("Diatone Mamba vs Holybro Kakute Uçuş Kartı Karşılaştırması", "Karşılaştırmalı FC İncelemesi", "Uçuş", ["Diatone Mamba", "Holybro Kakute", "uçuş kartı"])
+        ]
+
+        for title, focus, cat, kws in advanced_catalog:
+            if not self.is_topic_covered(focus, title):
+                return {
+                    "id_code": turkish_to_slug(focus),
+                    "title": f"{title}: Kapsamlı Donanım Rehberi",
+                    "component_focus": focus,
+                    "category_search": cat,
+                    "target_keywords": kws + ["Pozitron Market FPV"],
+                    "content_markdown": None
+                }
+
         covered = self.get_covered_topics()
         count = len(covered) + 1
         return {
-            "id_code": f"advanced_fpv_topic_{count}",
-            "title": f"İleri Düzey FPV Mühendisliği ve Telemetri Optimizasyonu Rehberi #{count}",
-            "component_focus": f"İleri Düzey FPV Mühendisliği ve Telemetri Optimizasyonu #{count}",
+            "id_code": f"ozel_muhendislik_rehberi_{count}",
+            "title": f"Özel FPV Donanım Mimarisi ve Ar-Ge Rehberi #{count}",
+            "component_focus": f"Özel FPV Donanım Mimarisi ve Ar-Ge Rehberi #{count}",
             "category_search": "Uçuş",
-            "target_keywords": [
-                "ileri düzey FPV", "telemetri optimizasyonu", "drone mühendisliği", "Pozitron Market"
-            ],
+            "target_keywords": ["FPV Ar-Ge", "donanım mimarisi", "Pozitron Market"],
             "content_markdown": None
         }
 
@@ -997,6 +1019,13 @@ KRİTİK KURALLAR:
             ))
             conn.commit()
             conn.close()
+
+            # Keep data/seo_articles.json in sync with database
+            try:
+                from export_data import export_static_data
+                export_static_data()
+            except Exception:
+                pass
         except Exception as ex:
             print(f"[SEO Agent] Error saving article to db: {ex}")
 

@@ -1617,6 +1617,27 @@
     "video_engine": null
   },
   {
+    "id": "ig_post_e53d5e0c00c9",
+    "content_type": "tool_showcase",
+    "product_id": null,
+    "title": "[HESAPLAYICI] FPV Pil Kapasitesi ve Uçuş Süresi Simülatörü",
+    "caption": "[PIL] \"Drone'um havada kaç dakika kalır? 1300mAh mi 1550mAh mi seçmeliyim?\"\n\nPozitron Pil & Uçuş Süresi Simülatörü ile:\n[1] Motor KV ve pervane boyutunu seçin\n[2] Drone kalkış ağırlığını (AUW) ve GoPro yükünü girin\n[3] Hover ve agresif freestyle uçuş sürelerini saniyeler içinde simüle edin!\n\nAğırlık ve uçuş süresi dengesini sahaya çıkmadan önce optimize edin.\n\n> Ücretsiz hesaplayıcıyı keşfet: pozitronmarket.com/drone-toplama-sihirbazi.html\n\n[OTOMATIK DM ALARMI]\nYoruma 'KUPON', 'LINK' veya 'FIYAT' yaz, sana ozel indirim kodunu ve urun baglantisini aninda DM kutuna iletelim!",
+    "hashtags": "#pilhesaplama #ucussuresi #fpvpil #lipobattery #pozitronmarket #teknofest",
+    "image_url": "./assets/instagram/posts/ig_post_e53d5e0c00c9.jpg",
+    "local_image_path": "./assets/instagram/posts/ig_post_e53d5e0c00c9.jpg",
+    "status": "published",
+    "ig_media_id": "sim_ig_1789910083_680878",
+    "ig_permalink": "https://www.instagram.com/p/Z6HknJ0JakY/",
+    "error_message": null,
+    "scheduled_at": null,
+    "published_at": "2026-09-20T16:14:43.300530",
+    "metadata_json": "{\"visual_audit\": {\"status\": \"APPROVED\", \"quality_score\": 98, \"is_valid\": true, \"resolution\": \"1080x1080\", \"file_size_kb\": 113.0, \"text_readability\": \"MUKEMMEL\", \"emoji_detected\": false, \"framing_and_contrast\": \"UYGUN\", \"issues\": [], \"recommendations\": \"1080x1080 afis cozunurlugu, siber arka plan ve tipografi duzeni basariyla dogrulandi.\", \"model_used\": \"gemini-3.8-flash-vision-auditor\"}}",
+    "created_at": "2026-09-20T16:14:42.359493",
+    "image_mode": "canvas",
+    "media_type": "IMAGE",
+    "video_engine": null
+  },
+  {
     "id": "ig_post_e30810cb9fe8",
     "content_type": "tool_showcase",
     "product_id": null,

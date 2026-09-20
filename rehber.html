@@ -946,17 +946,34 @@
       }).join('');
     }
 
+    function normalizeTurkish(text) {
+      if (!text) return '';
+      return String(text)
+        .toLocaleLowerCase('tr')
+        .replace(/ı/g, 'i')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c');
+    }
+
     function filterArticles() {
-      const query = (document.getElementById('rehber-search').value || '').toLowerCase();
-      if (!query) {
+      const rawQuery = (document.getElementById('rehber-search').value || '').trim();
+      if (!rawQuery) {
         renderArticlesGrid(_allArticles);
         return;
       }
+      const qNorm = normalizeTurkish(rawQuery);
       const filtered = _allArticles.filter(a => {
-        return (a.title && a.title.toLowerCase().includes(query)) ||
-               (a.component_focus && a.component_focus.toLowerCase().includes(query)) ||
-               (a.target_keywords && a.target_keywords.toLowerCase().includes(query)) ||
-               (a.content_markdown && a.content_markdown.toLowerCase().includes(query));
+        const titleNorm = normalizeTurkish(a.title);
+        const focusNorm = normalizeTurkish(a.component_focus);
+        const kwNorm = normalizeTurkish(a.target_keywords);
+        const contentNorm = normalizeTurkish(a.content_markdown);
+        return titleNorm.includes(qNorm) ||
+               focusNorm.includes(qNorm) ||
+               kwNorm.includes(qNorm) ||
+               contentNorm.includes(qNorm);
       });
       renderArticlesGrid(filtered);
     }
