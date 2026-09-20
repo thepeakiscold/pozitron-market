@@ -18,6 +18,7 @@ import json
 import os
 import html
 import re
+import sqlite3
 from datetime import datetime
 
 BASE_URL = "https://pozitronmarket.com"
@@ -25,6 +26,26 @@ PRODUCTS_JSON_PATH = "data/products.json"
 CATEGORIES_JSON_PATH = "data/categories.json"
 OUTPUT_DIR = "products"
 SITEMAP_PATH = "sitemap.xml"
+
+def get_db_review_stats():
+    """Fetch aggregated real reviews from SQLite database."""
+    stats = {}
+    db_path = os.environ.get('DATABASE_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pozitron.db')
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            c = conn.cursor()
+            c.execute("SELECT product_id, AVG(rating), COUNT(*) FROM reviews WHERE product_id IS NOT NULL AND product_id != '' GROUP BY product_id")
+            for pid, avg_r, cnt_r in c.fetchall():
+                if pid:
+                    stats[str(pid)] = {
+                        "rating": round(float(avg_r), 1) if avg_r is not None else 0.0,
+                        "review_count": int(cnt_r or 0)
+                    }
+            conn.close()
+        except Exception as e:
+            print(f"Warning: Could not fetch reviews from DB: {e}")
+    return stats
 
 COMPLEMENTARY_CATEGORIES = {
     "motors": ["esc", "propellers", "frames"],
@@ -77,7 +98,7 @@ def get_bundle_items(current_prod, by_category, all_products):
                 break
     return bundle
 
-def generate_product_page(product, category, related_products, all_products, by_category):
+def generate_product_page(product, category, related_products, all_products, by_category, db_reviews=None):
     p_id = product.get("id", "")
     slug = product.get("slug", "")
     sku = product.get("sku", "")
@@ -106,8 +127,16 @@ def generate_product_page(product, category, related_products, all_products, by_
     desc_tr = product.get("description_tr") or f"{name_tr}, yüksek performanslı FPV drone ve robotik projeleri için tasarlanmış birinci sınıf donanım bileşenidir."
     desc_en = product.get("description_en") or ""
     specs = product.get("specs") or {}
-    rating = float(product.get("rating") or 0.0)
-    review_count = int(product.get("review_count") or 0)
+
+    # Real Review Stats: Grounded in database reviews table
+    db_reviews = db_reviews or {}
+    real_rev = db_reviews.get(str(p_id)) or db_reviews.get(str(sku)) or db_reviews.get(str(slug))
+    if real_rev and real_rev.get("review_count", 0) > 0:
+        rating = float(real_rev.get("rating") or 0.0)
+        review_count = int(real_rev.get("review_count") or 0)
+    else:
+        rating = 0.0
+        review_count = 0
 
     cat_name_tr = category.get("name_tr", "Drone Parçaları") if category else "Drone Parçaları"
     cat_id = category.get("id", "motors") if category else "motors"
@@ -270,8 +299,16 @@ def generate_product_page(product, category, related_products, all_products, by_
                 elif row_type == "price":
                     cell_content = f'<div class="pdp-compare-price">{format_try(c_price)}</div>'
                 elif row_type == "rating":
-                    c_rev = int(c_prod.get("review_count", 0) or 0)
-                    c_rat = float(c_prod.get("rating", 0.0) or 0.0)
+                    c_id = str(c_prod.get("id", ""))
+                    c_sku = str(c_prod.get("sku", ""))
+                    c_slug = str(c_prod.get("slug", ""))
+                    c_real = (db_reviews.get(c_id) or db_reviews.get(c_sku) or db_reviews.get(c_slug)) if db_reviews else None
+                    if c_real and c_real.get("review_count", 0) > 0:
+                        c_rat = float(c_real.get("rating") or 0.0)
+                        c_rev = int(c_real.get("review_count") or 0)
+                    else:
+                        c_rat = 0.0
+                        c_rev = 0
                     if c_rev > 0 and c_rat > 0:
                         cell_content = f"""
                           <div style="color:#f59e0b; font-size:0.88rem; font-weight:700;">★ {c_rat:.1f}</div>
@@ -418,7 +455,7 @@ def generate_product_page(product, category, related_products, all_products, by_
             for _ in range(5 - filled_stars_count)
         ])
         pdp_rating_row_html = f'''
-        <a href="#pdp-reviews-section" class="pdp-rating-row" style="text-decoration:none; cursor:pointer;" title="{rating:.1f} / 5 Yıldız ({review_count} Değerlendirme)">
+        <a id="pdp-rating-row" href="#pdp-reviews-section" class="pdp-rating-row" style="text-decoration:none; cursor:pointer;" title="{rating:.1f} / 5 Yıldız ({review_count} Değerlendirme)">
           <div class="pdp-stars">
             {stars_svg}
           </div>
@@ -449,7 +486,7 @@ def generate_product_page(product, category, related_products, all_products, by_
             for _ in range(5)
         ])
         pdp_rating_row_html = f'''
-        <a href="#pdp-reviews-section" class="pdp-rating-row" style="text-decoration:none; cursor:pointer;" title="Bu ürüne henüz değerlendirme yapılmadı. İlk yorumu siz yazın!">
+        <a id="pdp-rating-row" href="#pdp-reviews-section" class="pdp-rating-row" style="text-decoration:none; cursor:pointer;" title="Bu ürüne henüz değerlendirme yapılmadı. İlk yorumu siz yazın!">
           <div class="pdp-stars">
             {empty_stars_svg}
           </div>
@@ -736,7 +773,9 @@ def generate_product_page(product, category, related_products, all_products, by_
         </button>
       </div>
 
-      {pdp_rating_summary_box_html}
+      <div id="pdp-rating-summary-wrapper">
+        {pdp_rating_summary_box_html}
+      </div>
 
       <!-- Reviews Container -->
       <div id="pdp-reviews-list" style="display:flex; flex-direction:column; gap:14px;"></div>
@@ -1157,13 +1196,85 @@ def generate_product_page(product, category, related_products, all_products, by_
         }} catch(e) {{}}
       }}
 
+      const ratingRow = document.getElementById('pdp-rating-row');
+      const summaryWrapper = document.getElementById('pdp-rating-summary-wrapper');
+
       if (reviews.length === 0) {{
         listEl.innerHTML = `
           <div style="text-align:center; padding:32px 16px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; color:#64748b; font-size:0.88rem;">
             Bu ürün için henüz bir değerlendirme yapılmamış. İlk yorumu siz yazın!
           </div>
         `;
+        if (ratingRow) {{
+          ratingRow.title = "Bu ürüne henüz değerlendirme yapılmadı. İlk yorumu siz yazın!";
+          ratingRow.innerHTML = `
+            <div class="pdp-stars">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            </div>
+            <span class="pdp-review-count" style="color:var(--brand-primary); font-weight:600; font-size:0.84rem;">İlk Yorumu Siz Yazın</span>
+          `;
+        }}
+        if (summaryWrapper) {{
+          summaryWrapper.innerHTML = `
+            <div id="pdp-rating-summary-box" style="text-align:center; padding:32px 20px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; margin-bottom:24px;">
+              <div style="font-size:1.5rem; color:#94a3b8; letter-spacing:4px; margin-bottom:8px;">☆☆☆☆☆</div>
+              <div style="font-weight:700; color:#0f172a; font-size:1.02rem; margin-bottom:4px;">Bu ürün için henüz bir değerlendirme yapılmadı</div>
+              <p style="color:#64748b; font-size:0.86rem; margin:0 0 16px 0;">İlk değerlendirmeyi siz yaparak diğer kullanıcılara yardımcı olabilirsiniz.</p>
+              <button type="button" class="btn-primary" onclick="openProductReviewModal()" style="display:inline-flex; align-items:center; gap:8px; padding:8px 18px; border-radius:8px; font-weight:700; cursor:pointer; background:var(--brand-primary); color:#fff; border:none; font-size:0.86rem;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <span>İlk Değerlendirmeyi Siz Yazın</span>
+              </button>
+            </div>
+          `;
+        }}
         return;
+      }}
+
+      // Calculate dynamic average
+      const sum = reviews.reduce((acc, r) => acc + (parseInt(r.rating) || 5), 0);
+      const avg = (sum / reviews.length).toFixed(1);
+      const filled = Math.min(5, Math.max(1, Math.round(avg)));
+
+      let starsHtml = '';
+      for (let i = 0; i < filled; i++) {{
+        starsHtml += '<svg width="15" height="15" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
+      }}
+      for (let i = 0; i < (5 - filled); i++) {{
+        starsHtml += '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>';
+      }}
+
+      if (ratingRow) {{
+        ratingRow.title = `${{avg}} / 5 Yıldız (${{reviews.length}} Değerlendirme)`;
+        ratingRow.innerHTML = `
+          <div class="pdp-stars">${{starsHtml}}</div>
+          <span class="pdp-rating-val">${{avg}}</span>
+          <span class="pdp-review-count">(${{reviews.length}} Değerlendirme)</span>
+        `;
+      }}
+
+      if (summaryWrapper) {{
+        summaryWrapper.innerHTML = `
+          <div id="pdp-rating-summary-box" class="pdp-rating-summary-grid" style="display:grid; grid-template-columns: 200px 1fr; gap: 28px; align-items:center; margin-bottom:24px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
+            <div style="text-align:center;">
+              <div style="font-size:2.8rem; font-weight:900; color:#0f172a; line-height:1;">${{avg}}</div>
+              <div style="color:#f59e0b; font-size:1.1rem; margin:6px 0;">${{'★'.repeat(filled)}}</div>
+              <div style="font-size:0.82rem; color:#64748b;">${{reviews.length}} müşteri değerlendirmesi</div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; align-items:center; gap:10px; font-size:0.82rem;">
+                <span style="width:48px; text-align:right;">5 Yıldız</span>
+                <div style="flex:1; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
+                  <div style="width:100%; height:100%; background:#f59e0b; border-radius:4px;"></div>
+                </div>
+                <span style="width:34px; color:#64748b;">%100</span>
+              </div>
+            </div>
+          </div>
+        `;
       }}
 
       listEl.innerHTML = reviews.map(r => `
@@ -1218,6 +1329,7 @@ def main():
             by_category[cid] = []
         by_category[cid].append(p)
 
+    db_reviews = get_db_review_stats()
     generated_count = 0
     sitemap_product_urls = []
 
@@ -1230,7 +1342,7 @@ def main():
         cat = cat_map.get(cid)
         related = [rp for rp in by_category.get(cid, []) if rp.get("slug") != slug]
 
-        content = generate_product_page(p, cat, related, products, by_category)
+        content = generate_product_page(p, cat, related, products, by_category, db_reviews=db_reviews)
         out_file = os.path.join(OUTPUT_DIR, f"{slug}.html")
         with open(out_file, "w", encoding="utf-8") as f:
             f.write(content)

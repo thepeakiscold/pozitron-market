@@ -2170,7 +2170,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor.execute("SELECT AVG(rating), COUNT(*) FROM reviews WHERE (product_id = ? OR product_id IN (SELECT id FROM products WHERE slug = ?))", (prod_id, prod_id))
                     avg_r, cnt_r = cursor.fetchone()
                     stats = {
-                        "rating": round(avg_r, 1) if avg_r else 5.0,
+                        "rating": round(avg_r, 1) if avg_r is not None else 0.0,
                         "count": cnt_r or 0
                     }
 
