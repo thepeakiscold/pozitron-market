@@ -75,7 +75,7 @@
         <div class="admin-header-actions">
           <!-- Live USD/TRY Indicator -->
           <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:5px 12px; border-radius:20px; font-size:0.8rem; font-weight:600; display:flex; align-items:center; gap:6px; color:#475569;">
-            <span style="color:#16a34a; font-size:0.7rem;">●</span> USD: <strong id="header-usd-rate" style="color:#0f172a;">47.00 ₺</strong>
+            <span style="color:#16a34a; font-size:0.7rem;">●</span> USD: <strong id="header-usd-rate" style="color:#0f172a;">--.-- ₺</strong>
           </div>
 
           <!-- Sync to Static Bundle Button -->
@@ -325,7 +325,13 @@
           <div class="admin-form-row">
             <div class="admin-form-group">
               <label for="bulk-usd-rate">Döviz Kuru (1 USD = ? TRY)</label>
-              <input type="number" id="bulk-usd-rate" step="0.1" value="47.0" style="font-weight:700; font-size:1.1rem; color:#0284c7;">
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input type="number" id="bulk-usd-rate" step="0.1" value="50.0" style="font-weight:700; font-size:1.1rem; color:#0284c7; flex:1;">
+                <button type="button" class="admin-btn-secondary" onclick="saveCurrencyRateOnly()" style="white-space:nowrap; padding:8px 14px; font-size:0.85rem;" title="Yalnızca döviz kurunu sisteme kaydet">
+                  💾 Kuru Kaydet
+                </button>
+              </div>
+              <span id="usd-rate-save-indicator" style="font-size:0.78rem; color:#16a34a; display:none; margin-top:4px; font-weight:600;">✓ Kur kaydedildi</span>
             </div>
             <div class="admin-form-group">
               <label for="bulk-rate-category">Uygulanacak Kategori</label>
@@ -1257,25 +1263,16 @@
       showAdminToast('API adresi varsayılan bulut adresine sıfırlandı.', 'info');
     }
 
-    const _originalFetch = window.fetch;
-    window.fetch = function(url, options) {
-      if (typeof url === 'string' && url.startsWith('/api/')) {
-        const base = getApiBaseUrl();
-        if (base) {
-          url = base + url;
-        }
-      }
-      return _originalFetch.call(this, url, options);
-    };
-
     let currentPage = 1;
     let totalPages = 1;
     let selectedProductIds = new Set();
     let categoriesList = [];
     let brandsList = [];
-    let currentUsdRate = parseFloat(localStorage.getItem('pozitron_usd_rate')) || 47.0;
+    let currentUsdRate = parseFloat(localStorage.getItem('pozitron_usd_rate')) || 
+      (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 50.0);
 
     function applyCurrencyRateToUI(rate) {
+      if (isNaN(rate) || rate <= 0) return;
       currentUsdRate = rate;
       const headerEl = document.getElementById('header-usd-rate');
       if (headerEl) headerEl.textContent = rate.toFixed(2) + ' ₺';
@@ -1291,6 +1288,9 @@
       if (cached) {
         const parsed = parseFloat(cached);
         if (!isNaN(parsed) && parsed > 0) rate = parsed;
+      } else if (window.pozitronData && window.pozitronData.usd_rate) {
+        const fallback = parseFloat(window.pozitronData.usd_rate);
+        if (!isNaN(fallback) && fallback > 0) rate = fallback;
       }
       applyCurrencyRateToUI(rate);
 
@@ -1304,31 +1304,75 @@
               rate = serverRate;
               localStorage.setItem('pozitron_usd_rate', rate.toString());
               applyCurrencyRateToUI(rate);
+              return rate;
             }
           }
         }
       } catch (err) {
-        if (window.pozitronData && window.pozitronData.usd_rate) {
-          const fallbackRate = parseFloat(window.pozitronData.usd_rate);
-          if (!isNaN(fallbackRate) && fallbackRate > 0) {
-            applyCurrencyRateToUI(fallbackRate);
-          }
+        console.warn('loadAdminCurrencyRate fetch error:', err);
+      }
+
+      // Fallback to static catalog data bundle if server wasn't reachable
+      if (window.pozitronData && window.pozitronData.usd_rate) {
+        const fallbackRate = parseFloat(window.pozitronData.usd_rate);
+        if (!isNaN(fallbackRate) && fallbackRate > 0) {
+          rate = fallbackRate;
+          localStorage.setItem('pozitron_usd_rate', rate.toString());
+          applyCurrencyRateToUI(rate);
         }
       }
+      return rate;
     }
 
     async function applyCurrencyRateChange(rate) {
+      if (isNaN(rate) || rate <= 0) return false;
       currentUsdRate = rate;
       localStorage.setItem('pozitron_usd_rate', rate.toString());
       applyCurrencyRateToUI(rate);
 
+      let savedOk = false;
       try {
-        await fetch('/api/settings', {
+        const res = await fetch('/api/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ usd_rate: rate })
         });
-      } catch(e) {}
+        if (res.ok) {
+          savedOk = true;
+        }
+      } catch(e) {
+        console.warn('applyCurrencyRateChange fetch error:', e);
+      }
+      return savedOk;
+    }
+
+    async function saveCurrencyRateOnly() {
+      const input = document.getElementById('bulk-usd-rate');
+      const rate = parseFloat(input?.value);
+      if (isNaN(rate) || rate <= 0) {
+        showToast('Lütfen geçerli bir döviz kuru girin.', 'error');
+        return;
+      }
+      const indicator = document.getElementById('usd-rate-save-indicator');
+      if (indicator) {
+        indicator.style.display = 'inline-block';
+        indicator.style.color = '#0284c7';
+        indicator.textContent = '⏳ Kaydediliyor...';
+      }
+      const ok = await applyCurrencyRateChange(rate);
+      if (indicator) {
+        if (ok) {
+          indicator.style.color = '#16a34a';
+          indicator.textContent = `✓ Kur başarıyla kaydedildi (${rate.toFixed(2)} ₺)`;
+        } else {
+          indicator.style.color = '#dc2626';
+          indicator.textContent = '✕ Kaydedilirken hata oluştu';
+        }
+        setTimeout(() => {
+          if (indicator) indicator.style.display = 'none';
+        }, 3500);
+      }
+      showToast(`Döviz kuru 1 USD = ${rate.toFixed(2)} ₺ olarak kaydedildi.`, ok ? 'success' : 'warning');
     }
     function getRobotAvatar(u) {
       if (!u) return 'https://api.dicebear.com/7.x/bottts/svg?seed=PozitronBot&scale=90';
@@ -1473,7 +1517,7 @@
 
         // Sync to backend SQLite database
         try {
-          await fetch('/api/auth/google', {
+          const authRes = await fetch('/api/auth/google', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1482,13 +1526,17 @@
               avatar_url: adminUser.avatar_url
             })
           });
+          if (authRes.ok) {
+            const authData = await authRes.json();
+            if (authData && authData.token) {
+              localStorage.setItem('pozitron_token', authData.token);
+            }
+          }
         } catch(e) {}
 
         if (checkAdminAuth()) {
           showToast(`Hoş geldiniz, ${adminUser.full_name}! Yönetim paneli açıldı.`, 'success');
-          await loadCategoriesAndBrands().catch(() => {});
-          await loadAdminStats().catch(() => {});
-          await loadAdminProducts(1).catch(() => {});
+          await initializeAdminDashboard();
         }
       } catch (err) {
         console.error('Google Admin Login Error:', err);
@@ -1497,6 +1545,7 @@
 
     function handleAdminLogout() {
       localStorage.removeItem('pozitron_user');
+      localStorage.removeItem('pozitron_token');
       checkAdminAuth();
       showToast('Yönetici oturumu kapatıldı.', 'info');
     }
@@ -1588,12 +1637,7 @@
       } catch(e) {}
     }
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      // 1. Enforce Admin Authentication Guard
-      if (!checkAdminAuth()) {
-        return; // Halt loading until authenticated!
-      }
-
+    async function initializeAdminDashboard() {
       // Check saved lang & webhook
       const savedLang = localStorage.getItem('pozitron_lang') || 'tr';
       const langBtn = document.getElementById('btn-lang-toggle');
@@ -1612,11 +1656,19 @@
       await loadAdminCurrencyRate();
 
       const bulkRateInput = document.getElementById('bulk-usd-rate');
-      if (bulkRateInput) {
+      if (bulkRateInput && !bulkRateInput._currencyBound) {
+        bulkRateInput._currencyBound = true;
         bulkRateInput.addEventListener('change', async (e) => {
           const val = parseFloat(e.target.value);
           if (!isNaN(val) && val > 0) {
             await applyCurrencyRateChange(val);
+            const indicator = document.getElementById('usd-rate-save-indicator');
+            if (indicator) {
+              indicator.style.display = 'inline-block';
+              indicator.style.color = '#16a34a';
+              indicator.textContent = `✓ Kur kaydedildi (${val.toFixed(2)} ₺)`;
+              setTimeout(() => { if (indicator) indicator.style.display = 'none'; }, 3000);
+            }
           }
         });
         bulkRateInput.addEventListener('blur', async (e) => {
@@ -1628,9 +1680,10 @@
       }
 
       // Event listener for search debounce
-      let searchTimeout = null;
       const searchInput = document.getElementById('admin-search-input');
-      if (searchInput) {
+      if (searchInput && !searchInput._searchBound) {
+        searchInput._searchBound = true;
+        let searchTimeout = null;
         searchInput.addEventListener('input', () => {
           clearTimeout(searchTimeout);
           searchTimeout = setTimeout(() => {
@@ -1641,7 +1694,8 @@
       }
 
       // Language Switcher
-      if (langBtn) {
+      if (langBtn && !langBtn._langBound) {
+        langBtn._langBound = true;
         langBtn.addEventListener('click', () => {
           const current = localStorage.getItem('pozitron_lang') || 'tr';
           const next = current === 'tr' ? 'en' : 'tr';
@@ -1653,12 +1707,17 @@
 
       // Sync button
       const syncBtn = document.getElementById('btn-sync-export');
-      if (syncBtn) syncBtn.addEventListener('click', handleSyncExport);
+      if (syncBtn && !syncBtn._syncBound) {
+        syncBtn._syncBound = true;
+        syncBtn.addEventListener('click', handleSyncExport);
+      }
 
       // Load initial data
-      await loadCategoriesAndBrands();
-      await loadAdminStats();
-      await loadAdminProducts(1);
+      await loadCategoriesAndBrands().catch(() => {});
+      await loadAdminStats().catch(() => {});
+      await loadAdminProducts(1).catch(() => {});
+      await loadPaymentSettings().catch(() => {});
+      await loadInstagramPrSettings().catch(() => {});
 
       // Auto-open tab from query param or hash (e.g. ?tab=tab-reddit or #tab-reddit)
       const urlParams = new URLSearchParams(window.location.search);
@@ -1666,6 +1725,15 @@
       if (targetTab && document.getElementById(targetTab)) {
         switchAdminTab(targetTab);
       }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Enforce Admin Authentication Guard
+      if (!checkAdminAuth()) {
+        return; // Halt loading until authenticated!
+      }
+
+      await initializeAdminDashboard();
     });
 
     // -------------------------------------------------------------
@@ -2658,7 +2726,8 @@
     // Bulk Tab Actions (Currency Sync, Filtered Batch Actions)
     // -------------------------------------------------------------
     async function runCurrencySync() {
-      const rate = parseFloat(document.getElementById('bulk-usd-rate').value) || 47.0;
+      const input = document.getElementById('bulk-usd-rate');
+      const rate = parseFloat(input?.value) || currentUsdRate || 50.0;
       const cat = document.getElementById('bulk-rate-category').value;
 
       await applyCurrencyRateChange(rate);
@@ -2679,9 +2748,11 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ usd_rate: rate, category_id: cat })
         });
-      } catch (err) {}
+      } catch (err) {
+        console.warn('runCurrencySync error:', err);
+      }
 
-      showToast(`${count} ürünün TRY fiyatı 1 USD = ${rate} ₺ kuruna göre güncellendi!`, 'success');
+      showToast(`${count} ürünün TRY fiyatı 1 USD = ${rate.toFixed(2)} ₺ kuruna göre güncellendi!`, 'success');
       await loadAdminStats();
       await loadAdminProducts(currentPage);
     }

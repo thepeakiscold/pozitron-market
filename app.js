@@ -60,7 +60,7 @@ class PozitronApp {
 
     this.pendingOrderData = null;
     this.usdRate = parseFloat(localStorage.getItem('pozitron_usd_rate')) || 
-      (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 47.0);
+      (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 50.0);
 
     this.init();
   }
@@ -1972,6 +1972,14 @@ class PozitronApp {
         }
       }
     } catch(e) {}
+
+    if (window.pozitronData && window.pozitronData.usd_rate) {
+      const fallback = parseFloat(window.pozitronData.usd_rate);
+      if (!isNaN(fallback) && fallback > 0) {
+        this.usdRate = fallback;
+        localStorage.setItem('pozitron_usd_rate', fallback.toString());
+      }
+    }
   }
 
   async openOrdersModal() {

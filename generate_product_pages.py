@@ -263,7 +263,7 @@ def generate_product_page(product, category, related_products, all_products, by_
                     """
                 elif row_type == "name":
                     cell_content = f"""
-                      <a href="./{c_slug}" class="pdp-compare-prod-name" title="{escape_str(c_name)}">
+                      <a href="./{escape_str(c_slug)}" class="pdp-compare-prod-name" title="{escape_str(c_name)}">
                         {escape_str(c_name)}
                       </a>
                     """
@@ -328,7 +328,7 @@ def generate_product_page(product, category, related_products, all_products, by_
         rel_img = rel.get("image_url", "./assets/placeholder.png")
         rel_img_src = f"../{rel_img[2:]}" if rel_img.startswith("./") else rel_img
         related_html += f"""
-          <a href="./{rel_slug}" class="pdp-related-card">
+          <a href="./{escape_str(rel_slug)}" class="pdp-related-card">
             <div class="pdp-related-img-wrap">
               <img src="{escape_str(rel_img_src)}" alt="{escape_str(rel_name)}" loading="lazy" onerror="this.src='../assets/hero_drone.png'">
             </div>

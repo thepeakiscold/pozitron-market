@@ -76,7 +76,7 @@ def export_static_data():
         pass
 
     if 'usd_rate' not in settings:
-        settings['usd_rate'] = 47.0
+        settings['usd_rate'] = 50.0
 
     conn.close()
 
@@ -116,7 +116,7 @@ def export_static_data():
         "reviews": reviews,
         "seo_articles": seo_articles[:10],
         "settings": settings,
-        "usd_rate": settings.get("usd_rate", 47.0)
+        "usd_rate": settings.get("usd_rate", 50.0)
     }
 
     with open(os.path.join(OUTPUT_DIR, "pozitron_data.js"), "w", encoding="utf-8") as f:

@@ -318,7 +318,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def is_static_path_allowed(self, raw_path: str) -> bool:
         """Whitelists public static file extensions and strictly blocks source/DB leaks."""
-        clean = raw_path.split('?')[0].split('#')[0].lstrip('/')
+        clean = urllib.parse.unquote(raw_path.split('?')[0].split('#')[0]).lstrip('/')
         if not clean:
             return True
 
@@ -335,16 +335,33 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if base_name in BLOCKED_SENSITIVE_FILES:
             return False
 
-        ext = os.path.splitext(clean)[1].lower()
+        # Path traversal guard
+        full_path = os.path.realpath(os.path.join(BASE_DIR, clean))
+        if not (full_path == BASE_DIR or full_path.startswith(BASE_DIR + os.sep)):
+            return False
+
+        # If it is a product route or matches an existing html page, its target is .html
+        clean_rstrip = clean.rstrip('/')
+        if clean_rstrip.startswith('products/'):
+            return True
+
+        candidate_html = os.path.realpath(os.path.join(BASE_DIR, clean_rstrip + '.html'))
+        if os.path.isfile(candidate_html):
+            return True
+
+        if os.path.isfile(full_path):
+            ext = os.path.splitext(full_path)[1].lower()
+            if ext in BLOCKED_STATIC_EXTENSIONS:
+                return False
+            if ext and ext not in ALLOWED_STATIC_EXTENSIONS:
+                return False
+            return True
+
+        ext = os.path.splitext(clean_rstrip)[1].lower()
         if ext in BLOCKED_STATIC_EXTENSIONS:
             return False
 
         if ext and ext not in ALLOWED_STATIC_EXTENSIONS:
-            return False
-
-        # Path traversal guard
-        full_path = os.path.realpath(os.path.join(BASE_DIR, clean))
-        if not (full_path == BASE_DIR or full_path.startswith(BASE_DIR + os.sep)):
             return False
 
         return True
@@ -396,13 +413,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         conn = get_db()
         cursor = conn.cursor()
 
-        prod_match = re.match(r'^/api/admin/products/([a-zA-Z0-9_-]+)$', path)
+        prod_match = re.match(r'^/api/admin/products/(.+)$', path)
         if not prod_match:
-            prod_match = re.match(r'^/api/products/([a-zA-Z0-9_-]+)$', path)
+            prod_match = re.match(r'^/api/products/(.+)$', path)
 
         if prod_match:
-            prod_id = prod_match.group(1)
-            cursor.execute("SELECT category_id FROM products WHERE id = ? OR slug = ?", (prod_id, prod_id))
+            prod_id = urllib.parse.unquote(prod_match.group(1)).strip()
+            cursor.execute("SELECT category_id, slug FROM products WHERE id = ? OR slug = ? OR sku = ?", (prod_id, prod_id, prod_id))
             row = cursor.fetchone()
             if not row:
                 conn.close()
@@ -410,10 +427,20 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             cat_id = row[0]
-            cursor.execute("DELETE FROM products WHERE id = ? OR slug = ?", (prod_id, prod_id))
+            del_slug = row[1]
+            cursor.execute("DELETE FROM products WHERE id = ? OR slug = ? OR sku = ?", (prod_id, prod_id, prod_id))
             cursor.execute("UPDATE categories SET item_count = MAX(0, item_count - 1) WHERE id = ?", (cat_id,))
             conn.commit()
             conn.close()
+
+            if del_slug:
+                del_html = os.path.join(BASE_DIR, 'products', f"{del_slug}.html")
+                if os.path.isfile(del_html):
+                    try:
+                        os.remove(del_html)
+                    except Exception:
+                        pass
+
             self.send_json(200, {"success": True, "deleted_id": prod_id})
             return
 
@@ -521,16 +548,76 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(404, {"error": "File not found"})
             return
 
+        unquoted_path = urllib.parse.unquote(path).rstrip('/')
+        clean_rel = unquoted_path.lstrip('/')
+
+        # Handle product pages (/products/<slug_or_id>)
+        if clean_rel.startswith('products/'):
+            slug_or_id = clean_rel[len('products/'):].rstrip('/')
+            if slug_or_id.endswith('.html'):
+                slug_or_id = slug_or_id[:-5]
+
+            target_html = os.path.join(BASE_DIR, 'products', f"{slug_or_id}.html")
+            if not os.path.isfile(target_html):
+                try:
+                    conn = get_db()
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT * FROM products WHERE slug = ? OR id = ? OR sku = ?", (slug_or_id, slug_or_id, slug_or_id))
+                    p_row = cursor.fetchone()
+                    conn.close()
+                    if p_row:
+                        p_dict = dict(p_row)
+                        real_slug = p_dict.get('slug')
+                        if real_slug:
+                            real_html = os.path.join(BASE_DIR, 'products', f"{real_slug}.html")
+                            if os.path.isfile(real_html):
+                                target_html = real_html
+                            else:
+                                try:
+                                    from generate_product_pages import generate_product_page
+                                    cat_dict = {"id": p_dict.get('category_id', 'motors')}
+                                    gen_html = generate_product_page(p_dict, cat_dict, [], [p_dict], {cat_dict["id"]: [p_dict]})
+                                    with open(real_html, 'w', encoding='utf-8') as pf:
+                                        pf.write(gen_html)
+                                    target_html = real_html
+                                except Exception as ge:
+                                    print(f"Error auto-generating product page: {ge}")
+                except Exception as e:
+                    print(f"Product route DB lookup error: {e}")
+
+            if os.path.isfile(target_html):
+                with open(target_html, 'rb') as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Content-Length', str(len(content)))
+                self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(content)
+                return
+            else:
+                self.send_json(404, {"error": "Product not found"})
+                return
+
         # Serve frontend static files
         if path == '/' or path == '/index.html':
             self.path = '/index.html'
         else:
-            # Check if an extensionless path matches an existing .html file (e.g. /products/<slug>)
-            clean_rel = path.lstrip('/')
-            if clean_rel and not os.path.splitext(clean_rel)[1]:
-                candidate_html = os.path.join(BASE_DIR, clean_rel + '.html')
-                if os.path.exists(candidate_html) and os.path.isfile(candidate_html):
-                    self.path = '/' + clean_rel + '.html'
+            # Check if an extensionless path matches an existing .html file (e.g. /drone-toplama-sihirbazi)
+            candidate_html = os.path.join(BASE_DIR, clean_rel + '.html')
+            if os.path.isfile(candidate_html):
+                with open(candidate_html, 'rb') as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Content-Length', str(len(content)))
+                self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(content)
+                return
+
         return super().do_GET()
 
     def do_HEAD(self):
@@ -545,11 +632,47 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
             return
-        clean_rel = path.lstrip('/')
-        if clean_rel and not os.path.splitext(clean_rel)[1]:
-            candidate_html = os.path.join(BASE_DIR, clean_rel + '.html')
-            if os.path.exists(candidate_html) and os.path.isfile(candidate_html):
-                self.path = '/' + clean_rel + '.html'
+        unquoted_path = urllib.parse.unquote(path).rstrip('/')
+        clean_rel = unquoted_path.lstrip('/')
+        if clean_rel.startswith('products/'):
+            slug_or_id = clean_rel[len('products/'):].rstrip('/')
+            if slug_or_id.endswith('.html'):
+                slug_or_id = slug_or_id[:-5]
+            target_html = os.path.join(BASE_DIR, 'products', f"{slug_or_id}.html")
+            if os.path.isfile(target_html):
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Content-Length', str(os.path.getsize(target_html)))
+                self.end_headers()
+                return
+            try:
+                conn = get_db()
+                cursor = conn.cursor()
+                cursor.execute("SELECT slug FROM products WHERE slug = ? OR id = ? OR sku = ?", (slug_or_id, slug_or_id, slug_or_id))
+                row = cursor.fetchone()
+                conn.close()
+                if row and row[0]:
+                    real_html = os.path.join(BASE_DIR, 'products', f"{row[0]}.html")
+                    if os.path.isfile(real_html):
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'text/html; charset=utf-8')
+                        self.send_header('Content-Length', str(os.path.getsize(real_html)))
+                        self.end_headers()
+                        return
+            except Exception:
+                pass
+            self.send_response(404)
+            self.end_headers()
+            return
+
+        candidate_html = os.path.join(BASE_DIR, clean_rel + '.html')
+        if os.path.isfile(candidate_html):
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Content-Length', str(os.path.getsize(candidate_html)))
+            self.end_headers()
+            return
+
         return super().do_HEAD()
 
     def handle_sitemap_xml(self):
@@ -561,11 +684,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         categories = cursor.fetchall()
         conn.close()
 
+        import html as html_lib
         xml_lines = [
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
             '  <url>',
-            '    <loc>http://localhost:8000/</loc>',
+            '    <loc>https://pozitronmarket.com/</loc>',
             '    <changefreq>daily</changefreq>',
             '    <priority>1.0</priority>',
             '  </url>'
@@ -575,7 +699,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         for cat in categories:
             xml_lines.extend([
                 '  <url>',
-                f'    <loc>http://localhost:8000/#category={cat[0]}</loc>',
+                f'    <loc>https://pozitronmarket.com/#category={html_lib.escape(cat[0])}</loc>',
                 '    <changefreq>weekly</changefreq>',
                 '    <priority>0.8</priority>',
                 '  </url>'
@@ -587,7 +711,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             lastmod = p[3].split('T')[0] if p[3] and 'T' in p[3] else datetime.now().strftime('%Y-%m-%d')
             xml_lines.extend([
                 '  <url>',
-                f'    <loc>http://localhost:8000/#product={slug}</loc>',
+                f'    <loc>https://pozitronmarket.com/products/{html_lib.escape(slug)}</loc>',
                 f'    <lastmod>{lastmod}</lastmod>',
                 '    <changefreq>weekly</changefreq>',
                 '    <priority>0.9</priority>',
@@ -763,7 +887,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if path in ('/api/currency-rate', '/api/currency'):
-            rate = get_setting('usd_rate', 47.0)
+            rate = get_setting('usd_rate', 50.0)
             self.send_json(200, {
                 "usd_rate": rate,
                 "currency": "TRY",
@@ -1347,15 +1471,15 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         # 3. Single Product: /api/products/<id_or_slug>
-        prod_match = re.match(r'^/api/products/([a-zA-Z0-9_-]+)$', path)
+        prod_match = re.match(r'^/api/products/(.+)$', path)
         if prod_match:
-            item_id = prod_match.group(1)
+            item_id = urllib.parse.unquote(prod_match.group(1)).strip()
             cursor.execute('''
                 SELECT p.*, c.name_en AS category_name_en, c.name_tr AS category_name_tr, c.icon AS category_icon
                 FROM products p
                 JOIN categories c ON p.category_id = c.id
-                WHERE p.id = ? OR p.slug = ?
-            ''', (item_id, item_id))
+                WHERE p.id = ? OR p.slug = ? OR p.sku = ?
+            ''', (item_id, item_id, item_id))
             row = cursor.fetchone()
             if not row:
                 conn.close()
@@ -2588,7 +2712,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             price_usd = float(data.get('price_usd', curr['price_usd']))
             price_try = float(data.get('price_try', curr['price_try']))
             if 'price_usd' in data and 'price_try' not in data:
-                price_try = round(price_usd * get_setting('usd_rate', 47.0), 2)
+                price_try = round(price_usd * get_setting('usd_rate', 50.0), 2)
 
             orig_price_usd = float(data['original_price_usd']) if data.get('original_price_usd') is not None and data['original_price_usd'] != '' else curr['original_price_usd']
             orig_price_try = float(data['original_price_try']) if data.get('original_price_try') is not None and data['original_price_try'] != '' else curr['original_price_try']
@@ -2696,7 +2820,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 ''', [disc_val] + prod_ids)
 
             elif action == 'currency_sync':
-                rate = float(value) if value else get_setting('usd_rate', 47.0)
+                rate = float(value) if value else get_setting('usd_rate', 50.0)
                 cursor.execute(f'''
                     UPDATE products
                     SET price_try = ROUND(price_usd * ?, 2),
@@ -2721,7 +2845,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             category_id = data.get('category_id', 'motors')
             brand = data.get('brand', 'Pozitron')
             price_usd = float(data.get('price_usd', 29.99))
-            active_rate = get_setting('usd_rate', 47.0)
+            active_rate = get_setting('usd_rate', 50.0)
             price_try = float(data.get('price_try', round(price_usd * active_rate, 2)))
             stock = max(0, int(data.get('stock', 50)))
             badge = data.get('badge', 'NEW')
@@ -2761,6 +2885,17 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             new_prod['gallery'] = []
             conn.close()
 
+            # Auto-generate product page HTML
+            try:
+                from generate_product_pages import generate_product_page
+                cat_dict = {"id": category_id, "name_en": new_prod.get('category_name_en', ''), "name_tr": new_prod.get('category_name_tr', '')}
+                page_html = generate_product_page(new_prod, cat_dict, [], [new_prod], {category_id: [new_prod]})
+                out_file = os.path.join(BASE_DIR, 'products', f"{slug}.html")
+                with open(out_file, "w", encoding="utf-8") as pf:
+                    pf.write(page_html)
+            except Exception as pe:
+                print(f"Failed to auto-generate static page for new product {slug}: {pe}")
+
             self.send_json(201, {
                 "success": True,
                 "message": "Product created successfully",
@@ -2776,13 +2911,22 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(400, {"error": "Product ID is required"})
                 return
 
-            cursor.execute("SELECT category_id FROM products WHERE id = ?", (prod_id,))
+            cursor.execute("SELECT category_id, slug FROM products WHERE id = ? OR slug = ? OR sku = ?", (prod_id, prod_id, prod_id))
             p = cursor.fetchone()
             if p:
                 cat_id = p[0]
-                cursor.execute("DELETE FROM products WHERE id = ?", (prod_id,))
+                del_slug = p[1]
+                cursor.execute("DELETE FROM products WHERE id = ? OR slug = ? OR sku = ?", (prod_id, prod_id, prod_id))
                 cursor.execute("UPDATE categories SET item_count = MAX(0, item_count - 1) WHERE id = ?", (cat_id,))
                 conn.commit()
+
+                if del_slug:
+                    del_html = os.path.join(BASE_DIR, 'products', f"{del_slug}.html")
+                    if os.path.isfile(del_html):
+                        try:
+                            os.remove(del_html)
+                        except Exception:
+                            pass
 
             conn.close()
             self.send_json(200, {"success": True, "deleted_id": prod_id})
@@ -2865,7 +3009,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # 12. Admin: Currency Sync across catalog
         if path == '/api/admin/currency-sync':
-            rate = float(data.get('usd_rate', 47.0))
+            rate = float(data.get('usd_rate', 50.0))
             set_setting('usd_rate', rate)
 
             cat = data.get('category_id')
