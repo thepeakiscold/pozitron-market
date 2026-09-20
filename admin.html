@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260823_min_v31">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
-  <script src="./data/pozitron_data.js?v=20260823_sec_v30"></script>
+  <script src="./data/pozitron_data.js?v=20260920_v50"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
@@ -1363,8 +1363,11 @@
     let selectedProductIds = new Set();
     let categoriesList = [];
     let brandsList = [];
-    let currentUsdRate = parseFloat(localStorage.getItem('pozitron_usd_rate')) || 
-      ((window.pozitronData || window.__POZITRON_DATA__) && (window.pozitronData || window.__POZITRON_DATA__).usd_rate ? parseFloat((window.pozitronData || window.__POZITRON_DATA__).usd_rate) : 50.0);
+    let currentUsdRate = ((window.pozitronData || window.__POZITRON_DATA__) && (window.pozitronData || window.__POZITRON_DATA__).usd_rate ? parseFloat((window.pozitronData || window.__POZITRON_DATA__).usd_rate) : 50.0);
+    const _initialCachedRate = parseFloat(localStorage.getItem('pozitron_usd_rate'));
+    if (!isNaN(_initialCachedRate) && _initialCachedRate > 0) {
+      currentUsdRate = _initialCachedRate;
+    }
 
     function applyCurrencyRateToUI(rate) {
       if (isNaN(rate) || rate <= 0) return;
@@ -1384,7 +1387,7 @@
     async function loadAdminCurrencyRate() {
       let rate = currentUsdRate;
 
-      // 1. Prioritize Server Live Settings (Single Source of Truth)
+      // 1. Prioritize Server Live Settings (Single Source of Truth: Render Cloud or Local)
       try {
         const res = await fetch(`/api/settings?t=${Date.now()}`);
         if (res.ok) {
@@ -1400,20 +1403,45 @@
           }
         }
       } catch (err) {
-        console.warn('loadAdminCurrencyRate fetch error:', err);
+        console.warn('loadAdminCurrencyRate /api/settings error:', err);
       }
 
-      // 2. Fallback to LocalStorage
+      // 2. Static file fallback: data/settings.json (authoritative for static hosting)
+      try {
+        const resStatic = await fetch(`data/settings.json?t=${Date.now()}`);
+        if (resStatic.ok) {
+          const s = await resStatic.json();
+          if (s && s.usd_rate) {
+            const staticRate = parseFloat(s.usd_rate);
+            if (!isNaN(staticRate) && staticRate > 0) {
+              rate = staticRate;
+              localStorage.setItem('pozitron_usd_rate', rate.toString());
+              applyCurrencyRateToUI(rate);
+              return rate;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('loadAdminCurrencyRate static settings error:', err);
+      }
+
+      // 3. Static bundle fallback: window.pozitronData / window.__POZITRON_DATA__
+      const bundle = window.pozitronData || window.__POZITRON_DATA__;
+      if (bundle && bundle.usd_rate) {
+        const bundleRate = parseFloat(bundle.usd_rate);
+        if (!isNaN(bundleRate) && bundleRate > 0) {
+          rate = bundleRate;
+          localStorage.setItem('pozitron_usd_rate', rate.toString());
+          applyCurrencyRateToUI(rate);
+          return rate;
+        }
+      }
+
+      // 4. Fallback to LocalStorage
       const cached = localStorage.getItem('pozitron_usd_rate');
       if (cached) {
         const parsed = parseFloat(cached);
         if (!isNaN(parsed) && parsed > 0) rate = parsed;
-      } else {
-        const bundle = window.pozitronData || window.__POZITRON_DATA__;
-        if (bundle && bundle.usd_rate) {
-          const fallback = parseFloat(bundle.usd_rate);
-          if (!isNaN(fallback) && fallback > 0) rate = fallback;
-        }
       }
 
       applyCurrencyRateToUI(rate);

@@ -58,9 +58,11 @@ class PozitronApp {
       battery: null
     };
 
-    this.pendingOrderData = null;
-    this.usdRate = parseFloat(localStorage.getItem('pozitron_usd_rate')) || 
-      (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 50.0);
+    this.usdRate = (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 50.0);
+    const cachedRate = parseFloat(localStorage.getItem('pozitron_usd_rate'));
+    if (!isNaN(cachedRate) && cachedRate > 0) {
+      this.usdRate = cachedRate;
+    }
 
     this.init();
   }
@@ -1943,8 +1945,9 @@ class PozitronApp {
 
 
   async loadCurrencyRate() {
+    // 1. Try server live settings (Render Cloud or local server)
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch(`/api/settings?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.usd_rate) {
@@ -1958,8 +1961,9 @@ class PozitronApp {
       }
     } catch(e) {}
 
+    // 2. Try server currency-rate endpoint
     try {
-      const res2 = await fetch('/api/currency-rate');
+      const res2 = await fetch(`/api/currency-rate?t=${Date.now()}`);
       if (res2.ok) {
         const data2 = await res2.json();
         if (data2 && data2.usd_rate) {
@@ -1973,6 +1977,23 @@ class PozitronApp {
       }
     } catch(e) {}
 
+    // 3. Static fallback: data/settings.json (authoritative for static GitHub Pages)
+    try {
+      const res3 = await fetch(`data/settings.json?t=${Date.now()}`);
+      if (res3.ok) {
+        const data3 = await res3.json();
+        if (data3 && data3.usd_rate) {
+          const rate = parseFloat(data3.usd_rate);
+          if (!isNaN(rate) && rate > 0) {
+            this.usdRate = rate;
+            localStorage.setItem('pozitron_usd_rate', rate.toString());
+            return;
+          }
+        }
+      }
+    } catch(e) {}
+
+    // 4. Static bundle fallback: window.pozitronData
     if (window.pozitronData && window.pozitronData.usd_rate) {
       const fallback = parseFloat(window.pozitronData.usd_rate);
       if (!isNaN(fallback) && fallback > 0) {
