@@ -190,6 +190,25 @@
     "created_at": "2026-09-20T08:13:01.739841"
   },
   {
+    "id": "cbeb61bfbc68",
+    "reddit_id": "t3_1wllp1p",
+    "reddit_type": "submission",
+    "title": "Betafpv HexaCharger Pro overcharging issue",
+    "body": "I got this charger hv batterys and a air 75 ii today and wanted to start flying i was flying 5 Inch before and wanted to try out Tiny whoops i First charged to 4.2 V because i forgot that i had to Switch to 4.35 charging all to 4.2 worked Fine then i testet the quad out and then out all batterys into the charger to charge them to 4.35 the thing was the batterys that i did Not use before charged up to 4.38 and there was no Sing of stopping and i shut it up at that Point now i dont know What to do if there is anyone with the Same charger that knows What the Problem is \n\nOther question What Rates do you have on the 75 cause hovering in Place is pretty Hard ",
+    "author": "Honest_Newt_7906",
+    "subreddit": "fpv",
+    "url": "https://i.redd.it/1nxgcimycpqh1.jpeg",
+    "permalink": "https://reddit.com/r/fpv/comments/1wllp1p/betafpv_hexacharger_pro_overcharging_issue/",
+    "question_summary": "Betafpv HexaCharger Pro overcharging issue",
+    "gemini_reply": "Hey! For LiPo battery safety and longevity, keep these guidelines in mind:\n\n1. **Per-Cell Voltage:** Never discharge below 3.5V per cell (aim to land around 3.6V-3.7V). Full charge is 4.20V (or 4.35V for LiHV).\n2. **Storage Charge:** Don't leave packs fully charged or depleted for more than 48 hours. Charge or discharge them to 3.80V-3.85V per cell.\n3. **Charge Rate:** Stick to 1C charge rate for longest cycle life (e.g. 1.5A for a 1500mAh pack).\n\n*Fly safe and happy flying! [POZITRON MARKET]*",
+    "status": "failed",
+    "confidence_score": 88,
+    "upvotes": 1,
+    "error_message": "Gönderim hatası: [Errno 2] No such file or directory: 'node'",
+    "published_at": null,
+    "created_at": "2026-09-20T19:37:46.930751"
+  },
+  {
     "id": "c49727d7082b",
     "reddit_id": "t3_1wlk4ig",
     "reddit_type": "submission",

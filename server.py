@@ -93,8 +93,8 @@ def send_verification_email(to_email: str, code: str) -> bool:
     """Sends a 6-digit password reset verification code to user email."""
     smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.environ.get('SMTP_PORT', 587))
-    smtp_user = os.environ.get('SMTP_USER', '')
-    smtp_password = os.environ.get('SMTP_PASSWORD', '')
+    smtp_user = os.environ.get('SMTP_USER', '').strip().lower()
+    smtp_password = os.environ.get('SMTP_PASSWORD', 'mdbcqmpllseypvzo').strip().replace(' ', '')
     smtp_from = os.environ.get('SMTP_FROM', smtp_user or 'noreply@pozitronmarket.com')
 
     subject = f"[Pozitron Market] Şifre Sıfırlama Doğrulama Kodu: {code}"
