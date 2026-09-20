@@ -950,6 +950,25 @@
     "created_at": "2026-09-20T09:57:18.630468"
   },
   {
+    "id": "06dae871e305",
+    "reddit_id": "t3_1wlh4iu",
+    "reddit_type": "submission",
+    "title": "FPV drone stuck on the tree - Drone Recovery Mission (with Interstellar music)",
+    "body": "Hey guys! A while ago, I got my FPV drone stuck on a tree at a height of about 10 meters. I decided to share a short video of how I managed to get it back, hoping it might help anyone dealing with this for the first time.\n\nI used my DJI drone equipped with additional landing gear, which made it easy to attach a lightweight, 40-meter string. I flew slowly over the branch and got the string caught in the smaller branches. Then, I pulled the drone backwards so the string would release from the landing gear and drop over the branch.\n\nOnce both ends of the string were on the ground, I tied one end to a thicker cord. By pulling the other end of the string, I managed to hoist the thicker cord over the branch. After that, it just took a good shake to get the drone down!\n\nI know there are plenty of posts about stuck drones, but mine was way too high to just throw something over the branch, so I had to get a bit more creative.",
+    "author": "Dejvidos56",
+    "subreddit": "fpv",
+    "url": "https://youtu.be/N7DTqjmxLD0?is=-9PSqKWvr_QMtTzD",
+    "permalink": "https://reddit.com/r/fpv/comments/1wlh4iu/fpv_drone_stuck_on_the_tree_drone_recovery/",
+    "question_summary": "FPV drone stuck on the tree - Drone Recovery Mission (with Interstellar music)",
+    "gemini_reply": "Awesome flying! Smooth lines and great throttle control. Keep ripping and fly safe!\n\n*Fly safe and happy flying! [POZITRON MARKET]*",
+    "status": "failed",
+    "confidence_score": 80,
+    "upvotes": 1,
+    "error_message": "Gönderim hatası: [Errno 2] No such file or directory: 'node'",
+    "published_at": null,
+    "created_at": "2026-09-20T16:35:59.553059"
+  },
+  {
     "id": "02e48e52987f",
     "reddit_id": "t3_1wl3uri",
     "reddit_type": "submission",

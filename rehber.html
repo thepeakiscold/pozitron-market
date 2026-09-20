@@ -9,11 +9,11 @@
   <meta id="meta-desc" name="description" content="Pozitron Market FPV mühendislik rehberleri. Betaflight 4.5 UART konfigürasyonları, ESC protokolleri, LiPo batarya güvenliği ve drone toplama rehberleri.">
   <meta id="meta-keywords" name="keywords" content="fpv rehber, betaflight uart, drone lehimleme, esc protokolu, lipo sarj, pozitron market rehber, drone yapımı">
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-  <link rel="canonical" id="meta-canonical" href="https://pozitronmarket.com/rehber.html">
+  <link rel="canonical" id="meta-canonical" href="https://pozitronmarket.com/rehber">
 
   <!-- Open Graph / Social Media -->
   <meta property="og:type" content="article">
-  <meta id="og-url" property="og:url" content="https://pozitronmarket.com/rehber.html">
+  <meta id="og-url" property="og:url" content="https://pozitronmarket.com/rehber">
   <meta id="og-title" property="og:title" content="Teknik FPV &amp; Drone Mühendislik Rehberleri | Pozitron Market">
   <meta id="og-desc" property="og:description" content="Pozitron Market FPV mühendislik ve donanım rehberleri.">
   <meta property="og:image" content="https://pozitronmarket.com/assets/hero_drone.png">
@@ -34,7 +34,7 @@
     "@context": "https://schema.org",
     "@type": "Blog",
     "name": "Pozitron Market FPV Mühendislik Rehberleri",
-    "url": "https://pozitronmarket.com/rehber.html",
+    "url": "https://pozitronmarket.com/rehber",
     "description": "Betaflight, UART, ESC ve FPV donanım mühendisliği rehberleri."
   }
   </script>
@@ -491,6 +491,11 @@
     /* Utility */
     .hidden { display: none !important; }
   </style>
+  <script>
+    if (window.location.pathname.endsWith('.html')) {
+      window.history.replaceState(null, '', window.location.pathname.slice(0, -5) + window.location.search + window.location.hash);
+    }
+  </script>
 </head>
 <body>
 
@@ -544,17 +549,17 @@
           <span>Mağaza</span>
         </a>
 
-        <a href="/drone-toplama-sihirbazi.html" class="btn-builder-nav" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
+        <a href="/drone-toplama-sihirbazi" class="btn-builder-nav" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
           <span>Drone Topla</span>
         </a>
 
-        <a href="/3d-baski-studio.html" class="btn-3d-print-nav" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
+        <a href="/3d-baski-studio" class="btn-3d-print-nav" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           <span>3D Baskı Studio</span>
         </a>
 
-        <a href="/rehber.html" class="btn-builder-nav" style="text-decoration:none; background:#0284c7; color:#ffffff; border-color:#0284c7; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(2,132,199,0.25);">
+        <a href="/rehber" class="btn-builder-nav" style="text-decoration:none; background:#0284c7; color:#ffffff; border-color:#0284c7; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(2,132,199,0.25);">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
           <span>Rehberler</span>
         </a>
@@ -601,7 +606,7 @@
       <div class="breadcrumbs">
         <a href="/">Ana Sayfa</a>
         <span>&rsaquo;</span>
-        <a href="/rehber.html">Teknik Rehberler</a>
+        <a href="/rehber">Teknik Rehberler</a>
         <span>&rsaquo;</span>
         <span id="breadcrumb-title" style="color:var(--text-main); font-weight:600;">Rehber Detayı</span>
       </div>
@@ -631,7 +636,7 @@
           </div>
 
           <div style="margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <a href="/rehber.html" class="nav-link-btn">
+            <a href="/rehber" class="nav-link-btn">
               &larr; Tüm Rehberlere Dön
             </a>
             <div style="display:flex; gap:8px;">
@@ -681,7 +686,7 @@
           </div>
           <div class="contact-line">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-            <span>+90 (542) 546 55 62</span>
+            <span>+90 (552) 128 06 17</span>
           </div>
           <div class="contact-line">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -712,11 +717,11 @@
       <div class="footer-col">
         <h3 class="footer-heading">Müşteri &amp; Güvenlik</h3>
         <ul class="footer-links">
-          <li><a href="/drone-toplama-sihirbazi.html">Drone Uyumluluk Sihirbazı</a></li>
-          <li><a href="/3d-baski-studio.html">3D Baskı Studio (Özel İmalat)</a></li>
-          <li><a href="/rehber.html">Teknik FPV Rehberleri &amp; Blog</a></li>
+          <li><a href="/drone-toplama-sihirbazi">Drone Uyumluluk Sihirbazı</a></li>
+          <li><a href="/3d-baski-studio">3D Baskı Studio (Özel İmalat)</a></li>
+          <li><a href="/rehber">Teknik FPV Rehberleri &amp; Blog</a></li>
           <li><a href="/#shipping">Teslimat &amp; Aynı Gün Kargo</a></li>
-          <li><a href="/iade-politikasi.html" target="_blank" rel="noopener">İade ve Geri Ödeme Politikası (14 Gün İade)</a></li>
+          <li><a href="/iade-politikasi" target="_blank" rel="noopener">İade ve Geri Ödeme Politikası (14 Gün İade)</a></li>
           <li><a href="/#faq">Sıkça Sorulan Sorular (SSS)</a></li>
           <li><a href="/#privacy">KVKK &amp; Gizlilik Politikası</a></li>
           <li><a href="/#terms">Mesafeli Satış Sözleşmesi</a></li>
@@ -751,7 +756,7 @@
         <div class="footer-bottom-links">
           <a href="/#privacy">Gizlilik</a>
           <a href="/#terms">Kullanım Şartları</a>
-          <a href="/iade-politikasi.html">İade Koşulları</a>
+          <a href="/iade-politikasi">İade Koşulları</a>
         </div>
       </div>
     </div>
@@ -920,7 +925,7 @@
         const tag = a.component_focus ? a.component_focus.split(' ')[0] : 'FPV';
 
         return `
-          <a href="/rehber.html?slug=${encodeURIComponent(a.slug)}" class="article-card">
+          <a href="/rehber/${encodeURIComponent(a.slug)}" onclick="event.preventDefault(); openArticle('${a.slug}');" class="article-card">
             <div>
               <div class="card-meta-row">
                 <span class="card-tag">${tag}</span>
@@ -977,6 +982,26 @@
       });
       renderArticlesGrid(filtered);
     }
+
+    
+    function openArticle(slug) {
+      window.history.pushState({ slug }, '', `/rehber/${slug}`);
+      showArticleDetail(slug);
+    }
+
+    function goDirectory() {
+      window.history.pushState({}, '', '/rehber');
+      showDirectory();
+    }
+
+    window.addEventListener('popstate', (e) => {
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      if (pathParts.length >= 2 && pathParts[0] === 'rehber') {
+        showArticleDetail(pathParts[1]);
+      } else {
+        showDirectory();
+      }
+    });
 
     function showArticleDetail(slug) {
       const article = _allArticles.find(a => a.slug === slug);

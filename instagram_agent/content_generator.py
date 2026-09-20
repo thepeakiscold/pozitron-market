@@ -501,7 +501,7 @@ class ContentGenerator:
 {price_text}
 [STOK] Stok Durumu: Hızlı Kargo & Güvenli 3D Secure Ödeme
 [LINK] Sipariş ve detaylar için profildeki linke tıkla! 
-Ürün linki: pozitronmarket.com/products/{slug}.html"""
+Ürün linki: pozitronmarket.com/products/{slug}"""
 
         hashtags = f"#fpv #fpvdrone #fpvturkey #{brand.lower().replace(' ', '')} #dronetopla #pozitronmarket #fpvracing #fpvfreestyle #dronehardware #teknofest"
 
@@ -561,7 +561,7 @@ Pozitron Market'in tamamen ÜCRETSİZ geliştirdiği FPV Drone Toplama Sihirbaz�
 
 Takım arkadaşlarınla listenin çıktısını alabilir veya doğrudan sipariş verebilirsin.
 
-> Hemen profildeki linkten Sihirbazı dene: pozitronmarket.com/drone-toplama-sihirbazi.html""",
+> Hemen profildeki linkten Sihirbazı dene: pozitronmarket.com/drone-toplama-sihirbazi""",
                 'hashtags': '#dronetopla #fpvuyumluluk #dronesihirbazi #fpvturkey #pozitronmarket #teknofest #dronebuild',
                 'visual_summary': {
                     'badge': 'ÜCRETSİZ ONLİNE ARAÇ',
@@ -576,7 +576,7 @@ Takım arkadaşlarınla listenin çıktısını alabilir veya doğrudan sipariş
                 },
                 'tool_info': {
                     'tool_name': 'drone_wizard',
-                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi.html'
+                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi'
                 }
             },
             {
@@ -592,7 +592,7 @@ Pozitron 3D Baskı Studio devrede!
 
 Kırım yaşamadan önce motorlarını ve kameranı sağlama al! [KORUMA]
 
-> Hemen online baskı al: pozitronmarket.com/3d-baski-studio.html""",
+> Hemen online baskı al: pozitronmarket.com/3d-baski-studio""",
                 'hashtags': '#3dbaski #tpu95a #dronemount #gopromount #fpvturkey #pozitronmarket #3dprinting #teknofest',
                 'visual_summary': {
                     'badge': 'ONLİNE FİYAT & BASKI',
@@ -607,7 +607,7 @@ Kırım yaşamadan önce motorlarını ve kameranı sağlama al! [KORUMA]
                 },
                 'tool_info': {
                     'tool_name': '3d_print_studio',
-                    'url': 'https://pozitronmarket.com/3d-baski-studio.html'
+                    'url': 'https://pozitronmarket.com/3d-baski-studio'
                 }
             },
             {
@@ -622,7 +622,7 @@ Pozitron Pil & Uçuş Süresi Simülatörü ile:
 
 Ağırlık ve uçuş süresi dengesini sahaya çıkmadan önce optimize edin.
 
-> Ücretsiz hesaplayıcıyı keşfet: pozitronmarket.com/drone-toplama-sihirbazi.html""",
+> Ücretsiz hesaplayıcıyı keşfet: pozitronmarket.com/drone-toplama-sihirbazi""",
                 'hashtags': '#pilhesaplama #ucussuresi #fpvpil #lipobattery #pozitronmarket #teknofest',
                 'visual_summary': {
                     'badge': 'PERFORMANS SİMÜLATÖRÜ',
@@ -637,7 +637,7 @@ Ağırlık ve uçuş süresi dengesini sahaya çıkmadan önce optimize edin.
                 },
                 'tool_info': {
                     'tool_name': 'battery_calc',
-                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi.html'
+                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi'
                 }
             },
             {
@@ -650,7 +650,7 @@ Pozitron 5.8GHz Frekans Tablosu ile:
 • Takım arkadaşlarınızla frekans paylaşımını tek tıkla organize edin.
 • 8 pilota kadar sıfır parazitle aynı anda gökyüzünde kalın!
 
-> Frekans rehberini incele: pozitronmarket.com/drone-toplama-sihirbazi.html""",
+> Frekans rehberini incele: pozitronmarket.com/drone-toplama-sihirbazi""",
                 'hashtags': '#raceband #fpvfrekans #58ghz #fpvracing #pozitronmarket #teknofest',
                 'visual_summary': {
                     'badge': 'KANAL PLANLAYICI',
@@ -665,7 +665,7 @@ Pozitron 5.8GHz Frekans Tablosu ile:
                 },
                 'tool_info': {
                     'tool_name': 'freq_planner',
-                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi.html'
+                    'url': 'https://pozitronmarket.com/drone-toplama-sihirbazi'
                 }
             }
         ]
@@ -893,7 +893,7 @@ Pozitron Mühendislik Ekibi tarafından hazırlanan bu teknik kılavuz ile FPV d
 • Yanma ve kırım risklerini sıfıra indiren test protokolleri
 • Maksimum verimlilik için önerilen komponent konfigürasyonları
 
-> Kılavuzun tamamını okumak için profildeki linke tıkla: pozitronmarket.com/docs/{slug}.html"""
+> Kılavuzun tamamını okumak için profildeki linke tıkla: pozitronmarket.com/rehber/{slug}"""
 
                 hashtags = "#fpvrehber #teknikmakale #dronemuhendislik #pozitronmarket #fpvturkey #teknofest"
 
@@ -957,7 +957,7 @@ Pozitron Mühendislik Ekibi tarafından hazırlanan bu teknik kılavuz ile FPV d
         product_name = r.get('name_tr') or r.get('name_en') or 'Pozitron FPV Donanım Mağazası'
         comment = r.get('comment', 'Hızlı kargo ve orijinal parçalar!')
         slug = r.get('slug') or ''
-        link = f"pozitronmarket.com/products/{slug}.html" if slug else "pozitronmarket.com"
+        link = f"pozitronmarket.com/products/{slug}" if slug else "pozitronmarket.com"
 
         title = f"Pilot Değerlendirmesi — {product_name}"
         caption = f"""***** Pilot Yorumu: "{comment}"

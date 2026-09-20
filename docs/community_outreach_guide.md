@@ -27,8 +27,8 @@ Bu kafa karışıklığını gidermek için Pozitron Market bünyesinde tamamen 
 Ayrıca kırılan motor tamponları ve GoPro mountları için de online gramaj hesaplayan bir **3D Baskı Studio** ekledik.
 
 Aracı test edip eksik gördüğünüz kuralları veya eklenmesini istediğiniz parçaları bu başlık altında iletirseniz çok seviniriz:
-👉 https://pozitronmarket.com/drone-toplama-sihirbazi.html
-👉 3D Studio: https://pozitronmarket.com/3d-baski-studio.html
+👉 https://pozitronmarket.com/drone-toplama-sihirbazi
+👉 3D Studio: https://pozitronmarket.com/3d-baski-studio
 
 Kazasız, keyifli kırım-sız uçuşlar dilerim!
 ```
@@ -44,12 +44,12 @@ Kazasız, keyifli kırım-sız uçuşlar dilerim!
 Selamlar arkadaşlar, yarışma hazırlıklarınızda kolaylıklar dilerim. 🚀
 
 Teknofest İHA ve FPV kategorilerinde yarışan ekipler için parça uyumluluğu (ESC amper marjı, motor KV, batarya voltajı) hesaplayan online bir konfigüratör hazırladık:
-🔗 https://pozitronmarket.com/drone-toplama-sihirbazi.html
+🔗 https://pozitronmarket.com/drone-toplama-sihirbazi
 
 Ayrıca yarışma esnasında acil kırılan veya özel tasarım gerektiren parçalarınız için (GoPro mount, motor koruyucu, anten tutucu) aynı gün kargolu esnek TPU 95A / PETG 3D baskı hizmetimiz de devrede:
-🔗 https://pozitronmarket.com/3d-baski-studio.html
+🔗 https://pozitronmarket.com/3d-baski-studio
 
-Takım arkadaşlarınızla parça listesi çıkarırken sihirbazın "Paketi Paylaş" özelliğiyle listenizi doğrudan grupta paylaşabilirsiniz. Yarışma hazırlığı yapan öğrenci takımlarına özel destek için doğrudan WhatsApp'tan da yazabilirsiniz: +90 542 546 55 62. Başarılar dileriz!
+Takım arkadaşlarınızla parça listesi çıkarırken sihirbazın "Paketi Paylaş" özelliğiyle listenizi doğrudan grupta paylaşabilirsiniz. Yarışma hazırlığı yapan öğrenci takımlarına özel destek için doğrudan WhatsApp'tan da yazabilirsiniz: +90 552 128 06 17. Başarılar dileriz!
 ```
 
 ---
@@ -64,7 +64,7 @@ FPV drone içerikleri Instagram ve TikTok algoritmalarında en yüksek izlenme a
 * **Format:** Ekran kaydı + masa üstü parça gösterimi (15-20 saniye).
 * **Kanca (İlk 3 Saniye):** *"Bir FPV drone toplamaya kalksanız bugün ne kadar tutar?"*
 * **Gelişme:** 
-  - Telefon ekranında [pozitronmarket.com/drone-toplama-sihirbazi.html](https://pozitronmarket.com/drone-toplama-sihirbazi.html) açılır.
+  - Telefon ekranında [pozitronmarket.com/drone-toplama-sihirbazi](https://pozitronmarket.com/drone-toplama-sihirbazi) açılır.
   - Bütçe slider'ı çekilir (örn. 25.000 TL), "Otomatik Topla"ya basılır.
   - Sihirbaz SpeedyBee stack, iFlight motorlar, kamera ve gövdeyi tek tek eşleştirir. "Voltaj ve ESC uyumu %100 doğrulandı" rozetleri gösterilir.
 * **Çağrı (CTA):** *"Kendi bütçene göre drone toplamak için profildeki Pozitron Sihirbazı linkine tıkla!"*
@@ -98,5 +98,5 @@ Sitemizdeki 500 ürün ve araç sayfalarının tamamı `sitemap.xml` dosyasına 
 2. Sol menüden **Sitemap'ler (Site Haritaları)** sekmesine gidin.
 3. `sitemap.xml` yazıp **Gönder** butonuna tıklayın.
 4. **URL Denetimi** aracına şu 2 yeni sayfayı yapıştırıp **Dizine Eklenmesini İste** butonuna basın:
-   - `https://pozitronmarket.com/drone-toplama-sihirbazi.html`
-   - `https://pozitronmarket.com/3d-baski-studio.html`
+   - `https://pozitronmarket.com/drone-toplama-sihirbazi`
+   - `https://pozitronmarket.com/3d-baski-studio`

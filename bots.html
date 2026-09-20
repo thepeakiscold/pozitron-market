@@ -838,6 +838,11 @@
       margin-top: 16px;
     }
   </style>
+  <script>
+    if (window.location.pathname.endsWith('.html')) {
+      window.history.replaceState(null, '', window.location.pathname.slice(0, -5) + window.location.search + window.location.hash);
+    }
+  </script>
 </head>
 <body class="bots-body">
 
@@ -869,7 +874,7 @@
           <span class="code-chip">8000</span>
         </div>
 
-        <a href="/admin.html" class="nav-btn nav-btn-outline">
+        <a href="/admin" class="nav-btn nav-btn-outline">
           <span>Market Paneli</span>
         </a>
 
@@ -3065,15 +3070,18 @@
           const data = await res.json();
           const cfg = data.config || {};
           const isPeak = Boolean(cfg.peak_scheduler_enabled);
+          const freqSelect = document.getElementById('ig-quick-freq-select');
           const lbl = document.getElementById('ig-freq-label');
           const cycleBadge = document.getElementById('ig-post-cycle-badge');
           const postNextEl = document.getElementById('ig-post-next-target-time');
 
           if (isPeak) {
+            if (freqSelect) freqSelect.value = 'peak';
             if (lbl) lbl.textContent = 'Zirve Saatler (12:30 & 20:00)';
             if (cycleBadge) cycleBadge.textContent = 'Zirve Saatler';
           } else {
             const h = cfg.posting_frequency_hours || val;
+            if (freqSelect) freqSelect.value = String(h);
             if (lbl) lbl.textContent = `Her ${h} Saatte Bir`;
             if (cycleBadge) cycleBadge.textContent = `${h} Saatte Bir`;
           }
@@ -3087,6 +3095,9 @@
           }
 
           showToast(isPeak ? 'Paylaşım modu: Zirve Saatler (12:30 & 20:00).' : `Paylaşım sıklığı güncellendi: Her ${val} saatte bir.`, "success");
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          showToast(`Hata: ${errData.error || 'Sıklık güncellenemedi (HTTP ' + res.status + ')'}`, "error");
         }
       } catch(e) {
         showToast("Hata: " + e.message, "error");
@@ -3657,7 +3668,7 @@
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #1e293b; padding-top:8px;">
               <span style="font-size:0.72rem; color:#10b981; font-weight:600;">${linksCount} Ürüne İç Link</span>
-              <a href="/rehber.html?slug=${encodeURIComponent(a.slug)}" target="_blank" class="btn-action btn-secondary" style="padding:2px 8px; font-size:0.7rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+              <a href="/rehber/${encodeURIComponent(a.slug)}" target="_blank" class="btn-action btn-secondary" style="padding:2px 8px; font-size:0.7rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
                 <span>Sitede Gör &rarr;</span>
               </a>
             </div>

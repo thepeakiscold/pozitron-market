@@ -11,6 +11,11 @@
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
   <script src="./data/pozitron_data.js?v=20260823_sec_v30"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    if (window.location.pathname.endsWith('.html')) {
+      window.history.replaceState(null, '', window.location.pathname.slice(0, -5) + window.location.search + window.location.hash);
+    }
+  </script>
 </head>
 <body class="admin-body">
 

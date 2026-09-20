@@ -1,4 +1,7 @@
 User-agent: *
+Disallow: /admin
 Disallow: /admin.html
+Disallow: /bots
+Disallow: /bots.html
 
 Sitemap: https://pozitronmarket.com/sitemap.xml

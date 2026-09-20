@@ -2586,19 +2586,21 @@ class PozitronApp {
 
   updateBankInfo(bankKey) {
     const banks = {
-      main: { name: 'Kuveyt Türk / 7/24 FAST', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' },
-      ziraat: { name: 'Ziraat Bankası (7/24 FAST)', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' },
-      garanti: { name: 'Garanti BBVA', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' },
-      isbank: { name: 'Türkiye İş Bankası', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' },
-      enpara: { name: 'QNB Enpara / FAST', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz' }
+      main: { name: 'Kuveyt Türk / 7/24 FAST', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' },
+      ziraat: { name: 'Ziraat Bankası (7/24 FAST)', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' },
+      garanti: { name: 'Garanti BBVA', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' },
+      isbank: { name: 'Türkiye İş Bankası', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' },
+      enpara: { name: 'QNB Enpara / FAST', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' }
     };
     const b = banks[bankKey] || banks.main;
     const nameEl = document.getElementById('bank-box-name');
     const ibanEl = document.getElementById('bank-box-iban');
     const ownerEl = document.getElementById('bank-box-owner');
+    const phoneEl = document.getElementById('bank-box-phone');
     if (nameEl) nameEl.textContent = b.name;
     if (ibanEl) ibanEl.textContent = b.iban;
     if (ownerEl) ownerEl.textContent = b.owner;
+    if (phoneEl) phoneEl.textContent = b.phone || '0552 128 0617';
   }
 
   copyIban() {
@@ -2606,6 +2608,14 @@ class PozitronApp {
     if (ibanEl) {
       navigator.clipboard.writeText(ibanEl.textContent.trim());
       this.showToast('IBAN panoya kopyalandı.', 'success');
+    }
+  }
+
+  copyBankPhone() {
+    const phoneEl = document.getElementById('bank-box-phone');
+    if (phoneEl) {
+      navigator.clipboard.writeText(phoneEl.textContent.trim().replace(/\s+/g, ''));
+      this.showToast('Ödeme telefon numarası (FAST / Kolay Adres) panoya kopyalandı.', 'success');
     }
   }
 
@@ -2726,7 +2736,7 @@ class PozitronApp {
 
     if (brandEl) brandEl.textContent = gatewayName;
     if (phoneEl) {
-      const clean = phone || '+90 555 000 1122';
+      const clean = phone || '+90 552 128 0617';
       phoneEl.textContent = clean.replace(/(\d{3})\d{4}(\d{3})/, '$1 **** $2');
     }
     if (inputEl) inputEl.value = '';

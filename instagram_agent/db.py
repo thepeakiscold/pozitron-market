@@ -127,6 +127,8 @@ def init_instagram_tables():
         cursor.execute("ALTER TABLE instagram_posts ADD COLUMN media_type TEXT DEFAULT 'IMAGE'")
     if 'video_engine' not in ig_cols:
         cursor.execute("ALTER TABLE instagram_posts ADD COLUMN video_engine TEXT DEFAULT NULL")
+    if 'video_url' not in ig_cols:
+        cursor.execute("ALTER TABLE instagram_posts ADD COLUMN video_url TEXT DEFAULT NULL")
 
     # Migration: Ensure advanced PR config columns exist
     cursor.execute("PRAGMA table_info(instagram_agent_config)")
@@ -238,8 +240,8 @@ def save_instagram_post(post_data: dict):
         INSERT OR REPLACE INTO instagram_posts (
             id, content_type, product_id, title, caption, hashtags,
             image_url, local_image_path, status, ig_media_id, ig_permalink,
-            error_message, scheduled_at, published_at, metadata_json, image_mode, media_type, video_engine, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            error_message, scheduled_at, published_at, metadata_json, image_mode, media_type, video_engine, video_url, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         post_data['id'],
         post_data.get('content_type', 'product_spotlight'),
@@ -259,6 +261,7 @@ def save_instagram_post(post_data: dict):
         post_data.get('image_mode', 'canvas'),
         post_data.get('media_type', 'IMAGE'),
         post_data.get('video_engine'),
+        post_data.get('video_url'),
         post_data.get('created_at', datetime.now().isoformat())
     ))
     conn.commit()

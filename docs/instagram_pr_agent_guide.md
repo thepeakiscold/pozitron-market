@@ -8,7 +8,7 @@ Bu kılavuz, **Pozitron Market** ([pozitronmarket.com](https://pozitronmarket.co
 
 1. **5 Farklı İçerik Stratejisi (Content Pillars):**
    - 🛸 **Ürün Vitrini (Product Spotlight):** 500 FPV donanımı arasından öne çıkan motor, ESC, FC, DJI O3, kamera ve LiPo bataryaları teknik özellikleri, TRY/USD fiyatları ve stok bilgisiyle tanıtır.
-   - 🛠️ **Araç Tanıtımı (Tool Showcase):** Sitedeki **Drone Uyumluluk Sihirbazı** (`drone-toplama-sihirbazi.html`) ve **3D Baskı TPU Studio**'sunu (`3d-baski-studio.html`) tanıtır.
+   - 🛠️ **Araç Tanıtımı (Tool Showcase):** Sitedeki **Drone Uyumluluk Sihirbazı** (`drone-toplama-sihirbazi`) ve **3D Baskı TPU Studio**'sunu (`3d-baski-studio`) tanıtır.
    - 🔥 **Fırsat & Kupon Alarmı (Deal Drop):** Aktif kupon kodlarını (`POZITRON10`, `DRONE20`, `FPVRACE`) ve indirimleri duyurur.
    - 💡 **FPV Pilot Akademisi (Pilot Advice):** 4S vs 6S pil seçimi, motor KV hesabı, TPU malzeme avantajları gibi rehber paylaşımlar.
    - ⭐ **Doğrulanmış Müşteri Yorumları (Social Proof):** Gerçek kullanıcı deneyimlerini şık kartlarla öne çıkarır.
@@ -34,7 +34,7 @@ Bu kılavuz, **Pozitron Market** ([pozitronmarket.com](https://pozitronmarket.co
    ```bash
    python3 server.py
    ```
-2. Tarayıcınızda `http://localhost:8000/admin.html` adresine gidin.
+2. Tarayıcınızda `http://localhost:8000/admin` adresine gidin.
 3. Üst menüden **"🤖 Instagram PR Robotu"** sekmesine tıklayın.
 4. **İçerik Stüdyosu**'ndan içerik türünü ve isterseniz belirli bir ürünü seçip **"✨ Yeni Gönderi & 1080x1080 Görsel Üret"** butonuna basın.
 5. Sağ taraftaki **Canlı Instagram Telefon Mockup'ı** üzerinde tasarlanan afişi, başlığı ve hashtag'leri anlık olarak inceleyin.

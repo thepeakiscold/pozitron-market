@@ -517,6 +517,10 @@ class InstagramPRAgent:
             paths_to_sync = post.get('slides') or [post.get('local_image_path')]
             self._sync_assets_to_repo(paths_to_sync, f"instagram post {post['id']}")
 
+        # Ensure video_url is set for REEL posts (fallback to image_url for older posts without video_url column)
+        if post.get('media_type') == 'REEL' and not post.get('video_url'):
+            post['video_url'] = post.get('image_url', '')
+
         result = self.publisher.publish_post(post)
         now_iso = datetime.now().isoformat()
         if result.get('success'):

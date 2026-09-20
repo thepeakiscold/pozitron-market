@@ -135,7 +135,7 @@ def generate_product_page(product, category, related_products, all_products, by_
     # WhatsApp order link pre-filled
     wa_msg = f"Merhaba, Pozitron Market web sitenizdeki şu ürünü sipariş etmek istiyorum:\n\nÜrün: {name_tr}\nKod: {sku}\nAdet: 1\nFiyat: {format_try(price_try)}\nLink: {canonical_url}"
     import urllib.parse
-    wa_url = f"https://wa.me/905425465562?text={urllib.parse.quote(wa_msg)}"
+    wa_url = f"https://wa.me/905521280617?text={urllib.parse.quote(wa_msg)}"
 
     # Specs table rows
     specs_rows_html = ""
@@ -559,12 +559,12 @@ def generate_product_page(product, category, related_products, all_products, by_
 
       <!-- Action Nav Buttons (Clean SVG Icons, Zero Emojis) -->
       <nav class="header-actions" aria-label="Navigasyon Menüsü">
-        <a href="../3d-baski-studio.html" class="btn-3d-print-nav" title="3D Baskı Studio">
+        <a href="../3d-baski-studio" class="btn-3d-print-nav" title="3D Baskı Studio">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           <span>3D Baskı Studio</span>
         </a>
 
-        <a href="../drone-toplama-sihirbazi.html" class="btn-builder-nav" title="Drone Toplama Sihirbazı">
+        <a href="../drone-toplama-sihirbazi" class="btn-builder-nav" title="Drone Toplama Sihirbazı">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
           <span>Drone Topla</span>
         </a>
@@ -673,7 +673,7 @@ def generate_product_page(product, category, related_products, all_products, by_
             <span>WhatsApp ile Sipariş &amp; Destek</span>
           </a>
 
-          <a href="../drone-toplama-sihirbazi.html" class="pdp-btn-wizard">
+          <a href="../drone-toplama-sihirbazi" class="pdp-btn-wizard">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
             <span>Bu Parçayı Drone Sihirbazında Test Et</span>
           </a>
@@ -803,7 +803,7 @@ def generate_product_page(product, category, related_products, all_products, by_
           </div>
           <div class="contact-line">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-            <span>+90 (542) 546 55 62</span>
+            <span>+90 (552) 128 06 17</span>
           </div>
           <div class="contact-line">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
@@ -830,10 +830,10 @@ def generate_product_page(product, category, related_products, all_products, by_
       <div class="footer-col">
         <div class="footer-col-title">Mühendislik &amp; Destek</div>
         <ul class="footer-links">
-          <li><a href="../drone-toplama-sihirbazi.html">Drone Toplama Sihirbazı</a></li>
-          <li><a href="../3d-baski-studio.html">3D Baskı Studio (TPU/PETG)</a></li>
-          <li><a href="../iade-politikasi.html">İade ve İptal Şartları</a></li>
-          <li><a href="../return-policy.html">Return &amp; Refund Policy</a></li>
+          <li><a href="../drone-toplama-sihirbazi">Drone Toplama Sihirbazı</a></li>
+          <li><a href="../3d-baski-studio">3D Baskı Studio (TPU/PETG)</a></li>
+          <li><a href="../iade-politikasi">İade ve İptal Şartları</a></li>
+          <li><a href="../return-policy">Return &amp; Refund Policy</a></li>
           <li><a href="../#builder">Özel İHA Konfigüratörü</a></li>
         </ul>
       </div>
@@ -860,7 +860,7 @@ def generate_product_page(product, category, related_products, all_products, by_
         <div class="footer-social-links">
           <a href="../" aria-label="Anasayfa">Anasayfa</a>
           <a href="../#catalog-section" aria-label="Tüm Donanımlar">Tüm Donanımlar</a>
-          <a href="../drone-toplama-sihirbazi.html" aria-label="Sihirbaz">Sihirbaz</a>
+          <a href="../drone-toplama-sihirbazi" aria-label="Sihirbaz">Sihirbaz</a>
         </div>
       </div>
     </div>
@@ -1254,25 +1254,25 @@ def main():
         '    <priority>1.0</priority>',
         '  </url>',
         '  <url>',
-        f'    <loc>{BASE_URL}/drone-toplama-sihirbazi.html</loc>',
+        f'    <loc>{BASE_URL}/drone-toplama-sihirbazi</loc>',
         f'    <lastmod>{today_str}</lastmod>',
         '    <changefreq>weekly</changefreq>',
         '    <priority>0.95</priority>',
         '  </url>',
         '  <url>',
-        f'    <loc>{BASE_URL}/3d-baski-studio.html</loc>',
+        f'    <loc>{BASE_URL}/3d-baski-studio</loc>',
         f'    <lastmod>{today_str}</lastmod>',
         '    <changefreq>weekly</changefreq>',
         '    <priority>0.95</priority>',
         '  </url>',
         '  <url>',
-        f'    <loc>{BASE_URL}/iade-politikasi.html</loc>',
+        f'    <loc>{BASE_URL}/iade-politikasi</loc>',
         f'    <lastmod>{today_str}</lastmod>',
         '    <changefreq>monthly</changefreq>',
         '    <priority>0.7</priority>',
         '  </url>',
         '  <url>',
-        f'    <loc>{BASE_URL}/return-policy.html</loc>',
+        f'    <loc>{BASE_URL}/return-policy</loc>',
         f'    <lastmod>{today_str}</lastmod>',
         '    <changefreq>monthly</changefreq>',
         '    <priority>0.6</priority>',
