@@ -504,7 +504,8 @@ class QASentinelAgent:
     def probe_product_links(self) -> Dict:
         """
         Validates 100% of all product links, canonical slug files, and routing integrity.
-        Ensures zero 404 broken product links across the catalog, sitemap, and static HTML files.
+        Ensures zero 404 broken product links across the catalog, sitemap, static HTML files,
+        and published marketing channels (Instagram, Merchant feeds).
         """
         result = {
             "channel": "product_links",
@@ -514,6 +515,8 @@ class QASentinelAgent:
             "broken_links_count": 0,
             "missing_html_count": 0,
             "empty_slugs_count": 0,
+            "invalid_slug_syntax_count": 0,
+            "broken_external_links_count": 0,
             "broken_products": [],
             "issues": []
         }
@@ -529,7 +532,10 @@ class QASentinelAgent:
             broken = []
             missing_html = []
             empty_slugs = []
+            invalid_slugs = []
+            broken_external = []
 
+            # 1. Check database products and static HTML files
             for p in products:
                 result["total_products_checked"] += 1
                 pid = p['id']
@@ -542,6 +548,11 @@ class QASentinelAgent:
                     broken.append({"id": pid, "slug": "", "sku": sku, "name": name, "reason": "Slug eksik."})
                     continue
 
+                # Validate URL RFC compliance (kebab-case: only lowercase letters, digits, and hyphens)
+                if not re.match(r'^[a-z0-9-]+$', slug):
+                    invalid_slugs.append({"id": pid, "slug": slug, "sku": sku, "name": name, "reason": "Gecersiz URL karakterleri iceriyor (&, parantez, bosluk vb.)."})
+                    broken.append({"id": pid, "slug": slug, "sku": sku, "name": name, "reason": "Gecersiz URL karakterleri iceriyor (&, parantez, bosluk vb.)."})
+
                 html_file = os.path.join(products_dir, f"{slug}.html")
                 if not os.path.isfile(html_file):
                     missing_html.append({"id": pid, "slug": slug, "sku": sku, "name": name, "reason": f"products/{slug}.html bulunamadi."})
@@ -549,22 +560,101 @@ class QASentinelAgent:
                 elif os.path.getsize(html_file) < 500:
                     broken.append({"id": pid, "slug": slug, "sku": sku, "name": name, "reason": f"products/{slug}.html bos veya bozuk (<500 bayt)."})
 
+            # 2. Check external published links (Instagram posts, Sitemap, Google Merchant Feed)
+            # Load slug aliases map to allow valid redirects
+            alias_map = {}
+            alias_file = os.path.join(PROJECT_ROOT, "data", "slug_aliases.json")
+            if os.path.isfile(alias_file):
+                try:
+                    with open(alias_file, "r", encoding="utf-8") as af:
+                        alias_map = json.load(af)
+                except Exception:
+                    pass
+
+            # Scan Instagram posts captions for product URLs
+            ig_file = os.path.join(PROJECT_ROOT, "data", "instagram_posts.json")
+            if os.path.isfile(ig_file):
+                try:
+                    with open(ig_file, "r", encoding="utf-8") as f:
+                        ig_posts = json.load(f)
+                    for post in ig_posts:
+                        caption = post.get("caption") or ""
+                        matches = re.findall(r'products/([a-zA-Z0-9_.\-&()]+)', caption)
+                        for match in matches:
+                            clean_match = match.rstrip('.html').rstrip('/')
+                            target_html = os.path.join(products_dir, f"{clean_match}.html")
+                            if not os.path.isfile(target_html) and clean_match not in alias_map:
+                                broken_external.append({
+                                    "source": "instagram",
+                                    "post_id": post.get("id"),
+                                    "slug": clean_match,
+                                    "reason": f"Instagram postunda yayinlanan link ({clean_match}) bulunamadi ve yonlendirmesi yok."
+                                })
+                except Exception as e:
+                    print(f"Instagram link scan error: {e}")
+
+            # Scan sitemap.xml
+            sitemap_file = os.path.join(PROJECT_ROOT, "sitemap.xml")
+            if os.path.isfile(sitemap_file):
+                try:
+                    with open(sitemap_file, "r", encoding="utf-8") as f:
+                        sitemap_content = f.read()
+                    sitemap_slugs = re.findall(r'<loc>https?://[^/]+/products/([^<]+)</loc>', sitemap_content)
+                    for s_slug in sitemap_slugs:
+                        clean_slug = s_slug.rstrip('.html').rstrip('/')
+                        target_html = os.path.join(products_dir, f"{clean_slug}.html")
+                        if not os.path.isfile(target_html) and clean_slug not in alias_map:
+                            broken_external.append({
+                                "source": "sitemap",
+                                "slug": clean_slug,
+                                "reason": f"sitemap.xml icindeki link ({clean_slug}) bulunamadi."
+                            })
+                except Exception as e:
+                    print(f"Sitemap link scan error: {e}")
+
+            # Scan Google Merchant Feed
+            for feed_rel in ["data/google_merchant_feed.tsv", "google_merchant_feed.tsv"]:
+                feed_path = os.path.join(PROJECT_ROOT, feed_rel)
+                if os.path.isfile(feed_path):
+                    try:
+                        with open(feed_path, "r", encoding="utf-8") as f:
+                            for line in f:
+                                matches = re.findall(r'https?://[^/]+/products/([^\s\t\n]+)', line)
+                                for match in matches:
+                                    clean_slug = match.rstrip('.html').rstrip('/')
+                                    target_html = os.path.join(products_dir, f"{clean_slug}.html")
+                                    if not os.path.isfile(target_html) and clean_slug not in alias_map:
+                                        broken_external.append({
+                                            "source": "merchant_feed",
+                                            "slug": clean_slug,
+                                            "reason": f"Merchant feed icindeki link ({clean_slug}) bulunamadi."
+                                        })
+                    except Exception as e:
+                        print(f"Merchant feed scan error: {e}")
+                    break
+
             result["empty_slugs_count"] = len(empty_slugs)
             result["missing_html_count"] = len(missing_html)
-            result["broken_links_count"] = len(broken)
+            result["invalid_slug_syntax_count"] = len(invalid_slugs)
+            result["broken_external_links_count"] = len(broken_external)
+
+            total_broken = len(broken) + len(broken_external)
+            result["broken_links_count"] = total_broken
             result["valid_links_count"] = result["total_products_checked"] - len(broken)
-            result["broken_products"] = broken[:20]
+            result["broken_products"] = (broken + broken_external)[:25]
 
             if empty_slugs:
                 result["issues"].append(f"{len(empty_slugs)} adet urunun slug degeri bos veya tanimsiz.")
+            if invalid_slugs:
+                result["issues"].append(f"{len(invalid_slugs)} adet urunun slug degeri web uyumsuz karakterler iceriyor (&, parantez, bosluk).")
             if missing_html:
                 result["issues"].append(f"{len(missing_html)} adet urunun statik HTML sayfasi (products/<slug>.html) eksik.")
-            if len(broken) > len(missing_html) + len(empty_slugs):
-                result["issues"].append(f"{len(broken)} adet urun linkinde anomali tespit edildi.")
+            if broken_external:
+                result["issues"].append(f"{len(broken_external)} adet harici/pazarlama kanalinda (Instagram, sitemap, feed) kirik urun linki tespit edildi.")
 
-            if len(broken) > 10:
+            if total_broken > 10:
                 result["status"] = "CRITICAL"
-            elif len(broken) > 0:
+            elif total_broken > 0:
                 result["status"] = "DEGRADED"
 
         except Exception as e:

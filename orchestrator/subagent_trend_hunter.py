@@ -379,7 +379,20 @@ class GlobalTrendHunterAgent:
         tags_json = proposal["tags_json"]
 
         sku = f"PZT-{category_id[:4].upper()}-{random.randint(1000, 9999)}"
-        slug = re.sub(r'[^a-zA-Z0-9_-]', '-', name_en.lower()).strip('-') + f"-{random.randint(100, 999)}"
+        clean_name = name_en.lower().replace('&', 'and')
+        base_slug = re.sub(r'[^a-z0-9]+', '-', clean_name).strip('-')
+        cursor.execute("SELECT id FROM products WHERE slug = ?", (base_slug,))
+        if not cursor.fetchone():
+            slug = base_slug
+        else:
+            suffix = 1
+            while True:
+                candidate = f"{base_slug}-{suffix}"
+                cursor.execute("SELECT id FROM products WHERE slug = ?", (candidate,))
+                if not cursor.fetchone():
+                    slug = candidate
+                    break
+                suffix += 1
         prod_id = f"pzt_{uuid.uuid4().hex[:8]}"
         now_iso = datetime.now().isoformat()
 

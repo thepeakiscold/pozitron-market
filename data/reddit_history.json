@@ -570,6 +570,25 @@
     "created_at": "2026-09-20T14:17:38.589839"
   },
   {
+    "id": "770adb789df8",
+    "reddit_id": "t3_1wlj4mw",
+    "reddit_type": "submission",
+    "title": "Indian FPV pilots — looking for drone parts? 🇮🇳",
+    "body": "",
+    "author": "Alive-Chard-5803",
+    "subreddit": "Multicopter",
+    "url": "/r/Electronicsinindia/comments/1wlf73b/indian_fpv_pilots_looking_for_drone_parts/",
+    "permalink": "https://reddit.com/r/Multicopter/comments/1wlj4mw/indian_fpv_pilots_looking_for_drone_parts/",
+    "question_summary": "Indian FPV pilots — looking for drone parts? 🇮🇳",
+    "gemini_reply": "Hey! For LiPo battery safety and longevity, keep these guidelines in mind:\n\n1. **Per-Cell Voltage:** Never discharge below 3.5V per cell (aim to land around 3.6V-3.7V). Full charge is 4.20V (or 4.35V for LiHV).\n2. **Storage Charge:** Don't leave packs fully charged or depleted for more than 48 hours. Charge or discharge them to 3.80V-3.85V per cell.\n3. **Charge Rate:** Stick to 1C charge rate for longest cycle life (e.g. 1.5A for a 1500mAh pack).\n\n*Fly safe and happy flying! [POZITRON MARKET]*",
+    "status": "failed",
+    "confidence_score": 88,
+    "upvotes": 1,
+    "error_message": "Gönderim hatası: [Errno 2] No such file or directory: 'node'",
+    "published_at": null,
+    "created_at": "2026-09-20T17:55:10.140432"
+  },
+  {
     "id": "7632e98f412d",
     "reddit_id": "t3_sample_1789883813_3",
     "reddit_type": "submission",

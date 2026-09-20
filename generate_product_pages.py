@@ -1240,6 +1240,39 @@ def main():
 
     print(f"Generated {generated_count} product HTML pages with Amazon Suite in '{OUTPUT_DIR}/'.")
 
+    # Generate alias redirect HTML pages for backwards compatibility and clean URLs
+    alias_file = os.path.join("data", "slug_aliases.json")
+    alias_count = 0
+    if os.path.isfile(alias_file):
+        try:
+            with open(alias_file, "r", encoding="utf-8") as af:
+                alias_map = json.load(af)
+            actual_slugs = {p.get("slug") for p in products if p.get("slug")}
+            for old_s, new_s in alias_map.items():
+                if old_s != new_s and old_s not in actual_slugs:
+                    alias_path = os.path.join(OUTPUT_DIR, f"{old_s}.html")
+                    target_prod = next((pr for pr in products if pr.get("slug") == new_s), None)
+                    target_name = html.escape(target_prod.get("name_tr", "") or target_prod.get("name_en", "") or new_s) if target_prod else new_s
+                    redirect_html = f"""<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=./{new_s}.html">
+  <link rel="canonical" href="{BASE_URL}/products/{new_s}">
+  <title>{target_name} | Pozitron Market</title>
+  <script>window.location.replace("./{new_s}.html");</script>
+</head>
+<body style="font-family:sans-serif; text-align:center; padding:40px;">
+  <p>Ürün sayfasına yönlendiriliyorsunuz... <a href="./{new_s}.html">Buraya tıklayın</a></p>
+</body>
+</html>"""
+                    with open(alias_path, "w", encoding="utf-8") as f:
+                        f.write(redirect_html)
+                    alias_count += 1
+            print(f"Generated {alias_count} alias redirect HTML pages in '{OUTPUT_DIR}/'.")
+        except Exception as e:
+            print(f"Alias generation error: {e}")
+
     # Generate full updated sitemap.xml
     print("Generating comprehensive sitemap.xml...")
     today_str = datetime.now().strftime("%Y-%m-%d")

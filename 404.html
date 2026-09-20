@@ -12,12 +12,57 @@
   <link rel="stylesheet" href="/styles.css?v=20260920_v1">
   
   <script>
-    // GitHub Pages SPA Fallback for /rehber/<slug>
     const path = window.location.pathname;
+
+    // 1. GitHub Pages SPA Fallback for /rehber/<slug>
     if (path.startsWith("/rehber/")) {
       const parts = path.split("/").filter(Boolean);
       if (parts.length >= 2) {
         window.location.replace("/rehber?slug=" + encodeURIComponent(parts[1]));
+      }
+    }
+
+    // 2. GitHub Pages Smart Product Fuzzy Resolver for /products/<slug>
+    if (path.includes("/products/")) {
+      const slugRaw = path.split("/products/")[1].split("?")[0].split("#")[0].replace(/\.html$/, "");
+      if (slugRaw) {
+        const cleanSlug = slugRaw.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+        const baseSlug = cleanSlug.replace(/-\d+$/, "");
+
+        function resolveProduct(prods) {
+          if (!Array.isArray(prods) || prods.length === 0) return false;
+          // Exact match
+          let match = prods.find(p => p.slug === cleanSlug || p.slug === slugRaw);
+          // Match by base slug (without random -NNN suffix)
+          if (!match && baseSlug) {
+            match = prods.find(p => p.slug && p.slug.replace(/-\d+$/, "") === baseSlug);
+          }
+          // Match prefix
+          if (!match && baseSlug) {
+            match = prods.find(p => p.slug && (p.slug.startsWith(baseSlug) || baseSlug.startsWith(p.slug.replace(/-\d+$/, ""))));
+          }
+          // Match SKU or ID
+          if (!match) {
+            match = prods.find(p => (p.sku && p.sku.toLowerCase() === cleanSlug) || p.id === cleanSlug);
+          }
+          if (match && match.slug) {
+            window.location.replace("/products/" + match.slug + ".html");
+            return true;
+          }
+          return false;
+        }
+
+        // Fetch products catalog and redirect
+        fetch("/data/products.json")
+          .then(res => res.json())
+          .then(prods => {
+            if (!resolveProduct(prods)) {
+              window.location.replace("/#product=" + encodeURIComponent(cleanSlug));
+            }
+          })
+          .catch(() => {
+            window.location.replace("/#product=" + encodeURIComponent(cleanSlug));
+          });
       }
     }
   </script>

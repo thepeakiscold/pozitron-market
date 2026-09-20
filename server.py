@@ -599,6 +599,30 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             if slug_or_id.endswith('.html'):
                 slug_or_id = slug_or_id[:-5]
 
+            # 1. Check data/slug_aliases.json for canonical redirection
+            alias_map_path = os.path.join(BASE_DIR, 'data', 'slug_aliases.json')
+            alias_target = None
+            if os.path.isfile(alias_map_path):
+                try:
+                    with open(alias_map_path, 'r', encoding='utf-8') as af:
+                        alias_data = json.load(af)
+                        alias_target = alias_data.get(slug_or_id)
+                        if not alias_target:
+                            # Try base slug without trailing numeric suffix (e.g. ...-838)
+                            base_lookup = re.sub(r'-\d+$', '', slug_or_id)
+                            alias_target = alias_data.get(base_lookup)
+                except Exception:
+                    pass
+
+            if alias_target and alias_target != slug_or_id:
+                target_url = f"/products/{alias_target}" + (('?' + parsed.query) if parsed.query else '')
+                self.send_response(301)
+                self.send_header('Location', target_url)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'public, max-age=31536000')
+                self.end_headers()
+                return
+
             target_html = os.path.join(BASE_DIR, 'products', f"{slug_or_id}.html")
             if not os.path.isfile(target_html):
                 try:
@@ -606,11 +630,27 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     cursor = conn.cursor()
                     cursor.execute("SELECT * FROM products WHERE slug = ? OR id = ? OR sku = ?", (slug_or_id, slug_or_id, slug_or_id))
                     p_row = cursor.fetchone()
+                    if not p_row:
+                        # Try matching base slug without trailing number
+                        base_slug = re.sub(r'-\d+$', '', slug_or_id)
+                        if base_slug != slug_or_id:
+                            cursor.execute("SELECT * FROM products WHERE slug LIKE ? ORDER BY id ASC LIMIT 1", (f"{base_slug}%",))
+                            p_row = cursor.fetchone()
                     conn.close()
+
                     if p_row:
                         p_dict = dict(p_row)
                         real_slug = p_dict.get('slug')
-                        if real_slug:
+                        if real_slug and real_slug != slug_or_id:
+                            # Redirect to canonical slug
+                            target_url = f"/products/{real_slug}" + (('?' + parsed.query) if parsed.query else '')
+                            self.send_response(301)
+                            self.send_header('Location', target_url)
+                            self.send_header('Content-Type', 'text/html; charset=utf-8')
+                            self.send_header('Cache-Control', 'public, max-age=31536000')
+                            self.end_headers()
+                            return
+                        elif real_slug:
                             real_html = os.path.join(BASE_DIR, 'products', f"{real_slug}.html")
                             if os.path.isfile(real_html):
                                 target_html = real_html
@@ -639,6 +679,19 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(content)
                 return
             else:
+                # 404: Try serving 404.html with smart client resolver if available
+                not_found_file = os.path.join(BASE_DIR, '404.html')
+                if os.path.isfile(not_found_file):
+                    with open(not_found_file, 'rb') as f:
+                        content = f.read()
+                    self.send_response(404)
+                    self.send_header('Content-Type', 'text/html; charset=utf-8')
+                    self.send_header('Content-Length', str(len(content)))
+                    self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(content)
+                    return
                 self.send_json(404, {"error": "Product not found"})
                 return
 
@@ -712,6 +765,30 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             slug_or_id = clean_rel[len('products/'):].rstrip('/')
             if slug_or_id.endswith('.html'):
                 slug_or_id = slug_or_id[:-5]
+
+            # 1. Check data/slug_aliases.json for canonical redirection
+            alias_map_path = os.path.join(BASE_DIR, 'data', 'slug_aliases.json')
+            alias_target = None
+            if os.path.isfile(alias_map_path):
+                try:
+                    with open(alias_map_path, 'r', encoding='utf-8') as af:
+                        alias_data = json.load(af)
+                        alias_target = alias_data.get(slug_or_id)
+                        if not alias_target:
+                            base_lookup = re.sub(r'-\d+$', '', slug_or_id)
+                            alias_target = alias_data.get(base_lookup)
+                except Exception:
+                    pass
+
+            if alias_target and alias_target != slug_or_id:
+                target_url = f"/products/{alias_target}"
+                self.send_response(301)
+                self.send_header('Location', target_url)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'public, max-age=31536000')
+                self.end_headers()
+                return
+
             target_html = os.path.join(BASE_DIR, 'products', f"{slug_or_id}.html")
             if os.path.isfile(target_html):
                 self.send_response(200)
@@ -3060,7 +3137,20 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             badge = data.get('badge', 'NEW')
             image_url = data.get('image_url', 'https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80')
             sku = data.get('sku', '').strip() or f"PZT-{category_id[:4].upper()}-{random.randint(1000, 9999)}"
-            slug = re.sub(r'[^a-zA-Z0-9_-]', '-', name_en.lower()).strip('-') + f"-{random.randint(100, 999)}"
+            clean_name = name_en.lower().replace('&', 'and')
+            base_slug = re.sub(r'[^a-z0-9]+', '-', clean_name).strip('-')
+            cursor.execute("SELECT id FROM products WHERE slug = ?", (base_slug,))
+            if not cursor.fetchone():
+                slug = base_slug
+            else:
+                suffix = 1
+                while True:
+                    candidate = f"{base_slug}-{suffix}"
+                    cursor.execute("SELECT id FROM products WHERE slug = ?", (candidate,))
+                    if not cursor.fetchone():
+                        slug = candidate
+                        break
+                    suffix += 1
             prod_id = f"pzt_{uuid.uuid4().hex[:8]}"
             now_iso = datetime.now().isoformat()
 
