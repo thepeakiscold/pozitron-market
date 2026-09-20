@@ -4169,7 +4169,7 @@ class PozitronApp {
       this._3dControls.maxPolarAngle = Math.PI / 2 + 0.05;
     }
 
-    // 5. Clean Grid Floor — Bambu Lab P1P Build Volume: 256 × 256 × 256 mm
+    // 5. Clean Grid Floor — Industrial Build Volume: 256 × 256 × 256 mm
     const grid = new THREE.GridHelper(256, 16, 0x0284c7, 0xe2e8f0);
     grid.position.y = -0.5;
     this._3dScene.add(grid);
@@ -4283,77 +4283,97 @@ class PozitronApp {
     let elapsed = 0;
 
     const steps = [
-      { id: 1, tr: '3D CAD mesh geometrisi ve üçgen ağları (Triangulation) taranıyor...', en: 'Parsing 3D CAD mesh geometry & triangulation...', duration: 1500 },
-      { id: 2, tr: 'Manifold geometri, delik ve yüzey normali hataları denetleniyor...', en: 'Checking manifold geometry, holes & surface normals...', duration: 2000 },
-      { id: 3, tr: 'Bambu Lab P1P (256×256mm) baskı tablası yerleşimi simüle ediliyor...', en: 'Simulating Bambu Lab P1P (256x256mm) build plate orientation...', duration: 2000 },
-      { id: 4, tr: 'Katman dilimleme (Slicing) ve petek doluluk (Infill) takım yolları hesaplanıyor...', en: 'Calculating slicing layer toolpaths & infill generation...', duration: 2000 },
-      { id: 5, tr: 'Destek yapıları (Support) ve net filament sarfiyat gramajı ölçülüyor...', en: 'Estimating support structures & filament weight in grams...', duration: 1500 },
-      { id: 6, tr: 'Katman baskı süresi ve mühendislik maliyet analizi tamamlandı!', en: 'Layer print time and engineering cost analysis complete!', duration: 1000 }
+      { id: 1, phase: 1, tr: '3D CAD mesh geometrisi ve üçgen ağları (Triangulation) taranıyor...', en: 'Parsing 3D CAD mesh geometry & triangulation...', duration: 1600 },
+      { id: 2, phase: 1, tr: 'Manifold geometri, delik ve yüzey normali hataları denetleniyor...', en: 'Checking manifold geometry, holes & surface normals...', duration: 1800 },
+      { id: 3, phase: 2, tr: 'Hassas üretim tablası yerleşimi ve oryantasyon simüle ediliyor...', en: 'Simulating precision build plate orientation...', duration: 1800 },
+      { id: 4, phase: 2, tr: 'Katman dilimleme (Slicing) ve petek doluluk takım yolları üretiliyor...', en: 'Generating layer toolpaths & infill structures...', duration: 2200 },
+      { id: 5, phase: 3, tr: 'Destek yapıları (Support) ve net sarfiyat gramajı hesaplanıyor...', en: 'Estimating support structures & material consumption...', duration: 1600 },
+      { id: 6, phase: 3, tr: 'Katman baskı süresi ve mühendislik maliyet analizi hazır!', en: 'Layer print time and engineering cost analysis ready!', duration: 1000 }
     ];
 
     overlay.innerHTML = `
       <div class="calculating-bg-grid"></div>
       <div class="calculating-slicer-laser"></div>
 
-      <div class="calculating-visual-wrap" style="margin-bottom:12px; width:72px; height:72px;">
-        <div class="calculating-radar-glow"></div>
-        <div class="calculating-radar-ring"></div>
-        <div class="calculating-icon-center" style="width:48px; height:48px;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-          </svg>
+      <!-- Slicer Header -->
+      <div class="studio-calc-header">
+        <div class="studio-calc-badge">
+          <span class="studio-calc-pulse-dot"></span>
+          <span>${lang === 'tr' ? 'Endüstriyel Dilimleme Motoru' : 'Industrial Slicing Engine'}</span>
+        </div>
+        <h3 class="studio-calc-title">${lang === 'tr' ? '3D Model Dilimleniyor & Hesaplanıyor' : 'Slicing & Analyzing 3D Model'}</h3>
+        <p class="studio-calc-sub">${filename || (lang === 'tr' ? '3D CAD Modeli' : '3D CAD Model')} • ${lang === 'tr' ? 'Hassas katman dilimleme ve hacim analizi yapılıyor.' : 'Running precision slicing & volume calculation.'}</p>
+      </div>
+
+      <!-- Countdown Banner & Progress Track -->
+      <div class="studio-calc-progress-section">
+        <div class="calculating-timer-banner studio-timer-compact">
+          <span class="calculating-timer-icon">⏳</span>
+          <span class="calculating-timer-text">
+            ${lang === 'tr' ? 'Kalan Süre:' : 'Remaining Time:'} 
+            <span class="calculating-timer-seconds" id="studio-calc-countdown">10</span> 
+            ${lang === 'tr' ? 'saniye' : 'seconds'}
+          </span>
+        </div>
+
+        <div class="calculating-progress-track studio-progress-track">
+          <div class="calculating-progress-fill" id="studio-calc-progress" style="width: 0%;"></div>
+        </div>
+
+        <div class="studio-calc-status-bar">
+          <span class="studio-calc-pct-label" id="studio-calc-pct">0% ${lang === 'tr' ? 'Dilimlendi' : 'Sliced'}</span>
+          <span class="studio-calc-ticker-text" id="studio-calc-active-ticker">${lang === 'tr' ? steps[0].tr : steps[0].en}</span>
         </div>
       </div>
 
-      <h3 class="calculating-title" style="font-size:1.18rem; margin-bottom:4px;">${lang === 'tr' ? '3D Model Dilimleniyor & Hesaplanıyor' : 'Slicing & Analyzing 3D Model'}</h3>
-      <p class="calculating-sub" style="font-size:0.8rem; margin-bottom:12px; max-width:440px;">${filename || (lang === 'tr' ? '3D CAD Modeli' : '3D CAD Model')} — ${lang === 'tr' ? 'Bambu Lab P1P endüstriyel dilimleme ve hacim analizi yapılıyor.' : 'Running Bambu Lab P1P industrial slicing & volume calculation.'}</p>
-
-      <!-- Countdown Banner -->
-      <div class="calculating-timer-banner" style="padding:5px 14px; margin-bottom:12px;">
-        <span class="calculating-timer-icon" style="font-size:1rem;">⏳</span>
-        <span class="calculating-timer-text" style="font-size:0.9rem;">
-          ${lang === 'tr' ? 'Kalan Süre:' : 'Remaining Time:'} 
-          <span class="calculating-timer-seconds" id="studio-calc-countdown">10</span> 
-          ${lang === 'tr' ? 'saniye' : 'seconds'}
-        </span>
-      </div>
-
-      <!-- Progress Bar -->
-      <div class="calculating-progress-track" style="margin-bottom:6px; max-width:460px; height:10px;">
-        <div class="calculating-progress-fill" id="studio-calc-progress" style="width: 0%;"></div>
-      </div>
-      <div class="calculating-pct-text" id="studio-calc-pct" style="margin-bottom:10px; font-size:0.78rem;">0% ${lang === 'tr' ? 'Dilimlendi' : 'Sliced'}</div>
-
-      <!-- Step Logs -->
-      <div class="calculating-steps-box" id="studio-calc-steps-box" style="margin-bottom:12px; padding:8px 12px; max-width:480px;">
-        ${steps.map((s, idx) => `
-          <div class="calculating-step-row ${idx === 0 ? 'active' : ''}" id="studio-step-row-${s.id}" style="padding:4px 6px; font-size:0.76rem; gap:8px;">
-            <span class="calc-step-icon" id="studio-step-icon-${s.id}" style="width:16px; height:16px; font-size:0.65rem;">${idx === 0 ? '▶' : (idx + 1)}</span>
-            <span class="calc-step-name">${lang === 'tr' ? s.tr : s.en}</span>
-            <span class="calc-step-status" id="studio-step-status-${s.id}" style="font-size:0.72rem;">${idx === 0 ? (lang === 'tr' ? 'İşleniyor' : 'Processing') : (lang === 'tr' ? 'Bekliyor' : 'Waiting')}</span>
+      <!-- 3-Phase Interactive Workflow Pipeline -->
+      <div class="studio-phases-pipeline">
+        <div class="studio-phase-card active" id="studio-phase-1">
+          <div class="phase-icon" id="studio-phase-icon-1">1</div>
+          <div class="phase-info">
+            <div class="phase-title">${lang === 'tr' ? '1. Geometri' : '1. Geometry'}</div>
+            <div class="phase-desc" id="studio-phase-status-1">${lang === 'tr' ? 'İşleniyor' : 'Processing'}</div>
           </div>
-        `).join('')}
+        </div>
+
+        <div class="phase-connector" id="studio-phase-conn-1"></div>
+
+        <div class="studio-phase-card" id="studio-phase-2">
+          <div class="phase-icon" id="studio-phase-icon-2">2</div>
+          <div class="phase-info">
+            <div class="phase-title">${lang === 'tr' ? '2. Dilimleme' : '2. Slicing'}</div>
+            <div class="phase-desc" id="studio-phase-status-2">${lang === 'tr' ? 'Bekliyor' : 'Queued'}</div>
+          </div>
+        </div>
+
+        <div class="phase-connector" id="studio-phase-conn-2"></div>
+
+        <div class="studio-phase-card" id="studio-phase-3">
+          <div class="phase-icon" id="studio-phase-icon-3">3</div>
+          <div class="phase-info">
+            <div class="phase-title">${lang === 'tr' ? '3. Maliyet' : '3. Pricing'}</div>
+            <div class="phase-desc" id="studio-phase-status-3">${lang === 'tr' ? 'Bekliyor' : 'Queued'}</div>
+          </div>
+        </div>
       </div>
 
-      <!-- Simulated Telemetry Tiles -->
-      <div class="calculating-stats-grid" style="max-width:480px;">
-        <div class="calc-stat-tile" style="padding:5px 6px;">
-          <span class="label" style="font-size:0.65rem;">${lang === 'tr' ? 'Dilim Katmanı' : 'Slicing Layer'}</span>
-          <span class="value" id="studio-stat-layer" style="font-size:0.82rem;">0 / 342</span>
+      <!-- Micro Telemetry Bottom Bar -->
+      <div class="studio-telemetry-row">
+        <div class="studio-telem-item">
+          <span class="telem-label">${lang === 'tr' ? 'Dilim Katmanı' : 'Slicing Layer'}</span>
+          <span class="telem-val" id="studio-stat-layer">0 / 342</span>
         </div>
-        <div class="calc-stat-tile" style="padding:5px 6px;">
-          <span class="label" style="font-size:0.65rem;">${lang === 'tr' ? 'Doluluk (Infill)' : 'Infill Density'}</span>
-          <span class="value" style="font-size:0.82rem;">%${this._3dConfig.infill || 20}</span>
+        <div class="studio-telem-item">
+          <span class="telem-label">${lang === 'tr' ? 'Doluluk (Infill)' : 'Infill Density'}</span>
+          <span class="telem-val">%${this._3dConfig.infill || 20}</span>
         </div>
-        <div class="calc-stat-tile" style="padding:5px 6px;">
-          <span class="label" style="font-size:0.65rem;">${lang === 'tr' ? 'Baskı Tablası' : 'Build Plate'}</span>
-          <span class="value" style="font-size:0.82rem;">256×256 mm</span>
+        <div class="studio-telem-item">
+          <span class="telem-label">${lang === 'tr' ? 'Üretim Tablası' : 'Build Plate'}</span>
+          <span class="telem-val">250×250 mm</span>
         </div>
-        <div class="calc-stat-tile" style="padding:5px 6px;">
-          <span class="label" style="font-size:0.65rem;">${lang === 'tr' ? 'Geometri Analizi' : 'Geometry Mesh'}</span>
-          <span class="value" style="font-size:0.82rem;">%100 Manifold</span>
+        <div class="studio-telem-item">
+          <span class="telem-label">${lang === 'tr' ? 'Geometri' : 'Geometry'}</span>
+          <span class="telem-val">%100 Manifold</span>
         </div>
       </div>
     `;
@@ -4379,31 +4399,88 @@ class PozitronApp {
         layerEl.textContent = `${curLayer} / ${totalLayers}`;
       }
 
+      // Determine active granular step & update ticker
       let accumulatedTime = 0;
+      let activeStep = steps[0];
       for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
-        const stepStart = accumulatedTime;
-        const stepEnd = accumulatedTime + step.duration;
-        accumulatedTime = stepEnd;
+        accumulatedTime += step.duration;
+        if (elapsed <= accumulatedTime) {
+          activeStep = step;
+          break;
+        }
+        if (i === steps.length - 1) activeStep = steps[steps.length - 1];
+      }
 
-        const row = document.getElementById(`studio-step-row-${step.id}`);
-        const icon = document.getElementById(`studio-step-icon-${step.id}`);
-        const status = document.getElementById(`studio-step-status-${step.id}`);
+      const tickerEl = document.getElementById('studio-calc-active-ticker');
+      if (tickerEl) {
+        tickerEl.textContent = lang === 'tr' ? activeStep.tr : activeStep.en;
+      }
 
-        if (row && icon && status) {
-          if (elapsed >= stepEnd) {
-            row.className = 'calculating-step-row completed';
-            icon.textContent = '✓';
-            status.textContent = lang === 'tr' ? 'Tamamlandı' : 'Verified';
-          } else if (elapsed >= stepStart) {
-            row.className = 'calculating-step-row active';
-            icon.textContent = '▶';
-            status.textContent = lang === 'tr' ? 'Hesaplanıyor' : 'Calculating';
-          } else {
-            row.className = 'calculating-step-row';
-            icon.textContent = (i + 1);
-            status.textContent = lang === 'tr' ? 'Bekliyor' : 'Waiting';
-          }
+      // Update 3 Phase Pipeline Cards
+      const p1End = steps[0].duration + steps[1].duration;
+      const p2End = p1End + steps[2].duration + steps[3].duration;
+
+      const p1Card = document.getElementById('studio-phase-1');
+      const p1Icon = document.getElementById('studio-phase-icon-1');
+      const p1Status = document.getElementById('studio-phase-status-1');
+      const conn1 = document.getElementById('studio-phase-conn-1');
+
+      const p2Card = document.getElementById('studio-phase-2');
+      const p2Icon = document.getElementById('studio-phase-icon-2');
+      const p2Status = document.getElementById('studio-phase-status-2');
+      const conn2 = document.getElementById('studio-phase-conn-2');
+
+      const p3Card = document.getElementById('studio-phase-3');
+      const p3Icon = document.getElementById('studio-phase-icon-3');
+      const p3Status = document.getElementById('studio-phase-status-3');
+
+      // Phase 1: CAD & Geometry
+      if (p1Card && p1Icon && p1Status) {
+        if (elapsed >= p1End) {
+          p1Card.className = 'studio-phase-card completed';
+          p1Icon.textContent = '✓';
+          p1Status.textContent = lang === 'tr' ? 'Doğrulandı' : 'Verified';
+          if (conn1) conn1.className = 'phase-connector completed';
+        } else {
+          p1Card.className = 'studio-phase-card active';
+          p1Icon.textContent = '⚡';
+          p1Status.textContent = lang === 'tr' ? 'İşleniyor' : 'Processing';
+        }
+      }
+
+      // Phase 2: Slicing & Toolpaths
+      if (p2Card && p2Icon && p2Status) {
+        if (elapsed >= p2End) {
+          p2Card.className = 'studio-phase-card completed';
+          p2Icon.textContent = '✓';
+          p2Status.textContent = lang === 'tr' ? 'Dilimlendi' : 'Sliced';
+          if (conn2) conn2.className = 'phase-connector completed';
+        } else if (elapsed >= p1End) {
+          p2Card.className = 'studio-phase-card active';
+          p2Icon.textContent = '⚡';
+          p2Status.textContent = lang === 'tr' ? 'Dilimleniyor' : 'Slicing';
+        } else {
+          p2Card.className = 'studio-phase-card';
+          p2Icon.textContent = '2';
+          p2Status.textContent = lang === 'tr' ? 'Bekliyor' : 'Queued';
+        }
+      }
+
+      // Phase 3: Production & Cost Estimation
+      if (p3Card && p3Icon && p3Status) {
+        if (elapsed >= totalDuration) {
+          p3Card.className = 'studio-phase-card completed';
+          p3Icon.textContent = '✓';
+          p3Status.textContent = lang === 'tr' ? 'Tamamlandı' : 'Complete';
+        } else if (elapsed >= p2End) {
+          p3Card.className = 'studio-phase-card active';
+          p3Icon.textContent = '⚡';
+          p3Status.textContent = lang === 'tr' ? 'Hesaplanıyor' : 'Calculating';
+        } else {
+          p3Card.className = 'studio-phase-card';
+          p3Icon.textContent = '3';
+          p3Status.textContent = lang === 'tr' ? 'Bekliyor' : 'Queued';
         }
       }
 

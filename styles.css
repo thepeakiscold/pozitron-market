@@ -4167,11 +4167,22 @@ img {
   position: absolute;
   inset: 0;
   z-index: 25;
-  overflow-y: auto;
-  min-height: 100%;
-  height: 100%;
+  overflow: hidden !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 420px !important;
   border-radius: 12px;
-  padding: 16px 14px;
+  padding: 16px 18px 12px;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: inset 0 0 30px rgba(2, 132, 199, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
 }
 
 .dropzone-inner {
@@ -5634,8 +5645,16 @@ img {
 }
 
 .calculating-screen-container.studio-3d-theme {
-  border-color: rgba(219, 39, 119, 0.3);
-  background: linear-gradient(145deg, #13091f 0%, #1e112a 50%, #2a113b 100%);
+  border-color: rgba(226, 232, 240, 0.9) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #0f172a !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 420px !important;
+  padding: 16px 18px 12px !important;
+  overflow: hidden !important;
+  box-shadow: inset 0 0 30px rgba(2, 132, 199, 0.04) !important;
+  justify-content: space-between !important;
 }
 
 @keyframes fadeInCalc {
@@ -5657,8 +5676,10 @@ img {
 
 .studio-3d-theme .calculating-bg-grid {
   background-image: 
-    linear-gradient(rgba(244, 114, 182, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(244, 114, 182, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(2, 132, 199, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(2, 132, 199, 0.04) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.8;
 }
 
 /* Central Radar / Slicer Visual */
@@ -5732,15 +5753,15 @@ img {
   position: absolute;
   width: 120%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #ec4899, #f472b6, transparent);
-  box-shadow: 0 0 10px #ec4899;
-  animation: laserScan 2.2s ease-in-out infinite alternate;
+  background: linear-gradient(90deg, transparent, rgba(2, 132, 199, 0.3), rgba(56, 189, 248, 0.8), rgba(2, 132, 199, 0.3), transparent);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  animation: laserScan 2.4s ease-in-out infinite alternate;
 }
 
 @keyframes laserScan {
-  0% { top: 10%; opacity: 0.3; }
+  0% { top: 8%; opacity: 0.3; }
   50% { opacity: 1; }
-  100% { top: 90%; opacity: 0.3; }
+  100% { top: 92%; opacity: 0.3; }
 }
 
 /* Titles */
@@ -5775,9 +5796,9 @@ img {
 }
 
 .studio-3d-theme .calculating-timer-banner {
-  background: rgba(219, 39, 119, 0.2);
-  border-color: rgba(244, 114, 182, 0.5);
-  box-shadow: 0 0 15px rgba(219, 39, 119, 0.2);
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
 }
 
 .calculating-timer-icon {
@@ -5799,7 +5820,7 @@ img {
 }
 
 .studio-3d-theme .calculating-timer-text {
-  color: #fbcfe8;
+  color: #0369a1;
 }
 
 .calculating-timer-seconds {
@@ -5813,8 +5834,8 @@ img {
 }
 
 .studio-3d-theme .calculating-timer-seconds {
-  background: #f472b6;
-  color: #1e112a;
+  background: #0284c7;
+  color: #ffffff;
 }
 
 /* Progress Bar */
@@ -5832,7 +5853,9 @@ img {
 }
 
 .studio-3d-theme .calculating-progress-track {
-  border-color: rgba(244, 114, 182, 0.25);
+  background: #e2e8f0;
+  border-color: rgba(2, 132, 199, 0.15);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .calculating-progress-fill {
@@ -5847,8 +5870,8 @@ img {
 }
 
 .studio-3d-theme .calculating-progress-fill {
-  background: linear-gradient(90deg, #be185d 0%, #f472b6 50%, #fb7185 100%);
-  box-shadow: 0 0 14px rgba(244, 114, 182, 0.8);
+  background: linear-gradient(90deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
+  box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);
 }
 
 .calculating-progress-fill::after {
@@ -5882,7 +5905,7 @@ img {
 }
 
 .studio-3d-theme .calculating-pct-text {
-  color: #f472b6;
+  color: #0284c7;
 }
 
 /* Step-by-Step Engineering Milestones Terminal */
@@ -5896,11 +5919,6 @@ img {
   text-align: left;
   margin-bottom: 20px;
   backdrop-filter: blur(8px);
-}
-
-.studio-3d-theme .calculating-steps-box {
-  background: rgba(24, 12, 38, 0.8);
-  border-color: rgba(244, 114, 182, 0.2);
 }
 
 .calculating-step-row {
@@ -5918,10 +5936,6 @@ img {
   background: rgba(2, 132, 199, 0.15);
   color: #ffffff;
   font-weight: 600;
-}
-
-.studio-3d-theme .calculating-step-row.active {
-  background: rgba(219, 39, 119, 0.15);
 }
 
 .calculating-step-row.completed {
@@ -5950,12 +5964,6 @@ img {
   animation: pulseDot 1s infinite alternate;
 }
 
-.studio-3d-theme .calculating-step-row.active .calc-step-icon {
-  border-color: #f472b6;
-  background: #db2777;
-  box-shadow: 0 0 8px #f472b6;
-}
-
 .calculating-step-row.completed .calc-step-icon {
   border-color: #10b981;
   background: #065f46;
@@ -5981,10 +5989,6 @@ img {
 
 .calculating-step-row.active .calc-step-status {
   color: #38bdf8;
-}
-
-.studio-3d-theme .calculating-step-row.active .calc-step-status {
-  color: #f472b6;
 }
 
 .calculating-step-row.completed .calc-step-status {
@@ -6027,6 +6031,240 @@ img {
   color: #38bdf8;
 }
 
-.studio-3d-theme .calc-stat-tile .value {
-  color: #f472b6;
+/* Dedicated Clean Studio 3D Calculating Screen Components */
+.studio-calc-header {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.studio-calc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  margin-bottom: 4px;
+}
+
+.studio-calc-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 6px #16a34a;
+  animation: pulseDot 1s infinite alternate;
+}
+
+.studio-calc-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
+}
+
+.studio-calc-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.studio-calc-progress-section {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 2px 0;
+}
+
+.studio-timer-compact {
+  padding: 4px 14px;
+  margin-bottom: 8px;
+}
+
+.studio-progress-track {
+  height: 8px;
+  margin-bottom: 6px;
+}
+
+.studio-calc-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.76rem;
+  padding: 0 2px;
+}
+
+.studio-calc-pct-label {
+  color: #0284c7;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.studio-calc-ticker-text {
+  color: #475569;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  max-width: 330px;
+}
+
+.studio-phases-pipeline {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 480px;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.studio-phase-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  min-width: 0;
+}
+
+.studio-phase-card.active {
+  background: #f0f9ff;
+  border-color: #0284c7;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.12);
+}
+
+.studio-phase-card.completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.phase-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #e2e8f0;
+  color: #64748b;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.studio-phase-card.active .phase-icon {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(2, 132, 199, 0.5);
+  animation: pulseDot 1s infinite alternate;
+}
+
+.studio-phase-card.completed .phase-icon {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.phase-info {
+  min-width: 0;
+  text-align: left;
+}
+
+.phase-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.phase-desc {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.studio-phase-card.active .phase-desc {
+  color: #0284c7;
+}
+
+.studio-phase-card.completed .phase-desc {
+  color: #10b981;
+}
+
+.phase-connector {
+  width: 10px;
+  height: 2px;
+  background: #cbd5e1;
+  flex-shrink: 0;
+  transition: background 0.25s ease;
+}
+
+.phase-connector.completed {
+  background: #10b981;
+}
+
+.studio-telemetry-row {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.studio-telem-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 5px 6px;
+  text-align: center;
+}
+
+.studio-telem-item .telem-label {
+  font-size: 0.64rem;
+  color: #64748b;
+  display: block;
+  font-weight: 600;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.studio-telem-item .telem-val {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: block;
+  white-space: nowrap;
+}
+
+.studio-telem-item #studio-stat-layer {
+  color: #0284c7;
 }

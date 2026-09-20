@@ -66,7 +66,20 @@ class TestCalculatingScreens(unittest.TestCase):
         self.assertIn('.calculating-progress-fill', self.styles_css)
         self.assertIn('.calculating-slicer-laser', self.styles_css)
         self.assertIn('#viewport-calculating-overlay', self.styles_css)
+        self.assertIn('.studio-phases-pipeline', self.styles_css)
+        self.assertIn('.studio-telemetry-row', self.styles_css)
+
+    def test_3d_studio_confidentiality_no_p1p_or_bambu(self):
+        """Confidentiality check: app.js must not mention P1P or Bambu Lab in 3D studio."""
+        self.assertNotIn('p1p', self.app_js.lower())
+        self.assertNotIn('bambu', self.app_js.lower())
+
+    def test_3d_studio_no_scrollbar_layout(self):
+        """Viewport calculating overlay must prevent any vertical scrollbars inside 420px canvas."""
+        self.assertIn('overflow: hidden !important;', self.styles_css)
+        self.assertIn('max-height: 420px', self.styles_css)
 
 
 if __name__ == '__main__':
     unittest.main()
+
