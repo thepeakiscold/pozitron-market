@@ -43,7 +43,7 @@ BLOCKED_SENSITIVE_FILES = {
     'instagram_config.json', 'reddit_history.json'
 }
 
-ALLOWED_UPLOAD_EXTENSIONS = {'.step', '.stp', '.stl', '.obj', '.png', '.jpg', '.jpeg', '.webp'}
+ALLOWED_UPLOAD_EXTENSIONS = {'.step', '.stp', '.stl', '.obj', '.3mf', '.png', '.jpg', '.jpeg', '.webp'}
 MAX_UPLOAD_SIZE = 30 * 1024 * 1024  # 30 MB
 
 def create_auth_token(user_dict: dict) -> str:
@@ -470,7 +470,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # SEO Endpoints
         if path == '/robots.txt':
-            robots_txt = "User-agent: *\nAllow: /\nSitemap: http://localhost:8000/sitemap.xml\n"
+            robots_txt = "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /bots\nSitemap: https://pozitronmarket.com/sitemap.xml\n"
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain; charset=utf-8')
             self.send_header('Content-Length', str(len(robots_txt.encode('utf-8'))))
@@ -531,7 +531,34 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(404, {"error": "Uploaded file not found"})
                 return
 
-        if path in ('/bots', '/bots.html'):
+        # Clean URL 301 Redirection: Redirect legacy .html URLs to modern clean URLs
+        if path.endswith('.html'):
+            target_url = None
+            if path == '/index.html':
+                target_url = '/' + (('?' + parsed.query) if parsed.query else '')
+            elif path == '/rehber.html':
+                if query.get('slug'):
+                    target_url = f"/rehber/{urllib.parse.quote(query['slug'][0])}"
+                else:
+                    target_url = '/rehber' + (('?' + parsed.query) if parsed.query else '')
+            elif path.startswith('/products/') and path.endswith('.html'):
+                prod_slug = path[len('/products/'):-5]
+                target_url = f"/products/{prod_slug}" + (('?' + parsed.query) if parsed.query else '')
+            else:
+                clean_name = path[:-5]
+                candidate_file = os.path.join(BASE_DIR, clean_name.lstrip('/') + '.html')
+                if os.path.isfile(candidate_file):
+                    target_url = clean_name + (('?' + parsed.query) if parsed.query else '')
+
+            if target_url:
+                self.send_response(301)
+                self.send_header('Location', target_url)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Cache-Control', 'public, max-age=31536000')
+                self.end_headers()
+                return
+
+        if path == '/bots':
             file_path = os.path.join(BASE_DIR, 'bots.html')
             if os.path.exists(file_path):
                 with open(file_path, 'rb') as f:
@@ -543,8 +570,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(content)
                 return
 
-        # Technical SEO Guides & Engineering Blog (/rehber, /rehber.html, /rehber/<slug>)
-        if path in ('/rehber', '/rehber.html') or path.startswith('/rehber/'):
+        # Technical SEO Guides & Engineering Blog (/rehber, /rehber/<slug>)
+        if path == '/rehber' or path.startswith('/rehber/'):
             file_path = os.path.join(BASE_DIR, 'rehber.html')
             if os.path.exists(file_path):
                 with open(file_path, 'rb') as f:
@@ -638,11 +665,43 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_HEAD(self):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
+
+        # Clean URL 301 Redirection: HEAD requests for .html URLs
+        if path.endswith('.html'):
+            target_url = None
+            if path == '/index.html':
+                target_url = '/' + (('?' + parsed.query) if parsed.query else '')
+            elif path == '/rehber.html':
+                if 'slug' in parsed.query:
+                    q_dict = urllib.parse.parse_qs(parsed.query)
+                    if q_dict.get('slug'):
+                        target_url = f"/rehber/{urllib.parse.quote(q_dict['slug'][0])}"
+                    else:
+                        target_url = '/rehber'
+                else:
+                    target_url = '/rehber'
+            elif path.startswith('/products/') and path.endswith('.html'):
+                prod_slug = path[len('/products/'):-5]
+                target_url = f"/products/{prod_slug}"
+            else:
+                clean_name = path[:-5]
+                candidate_file = os.path.join(BASE_DIR, clean_name.lstrip('/') + '.html')
+                if os.path.isfile(candidate_file):
+                    target_url = clean_name
+
+            if target_url:
+                self.send_response(301)
+                self.send_header('Location', target_url)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.end_headers()
+                return
+
         if not self.is_static_path_allowed(self.path):
             self.send_response(404)
             self.end_headers()
             return
-        if path in ('/bots', '/bots.html') or path in ('/rehber', '/rehber.html') or path.startswith('/rehber/'):
+
+        if path == '/bots' or path == '/rehber' or path.startswith('/rehber/'):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
@@ -711,9 +770,29 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             '    <priority>1.0</priority>',
             '  </url>',
             '  <url>',
-            '    <loc>https://pozitronmarket.com/rehber.html</loc>',
+            '    <loc>https://pozitronmarket.com/drone-toplama-sihirbazi</loc>',
+            '    <changefreq>weekly</changefreq>',
+            '    <priority>0.95</priority>',
+            '  </url>',
+            '  <url>',
+            '    <loc>https://pozitronmarket.com/3d-baski-studio</loc>',
+            '    <changefreq>weekly</changefreq>',
+            '    <priority>0.95</priority>',
+            '  </url>',
+            '  <url>',
+            '    <loc>https://pozitronmarket.com/rehber</loc>',
             '    <changefreq>daily</changefreq>',
-            '    <priority>0.9</priority>',
+            '    <priority>0.95</priority>',
+            '  </url>',
+            '  <url>',
+            '    <loc>https://pozitronmarket.com/iade-politikasi</loc>',
+            '    <changefreq>monthly</changefreq>',
+            '    <priority>0.7</priority>',
+            '  </url>',
+            '  <url>',
+            '    <loc>https://pozitronmarket.com/return-policy</loc>',
+            '    <changefreq>monthly</changefreq>',
+            '    <priority>0.6</priority>',
             '  </url>'
         ]
 
@@ -746,7 +825,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             lastmod = a[1].split('T')[0] if a[1] and 'T' in a[1] else datetime.now().strftime('%Y-%m-%d')
             xml_lines.extend([
                 '  <url>',
-                f'    <loc>https://pozitronmarket.com/rehber.html?slug={html_lib.escape(slug)}</loc>',
+                f'    <loc>https://pozitronmarket.com/rehber/{html_lib.escape(slug)}</loc>',
                 f'    <lastmod>{lastmod}</lastmod>',
                 '    <changefreq>weekly</changefreq>',
                 '    <priority>0.8</priority>',

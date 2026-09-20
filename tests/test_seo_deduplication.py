@@ -39,6 +39,14 @@ class TestSeoDeduplicationAndTurkishTargeting(unittest.TestCase):
         self.assertIsNotNone(article)
         # Because LiPo is already covered, it must not repeat LiPo
         self.assertNotIn("LiPo Batarya Güvenliği ve Şarj Kuralları", article["component_focus"])
+        if article and "slug" in article:
+            conn = sqlite3.connect("pozitron.db")
+            c = conn.cursor()
+            c.execute("DELETE FROM seo_articles WHERE slug = ?", (article["slug"],))
+            conn.commit()
+            conn.close()
+            from export_data import export_static_data
+            export_static_data()
 
     def test_turkish_characters_present_in_all_guides(self):
         """Verifies that all stored articles have proper Turkish characters and no broken ASCII words."""

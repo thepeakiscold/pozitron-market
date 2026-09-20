@@ -802,6 +802,10 @@ class TechnicalSeoAgent:
                 overlap = candidate_keywords.intersection(exist_keywords)
                 total_min = min(len(candidate_keywords), len(exist_keywords))
                 if total_min >= 3 and len(overlap) >= 3 and (len(overlap) / total_min) >= 0.80:
+                    cand_num = re.findall(r'#(\d+)', f"{component_focus} {title}")
+                    exist_num = re.findall(r'#(\d+)', f"{art.get('title', '')} {art.get('component_focus', '')}")
+                    if cand_num and exist_num and cand_num != exist_num:
+                        continue
                     return True
 
         return False
@@ -842,6 +846,8 @@ class TechnicalSeoAgent:
 
         covered = self.get_covered_topics()
         count = len(covered) + 1
+        while self.is_topic_covered(f"Özel FPV Donanım Mimarisi ve Ar-Ge Rehberi #{count}"):
+            count += 1
         return {
             "id_code": f"ozel_muhendislik_rehberi_{count}",
             "title": f"Özel FPV Donanım Mimarisi ve Ar-Ge Rehberi #{count}",

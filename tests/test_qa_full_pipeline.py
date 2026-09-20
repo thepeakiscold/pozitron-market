@@ -8,9 +8,11 @@ import os
 import json
 import sqlite3
 from orchestrator.subagent_qa import QASentinelAgent
+from export_data import export_static_data
 
 class TestQAFullPipeline(unittest.TestCase):
     def setUp(self):
+        export_static_data()
         self.agent = QASentinelAgent(check_interval_minutes=15)
 
     def test_probe_subagent_pipeline_outputs(self):

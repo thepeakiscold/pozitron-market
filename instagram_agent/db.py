@@ -307,7 +307,7 @@ def get_last_post_image_mode() -> str:
     init_instagram_tables()
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT image_mode FROM instagram_posts WHERE status IN ('published', 'draft', 'scheduled') ORDER BY created_at DESC LIMIT 1")
+    cursor.execute("SELECT image_mode FROM instagram_posts WHERE status IN ('published', 'draft', 'scheduled') ORDER BY created_at DESC, rowid DESC LIMIT 1")
     row = cursor.fetchone()
     conn.close()
     if row and row[0]:

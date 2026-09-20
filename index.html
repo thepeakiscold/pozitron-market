@@ -23,6 +23,11 @@
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
   <meta name="author" content="Pozitron Market FPV Hardware Ltd.">
   <link rel="canonical" href="https://pozitronmarket.com/">
+  <script>
+    if (window.location.pathname.endsWith('/index.html') || window.location.pathname === '/index.html') {
+      window.history.replaceState(null, '', '/' + window.location.search + window.location.hash);
+    }
+  </script>
 
   <!-- Open Graph / Facebook / WhatsApp SEO -->
   <meta property="og:type" content="website">
@@ -263,13 +268,13 @@
         </button>
 
         <!-- FPV Engineering Guides Link -->
-        <a href="/rehber.html" class="btn-builder-nav" id="open-rehber-btn" aria-label="Teknik FPV Rehberleri" title="Teknik FPV &amp; Drone Rehberleri" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
+        <a href="/rehber" class="btn-builder-nav" id="open-rehber-btn" aria-label="Teknik FPV Rehberleri" title="Teknik FPV &amp; Drone Rehberleri" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
           <span>Rehberler</span>
         </a>
 
         <!-- Direct Admin Panel Button (Shown when Admin is Logged In) -->
-        <a href="admin.html" class="btn-admin-nav" id="header-admin-btn" style="display:none; align-items:center; gap:6px; background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; padding:7px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; transition:all 0.2s ease;" title="Stok & Fiyat Yönetim Paneli">
+        <a href="/admin" class="btn-admin-nav" id="header-admin-btn" style="display:none; align-items:center; gap:6px; background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; padding:7px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; transition:all 0.2s ease;" title="Stok & Fiyat Yönetim Paneli">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           <span data-i18n="menu_admin">Stok Yönetimi</span>
         </a>
@@ -293,7 +298,7 @@
               </div>
             </div>
             <div class="dropdown-divider"></div>
-            <a href="admin.html" class="dropdown-item" id="admin-panel-link" style="display:none; color: var(--brand-primary); font-weight:600;">
+            <a href="/admin" class="dropdown-item" id="admin-panel-link" style="display:none; color: var(--brand-primary); font-weight:600;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
               <span data-i18n="menu_admin">Stok &amp; Fiyat Yönetimi</span>
             </a>
@@ -546,7 +551,7 @@
               Betaflight konfigürasyonları, UART pinout bağlantı şemaları, LiPo batarya güvenliği ve ESC protokolleri üzerine detaylı saha rehberleri.
             </p>
           </div>
-          <a href="/rehber.html" style="display:inline-flex; align-items:center; gap:6px; background:#0284c7; color:#ffffff; text-decoration:none; padding:10px 20px; border-radius:10px; font-weight:700; font-size:0.88rem; transition:background 0.2s ease;">
+          <a href="/rehber" style="display:inline-flex; align-items:center; gap:6px; background:#0284c7; color:#ffffff; text-decoration:none; padding:10px 20px; border-radius:10px; font-weight:700; font-size:0.88rem; transition:background 0.2s ease;">
             <span>Tüm Rehberleri İncele &rarr;</span>
           </a>
         </div>
@@ -640,11 +645,11 @@
       <div class="footer-col">
         <h3 class="footer-heading" data-i18n="footer_support_heading">Müşteri &amp; Güvenlik</h3>
         <ul class="footer-links">
-          <li><a href="./drone-toplama-sihirbazi.html" id="footer-builder-link" data-i18n="footer_builder">Drone Uyumluluk Sihirbazı</a></li>
-          <li><a href="./3d-baski-studio.html" id="footer-3d-link" data-i18n="footer_3d_studio">3D Baskı Studio (Özel İmalat)</a></li>
-          <li><a href="./rehber.html" id="footer-rehber-link">Teknik FPV Rehberleri &amp; Blog</a></li>
+          <li><a href="/drone-toplama-sihirbazi" id="footer-builder-link" data-i18n="footer_builder">Drone Uyumluluk Sihirbazı</a></li>
+          <li><a href="/3d-baski-studio" id="footer-3d-link" data-i18n="footer_3d_studio">3D Baskı Studio (Özel İmalat)</a></li>
+          <li><a href="/rehber" id="footer-rehber-link">Teknik FPV Rehberleri &amp; Blog</a></li>
           <li><a href="#shipping" data-i18n="footer_shipping">Teslimat &amp; Aynı Gün Kargo</a></li>
-          <li><a href="./iade-politikasi.html" target="_blank" rel="noopener" data-i18n="footer_returns">İade ve Geri Ödeme Politikası (14 Gün İade)</a></li>
+          <li><a href="/iade-politikasi" target="_blank" rel="noopener" data-i18n="footer_returns">İade ve Geri Ödeme Politikası (14 Gün İade)</a></li>
           <li><a href="#faq" data-i18n="footer_faq">Sıkça Sorulan Sorular (SSS)</a></li>
           <li><a href="#privacy" data-i18n="footer_privacy">KVKK &amp; Gizlilik Politikası</a></li>
           <li><a href="#terms" data-i18n="footer_terms">Mesafeli Satış Sözleşmesi</a></li>
@@ -1176,15 +1181,15 @@
   <!-- 3D Print Custom Manufacturing Studio Modal -->
   <div class="modal-backdrop" id="studio-3d-modal-backdrop" style="display:none;">
     <div class="modal-card modal-3d-studio" role="dialog" aria-modal="true">
-      <!-- Hidden File Input directly attached to modal root (without pointer-events:none so click & change always work) -->
-      <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.obj,.3mf,.STL,.STEP,.STP,.OBJ,.3MF,application/octet-stream,model/*,*/*" style="position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; opacity:0;" onchange="window.app && window.app.handle3DFileInputChange(this)">
+      <!-- Hidden File Input directly attached to modal root (only strictly supported 3D model formats allowed) -->
+      <input type="file" id="file-3d-input" accept=".stl,.step,.stp,.3mf,.obj,.STL,.STEP,.STP,.3MF,.OBJ" style="position:fixed; top:-9999px; left:-9999px; width:1px; height:1px; opacity:0;" onchange="window.app && window.app.handle3DFileInputChange(this)">
 
       <div class="modal-3d-header">
         <div style="display:flex; align-items:center; gap:10px;">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           <div>
             <h2 style="font-size:1.25rem; font-weight:800; color:var(--text-primary); margin:0;">3D Baskı &amp; Özel İmalat Studio</h2>
-            <p style="font-size:0.8rem; color:var(--text-secondary); margin:0;">STL / STEP modelinizi yükleyin, malzeme ve doluluk seçin, anında canlı fiyat teklifi alın.</p>
+            <p style="font-size:0.8rem; color:var(--text-secondary); margin:0;">STL / STEP / 3MF modelinizi yükleyin, malzeme ve doluluk seçin, anında canlı fiyat teklifi alın.</p>
           </div>
         </div>
         <button type="button" class="btn-close-modal" onclick="window.app && window.app.close3DStudioModal()">&times;</button>
@@ -1203,7 +1208,7 @@
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                 </div>
                 <strong style="font-size:1.05rem; color:#0f172a; display:block; margin-bottom:6px;">3D Modelinizi Buraya Sürükleyin veya Seçin</strong>
-                <p style="font-size:0.82rem; color:#64748b; margin-bottom:16px;">Desteklenen formatlar: <strong>.STL, .STEP, .STP, .OBJ</strong> (Max: 50MB)</p>
+                <p style="font-size:0.82rem; color:#64748b; margin-bottom:16px;">Desteklenen formatlar: <strong>.STL, .STEP, .STP, .3MF, .OBJ</strong> (Max: 50MB)</p>
                 <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;">
                   <button type="button" class="btn-primary btn-upload-model" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; margin:0;" onclick="event.stopPropagation(); window.app && window.app.trigger3DFileUpload(event)">Dosya Seç</button>
                 </div>
@@ -1222,17 +1227,17 @@
             <!-- Viewport 10-Second Calculating & Slicing Overlay -->
             <div id="viewport-calculating-overlay" class="calculating-screen-container studio-3d-theme" style="display:none;"></div>
 
-            <!-- Viewport Controls Overlay (wireframe, rotate, reset, change file) -->
+            <!-- Viewport Controls Overlay (wireframe, rotate, reset, remove model) -->
             <div class="viewport-floating-controls" id="viewport-floating-controls" style="display:none;">
               <button type="button" class="ctrl-btn" id="btn-3d-wireframe" title="Tel Kafes / Katı Mod" onclick="window.app && window.app.toggle3DWireframe()">Tel Kafes</button>
               <button type="button" class="ctrl-btn" id="btn-3d-autorotate" title="Otomatik Döndür" onclick="window.app && window.app.toggle3DAutoRotate()">Döndür</button>
               <button type="button" class="ctrl-btn" id="btn-3d-reset-cam" title="Kamerayı Sıfırla" onclick="window.app && window.app.reset3DCamera()">Ortala</button>
               <button type="button" class="ctrl-btn" id="btn-3d-recalculate" title="Slicing ve Fiyatı Yeniden Hesapla" style="color:#db2777; background:#ffffff; font-weight:700;" onclick="window.app && window.app.trigger3DRecalculate()">Dilimle &amp; Hesapla</button>
-              <button type="button" class="ctrl-btn" style="color:#0284c7; background:#ffffff; font-weight:700; cursor:pointer; display:inline-flex; align-items:center;" onclick="window.app && window.app.trigger3DFileUpload(event)">Değiştir</button>
+              <button type="button" class="ctrl-btn btn-delete-model" id="btn-3d-delete-model" title="Modeli Sahneden Kaldır ve Yükleme Ekranına Dön" style="color:#dc2626; background:#fff1f2; border-color:#fca5a5; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" onclick="window.app && window.app.remove3DModel()">🗑️ Modeli Sil</button>
             </div>
           </div>
 
-          <!-- Model Geometry Metrics Bar -->
+          <!-- Model Geometry Metrics Bar with Dedicated Delete Action -->
           <div class="model-metrics-bar" id="model-metrics-bar" style="display:none;">
             <div class="metric-item">
               <span class="m-label">Boyutlar (X × Y × Z):</span>
@@ -1244,7 +1249,12 @@
             </div>
             <div class="metric-item">
               <span class="m-label">Dosya Adı:</span>
-              <strong class="m-val" id="metric-filename" style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</strong>
+              <strong class="m-val" id="metric-filename" style="max-width:115px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</strong>
+            </div>
+            <div class="metric-item" style="display:flex; justify-content:center; align-items:center;">
+              <button type="button" class="btn-clear-model-bar" id="btn-metrics-delete-model" title="Modeli Sil ve Yükleme Ekranına Geri Dön" onclick="window.app && window.app.remove3DModel()">
+                <span>🗑️ Modeli Sil</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1472,7 +1482,7 @@
         const linksCount = a.internal_links ? a.internal_links.length : 0;
         const tag = a.component_focus ? a.component_focus.split(' ')[0] : 'FPV';
         return `
-          <a href="/rehber.html?slug=${encodeURIComponent(a.slug)}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:22px; text-decoration:none; color:inherit; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease; box-shadow:0 2px 8px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='#0284c7'; this.style.boxShadow='0 8px 20px rgba(2,132,199,0.12)'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; this.style.transform='none'">
+          <a href="/rehber/${encodeURIComponent(a.slug)}" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:22px; text-decoration:none; color:inherit; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease; box-shadow:0 2px 8px rgba(0,0,0,0.04);" onmouseover="this.style.borderColor='#0284c7'; this.style.boxShadow='0 8px 20px rgba(2,132,199,0.12)'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; this.style.transform='none'">
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <span style="font-size:0.72rem; font-weight:700; color:#0284c7; background:#e0f2fe; padding:2px 8px; border-radius:4px; border:1px solid #bae6fd;">${tag}</span>

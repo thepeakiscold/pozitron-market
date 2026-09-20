@@ -4247,12 +4247,51 @@ img {
 /* Model Metrics Bar */
 .model-metrics-bar {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr 1fr 1.15fr auto;
   gap: 8px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 8px 12px;
+  align-items: center;
+}
+
+.ctrl-btn.btn-delete-model {
+  color: #dc2626 !important;
+  background: #fff1f2 !important;
+  border-color: #fca5a5 !important;
+  transition: all 0.15s ease;
+}
+
+.ctrl-btn.btn-delete-model:hover {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+}
+
+.btn-clear-model-bar {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1);
+}
+
+.btn-clear-model-bar:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.25);
+  transform: translateY(-1px);
 }
 
 .metric-item {

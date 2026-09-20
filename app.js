@@ -4513,6 +4513,84 @@ class PozitronApp {
     });
   }
 
+  remove3DModel() {
+    // 1. Remove and dispose current 3D mesh
+    if (this._currentMesh) {
+      if (this._3dScene) {
+        this._3dScene.remove(this._currentMesh);
+      }
+      if (this._currentMesh.geometry) {
+        this._currentMesh.geometry.dispose();
+      }
+      if (this._currentMesh.material) {
+        if (Array.isArray(this._currentMesh.material)) {
+          this._currentMesh.material.forEach(m => m.dispose());
+        } else {
+          this._currentMesh.material.dispose();
+        }
+      }
+      this._currentMesh = null;
+    }
+
+    // 2. Clear calculating interval if active
+    if (this._3dCalcInterval) {
+      clearInterval(this._3dCalcInterval);
+      this._3dCalcInterval = null;
+    }
+    this._is3DCalculating = false;
+
+    // 3. Reset 3D Configuration
+    this._3dConfig.filename = '';
+    this._3dConfig.dimX = 0;
+    this._3dConfig.dimY = 0;
+    this._3dConfig.dimZ = 0;
+    this._3dConfig.volumeCm3 = 0;
+
+    // 4. Reset File Input
+    const fileInput = document.getElementById('file-3d-input');
+    if (fileInput) fileInput.value = '';
+
+    // 5. Hide Overlays & Floating Toolbars
+    const overlay = document.getElementById('viewport-calculating-overlay');
+    if (overlay) overlay.style.display = 'none';
+
+    const controls = document.getElementById('viewport-floating-controls');
+    if (controls) controls.style.display = 'none';
+
+    const metrics = document.getElementById('model-metrics-bar');
+    if (metrics) metrics.style.display = 'none';
+
+    // 6. Reset & Show Viewport Dropzone
+    const dropzone = document.getElementById('viewport-dropzone');
+    if (dropzone) {
+      dropzone.style.display = 'flex';
+      dropzone.classList.remove('hidden');
+    }
+
+    // 7. Reset Camera & View
+    if (this._3dCamera) {
+      this._3dCamera.position.set(0, 85, 160);
+      this._3dCamera.lookAt(0, 0, 0);
+    }
+    if (this._3dControls) {
+      this._3dControls.target.set(0, 0, 0);
+      this._3dControls.autoRotate = false;
+      this._3dControls.update();
+    }
+    const rotateBtn = document.getElementById('btn-3d-autorotate');
+    if (rotateBtn) rotateBtn.classList.remove('active');
+
+    if (this._3dRenderer && this._3dScene && this._3dCamera) {
+      this._3dRenderer.render(this._3dScene, this._3dCamera);
+    }
+
+    // 8. Recalculate price
+    this.calculate3DPrice();
+
+    const lang = window.i18n ? window.i18n.currentLang : 'tr';
+    this.showToast(lang === 'tr' ? 'Model silindi. Yeni bir 3D model yükleyebilirsiniz.' : 'Model removed. You can now upload a new 3D model.', 'info');
+  }
+
   load3DSamplePreset(presetName) {
     if (!this._3dScene || !this._3dRenderer) {
       this.init3DViewer();
@@ -4605,6 +4683,156 @@ class PozitronApp {
     if (metrics) metrics.style.display = 'grid';
   }
 
+  async decompress3MFData(compressed, compMethod) {
+    if (compMethod === 0) return compressed;
+    if (compMethod === 8) {
+      if (typeof DecompressionStream !== 'undefined') {
+        const ds = new DecompressionStream('deflate-raw');
+        const writer = ds.writable.getWriter();
+        writer.write(compressed);
+        writer.close();
+        const reader = ds.readable.getReader();
+        const chunks = [];
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+        }
+        const total = chunks.reduce((a, c) => a + c.length, 0);
+        const res = new Uint8Array(total);
+        let off = 0;
+        for (const c of chunks) {
+          res.set(c, off);
+          off += c.length;
+        }
+        return res;
+      } else {
+        throw new Error('Tarayıcınız DecompressionStream API desteklemiyor.');
+      }
+    }
+    throw new Error('Desteklenmeyen ZIP sıkıştırma yöntemi: ' + compMethod);
+  }
+
+  parse3MFXml(xml) {
+    const vertices = [];
+    const vRegex = /<vertex\s+([^>]+)\/>/gi;
+    let match;
+    while ((match = vRegex.exec(xml)) !== null) {
+      const attrs = match[1];
+      const xM = attrs.match(/\bx=[\"']([^\"']+)[\"']/i);
+      const yM = attrs.match(/\by=[\"']([^\"']+)[\"']/i);
+      const zM = attrs.match(/\bz=[\"']([^\"']+)[\"']/i);
+      if (xM && yM && zM) {
+        vertices.push(parseFloat(xM[1]), parseFloat(yM[1]), parseFloat(zM[1]));
+      }
+    }
+
+    const tRegex = /<triangle\s+([^>]+)\/>/gi;
+    const triIndices = [];
+    while ((match = tRegex.exec(xml)) !== null) {
+      const attrs = match[1];
+      const v1M = attrs.match(/\bv1=[\"'](\d+)[\"']/i);
+      const v2M = attrs.match(/\bv2=[\"'](\d+)[\"']/i);
+      const v3M = attrs.match(/\bv3=[\"'](\d+)[\"']/i);
+      if (v1M && v2M && v3M) {
+        triIndices.push(parseInt(v1M[1], 10), parseInt(v2M[1], 10), parseInt(v3M[1], 10));
+      }
+    }
+
+    const positions = new Float32Array(triIndices.length * 3);
+    let ptr = 0;
+    for (let i = 0; i < triIndices.length; i += 3) {
+      const i1 = triIndices[i] * 3;
+      const i2 = triIndices[i + 1] * 3;
+      const i3 = triIndices[i + 2] * 3;
+      if (i1 < vertices.length && i2 < vertices.length && i3 < vertices.length) {
+        positions[ptr++] = vertices[i1];
+        positions[ptr++] = vertices[i1 + 1];
+        positions[ptr++] = vertices[i1 + 2];
+        positions[ptr++] = vertices[i2];
+        positions[ptr++] = vertices[i2 + 1];
+        positions[ptr++] = vertices[i2 + 2];
+        positions[ptr++] = vertices[i3];
+        positions[ptr++] = vertices[i3 + 1];
+        positions[ptr++] = vertices[i3 + 2];
+      }
+    }
+    return {
+      verticesCount: vertices.length / 3,
+      trianglesCount: triIndices.length / 3,
+      positions: positions.subarray(0, ptr)
+    };
+  }
+
+  async parse3MFBuffer(buffer) {
+    const buf = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    const view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+
+    // Find End of Central Directory Record (EOCD): signature 0x06054b50
+    let eocdOffset = -1;
+    for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) {
+      if (view.getUint32(i, true) === 0x06054b50) {
+        eocdOffset = i;
+        break;
+      }
+    }
+    if (eocdOffset === -1) {
+      throw new Error('Geçersiz 3MF dosyası (ZIP EOCD başlığı bulunamadı).');
+    }
+
+    const cdCount = view.getUint16(eocdOffset + 10, true);
+    const cdOffset = view.getUint32(eocdOffset + 16, true);
+    const files = {};
+    let cur = cdOffset;
+    for (let i = 0; i < cdCount; i++) {
+      if (view.getUint32(cur, true) !== 0x02014b50) break;
+      const compMethod = view.getUint16(cur + 10, true);
+      const compSize = view.getUint32(cur + 20, true);
+      const nameLen = view.getUint16(cur + 28, true);
+      const extraLen = view.getUint16(cur + 30, true);
+      const commentLen = view.getUint16(cur + 32, true);
+      const localHeaderOffset = view.getUint32(cur + 42, true);
+      const name = new TextDecoder('utf-8').decode(buf.subarray(cur + 46, cur + 46 + nameLen));
+      const localNameLen = view.getUint16(localHeaderOffset + 26, true);
+      const localExtraLen = view.getUint16(localHeaderOffset + 28, true);
+      const dataStart = localHeaderOffset + 30 + localNameLen + localExtraLen;
+      const compressed = buf.subarray(dataStart, dataStart + compSize);
+      files[name] = { compMethod, compressed };
+      cur += 46 + nameLen + extraLen + commentLen;
+    }
+
+    const modelNames = Object.keys(files).filter(k => k.toLowerCase().endsWith('.model'));
+    if (modelNames.length === 0) {
+      throw new Error('3MF paketinde .model 3D geometrisi bulunamadı.');
+    }
+
+    const parts = [];
+    let totalTriangles = 0;
+    for (const mName of modelNames) {
+      const raw = await this.decompress3MFData(files[mName].compressed, files[mName].compMethod);
+      const xml = new TextDecoder('utf-8').decode(raw);
+      const parsed = this.parse3MFXml(xml);
+      if (parsed.positions.length > 0) {
+        parts.push(parsed.positions);
+        totalTriangles += parsed.trianglesCount;
+      }
+    }
+
+    if (parts.length === 0) {
+      throw new Error('3MF dosyasında 3D mesh üçgeni bulunamadı.');
+    }
+
+    const totalLen = parts.reduce((a, p) => a + p.length, 0);
+    const combined = new Float32Array(totalLen);
+    let offset = 0;
+    for (const p of parts) {
+      combined.set(p, offset);
+      offset += p.length;
+    }
+
+    return { positions: combined, trianglesCount: totalTriangles };
+  }
+
   handle3DFileUpload(file) {
     if (!file) return;
 
@@ -4645,6 +4873,35 @@ class PozitronApp {
         this.renderSimulatedFallbackModel(filename, file.size);
       };
       reader.readAsArrayBuffer(file);
+    } else if (ext === '3mf') {
+      reader.onload = async (e) => {
+        try {
+          const buffer = e.target.result;
+          const parsed = await this.parse3MFBuffer(buffer);
+          if (!parsed || !parsed.positions || parsed.positions.length === 0) {
+            throw new Error('3MF dosyasında geçerli mesh geometrisi bulunamadı.');
+          }
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.BufferAttribute(parsed.positions, 3));
+          geometry.computeVertexNormals();
+          geometry.center();
+
+          this.start3DCalculatingSimulation(filename, () => {
+            this.renderCustomGeometry(geometry, filename);
+          });
+        } catch (err) {
+          console.error('3MF Parse Error:', err);
+          this.start3DCalculatingSimulation(filename, () => {
+            this.showToast('3MF dosyası işlenirken hata oluştu: ' + err.message, 'error');
+            this.renderSimulatedFallbackModel(filename, file.size);
+          });
+        }
+      };
+      reader.onerror = () => {
+        this.showToast('3MF dosyası okunamadı.', 'error');
+        this.renderSimulatedFallbackModel(filename, file.size);
+      };
+      reader.readAsArrayBuffer(file);
     } else if (ext === 'obj') {
       reader.onload = (e) => {
         try {
@@ -4670,7 +4927,7 @@ class PozitronApp {
       };
       reader.readAsText(file);
     } else {
-      // STEP / STP / IGES / 3MF CAD Files
+      // STEP / STP / IGES CAD Files
       reader.onload = (e) => {
         try {
           const text = typeof e.target.result === 'string' ? e.target.result : new TextDecoder('utf-8').decode(e.target.result);

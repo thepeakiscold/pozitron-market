@@ -79,6 +79,41 @@ class TestCalculatingScreens(unittest.TestCase):
         self.assertIn('overflow: hidden !important;', self.styles_css)
         self.assertIn('max-height: 420px', self.styles_css)
 
+    def test_3d_studio_remove_model_and_reset_flow(self):
+        """User can delete/remove loaded 3D model and return to dropzone upload screen."""
+        self.assertIn('remove3DModel()', self.app_js)
+        self.assertIn('remove3DModel', self.index_html)
+        self.assertIn('btn-3d-delete-model', self.index_html)
+        self.assertIn('btn-metrics-delete-model', self.index_html)
+        self.assertIn('Modeli Sil', self.index_html)
+        # Verify that previous hard-to-find 'Değiştir' button text is gone from controls
+        self.assertNotIn('>Değiştir<', self.index_html)
+
+        # Check remove3DModel resets mesh and reveals dropzone
+        self.assertIn('this._3dScene.remove(this._currentMesh)', self.app_js)
+        self.assertIn("this._3dConfig.filename = ''", self.app_js)
+        self.assertIn("dropzone.style.display = 'flex'", self.app_js)
+
+    def test_3d_studio_3mf_support_in_backend_and_frontend(self):
+        """3MF files must be supported both in server upload whitelist and browser parser."""
+        with open(os.path.join(BASE_DIR, 'server.py'), 'r', encoding='utf-8') as f:
+            server_py = f.read()
+
+        self.assertIn("'.3mf'", server_py)
+        self.assertIn('parse3MFBuffer', self.app_js)
+        self.assertIn('decompress3MFData', self.app_js)
+        self.assertIn('parse3MFXml', self.app_js)
+        self.assertIn("ext === '3mf'", self.app_js)
+
+    def test_3d_studio_file_picker_strict_accept(self):
+        """File picker dialog must only allow supported 3D models and reject wildcards."""
+        self.assertIn('id="file-3d-input"', self.index_html)
+        self.assertIn('.3mf', self.index_html)
+        self.assertIn('.stl', self.index_html)
+        self.assertIn('.step', self.index_html)
+        self.assertNotIn('*/*', self.index_html)
+        self.assertNotIn('application/octet-stream', self.index_html)
+
 
 if __name__ == '__main__':
     unittest.main()
