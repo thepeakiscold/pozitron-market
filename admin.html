@@ -10,7 +10,39 @@
   <link rel="stylesheet" href="styles.css?v=20260823_min_v31">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
   <script src="./data/pozitron_data.js?v=20260823_sec_v30"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    .admin-btn-excel {
+      background: #107c41;
+      color: #ffffff !important;
+      border: 1px solid #0e6b37;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 0.84rem;
+      border-radius: var(--radius-sm, 6px);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .admin-btn-excel:hover {
+      background: #0d6334;
+      border-color: #0b502a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 124, 65, 0.25);
+    }
+    .admin-btn-excel:active {
+      transform: translateY(0);
+    }
+    .admin-btn-excel:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+  </style>
   <script>
     if (window.location.pathname.endsWith('.html')) {
       window.history.replaceState(null, '', window.location.pathname.slice(0, -5) + window.location.search + window.location.hash);
@@ -267,6 +299,10 @@
             <button type="button" class="admin-btn-secondary" onclick="resetAdminFilters()" style="padding:8px 12px; font-size:0.84rem;">
               Sıfırla
             </button>
+            <button type="button" class="admin-btn-excel" id="btn-export-excel" onclick="exportProductsToExcel()" title="Tüm ürünleri veya filtrelenen ürünleri Excel (.xlsx) formatında indir">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span>Excel'e Aktar</span>
+            </button>
             <button type="button" class="admin-btn-primary" onclick="switchAdminTab('tab-add')" style="padding:8px 14px; font-size:0.84rem; display:inline-flex; align-items:center; gap:6px;">
               <span>+ Yeni Ürün Ekle</span>
             </button>
@@ -348,6 +384,25 @@
           </div>
           <button type="button" class="admin-btn-primary" onclick="runCurrencySync()">
             ⚡ Tüm TRY Fiyatlarını Kur ile Güncelle
+          </button>
+        </div>
+
+        <hr style="border:none; border-top:1px solid var(--border-subtle); margin:30px 0;">
+
+        <h2 style="font-size:1.3rem; margin-bottom:6px; display:flex; align-items:center; gap:8px;">
+          <span>📊</span> Ürün Kataloğunu Excel (.xlsx) Olarak Dışa Aktarma
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+          Tüm ürünleri, güncel stokları, TRY/USD fiyatlarını, indirimleri ve ürün detaylarını Excel tablosu olarak indirin.
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:20px; max-width:680px; margin-bottom:32px;">
+          <p style="font-size:0.88rem; color:#475569; margin-bottom:14px; line-height:1.5;">
+            Katalogdaki tüm ürünler (506 ürün), kategori bilgileri, SKU kodları, TRY/USD fiyatları, indirim oranları, stok seviyeleri ve ürün linkleriyle birlikte eksiksiz olarak Excel tablosuna aktarılır.
+          </p>
+          <button type="button" class="admin-btn-excel" onclick="exportProductsToExcel()" style="padding:10px 18px; font-size:0.92rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span>Excel (.xlsx) Olarak İndir</span>
           </button>
         </div>
 
@@ -3841,6 +3896,271 @@
       await loadAdminUsers();
     }
 
+    // -------------------------------------------------------------
+    // Excel (.xlsx / .xls) Export Engine
+    // -------------------------------------------------------------
+    async function exportProductsToExcel() {
+      const btn = document.getElementById('btn-export-excel');
+      const originalHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path></svg>
+          <span>Hazırlanıyor...</span>
+        `;
+      }
+
+      try {
+        // 1. Fetch all products (API or Local)
+        let allProducts = [];
+        try {
+          const res = await fetch('/api/admin/products?limit=2000', { cache: 'no-cache' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && Array.isArray(data.products) && data.products.length > 0) {
+              allProducts = data.products;
+            }
+          }
+        } catch(e) {}
+
+        if (allProducts.length === 0) {
+          allProducts = await getLocalAdminProducts();
+        }
+
+        if (!allProducts || allProducts.length === 0) {
+          showToast('Dışa aktarılacak ürün bulunamadı.', 'error');
+          return;
+        }
+
+        // 2. Check if user selected specific products or applied search filters
+        let exportList = allProducts;
+        if (typeof selectedProductIds !== 'undefined' && selectedProductIds.size > 0) {
+          exportList = allProducts.filter(p => selectedProductIds.has(p.id));
+        } else {
+          // Check active filters on page
+          const qEl = document.getElementById('admin-search-input');
+          const catEl = document.getElementById('filter-category');
+          const brandEl = document.getElementById('filter-brand');
+          const stockEl = document.getElementById('filter-stock-status');
+
+          const q = qEl ? qEl.value.trim().toLowerCase() : '';
+          const cat = catEl ? catEl.value : 'all';
+          const brand = brandEl ? brandEl.value : 'all';
+          const stockStatus = stockEl ? stockEl.value : 'all';
+
+          if (q || cat !== 'all' || brand !== 'all' || stockStatus !== 'all') {
+            exportList = allProducts.filter(p => {
+              if (q) {
+                const matchQ = (p.name_tr && p.name_tr.toLowerCase().includes(q)) ||
+                               (p.name_en && p.name_en.toLowerCase().includes(q)) ||
+                               (p.brand && p.brand.toLowerCase().includes(q)) ||
+                               (p.sku && p.sku.toLowerCase().includes(q));
+                if (!matchQ) return false;
+              }
+              if (cat !== 'all' && p.category_id !== cat) return false;
+              if (brand !== 'all' && p.brand !== brand) return false;
+              const st = parseInt(p.stock) || 0;
+              if (stockStatus === 'in_stock' && st <= 0) return false;
+              if (stockStatus === 'low_stock' && (st <= 0 || st > 5)) return false;
+              if (stockStatus === 'out_of_stock' && st !== 0) return false;
+              return true;
+            });
+          }
+        }
+
+        if (exportList.length === 0) {
+          showToast('Filtre kriterlerine uygun dışa aktarılacak ürün bulunamadı.', 'error');
+          return;
+        }
+
+        // Category mapping
+        const catMap = {
+          'motors': 'Fırçasız Motorlar',
+          'propellers': 'Pervaneler & Bıçaklar',
+          'esc': 'Elektronik Hız Kontrolcüleri (ESC)',
+          'batteries_chargers': 'LiPo Bataryalar ve Akıllı Şarj Cihazları',
+          'frames': 'Karbon Fiber Gövdeler & Çerçeveler',
+          'flight_controllers': 'Uçuş Kontrol Kartları (FC)',
+          'vtx': 'Video Vericiler (VTX)',
+          'cameras': 'FPV Kameralar & HD Aksiyon',
+          'antennas': 'FPV Antenler',
+          'transmitters_receivers': 'Kumandalar & Alıcılar (ELRS / TBS)',
+          'tools_supplies': 'Saha Ekipmanları & Aletler',
+          'accessories_hardware': 'Aksesuarlar, Vidalar & Donanım',
+          '3d_print_custom': '3D Baskı Yedek Parçalar'
+        };
+
+        const catBundle = window.pozitronData?.categories || [];
+        catBundle.forEach(c => { if (c.id && c.name_tr) catMap[c.id] = c.name_tr; });
+
+        // Build Excel Rows
+        const rows = exportList.map((p, idx) => {
+          const st = parseInt(p.stock) || 0;
+          let stockStatus = 'Stokta Var';
+          if (st === 0) stockStatus = 'Tükendi';
+          else if (st <= 5) stockStatus = 'Kritik Stok';
+
+          const catName = p.category_name_tr || catMap[p.category_id] || p.category_id || '';
+          const priceTry = parseFloat(p.price_try) || 0;
+          const priceUsd = parseFloat(p.price_usd) || 0;
+          const origTry = p.original_price_try ? parseFloat(p.original_price_try) : '';
+          const origUsd = p.original_price_usd ? parseFloat(p.original_price_usd) : '';
+          const discount = parseInt(p.discount_pct) || 0;
+          const slug = p.slug || '';
+          const productUrl = slug ? `https://pozitronmarket.com/products/${slug}` : '';
+
+          return {
+            'Sıra No': idx + 1,
+            'Ürün ID': p.id || '',
+            'SKU': p.sku || '',
+            'Ürün Adı (TR)': p.name_tr || p.name_en || '',
+            'Ürün Adı (EN)': p.name_en || p.name_tr || '',
+            'Kategori': catName,
+            'Kategori Kodu': p.category_id || '',
+            'Marka': p.brand || 'Pozitron',
+            'Fiyat (TRY)': priceTry,
+            'Fiyat (USD)': priceUsd,
+            'Orijinal Fiyat (TRY)': origTry,
+            'Orijinal Fiyat (USD)': origUsd,
+            'İndirim (%)': discount,
+            'Stok Adedi': st,
+            'Stok Durumu': stockStatus,
+            'Rozet (Badge)': p.badge || '',
+            'Puan': p.rating || 5.0,
+            'Yorum Sayısı': p.review_count || 0,
+            'Öne Çıkan': p.featured ? 'Evet' : 'Hayır',
+            'Çok Satan': p.is_bestseller ? 'Evet' : 'Hayır',
+            'Ürün Linki': productUrl,
+            'Görsel URL': p.image_url || '',
+            'Açıklama (TR)': p.description_tr || '',
+            'Eklenme Tarihi': p.created_at || ''
+          };
+        });
+
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const fileName = `pozitron_urunler_${todayStr}.xlsx`;
+
+        // Method A: Use SheetJS (XLSX) if loaded
+        if (typeof XLSX !== 'undefined' && XLSX.utils && XLSX.writeFile) {
+          const ws = XLSX.utils.json_to_sheet(rows);
+
+          // Calculate auto column widths
+          const colWidths = [];
+          if (rows.length > 0) {
+            const keys = Object.keys(rows[0]);
+            keys.forEach(k => {
+              let maxLen = k.length;
+              for (let i = 0; i < Math.min(rows.length, 60); i++) {
+                const val = rows[i][k];
+                if (val !== undefined && val !== null) {
+                  const str = String(val);
+                  if (str.length > maxLen) maxLen = Math.min(str.length, 50);
+                }
+              }
+              colWidths.push({ wch: maxLen + 3 });
+            });
+            ws['!cols'] = colWidths;
+          }
+
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Ürünler');
+          XLSX.writeFile(wb, fileName);
+          showToast(`✓ ${rows.length} ürün başarıyla Excel (.xlsx) dosyasına aktarıldı!`, 'success');
+        } else {
+          // Method B: Fallback to XML Spreadsheet 2003 (.xls)
+          exportAsExcelXml(rows, `pozitron_urunler_${todayStr}.xls`);
+          showToast(`✓ ${rows.length} ürün başarıyla Excel formatında indirildi!`, 'success');
+        }
+      } catch (err) {
+        console.error('Excel export error:', err);
+        showToast('Excel dışa aktarma sırasında hata: ' + err.message, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+      }
+    }
+
+    function exportAsExcelXml(rows, fileName) {
+      if (!rows || rows.length === 0) return;
+      const headers = Object.keys(rows[0]);
+
+      const escapeXml = (str) => {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&apos;');
+      };
+
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+      xml += '<?mso-application progid="Excel.Sheet"?>\n';
+      xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"\n';
+      xml += ' xmlns:o="urn:schemas-microsoft-com:office:office"\n';
+      xml += ' xmlns:x="urn:schemas-microsoft-com:office:excel"\n';
+      xml += ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"\n';
+      xml += ' xmlns:html="http://www.w3.org/TR/REC-html40">\n';
+      xml += ' <Styles>\n';
+      xml += '  <Style ss:ID="Header">\n';
+      xml += '   <Font ss:FontName="Calibri" ss:Bold="1" ss:Color="#FFFFFF"/>\n';
+      xml += '   <Interior ss:Color="#107C41" ss:Pattern="Solid"/>\n';
+      xml += '   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>\n';
+      xml += '  </Style>\n';
+      xml += '  <Style ss:ID="Number">\n';
+      xml += '   <NumberFormat ss:Format="#,##0.00"/>\n';
+      xml += '  </Style>\n';
+      xml += '  <Style ss:ID="Integer">\n';
+      xml += '   <NumberFormat ss:Format="#,##0"/>\n';
+      xml += '  </Style>\n';
+      xml += '  <Style ss:ID="Center">\n';
+      xml += '   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>\n';
+      xml += '  </Style>\n';
+      xml += ' </Styles>\n';
+      xml += ' <Worksheet ss:Name="Ürünler">\n';
+      xml += '  <Table>\n';
+
+      // Header row
+      xml += '   <Row ss:StyleID="Header">\n';
+      headers.forEach(h => {
+        xml += `    <Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>\n`;
+      });
+      xml += '   </Row>\n';
+
+      // Data rows
+      rows.forEach(r => {
+        xml += '   <Row>\n';
+        headers.forEach(h => {
+          const val = r[h];
+          if (typeof val === 'number') {
+            const isInt = Number.isInteger(val);
+            const style = isInt ? ' ss:StyleID="Integer"' : ' ss:StyleID="Number"';
+            xml += `    <Cell${style}><Data ss:Type="Number">${val}</Data></Cell>\n`;
+          } else {
+            xml += `    <Cell><Data ss:Type="String">${escapeXml(val)}</Data></Cell>\n`;
+          }
+        });
+        xml += '   </Row>\n';
+      });
+
+      xml += '  </Table>\n';
+      xml += ' </Worksheet>\n';
+      xml += '</Workbook>';
+
+      const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 200);
+    }
   </script>
 </body>
 </html>

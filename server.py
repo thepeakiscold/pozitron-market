@@ -2,6 +2,7 @@ import http.server
 import socketserver
 import os
 import json
+import html
 import sqlite3
 import urllib.parse
 import urllib.request
@@ -1656,6 +1657,116 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "limit": limit,
                 "total_pages": (total_items + limit - 1) // limit if limit > 0 else 1
             })
+        # Admin: Export Products to Excel (XML Spreadsheet 2003 format)
+        if path == '/api/admin/products/export-excel':
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT p.*, c.name_en AS category_name_en, c.name_tr AS category_name_tr
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                ORDER BY p.id ASC
+            ''')
+            rows = cursor.fetchall()
+            conn.close()
+
+            xml_lines = [
+                '<?xml version="1.0" encoding="UTF-8"?>',
+                '<?mso-application progid="Excel.Sheet"?>',
+                '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"',
+                ' xmlns:o="urn:schemas-microsoft-com:office:office"',
+                ' xmlns:x="urn:schemas-microsoft-com:office:excel"',
+                ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"',
+                ' xmlns:html="http://www.w3.org/TR/REC-html40">',
+                ' <Styles>',
+                '  <Style ss:ID="Header">',
+                '   <Font ss:Bold="1" ss:Color="#FFFFFF"/>',
+                '   <Interior ss:Color="#107C41" ss:Pattern="Solid"/>',
+                '   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>',
+                '  </Style>',
+                '  <Style ss:ID="Number">',
+                '   <NumberFormat ss:Format="#,##0.00"/>',
+                '  </Style>',
+                '  <Style ss:ID="Integer">',
+                '   <NumberFormat ss:Format="#,##0"/>',
+                '  </Style>',
+                '  <Style ss:ID="Center">',
+                '   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>',
+                '  </Style>',
+                ' </Styles>',
+                ' <Worksheet ss:Name="Ürünler">',
+                '  <Table>',
+            ]
+
+            headers = [
+                'Sıra No', 'Ürün ID', 'SKU', 'Ürün Adı (TR)', 'Ürün Adı (EN)',
+                'Kategori', 'Marka', 'Fiyat (TRY)', 'Fiyat (USD)', 'Orijinal Fiyat (TRY)',
+                'Orijinal Fiyat (USD)', 'İndirim (%)', 'Stok Adedi', 'Stok Durumu',
+                'Rozet', 'Puan', 'Yorum Sayısı', 'Öne Çıkan', 'Çok Satan',
+                'Ürün Linki', 'Görsel URL', 'Eklenme Tarihi'
+            ]
+
+            xml_lines.append('   <Row ss:StyleID="Header">')
+            for h in headers:
+                xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(h)}</Data></Cell>')
+            xml_lines.append('   </Row>')
+
+            for idx, r in enumerate(rows, 1):
+                p = dict(r)
+                st = int(p.get('stock') or 0)
+                st_status = 'Tükendi' if st == 0 else ('Kritik Stok' if st <= 5 else 'Stokta Var')
+                slug = p.get('slug') or ''
+                url = f"https://pozitronmarket.com/products/{slug}" if slug else ""
+                cat_name = p.get('category_name_tr') or p.get('category_id') or ''
+
+                xml_lines.append('   <Row>')
+                xml_lines.append(f'    <Cell ss:StyleID="Integer"><Data ss:Type="Number">{idx}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Center"><Data ss:Type="String">{html.escape(p.get("id") or "")}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Center"><Data ss:Type="String">{html.escape(p.get("sku") or "")}</Data></Cell>')
+                xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(p.get("name_tr") or p.get("name_en") or "")}</Data></Cell>')
+                xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(p.get("name_en") or p.get("name_tr") or "")}</Data></Cell>')
+                xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(cat_name)}</Data></Cell>')
+                xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(p.get("brand") or "Pozitron")}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{float(p.get("price_try") or 0):.2f}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{float(p.get("price_usd") or 0):.2f}</Data></Cell>')
+                orig_try = f'{float(p["original_price_try"]):.2f}' if p.get("original_price_try") else ''
+                orig_usd = f'{float(p["original_price_usd"]):.2f}' if p.get("original_price_usd") else ''
+                if orig_try:
+                    xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{orig_try}</Data></Cell>')
+                else:
+                    xml_lines.append('    <Cell><Data ss:Type="String"></Data></Cell>')
+                if orig_usd:
+                    xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{orig_usd}</Data></Cell>')
+                else:
+                    xml_lines.append('    <Cell><Data ss:Type="String"></Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Integer"><Data ss:Type="Number">{int(p.get("discount_pct") or 0)}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Integer"><Data ss:Type="Number">{st}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Center"><Data ss:Type="String">{st_status}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Center"><Data ss:Type="String">{html.escape(p.get("badge") or "")}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{float(p.get("rating") or 5.0):.1f}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Integer"><Data ss:Type="Number">{int(p.get("review_count") or 0)}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Center"><Data ss:Type="String">{"Evet" if p.get("featured") else "Hayır"}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Center"><Data ss:Type="String">{"Evet" if p.get("is_bestseller") else "Hayır"}</Data></Cell>')
+                xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(url)}</Data></Cell>')
+                xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(p.get("image_url") or "")}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Center"><Data ss:Type="String">{html.escape(p.get("created_at") or "")}</Data></Cell>')
+                xml_lines.append('   </Row>')
+
+            xml_lines.extend([
+                '  </Table>',
+                ' </Worksheet>',
+                '</Workbook>'
+            ])
+
+            xml_bytes = "\n".join(xml_lines).encode('utf-8')
+            today_str = datetime.now().strftime("%Y-%m-%d")
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/vnd.ms-excel; charset=utf-8')
+            self.send_header('Content-Disposition', f'attachment; filename="pozitron_urunler_{today_str}.xls"')
+            self.send_header('Content-Length', str(len(xml_bytes)))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(xml_bytes)
             return
 
         # Admin: Registered Users List
