@@ -552,16 +552,16 @@
     /* ========================================================================= */
     .n8n-canvas-container {
       position: relative;
-      background-color: #070b14;
-      background-image: radial-gradient(#1e293b 1px, transparent 1px);
-      background-size: 20px 20px;
+      background-color: #060a12;
+      background-image: radial-gradient(rgba(56, 189, 248, 0.15) 1px, transparent 1px);
+      background-size: 24px 24px;
       border: 1px solid #1e293b;
-      border-radius: 12px;
+      border-radius: 14px;
       overflow-x: auto;
       overflow-y: hidden;
-      min-height: 480px;
-      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
-      transition: min-height 0.2s ease;
+      min-height: 600px;
+      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.7);
+      transition: min-height 0.25s ease;
     }
     .n8n-svg-layer {
       position: absolute;
@@ -569,27 +569,40 @@
       left: 0;
       width: 100%;
       height: 100%;
-      pointer-events: none;
+      pointer-events: auto;
       z-index: 1;
     }
     .n8n-wire {
       stroke: #38bdf8;
-      stroke-width: 1.5;
+      stroke-width: 2;
       fill: none;
-      opacity: 0.55;
-      transition: stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease;
+      opacity: 0.7;
+      transition: stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+      cursor: pointer;
+    }
+    .n8n-wire:hover {
+      opacity: 1 !important;
+      stroke-width: 3.2 !important;
+      filter: drop-shadow(0 0 6px currentColor);
     }
     .n8n-wire.wire-active {
-      stroke: #10b981;
-      stroke-width: 1.8;
       opacity: 0.85;
-      stroke-dasharray: 5 4;
-      animation: n8nDash 1.2s linear infinite;
     }
     .n8n-wire.wire-highlight {
-      stroke: #38bdf8;
-      stroke-width: 2.4;
-      opacity: 1;
+      opacity: 1 !important;
+      stroke-width: 3 !important;
+      stroke-dasharray: 6 4;
+      animation: n8nDash 1s linear infinite;
+      filter: drop-shadow(0 0 8px currentColor);
+    }
+    .n8n-wire.wire-dimmed {
+      opacity: 0.12 !important;
+      stroke-width: 1.2 !important;
+    }
+    .n8n-wire.wire-probe {
+      stroke-dasharray: 5 4;
+      opacity: 0.65;
+      stroke-width: 1.8;
     }
     @keyframes n8nDash {
       to { stroke-dashoffset: -20; }
@@ -599,106 +612,111 @@
       z-index: 2;
       display: flex;
       justify-content: space-between;
-      gap: 20px;
-      padding: 20px 18px;
-      min-width: 1080px;
-      min-height: 440px;
+      gap: 60px;
+      padding: 26px 28px 48px 28px;
+      min-width: 1340px;
+      min-height: 560px;
       box-sizing: border-box;
+      pointer-events: none;
     }
     .n8n-column {
       flex: 1;
       display: flex;
       flex-direction: column;
-      min-width: 180px;
+      min-width: 210px;
+      max-width: 250px;
+      pointer-events: auto;
     }
     .n8n-column-cards {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 18px;
       justify-content: center;
       flex: 1;
-      padding: 8px 0;
+      padding: 12px 0;
     }
     .n8n-column-header {
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      color: #64748b;
+      color: #94a3b8;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 6px;
-      margin-bottom: 2px;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 8px;
+      margin-bottom: 6px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .n8n-node-card {
       position: relative;
-      background: #0d1527;
+      background: rgba(13, 21, 39, 0.95);
       border: 1px solid #1e293b;
-      border-radius: 8px;
-      padding: 9px 12px;
+      border-radius: 10px;
+      padding: 11px 14px;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
     }
     .n8n-node-card:hover {
       border-color: #38bdf8;
       transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(56, 189, 248, 0.15);
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.2);
     }
     .n8n-node-card.selected {
       border-color: #38bdf8;
-      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4), 0 6px 20px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.5), 0 8px 26px rgba(0, 0, 0, 0.6);
       background: #111d35;
     }
     .n8n-node-topbar {
-      height: 2.5px;
-      border-radius: 2.5px 2.5px 0 0;
+      height: 3px;
+      border-radius: 3px 3px 0 0;
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
     }
-    .n8n-port {
+    .n8n-port-dot {
       position: absolute;
-      top: 50%;
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      border: 2px solid #070b14;
+      border: 2px solid #060a12;
       transform: translateY(-50%);
-      z-index: 3;
+      z-index: 4;
+      pointer-events: auto;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    .n8n-port-in {
+    .n8n-port-dot:hover {
+      transform: translateY(-50%) scale(1.35);
+    }
+    .n8n-port-dot-in {
       left: -6px;
-      background: #38bdf8;
-      box-shadow: 0 0 5px #38bdf8;
     }
-    .n8n-port-out {
+    .n8n-port-dot-out {
       right: -6px;
-      background: #10b981;
-      box-shadow: 0 0 5px #10b981;
     }
     .n8n-badge {
-      font-size: 0.62rem;
+      font-size: 0.64rem;
       font-weight: 700;
-      padding: 1px 5px;
-      border-radius: 3px;
+      padding: 2px 6px;
+      border-radius: 4px;
       font-family: var(--font-mono);
+      letter-spacing: 0.02em;
     }
     .n8n-card-title {
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #ffffff;
-      margin-bottom: 3px;
-      line-height: 1.25;
+      margin-bottom: 4px;
+      line-height: 1.3;
     }
     .n8n-card-desc {
-      font-size: 0.67rem;
+      font-size: 0.68rem;
       color: #94a3b8;
-      margin-bottom: 7px;
-      line-height: 1.3;
+      margin-bottom: 8px;
+      line-height: 1.35;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -708,73 +726,108 @@
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid #1e293b;
-      padding-top: 5px;
-      font-size: 0.65rem;
+      padding-top: 6px;
+      font-size: 0.67rem;
+    }
+
+    /* Legend Bar */
+    .n8n-legend-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 8px 14px;
+      background: rgba(7, 11, 20, 0.75);
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      margin-top: 12px;
+    }
+    .n8n-legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #cbd5e1;
+    }
+    .n8n-legend-line {
+      display: inline-block;
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+    }
+    .n8n-legend-line.dashed {
+      border-top: 2px dashed #14b8a6;
+      background: transparent !important;
+      height: 0;
     }
 
     /* Scale Modifiers */
     .n8n-canvas-container.n8n-scale-compact {
-      min-height: 400px;
+      min-height: 500px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-nodes-wrapper {
-      gap: 14px;
-      padding: 14px 12px;
-      min-width: 960px;
-      min-height: 370px;
+      gap: 40px;
+      padding: 18px 20px 36px 20px;
+      min-width: 1160px;
+      min-height: 460px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-column {
-      min-width: 155px;
+      min-width: 180px;
+      max-width: 215px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-column-cards {
-      gap: 6px;
-      padding: 4px 0;
+      gap: 12px;
+      padding: 6px 0;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-node-card {
-      padding: 6px 9px;
-      border-radius: 6px;
+      padding: 8px 10px;
+      border-radius: 8px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-title {
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       margin-bottom: 2px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-desc {
-      font-size: 0.62rem;
+      font-size: 0.63rem;
       margin-bottom: 5px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-footer {
       padding-top: 4px;
-      font-size: 0.6rem;
+      font-size: 0.62rem;
     }
 
     .n8n-canvas-container.n8n-scale-large {
-      min-height: 580px;
+      min-height: 720px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-nodes-wrapper {
-      gap: 26px;
-      padding: 26px 22px;
-      min-width: 1200px;
-      min-height: 530px;
+      gap: 82px;
+      padding: 32px 34px 60px 34px;
+      min-width: 1560px;
+      min-height: 660px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-column {
-      min-width: 200px;
+      min-width: 240px;
+      max-width: 290px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-column-cards {
-      gap: 14px;
-      padding: 12px 0;
+      gap: 24px;
+      padding: 16px 0;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-node-card {
-      padding: 12px 15px;
-      border-radius: 9px;
+      padding: 14px 18px;
+      border-radius: 12px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-title {
-      font-size: 0.84rem;
+      font-size: 0.88rem;
+      margin-bottom: 4px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-desc {
-      font-size: 0.72rem;
+      font-size: 0.74rem;
+      margin-bottom: 8px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-footer {
-      padding-top: 7px;
-      font-size: 0.68rem;
+      padding-top: 8px;
+      font-size: 0.7rem;
     }
 
     .n8n-inspector {
@@ -1587,17 +1640,58 @@
             </button>
           </div>
         </div>
+
+        <!-- Visual Legend Bar -->
+        <div class="n8n-legend-bar">
+          <span style="font-weight:700; color:#94a3b8; margin-right:4px;">Bağlantı Türleri:</span>
+          <div class="n8n-legend-item">
+            <span class="n8n-legend-line" style="background:#10b981;"></span>
+            <span>Tetikleyici (Cron)</span>
+          </div>
+          <div class="n8n-legend-item">
+            <span class="n8n-legend-line" style="background:#818cf8;"></span>
+            <span>İstihbarat &amp; Telemetri</span>
+          </div>
+          <div class="n8n-legend-item">
+            <span class="n8n-legend-line" style="background:#38bdf8;"></span>
+            <span>Direktif (Supervisor)</span>
+          </div>
+          <div class="n8n-legend-item">
+            <span class="n8n-legend-line" style="background:#f43f5e;"></span>
+            <span>İçerik Yayın</span>
+          </div>
+          <div class="n8n-legend-item">
+            <span class="n8n-legend-line dashed"></span>
+            <span>QA &amp; Sağlık Probu</span>
+          </div>
+          <span style="margin-left:auto; color:#64748b; font-size:0.68rem;">💡 Düğümlere veya hatlara tıklayarak filtreleyin</span>
+        </div>
       </div>
 
       <!-- n8n Interactive Canvas -->
       <div class="n8n-canvas-container" id="n8n-canvas">
         <svg class="n8n-svg-layer" id="n8n-svg">
           <defs>
-            <marker id="n8n-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <marker id="n8n-arrow-trigger" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#10b981" />
+            </marker>
+            <marker id="n8n-arrow-data" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#818cf8" />
+            </marker>
+            <marker id="n8n-arrow-directive" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
               <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#38bdf8" />
             </marker>
-            <marker id="n8n-arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#10b981" />
+            <marker id="n8n-arrow-publish" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#f43f5e" />
+            </marker>
+            <marker id="n8n-arrow-probe" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#14b8a6" />
+            </marker>
+            <marker id="n8n-arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#38bdf8" />
+            </marker>
+            <marker id="n8n-arrow-dim" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#334155" />
             </marker>
           </defs>
           <g id="n8n-wires-group"></g>
@@ -1763,6 +1857,14 @@
             <span class="status-pill status-pill-active" id="qa-db-status-badge">Senkron</span>
           </div>
           <div style="font-size:0.78rem; color:var(--text-muted);" id="qa-db-details">SQLite ve JSON eşit</div>
+        </div>
+
+        <div class="bots-card" style="padding:14px; margin-bottom:0;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:0.75rem; font-weight:700; color:#cbd5e1;">Ürün Linkleri &amp; Sayfaları</span>
+            <span class="status-pill status-pill-active" id="qa-prod-links-status-badge">Sağlıklı</span>
+          </div>
+          <div style="font-size:0.78rem; color:var(--text-muted);" id="qa-prod-links-details">Tüm ürün linkleri kontrol ediliyor...</div>
         </div>
       </div>
 
@@ -2025,6 +2127,8 @@
     // =========================================================================
     // n8n PIPELINE WORKFLOW GRAPH RENDERER & INTERACTION
     // =========================================================================
+    let _hoveredNodeId = null;
+
     async function loadPipelineGraph() {
       try {
         const res = await fetch('/api/pipeline/graph');
@@ -2033,7 +2137,7 @@
           renderN8nNodes(_pipelineGraphData);
           setTimeout(() => {
             drawN8nConnections(_pipelineGraphData);
-          }, 60);
+          }, 80);
         }
       } catch (e) {
         console.error("Pipeline graph fetch error:", e);
@@ -2077,18 +2181,16 @@
         } else if (node.type === 'destination') topColor = '#64748b';
 
         const isSelected = _selectedNodeId === node.id;
-        const hasInputs = node.inputs && node.inputs.length > 0;
-        const hasOutputs = node.triggers && node.triggers.length > 0;
 
         const card = document.createElement('div');
         card.className = `n8n-node-card ${isSelected ? 'selected' : ''}`;
         card.id = `node-${node.id}`;
         card.onclick = () => selectN8nNode(node.id);
+        card.onmouseenter = () => onNodeHover(node.id, true);
+        card.onmouseleave = () => onNodeHover(node.id, false);
 
         card.innerHTML = `
           <div class="n8n-node-topbar" style="background:${topColor};"></div>
-          ${hasInputs ? '<div class="n8n-port n8n-port-in"></div>' : ''}
-          ${hasOutputs ? '<div class="n8n-port n8n-port-out"></div>' : ''}
 
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <span class="n8n-badge" style="background:${topColor}22; color:${topColor}; border:1px solid ${topColor}44;">
@@ -2113,6 +2215,29 @@
 
         cardsContainer.appendChild(card);
       });
+    }
+
+    function onNodeHover(nodeId, isEnter) {
+      if (_selectedNodeId) return; // don't override if a node is selected
+      _hoveredNodeId = isEnter ? nodeId : null;
+      if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
+    }
+
+    function renderPortDot(cardEl, direction, fracY, type) {
+      const dot = document.createElement('div');
+      dot.className = `n8n-port-dot n8n-port-dot-${direction} n8n-dynamic-port`;
+      dot.style.top = `${fracY * 100}%`;
+
+      let col = '#38bdf8';
+      if (type === 'trigger') col = '#10b981';
+      else if (type === 'data') col = '#818cf8';
+      else if (type === 'directive') col = '#38bdf8';
+      else if (type === 'publish') col = '#f43f5e';
+      else if (type === 'probe') col = '#14b8a6';
+
+      dot.style.background = col;
+      dot.style.boxShadow = `0 0 6px ${col}`;
+      cardEl.appendChild(dot);
     }
 
     function setPipelineScale(scale) {
@@ -2141,57 +2266,183 @@
     function drawN8nConnections(data) {
       const svgGroup = document.getElementById('n8n-wires-group');
       const canvas = document.getElementById('n8n-canvas');
+      const svg = document.getElementById('n8n-svg');
       if (!svgGroup || !canvas || !data || !data.connections) return;
 
+      // Ensure SVG dimensions cover the full scrollable area
+      const scrollW = Math.max(canvas.scrollWidth, canvas.clientWidth);
+      const scrollH = Math.max(canvas.scrollHeight, canvas.clientHeight);
+      svg.setAttribute('width', scrollW);
+      svg.setAttribute('height', scrollH);
+      svg.style.width = scrollW + 'px';
+      svg.style.height = scrollH + 'px';
+
       svgGroup.innerHTML = '';
+      // Remove any previously rendered dynamic port dots
+      document.querySelectorAll('.n8n-dynamic-port').forEach(p => p.remove());
+
       const canvasRect = canvas.getBoundingClientRect();
       const scrollLeft = canvas.scrollLeft || 0;
       const scrollTop = canvas.scrollTop || 0;
+
+      // Group connections by source and target
+      const outConnsByNode = {};
+      const inConnsByNode = {};
+
+      data.connections.forEach(conn => {
+        if (!outConnsByNode[conn.from]) outConnsByNode[conn.from] = [];
+        outConnsByNode[conn.from].push(conn);
+
+        if (!inConnsByNode[conn.to]) inConnsByNode[conn.to] = [];
+        inConnsByNode[conn.to].push(conn);
+      });
+
+      // Sort outgoing connections by target element's vertical position
+      Object.keys(outConnsByNode).forEach(fromId => {
+        outConnsByNode[fromId].sort((a, b) => {
+          const elA = document.getElementById(`node-${a.to}`);
+          const elB = document.getElementById(`node-${b.to}`);
+          const yA = elA ? elA.getBoundingClientRect().top : 0;
+          const yB = elB ? elB.getBoundingClientRect().top : 0;
+          return yA - yB;
+        });
+      });
+
+      // Sort incoming connections by source element's vertical position
+      Object.keys(inConnsByNode).forEach(toId => {
+        inConnsByNode[toId].sort((a, b) => {
+          const elA = document.getElementById(`node-${a.from}`);
+          const elB = document.getElementById(`node-${b.from}`);
+          const yA = elA ? elA.getBoundingClientRect().top : 0;
+          const yB = elB ? elB.getBoundingClientRect().top : 0;
+          return yA - yB;
+        });
+      });
+
+      const activeFilterId = _selectedNodeId || _hoveredNodeId;
 
       data.connections.forEach(conn => {
         const fromEl = document.getElementById(`node-${conn.from}`);
         const toEl = document.getElementById(`node-${conn.to}`);
         if (!fromEl || !toEl) return;
 
-        const fromPort = fromEl.querySelector('.n8n-port-out') || fromEl;
-        const toPort = toEl.querySelector('.n8n-port-in') || toEl;
+        const fromNodeData = data.nodes.find(n => n.id === conn.from);
+        const toNodeData = data.nodes.find(n => n.id === conn.to);
 
-        const r1 = fromPort.getBoundingClientRect();
-        const r2 = toPort.getBoundingClientRect();
+        const r1 = fromEl.getBoundingClientRect();
+        const r2 = toEl.getBoundingClientRect();
+
+        // Calculate distributed Y on source card
+        const outList = outConnsByNode[conn.from] || [conn];
+        const outIdx = outList.indexOf(conn);
+        const outCount = outList.length;
+        let outFrac = 0.5;
+        if (outCount > 1) {
+          outFrac = 0.22 + (0.56 * outIdx) / (outCount - 1);
+        }
+
+        // Calculate distributed Y on target card
+        const inList = inConnsByNode[conn.to] || [conn];
+        const inIdx = inList.indexOf(conn);
+        const inCount = inList.length;
+        let inFrac = 0.5;
+        if (inCount > 1) {
+          inFrac = 0.22 + (0.56 * inIdx) / (inCount - 1);
+        }
 
         const x1 = r1.right - canvasRect.left + scrollLeft;
-        const y1 = r1.top + r1.height / 2 - canvasRect.top + scrollTop;
+        const y1 = r1.top + r1.height * outFrac - canvasRect.top + scrollTop;
 
         const x2 = r2.left - canvasRect.left + scrollLeft;
-        const y2 = r2.top + r2.height / 2 - canvasRect.top + scrollTop;
+        const y2 = r2.top + r2.height * inFrac - canvasRect.top + scrollTop;
 
-        const dx = Math.max(35, (x2 - x1) * 0.45);
-        const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+        const isProbe = conn.type === 'probe' || (conn.from === 'subagent_7_qa' && conn.to !== 'lead_supervisor') || (conn.label && conn.label.toLowerCase().includes('probu'));
+        const effectiveType = isProbe ? 'probe' : conn.type;
 
-        const isRelated = _selectedNodeId && (_selectedNodeId === conn.from || _selectedNodeId === conn.to);
+        // Render dynamic port indicators on cards
+        renderPortDot(fromEl, 'out', outFrac, effectiveType);
+        renderPortDot(toEl, 'in', inFrac, effectiveType);
+
+        // Path generation
+        let d = '';
+        const colFrom = (fromNodeData && fromNodeData.column) || 1;
+        const colTo = (toNodeData && toNodeData.column) || 1;
+
+        // Check if connection skips a column (e.g. Column 3 to Column 5 bypassing Column 4)
+        if (colTo - colFrom > 1) {
+          let maxBottom = Math.max(r1.bottom, r2.bottom);
+          for (let c = colFrom + 1; c < colTo; c++) {
+            const colEl = document.getElementById(`n8n-col-${c}`);
+            if (colEl) {
+              const colRect = colEl.getBoundingClientRect();
+              maxBottom = Math.max(maxBottom, colRect.bottom);
+            }
+          }
+          const bypassY = maxBottom - canvasRect.top + scrollTop + 32;
+          const rCurve = 20;
+
+          d = `M ${x1} ${y1} ` +
+              `C ${x1 + 35} ${y1}, ${x1 + 35} ${bypassY}, ${x1 + 35 + rCurve} ${bypassY} ` +
+              `L ${x2 - 35 - rCurve} ${bypassY} ` +
+              `C ${x2 - 35} ${bypassY}, ${x2 - 35} ${y2}, ${x2} ${y2}`;
+        } else {
+          // Smooth, non-reversing Bezier curve
+          const dist = Math.max(20, x2 - x1);
+          const dx = Math.min(dist * 0.45, Math.max(16, dist * 0.4));
+          d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+        }
+
+        const isHighlighted = activeFilterId && (activeFilterId === conn.from || activeFilterId === conn.to);
+        const isDimmed = activeFilterId && !isHighlighted;
+
+        let strokeColor = '#38bdf8';
+        let markerId = 'n8n-arrow-directive';
+
+        if (effectiveType === 'trigger') {
+          strokeColor = '#10b981';
+          markerId = 'n8n-arrow-trigger';
+        } else if (effectiveType === 'data') {
+          strokeColor = '#818cf8';
+          markerId = 'n8n-arrow-data';
+        } else if (effectiveType === 'directive') {
+          strokeColor = '#38bdf8';
+          markerId = 'n8n-arrow-directive';
+        } else if (effectiveType === 'publish') {
+          strokeColor = '#f43f5e';
+          markerId = 'n8n-arrow-publish';
+        } else if (effectiveType === 'probe') {
+          strokeColor = '#14b8a6';
+          markerId = 'n8n-arrow-probe';
+        }
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', d);
-        path.setAttribute('class', `n8n-wire ${isRelated ? 'wire-highlight' : 'wire-active'}`);
-        path.setAttribute('id', `wire-${conn.from}-${conn.to}`);
-        path.setAttribute('marker-end', isRelated ? 'url(#n8n-arrow-active)' : 'url(#n8n-arrow)');
+        let wireClasses = 'n8n-wire';
+        if (effectiveType === 'probe') wireClasses += ' wire-probe';
+        if (isHighlighted) wireClasses += ' wire-highlight';
+        if (isDimmed) wireClasses += ' wire-dimmed';
 
-        if (conn.type === 'trigger') {
-          path.style.stroke = '#10b981';
-        } else if (conn.type === 'data') {
-          path.style.stroke = '#818cf8';
-        } else if (conn.type === 'directive') {
-          path.style.stroke = '#38bdf8';
-        } else if (conn.type === 'publish') {
-          path.style.stroke = '#f43f5e';
-        }
+        path.setAttribute('class', wireClasses);
+        path.setAttribute('id', `wire-${conn.from}-${conn.to}`);
+        path.style.stroke = strokeColor;
+        path.setAttribute('marker-end', isHighlighted ? 'url(#n8n-arrow-active)' : (isDimmed ? 'url(#n8n-arrow-dim)' : `url(#${markerId})`));
+
+        // Interactive tooltip title on hover
+        const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        titleEl.textContent = `${conn.label || conn.type}: ${conn.from} → ${conn.to}`;
+        path.appendChild(titleEl);
 
         svgGroup.appendChild(path);
       });
     }
 
     function selectN8nNode(nodeId) {
+      if (_selectedNodeId === nodeId) {
+        closeInspector();
+        return;
+      }
       _selectedNodeId = nodeId;
+      _hoveredNodeId = null;
       if (!_pipelineGraphData) return;
 
       const node = _pipelineGraphData.nodes.find(n => n.id === nodeId);
@@ -2256,11 +2507,22 @@
       const inspector = document.getElementById('n8n-inspector');
       if (inspector) inspector.style.display = 'none';
       _selectedNodeId = null;
+      _hoveredNodeId = null;
+      document.querySelectorAll('.n8n-node-card').forEach(el => el.classList.remove('selected'));
       if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
     }
 
     window.addEventListener('resize', () => {
       if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('n8n-canvas');
+      if (canvas) {
+        canvas.addEventListener('scroll', () => {
+          if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
+        });
+      }
     });
 
     // =========================================================================
@@ -3143,7 +3405,9 @@
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #1e293b; padding-top:8px;">
               <span style="font-size:0.72rem; color:#10b981; font-weight:600;">${linksCount} Ürüne İç Link</span>
-              <button type="button" class="btn-action btn-secondary" style="padding:2px 8px; font-size:0.7rem;" onclick="alert('Rehber: ' + '${a.slug}')">Detay</button>
+              <a href="/rehber.html?slug=${encodeURIComponent(a.slug)}" target="_blank" class="btn-action btn-secondary" style="padding:2px 8px; font-size:0.7rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">
+                <span>Sitede Gör &rarr;</span>
+              </a>
             </div>
           </div>
         `;
@@ -3559,6 +3823,16 @@
             dbBadge.textContent = probes.database_and_cache.status === 'HEALTHY' ? 'Senkron' : 'Uyuşmazlık';
             dbBadge.className = probes.database_and_cache.status === 'HEALTHY' ? 'status-pill status-pill-active' : 'status-pill status-pill-warn';
             dbDetails.innerHTML = probes.database_and_cache.cache_files_in_sync ? 'SQLite ve JSON eşit' : 'Önbellek senkron değil';
+          }
+
+          const prodLinksBadge = document.getElementById('qa-prod-links-status-badge');
+          const prodLinksDetails = document.getElementById('qa-prod-links-details');
+          if (prodLinksBadge && probes.product_links) {
+            const pl = probes.product_links;
+            const isHealthy = pl.status === 'HEALTHY';
+            prodLinksBadge.textContent = isHealthy ? 'Sağlıklı' : (pl.status === 'CRITICAL' ? 'Kritik Hata' : 'Kırık Link Var');
+            prodLinksBadge.className = isHealthy ? 'status-pill status-pill-active' : (pl.status === 'CRITICAL' ? 'status-pill status-pill-danger' : 'status-pill status-pill-warn');
+            prodLinksDetails.innerHTML = `${pl.valid_links_count}/${pl.total_products_checked} Link Sağlıklı &bull; Kırık: <strong>${pl.broken_links_count}</strong>`;
           }
 
           if (probes.subagent_pipeline) {

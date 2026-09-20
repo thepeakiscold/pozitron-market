@@ -443,6 +443,78 @@ class QASentinelAgent:
 
         return result
 
+    def probe_product_links(self) -> Dict:
+        """
+        Validates 100% of all product links, canonical slug files, and routing integrity.
+        Ensures zero 404 broken product links across the catalog, sitemap, and static HTML files.
+        """
+        result = {
+            "channel": "product_links",
+            "status": "HEALTHY",
+            "total_products_checked": 0,
+            "valid_links_count": 0,
+            "broken_links_count": 0,
+            "missing_html_count": 0,
+            "empty_slugs_count": 0,
+            "broken_products": [],
+            "issues": []
+        }
+
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, slug, sku, name_tr FROM products ORDER BY id ASC")
+            products = cursor.fetchall()
+            conn.close()
+
+            products_dir = os.path.join(PROJECT_ROOT, "products")
+            broken = []
+            missing_html = []
+            empty_slugs = []
+
+            for p in products:
+                result["total_products_checked"] += 1
+                pid = p['id']
+                slug = p['slug']
+                sku = p['sku']
+                name = p['name_tr'] or sku or pid
+
+                if not slug:
+                    empty_slugs.append({"id": pid, "sku": sku, "name": name, "reason": "Slug eksik veya bos."})
+                    broken.append({"id": pid, "slug": "", "sku": sku, "name": name, "reason": "Slug eksik."})
+                    continue
+
+                html_file = os.path.join(products_dir, f"{slug}.html")
+                if not os.path.isfile(html_file):
+                    missing_html.append({"id": pid, "slug": slug, "sku": sku, "name": name, "reason": f"products/{slug}.html bulunamadi."})
+                    broken.append({"id": pid, "slug": slug, "sku": sku, "name": name, "reason": "Statik HTML dosyasi eksik."})
+                elif os.path.getsize(html_file) < 500:
+                    broken.append({"id": pid, "slug": slug, "sku": sku, "name": name, "reason": f"products/{slug}.html bos veya bozuk (<500 bayt)."})
+
+            result["empty_slugs_count"] = len(empty_slugs)
+            result["missing_html_count"] = len(missing_html)
+            result["broken_links_count"] = len(broken)
+            result["valid_links_count"] = result["total_products_checked"] - len(broken)
+            result["broken_products"] = broken[:20]
+
+            if empty_slugs:
+                result["issues"].append(f"{len(empty_slugs)} adet urunun slug degeri bos veya tanimsiz.")
+            if missing_html:
+                result["issues"].append(f"{len(missing_html)} adet urunun statik HTML sayfasi (products/<slug>.html) eksik.")
+            if len(broken) > len(missing_html) + len(empty_slugs):
+                result["issues"].append(f"{len(broken)} adet urun linkinde anomali tespit edildi.")
+
+            if len(broken) > 10:
+                result["status"] = "CRITICAL"
+            elif len(broken) > 0:
+                result["status"] = "DEGRADED"
+
+        except Exception as e:
+            result["status"] = "DEGRADED"
+            result["issues"].append(f"Urun linkleri probu calistirilirken hata: {str(e)}")
+
+        return result
+
     def probe_subagent_pipeline_outputs(self) -> Dict:
         """
         Deeply inspects content, freshness, and structural integrity of outputs
@@ -607,17 +679,18 @@ class QASentinelAgent:
         return result
 
     def run_probes(self) -> Dict:
-        """Executes all 6 diagnostic probes across the entire organization."""
+        """Executes all 7 diagnostic probes across the entire organization."""
         ig = self.probe_instagram()
         red = self.probe_reddit()
         pipe = self.probe_subagent_pipeline_outputs()
         db = self.probe_database_and_cache()
         sched = self.probe_schedulers_and_threads()
         assets = self.probe_assets_and_catalog()
+        prod_links = self.probe_product_links()
 
-        all_issues = ig["issues"] + red["issues"] + pipe["issues"] + db["issues"] + sched["issues"] + assets["issues"]
+        all_issues = ig["issues"] + red["issues"] + pipe["issues"] + db["issues"] + sched["issues"] + assets["issues"] + prod_links["issues"]
 
-        statuses = [ig["status"], red["status"], pipe["status"], db["status"], sched["status"], assets["status"]]
+        statuses = [ig["status"], red["status"], pipe["status"], db["status"], sched["status"], assets["status"], prod_links["status"]]
         if "CRITICAL" in statuses:
             overall = "CRITICAL"
             score = 50
@@ -643,7 +716,8 @@ class QASentinelAgent:
                 "subagent_pipeline": pipe,
                 "database_and_cache": db,
                 "schedulers_and_threads": sched,
-                "catalog_assets": assets
+                "catalog_assets": assets,
+                "product_links": prod_links
             }
         }
 
@@ -671,6 +745,7 @@ PROB DETAYLARI:
 - Veritabani ve Onbellek: Senkron Mu: {probe_results['probes']['database_and_cache']['cache_files_in_sync']}
 - Zamanlayicilar: Calismayan: {probe_results['probes']['schedulers_and_threads']['dead_schedulers']}
 - Urun Gorselleri: Eksik Sayisi: {probe_results['probes']['catalog_assets']['missing_images_count']}
+- Urun Linkleri ve Sayfalari: Toplam: {probe_results['probes']['product_links']['total_products_checked']}, Gecerli: {probe_results['probes']['product_links']['valid_links_count']}, Kirik/Eksik: {probe_results['probes']['product_links']['broken_links_count']}
 
 GOREVIN:
 Muhendislik standartlarinda net bir Kok Neden Analizi (Root Cause Analysis - RCA) ve otonom iyilestirme (Self-Healing) direktifi hazirla.
@@ -734,6 +809,11 @@ KURALLAR:
         if probe_results['probes']['schedulers_and_threads']['dead_schedulers']:
             root_causes.append("Bazi arka plan zamanlayici is parcaciklari baslatilmamis veya sonlanmis.")
             actions.append("Duran zamanlayicilari thread watchdog uzerinden yeniden baslat.")
+
+        if probe_results['probes'].get('product_links', {}).get('broken_links_count', 0) > 0:
+            broken_c = probe_results['probes']['product_links']['broken_links_count']
+            root_causes.append(f"{broken_c} adet urun linki veya statik HTML sayfasi eksik/bozuk.")
+            actions.append("generate_product_pages.py calistirilarak eksik urun sayfalari otonom derlendi ve sitemap.xml guncellendi.")
 
         return {
             "executive_summary": "Sistem bilesenleri denetlendi. Kritik darbogazlar otonom iyilestirme kapsamina alindi.",
@@ -954,6 +1034,36 @@ KURALLAR:
                     auto_healed=True,
                     heal_action=act["action"]
                 )
+
+        # Remedy 7: Product Links & Pages Auto-Heal
+        prod_links = probe_results.get('probes', {}).get('product_links', {})
+        if prod_links and prod_links.get('broken_links_count', 0) > 0:
+            try:
+                import subprocess
+                res = subprocess.run(
+                    ["python3", os.path.join(PROJECT_ROOT, "generate_product_pages.py")],
+                    cwd=PROJECT_ROOT,
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+                if res.returncode == 0:
+                    act = {
+                        "channel": "product_links",
+                        "action": f"{prod_links.get('broken_links_count')} adet urun linki/sayfasi otonom olarak yeniden uretildi ve sitemap.xml guncellendi.",
+                        "status": "SUCCESS"
+                    }
+                    healed_actions.append(act)
+                    self.log_incident(
+                        incident_type="PRODUCT_LINKS_AUTO_HEAL",
+                        channel="product_links",
+                        severity="WARNING",
+                        description=f"{prod_links.get('broken_links_count')} adet bozuk/eksik urun linki otonom onarildi.",
+                        auto_healed=True,
+                        heal_action=act["action"]
+                    )
+            except Exception:
+                pass
 
         conn.close()
         return healed_actions

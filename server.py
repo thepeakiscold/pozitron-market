@@ -543,6 +543,21 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(content)
                 return
 
+        # Technical SEO Guides & Engineering Blog (/rehber, /rehber.html, /rehber/<slug>)
+        if path in ('/rehber', '/rehber.html') or path.startswith('/rehber/'):
+            file_path = os.path.join(BASE_DIR, 'rehber.html')
+            if os.path.exists(file_path):
+                with open(file_path, 'rb') as f:
+                    content = f.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.send_header('Content-Length', str(len(content)))
+                self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(content)
+                return
+
         # Security: Enforce static file whitelist and block sensitive files (.db, .py, etc.)
         if not self.is_static_path_allowed(self.path):
             self.send_json(404, {"error": "File not found"})
@@ -627,7 +642,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
             return
-        if path in ('/bots', '/bots.html'):
+        if path in ('/bots', '/bots.html') or path in ('/rehber', '/rehber.html') or path.startswith('/rehber/'):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
@@ -682,6 +697,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         products = cursor.fetchall()
         cursor.execute("SELECT id FROM categories")
         categories = cursor.fetchall()
+        cursor.execute("SELECT slug, created_at FROM seo_articles ORDER BY id DESC")
+        articles = cursor.fetchall()
         conn.close()
 
         import html as html_lib
@@ -692,6 +709,11 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             '    <loc>https://pozitronmarket.com/</loc>',
             '    <changefreq>daily</changefreq>',
             '    <priority>1.0</priority>',
+            '  </url>',
+            '  <url>',
+            '    <loc>https://pozitronmarket.com/rehber.html</loc>',
+            '    <changefreq>daily</changefreq>',
+            '    <priority>0.9</priority>',
             '  </url>'
         ]
 
@@ -715,6 +737,19 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 f'    <lastmod>{lastmod}</lastmod>',
                 '    <changefreq>weekly</changefreq>',
                 '    <priority>0.9</priority>',
+                '  </url>'
+            ])
+
+        # Technical SEO Articles
+        for a in articles:
+            slug = a[0]
+            lastmod = a[1].split('T')[0] if a[1] and 'T' in a[1] else datetime.now().strftime('%Y-%m-%d')
+            xml_lines.extend([
+                '  <url>',
+                f'    <loc>https://pozitronmarket.com/rehber.html?slug={html_lib.escape(slug)}</loc>',
+                f'    <lastmod>{lastmod}</lastmod>',
+                '    <changefreq>weekly</changefreq>',
+                '    <priority>0.8</priority>',
                 '  </url>'
             ])
 
@@ -1068,6 +1103,35 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"articles": articles})
             return
 
+        if path == '/api/seo/article':
+            slug = query.get('slug', [''])[0]
+            art_id = query.get('id', [''])[0]
+            conn = get_db()
+            cursor = conn.cursor()
+            if slug:
+                cursor.execute("SELECT * FROM seo_articles WHERE slug = ? LIMIT 1", (slug,))
+            elif art_id:
+                cursor.execute("SELECT * FROM seo_articles WHERE id = ? LIMIT 1", (art_id,))
+            else:
+                cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC LIMIT 1")
+            row = cursor.fetchone()
+            conn.close()
+            if row:
+                art = {
+                    "id": row["id"],
+                    "slug": row["slug"],
+                    "title": row["title"],
+                    "component_focus": row["component_focus"],
+                    "target_keywords": row["target_keywords"],
+                    "internal_links": json.loads(row["internal_links_json"]) if row["internal_links_json"] else [],
+                    "content_markdown": row["content_markdown"],
+                    "created_at": row["created_at"]
+                }
+                self.send_json(200, {"article": art})
+            else:
+                self.send_json(404, {"error": "Article not found"})
+            return
+
         # Pipeline Topology & Workflow Graph (n8n style architecture)
         if path == '/api/pipeline/graph':
             sup_status = lead_supervisor_agent.get_status()
@@ -1312,8 +1376,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     {"from": "subagent_1_instagram", "to": "output_instagram_api", "label": "Yayin & Etkilesim", "type": "publish"},
                     {"from": "subagent_2_reddit", "to": "output_reddit_api", "label": "Otonom Yanit", "type": "publish"},
                     {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "Ic Linkli Rehber", "type": "publish"},
-                    {"from": "subagent_7_qa", "to": "output_instagram_api", "label": "API Saglik Probu", "type": "publish"},
-                    {"from": "subagent_7_qa", "to": "output_reddit_api", "label": "Oturum Probu", "type": "publish"}
+                    {"from": "subagent_7_qa", "to": "output_instagram_api", "label": "API Saglik Probu", "type": "probe"},
+                    {"from": "subagent_7_qa", "to": "output_reddit_api", "label": "Oturum Probu", "type": "probe"}
                 ]
             }
             self.send_json(200, graph)

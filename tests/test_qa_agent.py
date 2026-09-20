@@ -62,6 +62,16 @@ class TestQASentinelAgent(unittest.TestCase):
         self.assertIn("total_products_checked", res)
         self.assertIn("missing_images_count", res)
 
+    def test_probe_product_links(self):
+        """Ensures product links, slugs, and static HTML files are verified."""
+        res = self.agent.probe_product_links()
+        self.assertEqual(res["channel"], "product_links")
+        self.assertIn("total_products_checked", res)
+        self.assertIn("valid_links_count", res)
+        self.assertIn("broken_links_count", res)
+        self.assertEqual(res["broken_links_count"], 0)
+        self.assertEqual(res["status"], "HEALTHY")
+
     def test_ai_analysis_fallback_zero_emojis(self):
         """Ensures RCA synthesis operates cleanly with zero emojis."""
         probes = self.agent.run_probes()

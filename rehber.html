@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary SEO Meta Tags -->
+  <title id="meta-title">Teknik FPV &amp; Drone Mühendislik Rehberleri | Pozitron Market</title>
+  <meta id="meta-desc" name="description" content="Pozitron Market FPV mühendislik rehberleri. Betaflight 4.5 UART konfigürasyonları, ESC protokolleri, LiPo batarya güvenliği ve drone toplama rehberleri.">
+  <meta id="meta-keywords" name="keywords" content="fpv rehber, betaflight uart, drone lehimleme, esc protokolu, lipo sarj, pozitron market rehber, drone yapımı">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+  <link rel="canonical" id="meta-canonical" href="https://pozitronmarket.com/rehber.html">
+
+  <!-- Open Graph / Social Media -->
+  <meta property="og:type" content="article">
+  <meta id="og-url" property="og:url" content="https://pozitronmarket.com/rehber.html">
+  <meta id="og-title" property="og:title" content="Teknik FPV &amp; Drone Mühendislik Rehberleri | Pozitron Market">
+  <meta id="og-desc" property="og:description" content="Pozitron Market FPV mühendislik ve donanım rehberleri.">
+  <meta property="og:image" content="https://pozitronmarket.com/assets/hero_drone.png">
+  <meta property="og:site_name" content="Pozitron Market">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
+
+  <!-- Dynamic JSON-LD Article Schema Container -->
+  <script id="article-schema" type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    "name": "Pozitron Market FPV Mühendislik Rehberleri",
+    "url": "https://pozitronmarket.com/rehber.html",
+    "description": "Betaflight, UART, ESC ve FPV donanım mühendisliği rehberleri."
+  }
+  </script>
+
+  <style>
+    :root {
+      --brand-primary: #0284c7;
+      --brand-hover: #0369a1;
+      --brand-dark: #070b14;
+      --brand-card: #0d1527;
+      --border-color: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-green: #10b981;
+      --accent-purple: #8b5cf6;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--brand-dark);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Container */
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Header Navigation */
+    .rehber-header {
+      background: rgba(13, 21, 39, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 70px;
+    }
+
+    .brand-logo-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #fff;
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 1.1rem;
+      padding: 6px 12px;
+      border-radius: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-text-wrap {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-name {
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      color: #cbd5e1;
+      border: 1px solid transparent;
+    }
+
+    .nav-link-btn:hover {
+      background: #1e293b;
+      color: #fff;
+    }
+
+    .nav-link-btn.btn-highlight {
+      background: #0284c7;
+      color: #fff;
+      border-color: #0284c7;
+    }
+
+    .nav-link-btn.btn-highlight:hover {
+      background: #0369a1;
+    }
+
+    /* Hero Banner */
+    .rehber-hero {
+      background: radial-gradient(circle at 50% 0%, rgba(2, 132, 199, 0.15) 0%, transparent 70%);
+      border-bottom: 1px solid var(--border-color);
+      padding: 48px 0 36px 0;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(2, 132, 199, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .hero-title {
+      font-family: var(--font-heading);
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-desc {
+      max-width: 680px;
+      margin: 0 auto 24px auto;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Search & Filter Bar */
+    .filter-wrap {
+      max-width: 600px;
+      margin: 0 auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .search-input {
+      flex: 1;
+      background: #070b14;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: #38bdf8;
+    }
+
+    /* Directory Articles Grid */
+    .articles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px;
+      margin: 40px 0 60px 0;
+    }
+
+    .article-card {
+      background: var(--brand-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .article-card:hover {
+      border-color: #38bdf8;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+    }
+
+    .card-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .card-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    .card-date {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .card-keywords {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+      margin-top: 8px;
+    }
+
+    .links-badge {
+      font-size: 0.72rem;
+      color: var(--accent-green);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .read-more-btn {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Single Article Detail View */
+    .article-detail-wrap {
+      padding: 36px 0 60px 0;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+
+    .breadcrumbs a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+
+    .article-layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 36px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .article-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .article-main {
+      background: var(--brand-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 36px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .article-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 20px;
+      margin-bottom: 28px;
+    }
+
+    .article-header h1 {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.35;
+      margin-bottom: 14px;
+    }
+
+    .article-byline {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .article-byline span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Markdown Content Styling */
+    .article-content {
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #cbd5e1;
+    }
+
+    .article-content h1 {
+      display: none; /* Already rendered in header */
+    }
+
+    .article-content h2 {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 32px 0 14px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .article-content h3 {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #38bdf8;
+      margin: 22px 0 10px 0;
+    }
+
+    .article-content p {
+      margin-bottom: 16px;
+    }
+
+    .article-content ul, .article-content ol {
+      margin: 0 0 18px 24px;
+    }
+
+    .article-content li {
+      margin-bottom: 6px;
+    }
+
+    .article-content hr {
+      border: 0;
+      height: 1px;
+      background: var(--border-color);
+      margin: 28px 0;
+    }
+
+    .article-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0 24px 0;
+      font-size: 0.86rem;
+    }
+
+    .article-content th, .article-content td {
+      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      text-align: left;
+    }
+
+    .article-content th {
+      background: #070b14;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .article-content tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .article-content blockquote {
+      background: rgba(2, 132, 199, 0.1);
+      border-left: 4px solid #0284c7;
+      padding: 12px 18px;
+      margin: 20px 0;
+      border-radius: 0 8px 8px 0;
+      color: #e0f2fe;
+    }
+
+    .article-content code {
+      font-family: var(--font-mono);
+      background: #070b14;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: #38bdf8;
+      border: 1px solid #1e293b;
+    }
+
+    .article-content a {
+      color: #38bdf8;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+
+    .article-content a:hover {
+      color: #7dd3fc;
+    }
+
+    /* Internal Products Sidebar */
+    .sidebar-card {
+      background: var(--brand-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+      position: sticky;
+      top: 90px;
+    }
+
+    .sidebar-title {
+      font-family: var(--font-heading);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .product-link-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: #070b14;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .product-link-item:hover {
+      border-color: #38bdf8;
+      transform: translateX(2px);
+    }
+
+    .prod-sku {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: #64748b;
+    }
+
+    .prod-name {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    .prod-cta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    .rehber-footer {
+      background: #070b14;
+      border-top: 1px solid var(--border-color);
+      padding: 30px 0;
+      margin-top: auto;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .rehber-footer a {
+      color: #38bdf8;
+      text-decoration: none;
+    }
+
+    /* Utility */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="rehber-header">
+    <div class="container header-inner">
+      <a href="/" class="brand-logo-link">
+        <div class="brand-badge">PZ</div>
+        <div class="brand-text-wrap">
+          <span class="brand-name">POZİTRON MARKET</span>
+          <span class="brand-sub">Teknik Mühendislik &amp; FPV Rehberleri</span>
+        </div>
+      </a>
+
+      <nav class="header-nav-links">
+        <a href="/" class="nav-link-btn">
+          <span>&larr; Mağazaya Dön</span>
+        </a>
+        <a href="/drone-toplama-sihirbazi.html" class="nav-link-btn">
+          <span>Drone Topla</span>
+        </a>
+        <a href="/3d-baski-studio.html" class="nav-link-btn">
+          <span>3D Baskı</span>
+        </a>
+        <a href="/rehber.html" class="nav-link-btn btn-highlight">
+          <span>Tüm Rehberler</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="rehber-hero" id="rehber-hero">
+    <div class="container">
+      <div class="hero-badge">Pozitron Ar-Ge Donanım Laboratuvarı</div>
+      <h1 class="hero-title" id="hero-title">FPV &amp; Drone Mühendislik Rehberleri</h1>
+      <p class="hero-desc" id="hero-desc">
+        Betaflight konfigürasyonları, UART pinout bağlantı şemaları, LiPo batarya protokolleri ve ESC telemetri ayarları üzerine saha mühendisliği dokümantasyonu.
+      </p>
+
+      <!-- Directory Search Bar (Visible in directory mode) -->
+      <div class="filter-wrap" id="directory-search-wrap">
+        <input 
+          type="text" 
+          id="rehber-search" 
+          class="search-input" 
+          placeholder="Rehber veya bileşen ara (Örn: UART, Betaflight, LiPo, ESC)..." 
+          oninput="filterArticles()"
+        >
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Container -->
+  <main class="container">
+    
+    <!-- MODE 1: Directory List View -->
+    <div id="directory-view">
+      <div class="articles-grid" id="articles-grid">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+          Rehberler yükleniyor...
+        </div>
+      </div>
+    </div>
+
+    <!-- MODE 2: Single Article Detail View -->
+    <div id="article-view" class="article-detail-wrap hidden">
+      <div class="breadcrumbs">
+        <a href="/">Ana Sayfa</a>
+        <span>&rsaquo;</span>
+        <a href="/rehber.html">Teknik Rehberler</a>
+        <span>&rsaquo;</span>
+        <span id="breadcrumb-title" style="color:#fff;">Rehber Detayı</span>
+      </div>
+
+      <div class="article-layout">
+        <article class="article-main">
+          <header class="article-header">
+            <h1 id="art-title">Makale Başlığı</h1>
+            <div class="article-byline">
+              <span id="art-author">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                Pozitron Ar-Ge Ekibi
+              </span>
+              <span id="art-date">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                --
+              </span>
+              <span id="art-time">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                5 dk Okuma
+              </span>
+            </div>
+          </header>
+
+          <div class="article-content" id="art-content">
+            <!-- Rendered Markdown HTML goes here -->
+          </div>
+
+          <div style="margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <a href="/rehber.html" class="nav-link-btn" style="background:#1e293b;">
+              &larr; Tüm Rehberlere Dön
+            </a>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="nav-link-btn" onclick="copyArticleLink()" style="background:#070b14; border:1px solid #1e293b; cursor:pointer;">
+                Bağlantıyı Kopyala
+              </button>
+              <button type="button" class="nav-link-btn btn-highlight" onclick="shareOnWhatsApp()" style="cursor:pointer;">
+                WhatsApp'ta Paylaş
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Sidebar: Linked Products -->
+        <aside class="sidebar-card" id="art-sidebar">
+          <div class="sidebar-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            <span>Uyumlu Parçalar</span>
+          </div>
+          <div id="art-products-list">
+            <div style="font-size:0.8rem; color:var(--text-muted);">
+              Bu rehbere ait ürün eşleşmeleri taranıyor...
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="rehber-footer">
+    <div class="container">
+      <p>&copy; 2026 Pozitron Market FPV Hardware Ltd. Tüm hakları saklıdır. &bull; <a href="/">Mağaza Ana Sayfası</a> &bull; <a href="/rehber.html">Teknik Blog</a> &bull; <a href="/drone-toplama-sihirbazi.html">Drone Toplama Sihirbazı</a></p>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    let _allArticles = [];
+
+    // Simple Markdown to HTML parser for engineering guides
+    function parseMarkdown(md) {
+      if (!md) return '';
+      let html = md;
+
+      // Escape raw HTML except basic tags
+      html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+      // Restore callouts: &gt; [IPUCU] text
+      html = html.replace(/&gt;\s*\[IPUCU\]\s*([^\n]+)/g, '<blockquote><strong>Teknik İpucu:</strong> $1</blockquote>');
+      html = html.replace(/&gt;\s*([^\n]+)/g, '<blockquote>$1</blockquote>');
+
+      // Headings
+      html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+      html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+      html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+      // Horizontal rules
+      html = html.replace(/^---$/gim, '<hr>');
+
+      // Bold and Italics
+      html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>');
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+      // Markdown links: [text](url)
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+      // Parse Markdown Tables
+      const lines = html.split('\n');
+      let inTable = false;
+      let tableHtml = '';
+      const newLines = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line.startsWith('|') && line.endsWith('|')) {
+          const cells = line.slice(1, -1).split('|').map(c => c.trim());
+          // Check if separator line
+          if (cells.every(c => c.replace(/[:-]/g, '') === '')) {
+            continue;
+          }
+          if (!inTable) {
+            inTable = true;
+            tableHtml = '<table><thead><tr>' + cells.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+          } else {
+            tableHtml += '<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>';
+          }
+        } else {
+          if (inTable) {
+            inTable = false;
+            tableHtml += '</tbody></table>';
+            newLines.push(tableHtml);
+            tableHtml = '';
+          }
+          newLines.push(line);
+        }
+      }
+      if (inTable) {
+        tableHtml += '</tbody></table>';
+        newLines.push(tableHtml);
+      }
+
+      html = newLines.join('\n');
+
+      // Unordered lists
+      html = html.replace(/^\s*-\s+(.*$)/gim, '<li>$1</li>');
+      html = html.replace(/(<li>.*<\/li>(\n|.)*?)(?!<li>)/g, '<ul>$1</ul>');
+
+      // Numbered lists
+      html = html.replace(/^\s*\d+\.\s+(.*$)/gim, '<li>$1</li>');
+
+      // Paragraphs
+      html = html.split('\n\n').map(p => {
+        p = p.trim();
+        if (!p) return '';
+        if (p.startsWith('<h') || p.startsWith('<table') || p.startsWith('<ul') || p.startsWith('<ol') || p.startsWith('<blockquote') || p.startsWith('<hr')) {
+          return p;
+        }
+        return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+      }).join('\n');
+
+      return html;
+    }
+
+    async function initRehber() {
+      const urlParams = new URLSearchParams(window.location.search);
+      let slug = urlParams.get('slug');
+
+      // Check pathname if URL is like /rehber/slug-name
+      if (!slug) {
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        if (pathParts.length >= 2 && pathParts[0] === 'rehber') {
+          slug = pathParts[1];
+        }
+      }
+
+      try {
+        const res = await fetch('/api/seo/articles?limit=50');
+        if (!res.ok) throw new Error('API route unavailable');
+        const data = await res.json();
+        _allArticles = data.articles || [];
+      } catch (e) {
+        try {
+          const resStatic = await fetch('./data/seo_articles.json');
+          const staticData = await resStatic.json();
+          _allArticles = (staticData || []).map(a => ({
+            ...a,
+            internal_links: a.internal_links || (a.internal_links_json ? JSON.parse(a.internal_links_json) : [])
+          }));
+        } catch (err) {
+          console.error("Error loading SEO articles:", err);
+        }
+      }
+
+      if (_allArticles.length > 0) {
+        if (slug) {
+          showArticleDetail(slug);
+        } else {
+          showDirectory();
+        }
+      } else {
+        document.getElementById('articles-grid').innerHTML = `
+          <div style="grid-column:1/-1; text-align:center; padding:40px; color:#ef4444;">
+            Rehberler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyiniz.
+          </div>
+        `;
+      }
+    }
+
+    function showDirectory() {
+      document.getElementById('directory-view').classList.remove('hidden');
+      document.getElementById('article-view').classList.add('hidden');
+      document.getElementById('rehber-hero').classList.remove('hidden');
+
+      document.title = "Teknik FPV & Drone Mühendislik Rehberleri | Pozitron Market";
+      renderArticlesGrid(_allArticles);
+    }
+
+    function renderArticlesGrid(articles) {
+      const grid = document.getElementById('articles-grid');
+      if (!articles || articles.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">
+            Aranan kriterlere uygun rehber bulunamadı.
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = articles.map(a => {
+        const dateStr = a.created_at ? a.created_at.split('T')[0] : '';
+        const linksCount = a.internal_links ? a.internal_links.length : 0;
+        const tag = a.component_focus ? a.component_focus.split(' ')[0] : 'FPV';
+
+        return `
+          <a href="/rehber.html?slug=${encodeURIComponent(a.slug)}" class="article-card">
+            <div>
+              <div class="card-meta-row">
+                <span class="card-tag">${tag}</span>
+                <span class="card-date">${dateStr}</span>
+              </div>
+              <h2 class="card-title">${a.title}</h2>
+              <div class="card-keywords">
+                <strong>Odak:</strong> ${a.target_keywords || 'FPV Donanım'}
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <span class="links-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                ${linksCount} Uyumlu Parça
+              </span>
+              <span class="read-more-btn">
+                Rehberi Oku &rarr;
+              </span>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    function filterArticles() {
+      const query = (document.getElementById('rehber-search').value || '').toLowerCase();
+      if (!query) {
+        renderArticlesGrid(_allArticles);
+        return;
+      }
+      const filtered = _allArticles.filter(a => {
+        return (a.title && a.title.toLowerCase().includes(query)) ||
+               (a.component_focus && a.component_focus.toLowerCase().includes(query)) ||
+               (a.target_keywords && a.target_keywords.toLowerCase().includes(query)) ||
+               (a.content_markdown && a.content_markdown.toLowerCase().includes(query));
+      });
+      renderArticlesGrid(filtered);
+    }
+
+    function showArticleDetail(slug) {
+      const article = _allArticles.find(a => a.slug === slug);
+      if (!article) {
+        showDirectory();
+        return;
+      }
+
+      document.getElementById('directory-view').classList.add('hidden');
+      document.getElementById('rehber-hero').classList.add('hidden');
+      document.getElementById('article-view').classList.remove('hidden');
+
+      // Update Page Meta
+      document.title = `${article.title} | Pozitron Market`;
+      const metaDesc = document.getElementById('meta-desc');
+      if (metaDesc) metaDesc.content = `${article.title} - Pozitron Market FPV Donanım Mühendisliği Rehberi.`;
+
+      document.getElementById('breadcrumb-title').textContent = article.title;
+      document.getElementById('art-title').textContent = article.title;
+      document.getElementById('art-date').innerHTML = `
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        ${article.created_at ? article.created_at.split('T')[0] : ''}
+      `;
+
+      // Render Markdown Body
+      const contentEl = document.getElementById('art-content');
+      contentEl.innerHTML = parseMarkdown(article.content_markdown || '');
+
+      // Render Internal Linked Products in Sidebar
+      const prodList = document.getElementById('art-products-list');
+      if (article.internal_links && article.internal_links.length > 0) {
+        prodList.innerHTML = article.internal_links.map(p => `
+          <a href="${p.url}" class="product-link-item" target="_blank" rel="noopener">
+            <span class="prod-sku">SKU: ${p.sku}</span>
+            <span class="prod-name">${p.name}</span>
+            <div class="prod-cta">
+              <span>Türkiye Stoklarında</span>
+              <span>İncele &rarr;</span>
+            </div>
+          </a>
+        `).join('');
+      } else {
+        prodList.innerHTML = `
+          <div style="font-size:0.8rem; color:var(--text-muted);">
+            Bu rehbere doğrudan bağlı donanım bulunamadı. <a href="/" style="color:#38bdf8;">Tüm kataloğa göz atın</a>.
+          </div>
+        `;
+      }
+
+      // Inject JSON-LD Schema
+      const schemaEl = document.getElementById('article-schema');
+      if (schemaEl) {
+        schemaEl.textContent = JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "TechArticle",
+          "headline": article.title,
+          "author": {
+            "@type": "Organization",
+            "name": "Pozitron Market FPV Donanım Ar-Ge"
+          },
+          "datePublished": article.created_at || new Date().toISOString(),
+          "description": article.component_focus || article.title,
+          "publisher": {
+            "@type": "Organization",
+            "name": "Pozitron Market",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://pozitronmarket.com/assets/logo.svg"
+            }
+          }
+        }, null, 2);
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function copyArticleLink() {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert("Rehber bağlantısı panoya kopyalandı!");
+      });
+    }
+
+    function shareOnWhatsApp() {
+      const url = encodeURIComponent(window.location.href);
+      const text = encodeURIComponent(document.title);
+      window.open(`https://api.whatsapp.com/send?text=${text}%20${url}`, '_blank');
+    }
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', initRehber);
+  </script>
+</body>
+</html>

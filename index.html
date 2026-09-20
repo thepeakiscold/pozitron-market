@@ -262,6 +262,12 @@
           <span data-i18n="nav_builder">Drone Topla</span>
         </button>
 
+        <!-- FPV Engineering Guides Link -->
+        <a href="/rehber.html" class="btn-builder-nav" id="open-rehber-btn" aria-label="Teknik FPV Rehberleri" title="Teknik FPV &amp; Drone Rehberleri" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <span>Rehberler</span>
+        </a>
+
         <!-- Direct Admin Panel Button (Shown when Admin is Logged In) -->
         <a href="admin.html" class="btn-admin-nav" id="header-admin-btn" style="display:none; align-items:center; gap:6px; background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; padding:7px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; transition:all 0.2s ease;" title="Stok & Fiyat Yönetim Paneli">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -525,6 +531,34 @@
       </div>
     </section>
 
+    <!-- Engineering Guides & SEO Showcase Section -->
+    <section class="guides-showcase-section" id="guides-showcase-section" aria-label="Teknik FPV &amp; Drone Mühendislik Rehberleri" style="background:#070b14; border-top:1px solid #1e293b; border-bottom:1px solid #1e293b; padding:48px 0;">
+      <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:32px;">
+          <div>
+            <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(2,132,199,0.15); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; padding:3px 10px; border-radius:20px; font-size:0.75rem; font-weight:700; text-transform:uppercase; margin-bottom:8px;">
+              <span>Pozitron Ar-Ge Laboratuvarı</span>
+            </div>
+            <h2 style="font-family:'Plus Jakarta Sans',sans-serif; font-size:1.8rem; font-weight:800; color:#ffffff; margin:0 0 6px 0; letter-spacing:-0.02em;">
+              FPV &amp; Drone Mühendislik Rehberleri
+            </h2>
+            <p style="color:#94a3b8; font-size:0.92rem; margin:0; max-width:650px;">
+              Betaflight konfigürasyonları, UART pinout bağlantı şemaları, LiPo batarya güvenliği ve ESC protokolleri üzerine detaylı saha rehberleri.
+            </p>
+          </div>
+          <a href="/rehber.html" style="display:inline-flex; align-items:center; gap:6px; background:#0284c7; color:#ffffff; text-decoration:none; padding:10px 20px; border-radius:10px; font-weight:700; font-size:0.88rem; transition:background 0.2s ease;">
+            <span>Tüm Rehberleri İncele &rarr;</span>
+          </a>
+        </div>
+
+        <div id="home-guides-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+          <div style="text-align:center; padding:30px; color:#64748b; grid-column:1/-1;">
+            Rehberler yükleniyor...
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Community Comments & Pilot Reviews Section -->
     <section class="comments-section" id="comments-section" aria-label="Müşteri Değerlendirmeleri ve Pilot Yorumları">
       <div class="container">
@@ -608,6 +642,7 @@
         <ul class="footer-links">
           <li><a href="./drone-toplama-sihirbazi.html" id="footer-builder-link" data-i18n="footer_builder">Drone Uyumluluk Sihirbazı</a></li>
           <li><a href="./3d-baski-studio.html" id="footer-3d-link" data-i18n="footer_3d_studio">3D Baskı Studio (Özel İmalat)</a></li>
+          <li><a href="./rehber.html" id="footer-rehber-link">Teknik FPV Rehberleri &amp; Blog</a></li>
           <li><a href="#shipping" data-i18n="footer_shipping">Teslimat &amp; Aynı Gün Kargo</a></li>
           <li><a href="./iade-politikasi.html" target="_blank" rel="noopener" data-i18n="footer_returns">İade ve Geri Ödeme Politikası (14 Gün İade)</a></li>
           <li><a href="#faq" data-i18n="footer_faq">Sıkça Sorulan Sorular (SSS)</a></li>
@@ -1389,5 +1424,59 @@
   <script src="./i18n.js?v=20260912_no_seed_reviews"></script>
   <script src="./api.js?v=20260918_cloud_api"></script>
   <script src="./app.js?v=20260912_no_seed_reviews"></script>
+
+  <!-- Load Dynamic FPV Guides for Showcase -->
+  <script>
+    async function loadHomeGuides() {
+      const grid = document.getElementById('home-guides-grid');
+      if (!grid) return;
+      let articles = [];
+      try {
+        const res = await fetch('/api/seo/articles?limit=3');
+        if (!res.ok) throw new Error('API route unavailable');
+        const data = await res.json();
+        articles = data.articles || [];
+      } catch (e) {
+        try {
+          const resStatic = await fetch('./data/seo_articles.json');
+          const staticData = await resStatic.json();
+          articles = (staticData || []).slice(0, 3).map(a => ({
+            ...a,
+            internal_links: a.internal_links || (a.internal_links_json ? JSON.parse(a.internal_links_json) : [])
+          }));
+        } catch (err) {
+          console.error("Home guides load error:", err);
+        }
+      }
+
+      if (!articles || articles.length === 0) {
+        grid.innerHTML = '<div style="color:#64748b; text-align:center; grid-column:1/-1;">Henüz yayınlanmış rehber bulunmuyor.</div>';
+        return;
+      }
+
+      grid.innerHTML = articles.map(a => {
+        const dateStr = a.created_at ? a.created_at.split('T')[0] : '';
+        const linksCount = a.internal_links ? a.internal_links.length : 0;
+        const tag = a.component_focus ? a.component_focus.split(' ')[0] : 'FPV';
+        return `
+          <a href="/rehber.html?slug=${encodeURIComponent(a.slug)}" style="background:#0d1527; border:1px solid #1e293b; border-radius:12px; padding:22px; text-decoration:none; color:inherit; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.2s ease; box-shadow:0 4px 14px rgba(0,0,0,0.3);" onmouseover="this.style.borderColor='#38bdf8'; this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='#1e293b'; this.style.transform='none'">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:0.72rem; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.1); padding:2px 8px; border-radius:4px; border:1px solid rgba(56,189,248,0.2);">${tag}</span>
+                <span style="font-size:0.75rem; color:#64748b;">${dateStr}</span>
+              </div>
+              <h3 style="font-family:'Plus Jakarta Sans',sans-serif; font-size:1.1rem; font-weight:700; color:#ffffff; margin-bottom:8px; line-height:1.4;">${a.title}</h3>
+              <p style="font-size:0.78rem; color:#94a3b8; margin-bottom:14px; line-height:1.4;"><strong>Odak:</strong> ${a.target_keywords || 'FPV Donanım'}</p>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #1e293b; padding-top:12px; margin-top:6px; font-size:0.75rem;">
+              <span style="color:#10b981; font-weight:600;">${linksCount} Uyumlu Parça</span>
+              <span style="color:#38bdf8; font-weight:700;">Rehberi Oku &rarr;</span>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+    window.addEventListener('DOMContentLoaded', loadHomeGuides);
+  </script>
 </body>
 </html>
