@@ -1207,14 +1207,27 @@
                 <div style="display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;">
                   <button type="button" class="btn-primary btn-upload-model" style="display:inline-flex; align-items:center; justify-content:center; cursor:pointer; margin:0;" onclick="event.stopPropagation(); window.app && window.app.trigger3DFileUpload(event)">Dosya Seç</button>
                 </div>
+                <!-- Quick Demo Model Presets -->
+                <div style="display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:14px; border-top:1px dashed #e2e8f0; padding-top:12px;">
+                  <button type="button" class="btn-sample-model" style="background:#fdf2f8; color:#be185d; border:1px solid #fbcfe8; padding:6px 12px; border-radius:6px; font-size:0.8rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" onclick="event.stopPropagation(); window.app && window.app.load3DSamplePreset('gopro_mount')">
+                    <span>🚀 Örnek GoPro Mount (TPU)</span>
+                  </button>
+                  <button type="button" class="btn-sample-model" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:6px 12px; border-radius:6px; font-size:0.8rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" onclick="event.stopPropagation(); window.app && window.app.load3DSamplePreset('motor_guard')">
+                    <span>🛡️ Örnek Motor Koruma</span>
+                  </button>
+                </div>
               </div>
             </div>
+
+            <!-- Viewport 10-Second Calculating & Slicing Overlay -->
+            <div id="viewport-calculating-overlay" class="calculating-screen-container studio-3d-theme" style="display:none;"></div>
 
             <!-- Viewport Controls Overlay (wireframe, rotate, reset, change file) -->
             <div class="viewport-floating-controls" id="viewport-floating-controls" style="display:none;">
               <button type="button" class="ctrl-btn" id="btn-3d-wireframe" title="Tel Kafes / Katı Mod" onclick="window.app && window.app.toggle3DWireframe()">Tel Kafes</button>
               <button type="button" class="ctrl-btn" id="btn-3d-autorotate" title="Otomatik Döndür" onclick="window.app && window.app.toggle3DAutoRotate()">Döndür</button>
               <button type="button" class="ctrl-btn" id="btn-3d-reset-cam" title="Kamerayı Sıfırla" onclick="window.app && window.app.reset3DCamera()">Ortala</button>
+              <button type="button" class="ctrl-btn" id="btn-3d-recalculate" title="Slicing ve Fiyatı Yeniden Hesapla" style="color:#db2777; background:#ffffff; font-weight:700;" onclick="window.app && window.app.trigger3DRecalculate()">Dilimle &amp; Hesapla</button>
               <button type="button" class="ctrl-btn" style="color:#0284c7; background:#ffffff; font-weight:700; cursor:pointer; display:inline-flex; align-items:center;" onclick="window.app && window.app.trigger3DFileUpload(event)">Değiştir</button>
             </div>
           </div>

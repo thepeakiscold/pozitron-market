@@ -4163,6 +4163,17 @@ img {
   border: 2px dashed #0284c7;
 }
 
+#viewport-calculating-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  overflow-y: auto;
+  min-height: 100%;
+  height: 100%;
+  border-radius: 12px;
+  padding: 16px 14px;
+}
+
 .dropzone-inner {
   text-align: center;
   cursor: pointer;
@@ -5601,9 +5612,421 @@ img {
   .pdp-bundle-plus-separator {
     margin: 4px auto;
   }
+}/* =============================================================
+   IMAGINARY CALCULATING & SLICING SCREEN STYLES (10s SIMULATION)
+   ============================================================= */
+.calculating-screen-container {
+  background: linear-gradient(145deg, #090d16 0%, #0f172a 60%, #1e293b 100%);
+  color: #f8fafc;
+  border-radius: var(--radius-lg);
+  padding: 36px 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  animation: fadeInCalc 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 480px;
+  justify-content: center;
 }
 
+.calculating-screen-container.studio-3d-theme {
+  border-color: rgba(219, 39, 119, 0.3);
+  background: linear-gradient(145deg, #13091f 0%, #1e112a 50%, #2a113b 100%);
+}
 
+@keyframes fadeInCalc {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
 
+/* Background Animated Cyber Grid */
+.calculating-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+  opacity: 0.7;
+}
 
+.studio-3d-theme .calculating-bg-grid {
+  background-image: 
+    linear-gradient(rgba(244, 114, 182, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 114, 182, 0.06) 1px, transparent 1px);
+}
 
+/* Central Radar / Slicer Visual */
+.calculating-visual-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calculating-radar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px dashed rgba(56, 189, 248, 0.4);
+  animation: spinRadar 8s linear infinite;
+}
+
+.studio-3d-theme .calculating-radar-ring {
+  border-color: rgba(244, 114, 182, 0.4);
+}
+
+.calculating-radar-glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
+  animation: pulseRadarGlow 2s ease-in-out infinite alternate;
+}
+
+.studio-3d-theme .calculating-radar-glow {
+  background: radial-gradient(circle, rgba(219, 39, 119, 0.3) 0%, transparent 70%);
+}
+
+.calculating-icon-center {
+  position: relative;
+  z-index: 2;
+  width: 58px;
+  height: 58px;
+  background: #0f172a;
+  border: 2px solid #38bdf8;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+}
+
+.studio-3d-theme .calculating-icon-center {
+  border-color: #f472b6;
+  color: #f472b6;
+  box-shadow: 0 0 20px rgba(219, 39, 119, 0.5);
+}
+
+@keyframes spinRadar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulseRadarGlow {
+  0% { transform: scale(0.92); opacity: 0.5; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
+
+/* Slicing Laser Beam for 3D Studio */
+.calculating-slicer-laser {
+  position: absolute;
+  width: 120%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ec4899, #f472b6, transparent);
+  box-shadow: 0 0 10px #ec4899;
+  animation: laserScan 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes laserScan {
+  0% { top: 10%; opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { top: 90%; opacity: 0.3; }
+}
+
+/* Titles */
+.calculating-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.calculating-sub {
+  font-size: 0.92rem;
+  color: #94a3b8;
+  max-width: 540px;
+  margin-bottom: 22px;
+  line-height: 1.45;
+}
+
+/* Countdown & Progress Row */
+.calculating-timer-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(2, 132, 199, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  padding: 8px 20px;
+  border-radius: 9999px;
+  margin-bottom: 18px;
+  box-shadow: 0 0 15px rgba(2, 132, 199, 0.2);
+}
+
+.studio-3d-theme .calculating-timer-banner {
+  background: rgba(219, 39, 119, 0.2);
+  border-color: rgba(244, 114, 182, 0.5);
+  box-shadow: 0 0 15px rgba(219, 39, 119, 0.2);
+}
+
+.calculating-timer-icon {
+  font-size: 1.2rem;
+  animation: timerBounce 1s infinite alternate;
+}
+
+@keyframes timerBounce {
+  0% { transform: translateY(-1px) scale(0.98); }
+  100% { transform: translateY(1px) scale(1.06); }
+}
+
+.calculating-timer-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.02em;
+}
+
+.studio-3d-theme .calculating-timer-text {
+  color: #fbcfe8;
+}
+
+.calculating-timer-seconds {
+  background: #38bdf8;
+  color: #0f172a;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 900;
+  display: inline-block;
+  min-width: 24px;
+}
+
+.studio-3d-theme .calculating-timer-seconds {
+  background: #f472b6;
+  color: #1e112a;
+}
+
+/* Progress Bar */
+.calculating-progress-track {
+  width: 100%;
+  max-width: 620px;
+  height: 12px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  position: relative;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.studio-3d-theme .calculating-progress-track {
+  border-color: rgba(244, 114, 182, 0.25);
+}
+
+.calculating-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #0284c7 0%, #38bdf8 50%, #818cf8 100%);
+  border-radius: 9999px;
+  transition: width 0.12s linear;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.studio-3d-theme .calculating-progress-fill {
+  background: linear-gradient(90deg, #be185d 0%, #f472b6 50%, #fb7185 100%);
+  box-shadow: 0 0 14px rgba(244, 114, 182, 0.8);
+}
+
+.calculating-progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    45deg, 
+    rgba(255, 255, 255, 0.2) 25%, 
+    transparent 25%, 
+    transparent 50%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.2) 75%, 
+    transparent 75%, 
+    transparent
+  );
+  background-size: 24px 24px;
+  animation: progressStripes 1.2s linear infinite;
+}
+
+@keyframes progressStripes {
+  from { background-position: 0 0; }
+  to { background-position: 24px 0; }
+}
+
+.calculating-pct-text {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #7dd3fc;
+  margin-bottom: 24px;
+}
+
+.studio-3d-theme .calculating-pct-text {
+  color: #f472b6;
+}
+
+/* Step-by-Step Engineering Milestones Terminal */
+.calculating-steps-box {
+  width: 100%;
+  max-width: 640px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  text-align: left;
+  margin-bottom: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.studio-3d-theme .calculating-steps-box {
+  background: rgba(24, 12, 38, 0.8);
+  border-color: rgba(244, 114, 182, 0.2);
+}
+
+.calculating-step-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #64748b;
+  transition: all 0.25s ease;
+}
+
+.calculating-step-row.active {
+  background: rgba(2, 132, 199, 0.15);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.studio-3d-theme .calculating-step-row.active {
+  background: rgba(219, 39, 119, 0.15);
+}
+
+.calculating-step-row.completed {
+  color: #94a3b8;
+}
+
+.calc-step-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #64748b;
+}
+
+.calculating-step-row.active .calc-step-icon {
+  border-color: #38bdf8;
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: pulseDot 1s infinite alternate;
+}
+
+.studio-3d-theme .calculating-step-row.active .calc-step-icon {
+  border-color: #f472b6;
+  background: #db2777;
+  box-shadow: 0 0 8px #f472b6;
+}
+
+.calculating-step-row.completed .calc-step-icon {
+  border-color: #10b981;
+  background: #065f46;
+  color: #34d399;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.9); }
+  100% { transform: scale(1.1); }
+}
+
+.calc-step-name {
+  flex: 1;
+}
+
+.calc-step-status {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  min-width: 75px;
+  text-align: right;
+}
+
+.calculating-step-row.active .calc-step-status {
+  color: #38bdf8;
+}
+
+.studio-3d-theme .calculating-step-row.active .calc-step-status {
+  color: #f472b6;
+}
+
+.calculating-step-row.completed .calc-step-status {
+  color: #10b981;
+}
+
+/* Telemetry Micro Stats Tiles */
+.calculating-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+}
+
+@media (max-width: 640px) {
+  .calculating-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.calc-stat-tile {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.calc-stat-tile .label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.calc-stat-tile .value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.studio-3d-theme .calc-stat-tile .value {
+  color: #f472b6;
+}

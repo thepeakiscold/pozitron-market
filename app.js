@@ -3100,6 +3100,10 @@ class PozitronApp {
     const body = document.getElementById('builder-modal-body');
     if (!body) return;
 
+    if (this._isDroneCalculating) {
+      return;
+    }
+
     const lang = window.i18n.currentLang;
     const tab = this.builderState.activeTab || 'auto';
 
@@ -3262,6 +3266,11 @@ class PozitronApp {
   }
 
   switchBuilderTab(tab) {
+    if (this._droneCalcInterval) {
+      clearInterval(this._droneCalcInterval);
+      this._droneCalcInterval = null;
+    }
+    this._isDroneCalculating = false;
     this.builderState.activeTab = tab;
     this.currentGeneratedBuild = null;
     this.renderBuilderModal();
@@ -3451,7 +3460,7 @@ class PozitronApp {
     const validItems = items.filter(it => it.product != null);
     const totalPrice = validItems.reduce((sum, it) => sum + (it.product.price_try * it.qty), 0);
 
-    this.currentGeneratedBuild = {
+    const buildResult = {
       style,
       video,
       targetBudget: budget,
@@ -3460,7 +3469,156 @@ class PozitronApp {
       generatedAt: new Date().toISOString()
     };
 
-    this.renderBuilderModal();
+    this.startDroneCalculatingSimulation(buildResult);
+  }
+
+  startDroneCalculatingSimulation(buildResult) {
+    const body = document.getElementById('builder-modal-body');
+    if (!body) return;
+
+    if (this._droneCalcInterval) {
+      clearInterval(this._droneCalcInterval);
+      this._droneCalcInterval = null;
+    }
+
+    this._isDroneCalculating = true;
+    const lang = window.i18n.currentLang;
+    const totalDuration = 10000; // 10 seconds simulation
+    let elapsed = 0;
+
+    const steps = [
+      { id: 1, tr: 'Uçuş tarzı ve bütçe parametreleri analiz ediliyor...', en: 'Analyzing flight profile & target budget...', duration: 1500 },
+      { id: 2, tr: '500+ FPV donanım veritabanı taranıyor & filtreleniyor...', en: 'Scanning 500+ FPV component database & applying filters...', duration: 2000 },
+      { id: 3, tr: '4S / 6S voltaj & ESC amper dayanım sinerjisi simüle ediliyor...', en: 'Simulating 4S / 6S voltage & ESC current headroom synergy...', duration: 2000 },
+      { id: 4, tr: 'Motor KV, pervane hatvesi ve itiş gücü (T/W) hesaplanıyor...', en: 'Calculating motor KV, propeller pitch & thrust-to-weight ratio...', duration: 2000 },
+      { id: 5, tr: 'Gövde montaj delikleri (20x20 / 30.5x30.5mm stack) doğrulanıyor...', en: 'Verifying frame stack mounting screw spacing & clearance...', duration: 1500 },
+      { id: 6, tr: 'Bütçe ve performans optimizasyonu tamamlandı!', en: 'Budget and performance optimization complete!', duration: 1000 }
+    ];
+
+    body.innerHTML = `
+      <div class="calculating-screen-container" id="drone-calculating-screen">
+        <div class="calculating-bg-grid"></div>
+
+        <div class="calculating-visual-wrap">
+          <div class="calculating-radar-glow"></div>
+          <div class="calculating-radar-ring"></div>
+          <div class="calculating-icon-center">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+        </div>
+
+        <h3 class="calculating-title">${lang === 'tr' ? 'Pozitron Akıllı Drone Mühendislik Motoru' : 'Pozitron Smart Drone Engineering Engine'}</h3>
+        <p class="calculating-sub">${lang === 'tr' ? 'Bileşen sinerjisi, voltaj uyumluluğu, montaj vida delikleri ve itiş-ağırlık dinamikleri hesaplanıyor.' : 'Calculating component synergy, voltage compatibility, stack fit, and thrust dynamics.'}</p>
+
+        <!-- Countdown Banner -->
+        <div class="calculating-timer-banner">
+          <span class="calculating-timer-icon">⏳</span>
+          <span class="calculating-timer-text">
+            ${lang === 'tr' ? 'Kalan Süre:' : 'Remaining Time:'} 
+            <span class="calculating-timer-seconds" id="drone-calc-countdown">10</span> 
+            ${lang === 'tr' ? 'saniye' : 'seconds'}
+          </span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="calculating-progress-track">
+          <div class="calculating-progress-fill" id="drone-calc-progress" style="width: 0%;"></div>
+        </div>
+        <div class="calculating-pct-text" id="drone-calc-pct">0% ${lang === 'tr' ? 'Tamamlandı' : 'Completed'}</div>
+
+        <!-- Step-by-Step Logs -->
+        <div class="calculating-steps-box" id="drone-calc-steps-box">
+          ${steps.map((s, idx) => `
+            <div class="calculating-step-row ${idx === 0 ? 'active' : ''}" id="drone-step-row-${s.id}">
+              <span class="calc-step-icon" id="drone-step-icon-${s.id}">${idx === 0 ? '▶' : (idx + 1)}</span>
+              <span class="calc-step-name">${lang === 'tr' ? s.tr : s.en}</span>
+              <span class="calc-step-status" id="drone-step-status-${s.id}">${idx === 0 ? (lang === 'tr' ? 'İşleniyor' : 'Processing') : (lang === 'tr' ? 'Bekliyor' : 'Waiting')}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Simulated Telemetry Tiles -->
+        <div class="calculating-stats-grid">
+          <div class="calc-stat-tile">
+            <span class="label">${lang === 'tr' ? 'Taranan Parça' : 'Scanned Parts'}</span>
+            <span class="value" id="drone-stat-parts">0 / 506</span>
+          </div>
+          <div class="calc-stat-tile">
+            <span class="label">${lang === 'tr' ? 'Voltaj Sinerjisi' : 'Voltage Synergy'}</span>
+            <span class="value" id="drone-stat-voltage">4S / 6S</span>
+          </div>
+          <div class="calc-stat-tile">
+            <span class="label">${lang === 'tr' ? 'ESC Güvenlik Payı' : 'ESC Margin'}</span>
+            <span class="value" id="drone-stat-esc">+25% Amper</span>
+          </div>
+          <div class="calc-stat-tile">
+            <span class="label">${lang === 'tr' ? 'Stack Montajı' : 'Stack Clearance'}</span>
+            <span class="value" id="drone-stat-stack">20×20 & 30×30</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const intervalMs = 100;
+    this._droneCalcInterval = setInterval(() => {
+      elapsed += intervalMs;
+      const progressPct = Math.min(100, Math.round((elapsed / totalDuration) * 100));
+      const remainingSeconds = Math.max(0, Math.ceil((totalDuration - elapsed) / 1000));
+
+      const countdownEl = document.getElementById('drone-calc-countdown');
+      const progressEl = document.getElementById('drone-calc-progress');
+      const pctEl = document.getElementById('drone-calc-pct');
+      const partsEl = document.getElementById('drone-stat-parts');
+
+      if (countdownEl) countdownEl.textContent = remainingSeconds;
+      if (progressEl) progressEl.style.width = `${progressPct}%`;
+      if (pctEl) pctEl.textContent = `${progressPct}% ${lang === 'tr' ? 'Tamamlandı' : 'Completed'}`;
+      if (partsEl) {
+        const currentScanned = Math.min(506, Math.round((elapsed / totalDuration) * 506));
+        partsEl.textContent = `${currentScanned} / 506`;
+      }
+
+      let accumulatedTime = 0;
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        const stepStart = accumulatedTime;
+        const stepEnd = accumulatedTime + step.duration;
+        accumulatedTime = stepEnd;
+
+        const row = document.getElementById(`drone-step-row-${step.id}`);
+        const icon = document.getElementById(`drone-step-icon-${step.id}`);
+        const status = document.getElementById(`drone-step-status-${step.id}`);
+
+        if (row && icon && status) {
+          if (elapsed >= stepEnd) {
+            row.className = 'calculating-step-row completed';
+            icon.textContent = '✓';
+            status.textContent = lang === 'tr' ? 'Tamamlandı' : 'Verified';
+          } else if (elapsed >= stepStart) {
+            row.className = 'calculating-step-row active';
+            icon.textContent = '▶';
+            status.textContent = lang === 'tr' ? 'Hesaplanıyor' : 'Calculating';
+          } else {
+            row.className = 'calculating-step-row';
+            icon.textContent = (i + 1);
+            status.textContent = lang === 'tr' ? 'Bekliyor' : 'Waiting';
+          }
+        }
+      }
+
+      if (elapsed >= totalDuration) {
+        clearInterval(this._droneCalcInterval);
+        this._droneCalcInterval = null;
+        this._isDroneCalculating = false;
+        this.currentGeneratedBuild = buildResult;
+
+        setTimeout(() => {
+          this.renderBuilderModal();
+        }, 300);
+      }
+    }, intervalMs);
   }
 
   renderBuildResultView(body) {
@@ -3658,6 +3816,11 @@ class PozitronApp {
   }
 
   resetBuildResult() {
+    if (this._droneCalcInterval) {
+      clearInterval(this._droneCalcInterval);
+      this._droneCalcInterval = null;
+    }
+    this._isDroneCalculating = false;
     this.currentGeneratedBuild = null;
     this.renderBuilderModal();
   }
@@ -3788,7 +3951,13 @@ class PozitronApp {
   }
 
   closeBuilderModal() {
-    document.getElementById('builder-modal-backdrop').style.display = 'none';
+    if (this._droneCalcInterval) {
+      clearInterval(this._droneCalcInterval);
+      this._droneCalcInterval = null;
+    }
+    this._isDroneCalculating = false;
+    const modal = document.getElementById('builder-modal-backdrop');
+    if (modal) modal.style.display = 'none';
   }
 
   showToast(message, type = 'success') {
@@ -3930,6 +4099,14 @@ class PozitronApp {
   }
 
   close3DStudioModal() {
+    if (this._3dCalcInterval) {
+      clearInterval(this._3dCalcInterval);
+      this._3dCalcInterval = null;
+    }
+    this._is3DCalculating = false;
+    const overlay = document.getElementById('viewport-calculating-overlay');
+    if (overlay) overlay.style.display = 'none';
+
     const modal = document.getElementById('studio-3d-modal-backdrop');
     if (modal) modal.style.display = 'none';
   }
@@ -4076,6 +4253,281 @@ class PozitronApp {
     }
   }
 
+  start3DCalculatingSimulation(filename, onComplete) {
+    const overlay = document.getElementById('viewport-calculating-overlay');
+    const dropzone = document.getElementById('viewport-dropzone');
+    const controls = document.getElementById('viewport-floating-controls');
+    const metrics = document.getElementById('model-metrics-bar');
+
+    if (dropzone) {
+      dropzone.style.display = 'none';
+      dropzone.classList.add('hidden');
+    }
+    if (controls) controls.style.display = 'none';
+    if (metrics) metrics.style.display = 'none';
+
+    if (!overlay) {
+      if (typeof onComplete === 'function') onComplete();
+      return;
+    }
+
+    if (this._3dCalcInterval) {
+      clearInterval(this._3dCalcInterval);
+      this._3dCalcInterval = null;
+    }
+
+    this._is3DCalculating = true;
+    overlay.style.display = 'flex';
+    const lang = window.i18n.currentLang;
+    const totalDuration = 10000; // 10 seconds simulation
+    let elapsed = 0;
+
+    const steps = [
+      { id: 1, tr: '3D CAD mesh geometrisi ve üçgen ağları (Triangulation) taranıyor...', en: 'Parsing 3D CAD mesh geometry & triangulation...', duration: 1500 },
+      { id: 2, tr: 'Manifold geometri, delik ve yüzey normali hataları denetleniyor...', en: 'Checking manifold geometry, holes & surface normals...', duration: 2000 },
+      { id: 3, tr: 'Bambu Lab P1P (256×256mm) baskı tablası yerleşimi simüle ediliyor...', en: 'Simulating Bambu Lab P1P (256x256mm) build plate orientation...', duration: 2000 },
+      { id: 4, tr: 'Katman dilimleme (Slicing) ve petek doluluk (Infill) takım yolları hesaplanıyor...', en: 'Calculating slicing layer toolpaths & infill generation...', duration: 2000 },
+      { id: 5, tr: 'Destek yapıları (Support) ve net filament sarfiyat gramajı ölçülüyor...', en: 'Estimating support structures & filament weight in grams...', duration: 1500 },
+      { id: 6, tr: 'Katman baskı süresi ve mühendislik maliyet analizi tamamlandı!', en: 'Layer print time and engineering cost analysis complete!', duration: 1000 }
+    ];
+
+    overlay.innerHTML = `
+      <div class="calculating-bg-grid"></div>
+      <div class="calculating-slicer-laser"></div>
+
+      <div class="calculating-visual-wrap" style="margin-bottom:12px; width:72px; height:72px;">
+        <div class="calculating-radar-glow"></div>
+        <div class="calculating-radar-ring"></div>
+        <div class="calculating-icon-center" style="width:48px; height:48px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+        </div>
+      </div>
+
+      <h3 class="calculating-title" style="font-size:1.18rem; margin-bottom:4px;">${lang === 'tr' ? '3D Model Dilimleniyor & Hesaplanıyor' : 'Slicing & Analyzing 3D Model'}</h3>
+      <p class="calculating-sub" style="font-size:0.8rem; margin-bottom:12px; max-width:440px;">${filename || (lang === 'tr' ? '3D CAD Modeli' : '3D CAD Model')} — ${lang === 'tr' ? 'Bambu Lab P1P endüstriyel dilimleme ve hacim analizi yapılıyor.' : 'Running Bambu Lab P1P industrial slicing & volume calculation.'}</p>
+
+      <!-- Countdown Banner -->
+      <div class="calculating-timer-banner" style="padding:5px 14px; margin-bottom:12px;">
+        <span class="calculating-timer-icon" style="font-size:1rem;">⏳</span>
+        <span class="calculating-timer-text" style="font-size:0.9rem;">
+          ${lang === 'tr' ? 'Kalan Süre:' : 'Remaining Time:'} 
+          <span class="calculating-timer-seconds" id="studio-calc-countdown">10</span> 
+          ${lang === 'tr' ? 'saniye' : 'seconds'}
+        </span>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="calculating-progress-track" style="margin-bottom:6px; max-width:460px; height:10px;">
+        <div class="calculating-progress-fill" id="studio-calc-progress" style="width: 0%;"></div>
+      </div>
+      <div class="calculating-pct-text" id="studio-calc-pct" style="margin-bottom:10px; font-size:0.78rem;">0% ${lang === 'tr' ? 'Dilimlendi' : 'Sliced'}</div>
+
+      <!-- Step Logs -->
+      <div class="calculating-steps-box" id="studio-calc-steps-box" style="margin-bottom:12px; padding:8px 12px; max-width:480px;">
+        ${steps.map((s, idx) => `
+          <div class="calculating-step-row ${idx === 0 ? 'active' : ''}" id="studio-step-row-${s.id}" style="padding:4px 6px; font-size:0.76rem; gap:8px;">
+            <span class="calc-step-icon" id="studio-step-icon-${s.id}" style="width:16px; height:16px; font-size:0.65rem;">${idx === 0 ? '▶' : (idx + 1)}</span>
+            <span class="calc-step-name">${lang === 'tr' ? s.tr : s.en}</span>
+            <span class="calc-step-status" id="studio-step-status-${s.id}" style="font-size:0.72rem;">${idx === 0 ? (lang === 'tr' ? 'İşleniyor' : 'Processing') : (lang === 'tr' ? 'Bekliyor' : 'Waiting')}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Simulated Telemetry Tiles -->
+      <div class="calculating-stats-grid" style="max-width:480px;">
+        <div class="calc-stat-tile" style="padding:5px 6px;">
+          <span class="label" style="font-size:0.65rem;">${lang === 'tr' ? 'Dilim Katmanı' : 'Slicing Layer'}</span>
+          <span class="value" id="studio-stat-layer" style="font-size:0.82rem;">0 / 342</span>
+        </div>
+        <div class="calc-stat-tile" style="padding:5px 6px;">
+          <span class="label" style="font-size:0.65rem;">${lang === 'tr' ? 'Doluluk (Infill)' : 'Infill Density'}</span>
+          <span class="value" style="font-size:0.82rem;">%${this._3dConfig.infill || 20}</span>
+        </div>
+        <div class="calc-stat-tile" style="padding:5px 6px;">
+          <span class="label" style="font-size:0.65rem;">${lang === 'tr' ? 'Baskı Tablası' : 'Build Plate'}</span>
+          <span class="value" style="font-size:0.82rem;">256×256 mm</span>
+        </div>
+        <div class="calc-stat-tile" style="padding:5px 6px;">
+          <span class="label" style="font-size:0.65rem;">${lang === 'tr' ? 'Geometri Analizi' : 'Geometry Mesh'}</span>
+          <span class="value" style="font-size:0.82rem;">%100 Manifold</span>
+        </div>
+      </div>
+    `;
+
+    const totalLayers = 342;
+    const intervalMs = 100;
+
+    this._3dCalcInterval = setInterval(() => {
+      elapsed += intervalMs;
+      const progressPct = Math.min(100, Math.round((elapsed / totalDuration) * 100));
+      const remainingSeconds = Math.max(0, Math.ceil((totalDuration - elapsed) / 1000));
+
+      const countdownEl = document.getElementById('studio-calc-countdown');
+      const progressEl = document.getElementById('studio-calc-progress');
+      const pctEl = document.getElementById('studio-calc-pct');
+      const layerEl = document.getElementById('studio-stat-layer');
+
+      if (countdownEl) countdownEl.textContent = remainingSeconds;
+      if (progressEl) progressEl.style.width = `${progressPct}%`;
+      if (pctEl) pctEl.textContent = `${progressPct}% ${lang === 'tr' ? 'Dilimlendi' : 'Sliced'}`;
+      if (layerEl) {
+        const curLayer = Math.min(totalLayers, Math.round((elapsed / totalDuration) * totalLayers));
+        layerEl.textContent = `${curLayer} / ${totalLayers}`;
+      }
+
+      let accumulatedTime = 0;
+      for (let i = 0; i < steps.length; i++) {
+        const step = steps[i];
+        const stepStart = accumulatedTime;
+        const stepEnd = accumulatedTime + step.duration;
+        accumulatedTime = stepEnd;
+
+        const row = document.getElementById(`studio-step-row-${step.id}`);
+        const icon = document.getElementById(`studio-step-icon-${step.id}`);
+        const status = document.getElementById(`studio-step-status-${step.id}`);
+
+        if (row && icon && status) {
+          if (elapsed >= stepEnd) {
+            row.className = 'calculating-step-row completed';
+            icon.textContent = '✓';
+            status.textContent = lang === 'tr' ? 'Tamamlandı' : 'Verified';
+          } else if (elapsed >= stepStart) {
+            row.className = 'calculating-step-row active';
+            icon.textContent = '▶';
+            status.textContent = lang === 'tr' ? 'Hesaplanıyor' : 'Calculating';
+          } else {
+            row.className = 'calculating-step-row';
+            icon.textContent = (i + 1);
+            status.textContent = lang === 'tr' ? 'Bekliyor' : 'Waiting';
+          }
+        }
+      }
+
+      if (elapsed >= totalDuration) {
+        clearInterval(this._3dCalcInterval);
+        this._3dCalcInterval = null;
+        this._is3DCalculating = false;
+
+        overlay.style.display = 'none';
+        if (typeof onComplete === 'function') {
+          onComplete();
+        }
+        this.showToast(lang === 'tr' ? '3D Slicing ve Fiyat Analizi Tamamlandı!' : '3D Slicing & Cost Analysis Complete!', 'success');
+      }
+    }, intervalMs);
+  }
+
+  trigger3DRecalculate() {
+    if (!this._3dConfig.filename || this._3dConfig.volumeCm3 <= 0) {
+      this.showToast('Lütfen önce bir 3D model yükleyin veya örnek model seçin.', 'info');
+      return;
+    }
+
+    this.start3DCalculatingSimulation(this._3dConfig.filename, () => {
+      this.calculate3DPrice();
+      const controls = document.getElementById('viewport-floating-controls');
+      if (controls) controls.style.display = 'flex';
+      const metrics = document.getElementById('model-metrics-bar');
+      if (metrics) metrics.style.display = 'grid';
+    });
+  }
+
+  load3DSamplePreset(presetName) {
+    if (!this._3dScene || !this._3dRenderer) {
+      this.init3DViewer();
+      this.init3DStudio();
+      this._3dViewerInitialized = true;
+    }
+
+    let filename = 'gopro_hero11_mount.stl';
+    let sizeX = 52, sizeY = 44, sizeZ = 40;
+    let volCm3 = 24.5;
+    let mat = 'TPU';
+    let colorHex = '#eab308'; // Neon Yellow
+    let colorName = 'Neon Sarı (TPU)';
+    let infill = 50;
+
+    if (presetName === 'motor_guard') {
+      filename = 'motor_arm_guard_2207.stl';
+      sizeX = 36; sizeY = 14; sizeZ = 36;
+      volCm3 = 11.2;
+      mat = 'TPU';
+      colorHex = '#f97316'; // Pozitron Orange
+      colorName = 'Pozitron Turuncu';
+      infill = 80;
+    }
+
+    this._3dConfig.filename = filename;
+    this._3dConfig.material = mat;
+    this._3dConfig.colorHex = colorHex;
+    this._3dConfig.colorName = colorName;
+    this._3dConfig.infill = infill;
+
+    this.select3DMaterial(mat);
+    this.select3DColor(colorHex, colorName);
+    this.update3DInfill(infill);
+
+    this.start3DCalculatingSimulation(filename, () => {
+      let geometry;
+      if (presetName === 'motor_guard' && typeof THREE !== 'undefined' && THREE.CylinderGeometry) {
+        geometry = new THREE.CylinderGeometry(sizeX / 2, sizeX / 2, sizeY, 32);
+      } else if (typeof THREE !== 'undefined' && THREE.BoxGeometry) {
+        geometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ);
+      }
+      if (geometry) {
+        geometry.computeVertexNormals();
+        this.renderCustomGeometryWithSpecs(geometry, filename, sizeX, sizeY, sizeZ, volCm3);
+      }
+    });
+  }
+
+  renderCustomGeometryWithSpecs(geometry, filename, sizeX, sizeY, sizeZ, volCm3) {
+    if (!this._3dScene) return;
+
+    if (this._currentMesh) {
+      this._3dScene.remove(this._currentMesh);
+      if (this._currentMesh.geometry) this._currentMesh.geometry.dispose();
+      if (this._currentMesh.material) this._currentMesh.material.dispose();
+      this._currentMesh = null;
+    }
+
+    this._3dConfig.dimX = sizeX;
+    this._3dConfig.dimY = sizeY;
+    this._3dConfig.dimZ = sizeZ;
+    this._3dConfig.volumeCm3 = volCm3;
+
+    const material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(this._3dConfig.colorHex),
+      roughness: 0.28,
+      metalness: 0.18
+    });
+
+    this._currentMesh = new THREE.Mesh(geometry, material);
+    this._currentMesh.position.y = sizeY / 2;
+    this._3dScene.add(this._currentMesh);
+
+    const maxDim = Math.max(sizeX, sizeY, sizeZ, 30);
+    this._3dCamera.position.set(0, maxDim * 1.2, maxDim * 2.2);
+    if (this._3dControls) {
+      this._3dControls.target.set(0, sizeY / 2, 0);
+      this._3dControls.update();
+    }
+
+    this.updateMetricsUI(filename, sizeX, sizeY, sizeZ, volCm3);
+    this.calculate3DPrice();
+
+    const dropzone = document.getElementById('viewport-dropzone');
+    if (dropzone) dropzone.style.display = 'none';
+    const controls = document.getElementById('viewport-floating-controls');
+    if (controls) controls.style.display = 'flex';
+    const metrics = document.getElementById('model-metrics-bar');
+    if (metrics) metrics.style.display = 'grid';
+  }
+
   handle3DFileUpload(file) {
     if (!file) return;
 
@@ -4094,28 +4546,21 @@ class PozitronApp {
     // Also upload file to localhost server backend storage
     this.upload3DFileToServer(file);
 
-    // Immediately hide dropzone and reveal controls/metrics
-    const dropzone = document.getElementById('viewport-dropzone');
-    if (dropzone) {
-      dropzone.style.display = 'none';
-      dropzone.classList.add('hidden');
-    }
-    const controls = document.getElementById('viewport-floating-controls');
-    if (controls) controls.style.display = 'flex';
-    const metrics = document.getElementById('model-metrics-bar');
-    if (metrics) metrics.style.display = 'grid';
-
     const reader = new FileReader();
 
     if (ext === 'stl') {
       reader.onload = (e) => {
         try {
           const buffer = e.target.result;
-          this.renderSTLModel(buffer, filename);
+          this.start3DCalculatingSimulation(filename, () => {
+            this.renderSTLModel(buffer, filename);
+          });
         } catch (err) {
           console.error('STL Parse Error:', err);
-          this.showToast('STL dosyası işlenirken hata oluştu: ' + err.message, 'error');
-          this.renderSimulatedFallbackModel(filename, file.size);
+          this.start3DCalculatingSimulation(filename, () => {
+            this.showToast('STL dosyası işlenirken hata oluştu: ' + err.message, 'error');
+            this.renderSimulatedFallbackModel(filename, file.size);
+          });
         }
       };
       reader.onerror = () => {
@@ -4128,14 +4573,18 @@ class PozitronApp {
         try {
           const text = e.target.result;
           const geometry = this.parseOBJData(text);
-          if (geometry) {
-            this.renderCustomGeometry(geometry, filename);
-          } else {
-            this.renderSTEPTextFallback(text, filename, file.size);
-          }
+          this.start3DCalculatingSimulation(filename, () => {
+            if (geometry) {
+              this.renderCustomGeometry(geometry, filename);
+            } else {
+              this.renderSTEPTextFallback(text, filename, file.size);
+            }
+          });
         } catch (err) {
           console.error('OBJ Parse Error:', err);
-          this.renderSTEPTextFallback(e.target.result || '', filename, file.size);
+          this.start3DCalculatingSimulation(filename, () => {
+            this.renderSTEPTextFallback(e.target.result || '', filename, file.size);
+          });
         }
       };
       reader.onerror = () => {
@@ -4148,10 +4597,14 @@ class PozitronApp {
       reader.onload = (e) => {
         try {
           const text = typeof e.target.result === 'string' ? e.target.result : new TextDecoder('utf-8').decode(e.target.result);
-          this.renderSTEPTextFallback(text, filename, file.size);
+          this.start3DCalculatingSimulation(filename, () => {
+            this.renderSTEPTextFallback(text, filename, file.size);
+          });
         } catch (err) {
           console.error('CAD Parse Error:', err);
-          this.renderSimulatedFallbackModel(filename, file.size);
+          this.start3DCalculatingSimulation(filename, () => {
+            this.renderSimulatedFallbackModel(filename, file.size);
+          });
         }
       };
       reader.onerror = () => {
