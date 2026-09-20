@@ -306,6 +306,10 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
               <span data-i18n="menu_orders">Siparişlerim</span>
             </button>
+            <button type="button" class="dropdown-item" id="my-addresses-btn" onclick="window.app && window.app.openAddressesModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              <span data-i18n="menu_addresses">Adreslerim</span>
+            </button>
             <button type="button" class="dropdown-item text-danger" id="logout-btn" onclick="window.app && window.app.handleLogout()">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
               <span data-i18n="menu_logout">Çıkış Yap</span>
@@ -869,10 +873,15 @@
           <label for="login-password" data-i18n="password_label">Şifre</label>
           <input type="password" id="login-password" class="form-input" required autocomplete="current-password">
         </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-size:0.82rem;">
+          <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text-muted); user-select:none;">
+            <input type="checkbox" id="login-remember-me" checked style="width:15px; height:15px; accent-color:var(--brand-primary); cursor:pointer;">
+            <span data-i18n="remember_me">Beni Hatırla</span>
+          </label>
+          <a href="javascript:void(0)" onclick="window.app && window.app.showForgotPassword()" style="color:var(--brand-primary); text-decoration:none; font-weight:500;" data-i18n="forgot_password">Şifremi Unuttum?</a>
+        </div>
         <div class="form-error-msg" id="login-error-msg"></div>
         <button type="submit" class="btn-primary btn-block" data-i18n="btn_login_submit">Giriş Yap</button>
-
-
       </form>
 
       <!-- Register Form -->
@@ -893,6 +902,43 @@
         <button type="submit" class="btn-primary btn-block" data-i18n="btn_reg_submit">Hesap Oluştur</button>
       </form>
 
+      <!-- Forgot / Reset Password Panel -->
+      <div id="forgot-password-panel" style="display:none; padding-top:4px;">
+        <div style="margin-bottom:14px; text-align:center;">
+          <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:4px;" data-i18n="forgot_password_title">Şifremi Sıfırla</h3>
+          <p style="font-size:0.82rem; color:var(--text-muted);" data-i18n="forgot_password_sub">Kayıtlı e-posta adresinizi girin, şifre sıfırlama kodunu hemen oluşturalım.</p>
+        </div>
+
+        <!-- Step 1: Request Code -->
+        <form id="forgot-send-code-form" onsubmit="window.app && window.app.handleForgotPasswordSendCode(event)">
+          <div class="form-group">
+            <label for="forgot-email" data-i18n="email_label">E-Posta Adresi</label>
+            <input type="email" id="forgot-email" class="form-input" required autocomplete="email">
+          </div>
+          <div class="form-error-msg" id="forgot-error-msg"></div>
+          <button type="submit" class="btn-primary btn-block" id="btn-send-reset-code" data-i18n="btn_send_code">Sıfırlama Kodu Gönder</button>
+        </form>
+
+        <!-- Step 2: Enter Code & New Password -->
+        <form id="forgot-reset-password-form" style="display:none; margin-top:12px;" onsubmit="window.app && window.app.handleResetPasswordSubmit(event)">
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px; font-size:0.8rem; color:#1e40af; margin-bottom:12px;" id="forgot-code-notice"></div>
+          <div class="form-group">
+            <label for="reset-code" data-i18n="enter_code_label">6 Haneli Doğrulama Kodu</label>
+            <input type="text" id="reset-code" class="form-input" placeholder="123456" maxlength="6" required style="letter-spacing:4px; font-size:1.1rem; text-align:center; font-weight:700;">
+          </div>
+          <div class="form-group">
+            <label for="reset-new-password" data-i18n="new_password_label">Yeni Şifre</label>
+            <input type="password" id="reset-new-password" class="form-input" required minlength="6" autocomplete="new-password">
+          </div>
+          <div class="form-error-msg" id="reset-error-msg"></div>
+          <button type="submit" class="btn-primary btn-block" id="btn-submit-new-password" data-i18n="btn_reset_password">Şifreyi Güncelle ve Giriş Yap</button>
+        </form>
+
+        <div style="text-align:center; margin-top:14px;">
+          <a href="javascript:void(0)" onclick="window.app && window.app.hideForgotPassword()" style="font-size:0.82rem; color:var(--text-muted); text-decoration:none;" data-i18n="back_to_login">← Giriş Ekranına Dön</a>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -908,6 +954,83 @@
       </div>
       <div class="modal-body" id="orders-modal-body" style="padding:16px 0; max-height:400px; overflow-y:auto;">
         <!-- Injected via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- My Addresses Modal -->
+  <div class="modal-backdrop" id="addresses-modal-backdrop" style="display:none;">
+    <div class="modal-card" role="dialog" aria-modal="true" style="max-width:620px;">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title" style="font-size:1.25rem;" data-i18n="my_addresses">Kayıtlı Adreslerim</h2>
+          <p class="modal-subtitle">Siparişlerinizde hızlı teslimat için adreslerinizi yönetin.</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="close-addresses-modal" onclick="window.app && window.app.closeAddressesModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:16px 0; max-height:480px; overflow-y:auto;">
+        <!-- Top action: Add address button -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding:0 4px;">
+          <span style="font-size:0.85rem; color:var(--text-muted);" id="address-count-text"></span>
+          <button type="button" class="btn-primary" style="padding:6px 14px; font-size:0.82rem;" onclick="window.app && window.app.showAddressForm()">
+            + <span data-i18n="add_new_address">Yeni Adres Ekle</span>
+          </button>
+        </div>
+
+        <!-- Address List Container -->
+        <div id="addresses-list-container" style="display:flex; flex-direction:column; gap:12px;">
+          <!-- Rendered dynamically via app.js -->
+        </div>
+
+        <!-- Address Form (hidden by default) -->
+        <form id="user-address-form" style="display:none; background:var(--bg-card-hover, #f8fafc); border:1px solid var(--border-color, #e2e8f0); border-radius:8px; padding:16px; margin-top:14px;" onsubmit="window.app && window.app.handleAddressFormSubmit(event)">
+          <input type="hidden" id="addr-id" value="">
+          <h4 id="addr-form-title" style="margin-bottom:12px; font-size:0.95rem; font-weight:600;" data-i18n="add_new_address">Yeni Adres Ekle</h4>
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="addr-title" data-i18n="address_title">Adres Başlığı</label>
+              <input type="text" id="addr-title" class="form-input" placeholder="Evim, Ofis..." required data-i18n-placeholder="address_title_placeholder">
+            </div>
+            <div class="form-group col-half">
+              <label for="addr-recipient" data-i18n="fullname_label">Teslim Alacak Kişi</label>
+              <input type="text" id="addr-recipient" class="form-input" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="addr-phone" data-i18n="phone_label">Telefon</label>
+              <input type="tel" id="addr-phone" class="form-input" required>
+            </div>
+            <div class="form-group col-half">
+              <label for="addr-city" data-i18n="city_label">İl</label>
+              <select id="addr-city" class="form-input form-select" required>
+                <!-- Filled with 81 cities -->
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="addr-district" data-i18n="district_label">İlçe</label>
+              <input type="text" id="addr-district" class="form-input" required data-i18n-placeholder="district_placeholder">
+            </div>
+            <div class="form-group col-half">
+              <label for="addr-country" data-i18n="country_label">Ülke</label>
+              <input type="text" id="addr-country" class="form-input" value="Turkey" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="addr-line" data-i18n="address_label">Açık Adres (Mahalle, Cadde, Sokak, No, Daire)</label>
+            <textarea id="addr-line" class="form-input form-textarea" rows="2" required></textarea>
+          </div>
+          <div class="form-group" style="display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="addr-is-default" style="width:16px; height:16px; accent-color:var(--brand-primary); cursor:pointer;">
+            <label for="addr-is-default" style="cursor:pointer; font-size:0.85rem; margin:0;" data-i18n="is_default_address">Varsayılan adres olarak kaydet</label>
+          </div>
+          <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+            <button type="button" class="btn-secondary" style="padding:6px 14px; font-size:0.82rem;" onclick="window.app && window.app.hideAddressForm()">İptal</button>
+            <button type="submit" class="btn-primary" style="padding:6px 14px; font-size:0.82rem;" id="addr-save-btn">Kaydet</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -930,6 +1053,14 @@
           <div class="checkout-col shipping-info-col">
             <h3 class="checkout-section-title" data-i18n="shipping_info_title">1. Teslimat &amp; Fatura Bilgileri</h3>
             <form id="shipping-form" class="checkout-form">
+              <!-- Saved Address Quick Picker -->
+              <div class="form-group" id="chk-saved-addresses-group" style="display:none; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:10px;">
+                <label for="chk-saved-address-select" style="font-weight:600; font-size:0.82rem; color:#166534;" data-i18n="saved_addresses_select">Kayıtlı Adreslerimden Seç</label>
+                <select id="chk-saved-address-select" class="form-input form-select" onchange="window.app && window.app.handleCheckoutAddressSelect(this.value)">
+                  <!-- Options filled via app.js -->
+                </select>
+              </div>
+
               <div class="form-group">
                 <label for="chk-name" data-i18n="fullname_label">Teslim Alacak Kişi</label>
                 <input type="text" id="chk-name" class="form-input" required autocomplete="name">
@@ -944,19 +1075,103 @@
                   <input type="tel" id="chk-phone" class="form-input" required autocomplete="tel">
                 </div>
               </div>
-              <div class="form-group">
-                <label for="chk-address" data-i18n="address_label">Teslimat Adresi</label>
-                <textarea id="chk-address" class="form-input form-textarea" rows="2" required autocomplete="street-address"></textarea>
-              </div>
               <div class="form-row">
                 <div class="form-group col-half">
-                  <label for="chk-city" data-i18n="city_label">Şehir</label>
-                  <input type="text" id="chk-city" class="form-input" required autocomplete="address-level2">
+                  <label for="chk-city" data-i18n="city_label">İl</label>
+                  <select id="chk-city" class="form-input form-select" required>
+                    <!-- 81 cities filled via app.js -->
+                  </select>
                 </div>
+                <div class="form-group col-half">
+                  <label for="chk-district" data-i18n="district_label">İlçe</label>
+                  <input type="text" id="chk-district" class="form-input" required data-i18n-placeholder="district_placeholder" placeholder="İlçe giriniz">
+                </div>
+              </div>
+              <div class="form-row">
                 <div class="form-group col-half">
                   <label for="chk-country" data-i18n="country_label">Ülke</label>
                   <input type="text" id="chk-country" class="form-input" value="Turkey" required>
                 </div>
+              </div>
+              <div class="form-group">
+                <label for="chk-address" data-i18n="address_label">Teslimat Adresi (Mahalle, Sokak, No, Daire)</label>
+                <textarea id="chk-address" class="form-input form-textarea" rows="2" required autocomplete="street-address"></textarea>
+              </div>
+
+              <!-- Invoicing & Billing Section -->
+              <div style="border-top:1px solid var(--border-color, #e2e8f0); margin-top:16px; padding-top:12px;">
+                <h4 style="font-size:0.9rem; font-weight:600; margin:0 0 10px;" data-i18n="invoice_heading">Fatura Bilgileri</h4>
+                
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; cursor:pointer; user-select:none;">
+                    <input type="checkbox" id="chk-same-billing" checked onchange="window.app && window.app.toggleBillingAddress(this.checked)" style="width:16px; height:16px; accent-color:var(--brand-primary); cursor:pointer;">
+                    <span data-i18n="same_as_shipping">Fatura adresim teslimat adresim ile aynı</span>
+                  </label>
+                </div>
+
+                <!-- Invoice Type (Bireysel vs Kurumsal) -->
+                <div id="invoice-type-selector" style="display:flex; gap:16px; margin-bottom:12px; font-size:0.85rem;">
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+                    <input type="radio" name="chk_invoice_type" value="individual" checked onchange="window.app && window.app.setInvoiceType('individual')">
+                    <span data-i18n="invoice_individual">Bireysel Fatura</span>
+                  </label>
+                  <label style="display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none;">
+                    <input type="radio" name="chk_invoice_type" value="corporate" onchange="window.app && window.app.setInvoiceType('corporate')">
+                    <span data-i18n="invoice_corporate">Kurumsal Fatura</span>
+                  </label>
+                </div>
+
+                <!-- Individual Invoice Fields -->
+                <div id="invoice-individual-fields">
+                  <div class="form-group">
+                    <label for="chk-tckn" data-i18n="tckn_label">T.C. Kimlik No (TCKN)</label>
+                    <input type="text" id="chk-tckn" class="form-input" placeholder="11 haneli TCKN (veya 11111111111)" maxlength="11">
+                    <small style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:2px;" data-i18n="tckn_hint">Şahıs / Bireysel e-Arşiv faturaları için gereklidir.</small>
+                  </div>
+                </div>
+
+                <!-- Corporate Invoice Fields -->
+                <div id="invoice-corporate-fields" style="display:none;">
+                  <div class="form-group">
+                    <label for="chk-company-name" data-i18n="company_name">Şirket / Firma Ünvanı</label>
+                    <input type="text" id="chk-company-name" class="form-input" placeholder="Şirket Tam Ünvanı">
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col-half">
+                      <label for="chk-tax-office" data-i18n="tax_office">Vergi Dairesi</label>
+                      <input type="text" id="chk-tax-office" class="form-input" placeholder="Örn: Maslak VD">
+                    </div>
+                    <div class="form-group col-half">
+                      <label for="chk-vkn" data-i18n="tax_id">Vergi Kimlik No (VKN)</label>
+                      <input type="text" id="chk-vkn" class="form-input" placeholder="10 haneli VKN" maxlength="10">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Separate Billing Address Container -->
+                <div id="separate-billing-address-box" style="display:none; background:var(--bg-card-hover, #f8fafc); border:1px solid var(--border-color, #e2e8f0); border-radius:6px; padding:12px; margin-top:10px;">
+                  <h5 style="margin-bottom:8px; font-size:0.85rem; font-weight:600;" data-i18n="billing_address_heading">Fatura Adresi</h5>
+                  <div class="form-row">
+                    <div class="form-group col-half">
+                      <label for="chk-billing-city" data-i18n="billing_city_label">Fatura İli</label>
+                      <select id="chk-billing-city" class="form-input form-select"></select>
+                    </div>
+                    <div class="form-group col-half">
+                      <label for="chk-billing-district" data-i18n="billing_district_label">Fatura İlçesi</label>
+                      <input type="text" id="chk-billing-district" class="form-input" placeholder="İlçe">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="chk-billing-address" data-i18n="billing_address_label">Fatura Açık Adresi</label>
+                    <textarea id="chk-billing-address" class="form-input form-textarea" rows="2" placeholder="Fatura adresi"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Order & Shipping Notes -->
+              <div class="form-group" style="margin-top:14px;">
+                <label for="chk-order-notes" data-i18n="order_notes">Sipariş &amp; Kargo Notu (İsteğe Bağlı)</label>
+                <textarea id="chk-order-notes" class="form-input form-textarea" rows="2" data-i18n-placeholder="order_notes_placeholder" placeholder="Kuryeye iletmek istediğiniz özel not veya kargo teslim talimatı..."></textarea>
               </div>
             </form>
           </div>
@@ -1136,6 +1351,12 @@
               <div class="summary-line">
                 <span data-i18n="order_total">Ödenecek Tutar:</span>
                 <strong id="checkout-total-val" class="checkout-total-text">0,00 ₺</strong>
+              </div>
+              <div class="form-group" style="margin:12px 0 10px; display:flex; align-items:flex-start; gap:8px;">
+                <input type="checkbox" id="chk-agree-terms" checked required style="width:16px; height:16px; margin-top:2px; accent-color:var(--brand-primary); cursor:pointer;">
+                <label for="chk-agree-terms" style="cursor:pointer; font-size:0.75rem; color:var(--text-muted); line-height:1.35; user-select:none;" data-i18n="terms_accept">
+                  Ön Bilgilendirme Koşulları'nı ve Mesafeli Satış Sözleşmesi'ni okudum, onaylıyorum.
+                </label>
               </div>
               <div class="form-error-msg" id="checkout-error-msg"></div>
               <button type="button" class="btn-primary btn-block btn-pay-now" id="submit-order-btn">

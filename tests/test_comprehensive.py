@@ -350,6 +350,9 @@ class TestFrontendIntegrity(unittest.TestCase):
             with open(ppath, 'r', encoding='utf-8') as f:
                 c = f.read()
 
+            if '<meta http-equiv="refresh"' in c:
+                continue
+
             self.assertNotIn('card-quick-view-btn', c, f"Found quick view btn in {fname}")
             self.assertNotIn('product-modal-backdrop', c, f"Found quick view modal in {fname}")
             self.assertIn('id="pdp-reviews-section"', c, f"Missing reviews section in {fname}")

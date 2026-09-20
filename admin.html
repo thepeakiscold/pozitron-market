@@ -3332,6 +3332,30 @@
           ? od.items.map(i => `${i.name_en || i.name_tr || 'Ürün'} (x${i.quantity || 1})`).join(', ') 
           : 'Standart Sipariş Paketi';
 
+        const invoiceType = (od.invoice_type || 'individual').toLowerCase();
+        let invoiceBadge = '';
+        if (invoiceType === 'corporate') {
+          invoiceBadge = `
+            <div style="margin-top:6px; background:#fef3c7; border:1px solid #fde68a; border-radius:4px; padding:4px 6px; font-size:0.75rem; color:#92400e;">
+              <strong>🏢 Kurumsal Fatura</strong><br>
+              ${od.company_name ? `<span>${escapeHtml(od.company_name)}</span><br>` : ''}
+              <span>VKN: <code>${od.tax_id || '-'}</code> (${escapeHtml(od.tax_office || '-')})</span>
+            </div>
+          `;
+        } else if (od.tax_id && od.tax_id !== '11111111111') {
+          invoiceBadge = `
+            <div style="margin-top:6px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:4px 6px; font-size:0.75rem; color:#475569;">
+              <strong>👤 Bireysel Fatura</strong> &bull; TCKN: <code>${od.tax_id}</code>
+            </div>
+          `;
+        }
+
+        const notesHtml = od.order_notes ? `
+          <div style="margin-top:4px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:4px; padding:3px 6px; font-size:0.75rem; color:#166534;">
+            📝 <strong>Not:</strong> ${escapeHtml(od.order_notes)}
+          </div>
+        ` : '';
+
         return `
           <tr>
             <td style="white-space:nowrap; font-size:0.82rem; color:#475569;">${dateStr}</td>
@@ -3345,14 +3369,16 @@
               <div style="font-weight:700; color:var(--text-primary); font-size:0.88rem;">${od.customer_name || od.full_name || 'Pilot Müşteri'}</div>
               <div style="font-size:0.78rem; color:#64748b;">${od.customer_email || od.email || '-'}</div>
               <div style="font-size:0.78rem; color:#64748b;">${od.customer_phone || od.phone || '-'}</div>
+              ${invoiceBadge}
             </td>
             <td>
               <div style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">${priceFormatted}</div>
               <div style="margin-top:2px;">${methodBadge}</div>
             </td>
             <td>${statusBadge}</td>
-            <td style="max-width:240px;">
+            <td style="max-width:260px;">
               <div style="font-size:0.82rem; color:#334155; line-height:1.4; white-space:normal;">${od.shipping_address || od.address || '-'}</div>
+              ${notesHtml}
               <div style="font-size:0.75rem; color:#64748b; margin-top:4px; font-style:italic;">📦 ${itemsSummary}</div>
             </td>
             <td style="white-space:nowrap;">
@@ -3438,7 +3464,7 @@
         return;
       }
 
-      const headers = ['Sipariş No', 'Takip No', 'Tarih', 'Müşteri Adı', 'E-Posta', 'Telefon', 'Tutar (TRY)', 'Ödeme Yöntemi', 'Durum', 'Teslimat Adresi'];
+      const headers = ['Sipariş No', 'Takip No', 'Tarih', 'Müşteri Adı', 'E-Posta', 'Telefon', 'Tutar (TRY)', 'Ödeme Yöntemi', 'Durum', 'Teslimat Adresi', 'Fatura Türü', 'TCKN / VKN', 'Vergi Dairesi', 'Firma Ünvanı', 'Fatura Adresi', 'Sipariş Notu'];
       const rows = _cachedOrders.map(o => [
         `"${o.order_number || o.id || ''}"`,
         `"${o.tracking_number || ''}"`,
@@ -3449,7 +3475,13 @@
         `"${o.total_try || o.total_amount_try || ''}"`,
         `"${o.payment_method || ''}"`,
         `"${o.status || ''}"`,
-        `"${(o.shipping_address || o.address || '').replace(/"/g, '""')}"`
+        `"${(o.shipping_address || o.address || '').replace(/"/g, '""')}"`,
+        `"${o.invoice_type || 'individual'}"`,
+        `"${o.tax_id || ''}"`,
+        `"${(o.tax_office || '').replace(/"/g, '""')}"`,
+        `"${(o.company_name || '').replace(/"/g, '""')}"`,
+        `"${(o.billing_address || '').replace(/"/g, '""')}"`,
+        `"${(o.order_notes || '').replace(/"/g, '""')}"`
       ]);
 
       const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');

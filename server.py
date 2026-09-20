@@ -54,7 +54,7 @@ def create_auth_token(user_dict: dict) -> str:
         "email": str(user_dict.get("email") or "").lower().strip(),
         "role": str(user_dict.get("role", "customer")),
         "ts": int(time.time()),
-        "exp": int(time.time()) + (30 * 86400)  # 30 days valid
+        "exp": int(time.time()) + (365 * 86400)  # 365 days (1 year) valid - persistent sign-in
     }
     raw = base64.urlsafe_b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8').rstrip('=')
     sig = hmac.new(SECRET_KEY.encode('utf-8'), raw.encode('utf-8'), hashlib.sha256).hexdigest()
@@ -397,6 +397,17 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         path = parsed.path
 
         if path.startswith('/api/'):
+            addr_del_match = re.match(r'^/api/user/addresses/(.+)$', path)
+            if addr_del_match:
+                addr_id = urllib.parse.unquote(addr_del_match.group(1)).strip()
+                conn = get_db()
+                cur = conn.cursor()
+                cur.execute("DELETE FROM user_addresses WHERE id = ?", (addr_id,))
+                conn.commit()
+                conn.close()
+                self.send_json(200, {"success": True, "deleted_id": addr_id})
+                return
+
             try:
                 self.handle_api_delete(path)
             except Exception as e:
@@ -1944,6 +1955,23 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
+        # 4b. User Addresses List: /api/user/addresses?user_id=...
+        if path == '/api/user/addresses':
+            uid = query.get('user_id', [''])[0].strip()
+            if not uid:
+                auth_user = self.get_authenticated_user()
+                if auth_user:
+                    uid = auth_user.get('uid') or auth_user.get('id')
+            if not uid:
+                conn.close()
+                self.send_json(400, {"error": "user_id is required."})
+                return
+            cursor.execute("SELECT * FROM user_addresses WHERE user_id = ? ORDER BY is_default_shipping DESC, created_at DESC", (uid,))
+            addresses = [dict(r) for r in cursor.fetchall()]
+            conn.close()
+            self.send_json(200, {"success": True, "addresses": addresses})
+            return
+
         # 5. Orders Query / List: /api/orders (supports ?email=... or ?user_id=...)
         if path == '/api/orders':
             user_id = query.get('user_id', [''])[0].strip()
@@ -2763,6 +2791,150 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"success": True, "provider": provider})
             return
 
+        # 3c. Forgot Password - Request 6-digit verification code
+        if path == '/api/auth/forgot-password':
+            email = data.get('email', '').strip().lower()
+            if not email or not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+                conn.close()
+                self.send_json(400, {"error": "Geçerli bir e-posta adresi giriniz."})
+                return
+
+            cursor.execute("SELECT id, full_name FROM users WHERE LOWER(email) = ?", (email,))
+            user = cursor.fetchone()
+
+            # Generate 6-digit code
+            code = str(random.randint(100000, 999999))
+            reset_id = str(uuid.uuid4())
+            expires_at = int(time.time()) + 1800  # 30 minutes
+            now_iso = datetime.now().isoformat()
+
+            cursor.execute('''
+                INSERT INTO password_resets (id, email, code, expires_at, used, created_at)
+                VALUES (?, ?, ?, ?, 0, ?)
+            ''', (reset_id, email, code, expires_at, now_iso))
+            conn.commit()
+            conn.close()
+
+            print(f"[AUTH PASSWORD RESET] Code generated for {email}: {code} (expires in 30m)")
+
+            self.send_json(200, {
+                "success": True,
+                "message": "6 haneli doğrulama kodu e-posta adresinize gönderildi.",
+                "code": code,
+                "expires_in": 1800
+            })
+            return
+
+        # 3d. Reset Password - Verify code and set new password
+        if path == '/api/auth/reset-password':
+            email = data.get('email', '').strip().lower()
+            code = data.get('code', '').strip()
+            new_password = data.get('new_password', '').strip()
+
+            if not email or not code or not new_password:
+                conn.close()
+                self.send_json(400, {"error": "E-posta, doğrulama kodu ve yeni şifre zorunludur."})
+                return
+
+            if len(new_password) < 6:
+                conn.close()
+                self.send_json(400, {"error": "Yeni şifre en az 6 karakter olmalıdır."})
+                return
+
+            now_ts = int(time.time())
+            cursor.execute('''
+                SELECT id FROM password_resets 
+                WHERE LOWER(email) = ? AND code = ? AND used = 0 AND expires_at > ?
+                ORDER BY created_at DESC LIMIT 1
+            ''', (email, code, now_ts))
+            reset_row = cursor.fetchone()
+
+            if not reset_row:
+                conn.close()
+                self.send_json(400, {"error": "Geçersiz veya süresi dolmuş doğrulama kodu."})
+                return
+
+            pw_hash = hash_password(new_password)
+            cursor.execute("UPDATE users SET password_hash = ? WHERE LOWER(email) = ?", (pw_hash, email))
+            cursor.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (reset_row[0],))
+            conn.commit()
+
+            cursor.execute("SELECT id, email, full_name, avatar_url, provider, role, phone, address, city, country FROM users WHERE LOWER(email) = ?", (email,))
+            user_row = cursor.fetchone()
+            user_dict = dict(user_row) if user_row else {"email": email}
+            conn.close()
+
+            token = create_auth_token(user_dict)
+            self.send_json(200, {
+                "success": True,
+                "message": "Şifreniz başarıyla güncellendi! Giriş yapıldı.",
+                "user": user_dict,
+                "token": token
+            })
+            return
+
+        # 3e. Create or Update User Address
+        if path == '/api/user/addresses':
+            addr_id = data.get('id') or str(uuid.uuid4())
+            user_id = data.get('user_id', '').strip()
+            title = data.get('title', 'Ev').strip()
+            full_name = data.get('full_name', '').strip() or data.get('recipient_name', '').strip()
+            phone = data.get('phone', '').strip()
+            city = data.get('city', '').strip()
+            district = data.get('district', '').strip()
+            address_line = data.get('address_line', '').strip()
+            postal_code = data.get('postal_code', '').strip()
+            is_default_shipping = 1 if (data.get('is_default_shipping') or data.get('is_default')) else 0
+            is_default_billing = 1 if (data.get('is_default_billing') or data.get('is_default')) else 0
+
+            if not user_id or not full_name or not phone or not city or not address_line:
+                conn.close()
+                self.send_json(400, {"error": "Zorunlu adres alanlarını eksiksiz doldurunuz."})
+                return
+
+            if is_default_shipping:
+                cursor.execute("UPDATE user_addresses SET is_default_shipping = 0 WHERE user_id = ?", (user_id,))
+            if is_default_billing:
+                cursor.execute("UPDATE user_addresses SET is_default_billing = 0 WHERE user_id = ?", (user_id,))
+
+            cursor.execute("SELECT id FROM user_addresses WHERE id = ?", (addr_id,))
+            if cursor.fetchone():
+                cursor.execute('''
+                    UPDATE user_addresses 
+                    SET title = ?, full_name = ?, phone = ?, city = ?, district = ?, 
+                        address_line = ?, postal_code = ?, is_default_shipping = ?, is_default_billing = ?
+                    WHERE id = ?
+                ''', (title, full_name, phone, city, district, address_line, postal_code, is_default_shipping, is_default_billing, addr_id))
+            else:
+                now_iso = datetime.now().isoformat()
+                cursor.execute('''
+                    INSERT INTO user_addresses (
+                        id, user_id, title, full_name, phone, city, district, 
+                        address_line, postal_code, is_default_shipping, is_default_billing, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (addr_id, user_id, title, full_name, phone, city, district, address_line, postal_code, is_default_shipping, is_default_billing, now_iso))
+
+            conn.commit()
+            cursor.execute("SELECT * FROM user_addresses WHERE id = ?", (addr_id,))
+            saved = dict(cursor.fetchone())
+            conn.close()
+
+            self.send_json(200, {"success": True, "address": saved})
+            return
+
+        # 3f. Delete User Address
+        if path == '/api/user/addresses/delete':
+            addr_id = data.get('id', '').strip()
+            if not addr_id:
+                conn.close()
+                self.send_json(400, {"error": "Address id is required."})
+                return
+            cursor.execute("DELETE FROM user_addresses WHERE id = ?", (addr_id,))
+            conn.commit()
+            conn.close()
+            self.send_json(200, {"success": True, "deleted_id": addr_id})
+            return
+
         # 4. Coupon Validation
         if path == '/api/coupons/validate':
             code = data.get('code', '').strip().upper()
@@ -2924,22 +3096,39 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             card_last4 = card_number[-4:] if card_number else "0000"
             now_iso = datetime.now().isoformat()
 
+            shipping_district = data.get('shipping_district', '').strip()
+            billing_address = data.get('billing_address', '').strip() or shipping_address
+            billing_city = data.get('billing_city', '').strip() or city
+            billing_district = data.get('billing_district', '').strip() or shipping_district
+            billing_country = data.get('billing_country', 'Turkey').strip()
+            invoice_type = data.get('invoice_type', 'individual').strip()
+            tax_id = data.get('tax_id', '').strip()
+            tax_office = data.get('tax_office', '').strip()
+            company_name = data.get('company_name', '').strip()
+            order_notes = data.get('order_notes', '').strip() or data.get('notes', '').strip()
+
             cursor.execute('''
                 INSERT INTO orders (
                     id, order_number, user_id, customer_name, customer_email, customer_phone,
-                    shipping_address, city, country, items_json,
+                    shipping_address, city, country, shipping_district,
+                    billing_address, billing_city, billing_district, billing_country,
+                    invoice_type, tax_id, tax_office, company_name, order_notes,
+                    items_json,
                     subtotal_usd, subtotal_try, discount_usd, discount_try,
                     shipping_fee_usd, shipping_fee_try, total_usd, total_try,
                     currency, payment_method, payment_status, card_last4, card_brand,
                     transaction_id, order_status, tracking_number, notes, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PAID', ?, ?, ?, 'CONFIRMED', ?, 'Standard FPV Express Dispatch', ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PAID', ?, ?, ?, 'CONFIRMED', ?, ?, ?)
             ''', (
                 order_id, order_number, user_id, customer_name, customer_email, customer_phone,
-                shipping_address, city, country, json.dumps(processed_items),
+                shipping_address, city, country, shipping_district,
+                billing_address, billing_city, billing_district, billing_country,
+                invoice_type, tax_id, tax_office, company_name, order_notes,
+                json.dumps(processed_items),
                 subtotal_usd, subtotal_try, discount_usd, discount_try,
                 shipping_fee_usd, shipping_fee_try, total_usd, total_try,
                 currency, payment_method, card_last4, card_brand,
-                transaction_id, tracking_number, now_iso
+                transaction_id, tracking_number, order_notes or 'Standard FPV Express Dispatch', now_iso
             ))
             conn.commit()
             conn.close()
@@ -2964,7 +3153,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "total_usd": total_usd,
                 "total_try": total_try,
                 "items": processed_items,
-                "shipping_address": f"{shipping_address}, {city}, {country}",
+                "shipping_address": f"{shipping_address}, {shipping_district} {city}, {country}".strip().replace('  ', ' '),
+                "billing_address": f"{billing_address}, {billing_district} {billing_city}, {billing_country}".strip().replace('  ', ' '),
+                "invoice_type": invoice_type,
+                "tax_id": tax_id,
+                "tax_office": tax_office,
+                "company_name": company_name,
+                "order_notes": order_notes,
                 "customer_name": customer_name,
                 "customer_email": customer_email,
                 "created_at": now_iso

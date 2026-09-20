@@ -95,6 +95,16 @@ def init_db():
             shipping_address TEXT NOT NULL,
             city TEXT NOT NULL,
             country TEXT NOT NULL,
+            shipping_district TEXT,
+            billing_address TEXT,
+            billing_city TEXT,
+            billing_district TEXT,
+            billing_country TEXT DEFAULT 'Turkey',
+            invoice_type TEXT DEFAULT 'individual', -- 'individual' or 'corporate'
+            tax_id TEXT, -- TCKN or VKN
+            tax_office TEXT, -- Vergi Dairesi for corporate
+            company_name TEXT, -- Şirket Ünvanı for corporate
+            order_notes TEXT, -- Müşteri / Kurye Notu
             items_json TEXT NOT NULL,
             subtotal_usd REAL NOT NULL,
             subtotal_try REAL NOT NULL,
@@ -113,6 +123,36 @@ def init_db():
             order_status TEXT NOT NULL,
             tracking_number TEXT,
             notes TEXT,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
+    # User Addresses Table (Adres Defteri)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_addresses (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            title TEXT NOT NULL, -- 'Ev', 'İş', 'Atölye', etc.
+            full_name TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            city TEXT NOT NULL,
+            district TEXT NOT NULL,
+            address_line TEXT NOT NULL,
+            postal_code TEXT,
+            is_default_shipping INTEGER DEFAULT 0,
+            is_default_billing INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
+    # Password Resets Table (Şifremi Unuttum)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id TEXT PRIMARY KEY,
+            email TEXT NOT NULL,
+            code TEXT NOT NULL,
+            expires_at INTEGER NOT NULL,
+            used INTEGER DEFAULT 0,
             created_at TEXT NOT NULL
         )
     ''')
@@ -308,7 +348,7 @@ def init_db():
 
     # Seed default settings if not exists
     default_settings = [
-        ('usd_rate', '47.0'),
+        ('usd_rate', '50.0'),
         ('site_name', 'Pozitron Market'),
         ('support_email', 'destek@pozitronmarket.com'),
         ('bank_owner', 'Burak Peköz'),
@@ -333,6 +373,30 @@ def init_db():
         ig_cols = [c[1] for c in cursor.fetchall()]
         if 'image_mode' not in ig_cols:
             cursor.execute("ALTER TABLE instagram_posts ADD COLUMN image_mode TEXT DEFAULT 'canvas'")
+
+    # Migration: Ensure orders table has invoice and address detail columns
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='orders'")
+    if cursor.fetchone():
+        cursor.execute("PRAGMA table_info(orders)")
+        order_cols = [c[1] for c in cursor.fetchall()]
+        order_migrations = [
+            ('shipping_district', "ALTER TABLE orders ADD COLUMN shipping_district TEXT"),
+            ('billing_address', "ALTER TABLE orders ADD COLUMN billing_address TEXT"),
+            ('billing_city', "ALTER TABLE orders ADD COLUMN billing_city TEXT"),
+            ('billing_district', "ALTER TABLE orders ADD COLUMN billing_district TEXT"),
+            ('billing_country', "ALTER TABLE orders ADD COLUMN billing_country TEXT DEFAULT 'Turkey'"),
+            ('invoice_type', "ALTER TABLE orders ADD COLUMN invoice_type TEXT DEFAULT 'individual'"),
+            ('tax_id', "ALTER TABLE orders ADD COLUMN tax_id TEXT"),
+            ('tax_office', "ALTER TABLE orders ADD COLUMN tax_office TEXT"),
+            ('company_name', "ALTER TABLE orders ADD COLUMN company_name TEXT"),
+            ('order_notes', "ALTER TABLE orders ADD COLUMN order_notes TEXT")
+        ]
+        for col_name, sql in order_migrations:
+            if col_name not in order_cols:
+                try:
+                    cursor.execute(sql)
+                except Exception as ex:
+                    print(f"[Migration Warning] {col_name}: {ex}")
 
     conn.commit()
     conn.close()
