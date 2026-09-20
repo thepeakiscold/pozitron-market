@@ -4232,7 +4232,6 @@ class PozitronApp {
       if (res.ok) {
         const data = await res.json();
         if (data.url) this._3dConfig.serverUrl = data.url;
-        this.showToast(`${data.filename} sunucuya kaydedildi (${Math.round((data.size || file.size) / 1024)} KB)`, 'success');
       } else {
         // Fallback JSON payload
         const reader = new FileReader();
@@ -4500,7 +4499,7 @@ class PozitronApp {
 
   trigger3DRecalculate() {
     if (!this._3dConfig.filename || this._3dConfig.volumeCm3 <= 0) {
-      this.showToast('Lütfen önce bir 3D model yükleyin veya örnek model seçin.', 'info');
+      this.showToast('Lütfen önce bir 3D model yükleyin.', 'info');
       return;
     }
 

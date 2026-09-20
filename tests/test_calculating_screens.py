@@ -115,6 +115,11 @@ class TestCalculatingScreens(unittest.TestCase):
         self.assertNotIn('*/*', self.index_html)
         self.assertNotIn('application/octet-stream', self.index_html)
 
+    def test_3d_studio_no_server_saved_toast_and_keep_slice_toast(self):
+        """Must not show alarming 'sunucuya kaydedildi' toast, but preserve slicing completion toast."""
+        self.assertNotIn('sunucuya kaydedildi', self.app_js)
+        self.assertIn('3D Slicing ve Fiyat Analizi Tamamlandı!', self.app_js)
+
 
 if __name__ == '__main__':
     unittest.main()
