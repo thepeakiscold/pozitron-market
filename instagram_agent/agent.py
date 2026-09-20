@@ -36,7 +36,7 @@ class InstagramPRAgent:
             is_dry_run = bool(config.get('dry_run_mode', 1))
 
         self.content_gen = ContentGenerator(gemini_api_key=gemini_key)
-        self.image_gen = ImageGenerator(width=1080, height=1080)
+        self.image_gen = ImageGenerator(width=1080, height=1080, gemini_api_key=gemini_key)
         self.publisher = MetaPublisher(
             access_token=token,
             instagram_account_id=account_id,
@@ -62,6 +62,7 @@ class InstagramPRAgent:
             is_dry_run = bool(self.config.get('dry_run_mode', 1))
 
         self.content_gen.set_api_key(gemini_key)
+        self.image_gen.set_api_key(gemini_key)
         self.publisher.configure(
             access_token=token,
             instagram_account_id=account_id,
@@ -86,7 +87,7 @@ class InstagramPRAgent:
             "story_enabled": bool(self.config.get('story_enabled', 1)),
             "carousel_enabled": bool(self.config.get('carousel_enabled', 1)),
             "dm_automation_enabled": bool(self.config.get('dm_automation_enabled', 1)),
-            "peak_scheduler_enabled": bool(self.config.get('peak_scheduler_enabled', 1)),
+            "peak_scheduler_enabled": bool(self.config.get('peak_scheduler_enabled', 0)),
             "reels_enabled": bool(self.config.get('reels_enabled', 1)),
             "last_run_at": self.config.get('last_run_at'),
             "next_run_at": self.config.get('next_run_at'),
@@ -96,6 +97,19 @@ class InstagramPRAgent:
             "failed_count": failed_count,
             "has_credentials": bool(self.config.get('access_token') and self.config.get('instagram_account_id'))
         }
+
+    def calculate_next_run(self, from_dt: datetime = None) -> str:
+        """
+        Calculates the next scheduled run timestamp.
+        Uses calculate_next_peak_window if peak_scheduler_enabled is True,
+        otherwise calculates next_run based on posting_frequency_hours.
+        """
+        if from_dt is None:
+            from_dt = datetime.now()
+        if self.config.get('peak_scheduler_enabled', 0):
+            return calculate_next_peak_window(from_dt).isoformat()
+        freq_hours = self.config.get('posting_frequency_hours', 6)
+        return (from_dt + timedelta(hours=freq_hours)).isoformat()
 
     def get_safe_config(self) -> dict:
         self.reload_config()
@@ -122,7 +136,7 @@ class InstagramPRAgent:
             "story_enabled": bool(self.config.get('story_enabled', 1)),
             "carousel_enabled": bool(self.config.get('carousel_enabled', 1)),
             "dm_automation_enabled": bool(self.config.get('dm_automation_enabled', 1)),
-            "peak_scheduler_enabled": bool(self.config.get('peak_scheduler_enabled', 1)),
+            "peak_scheduler_enabled": bool(self.config.get('peak_scheduler_enabled', 0)),
             "reels_enabled": bool(self.config.get('reels_enabled', 1)),
             "last_run_at": self.config.get('last_run_at'),
             "next_run_at": self.config.get('next_run_at')
@@ -142,8 +156,35 @@ class InstagramPRAgent:
         # Only update tokens if non-empty and not masked
         if 'access_token' in updates and updates['access_token'] and '...' not in updates['access_token']:
             clean_updates['access_token'] = updates['access_token']
-        if 'gemini_api_key' in updates and updates['gemini_api_key'] and '...' not in updates['gemini_api_key']:
+        if 'gemini_api_key' in updates and '...' not in str(updates['gemini_api_key']):
             clean_updates['gemini_api_key'] = updates['gemini_api_key']
+
+        # If user explicitly sets an hourly posting frequency and didn't specify peak_scheduler_enabled,
+        # disable peak_scheduler_enabled so the requested hourly schedule is strictly honored.
+        if 'posting_frequency_hours' in clean_updates and 'peak_scheduler_enabled' not in updates:
+            clean_updates['peak_scheduler_enabled'] = 0
+
+        # Recalculate next_run_at immediately if frequency or peak scheduler mode changed
+        if 'posting_frequency_hours' in clean_updates or 'peak_scheduler_enabled' in clean_updates:
+            now = datetime.now()
+            is_peak = bool(clean_updates.get('peak_scheduler_enabled', self.config.get('peak_scheduler_enabled', 0)))
+            if is_peak:
+                clean_updates['next_run_at'] = calculate_next_peak_window(now).isoformat()
+            else:
+                freq_hours = clean_updates.get('posting_frequency_hours', self.config.get('posting_frequency_hours', 6))
+                last_run_str = self.config.get('last_run_at')
+                if last_run_str:
+                    try:
+                        last_run_dt = datetime.fromisoformat(last_run_str)
+                        target_dt = last_run_dt + timedelta(hours=freq_hours)
+                        if target_dt > now:
+                            clean_updates['next_run_at'] = target_dt.isoformat()
+                        else:
+                            clean_updates['next_run_at'] = (now + timedelta(seconds=10)).isoformat()
+                    except Exception:
+                        clean_updates['next_run_at'] = (now + timedelta(hours=freq_hours)).isoformat()
+                else:
+                    clean_updates['next_run_at'] = (now + timedelta(hours=freq_hours)).isoformat()
 
         res = update_agent_config(clean_updates)
         self.reload_config()
@@ -277,11 +318,7 @@ class InstagramPRAgent:
             save_instagram_post(temp_post_data)
 
             # Update schedule timings (smart peak-time window or frequency hours)
-            if self.config.get('peak_scheduler_enabled', 1):
-                next_run = calculate_next_peak_window().isoformat()
-            else:
-                freq_hours = self.config.get('posting_frequency_hours', 6)
-                next_run = (datetime.now() + timedelta(hours=freq_hours)).isoformat()
+            next_run = self.calculate_next_run()
 
             update_agent_config({
                 'last_run_at': now_iso,
@@ -344,11 +381,7 @@ class InstagramPRAgent:
 
             save_instagram_post(temp_post_data)
 
-            if self.config.get('peak_scheduler_enabled', 1):
-                next_run = calculate_next_peak_window().isoformat()
-            else:
-                freq_hours = self.config.get('posting_frequency_hours', 6)
-                next_run = (datetime.now() + timedelta(hours=freq_hours)).isoformat()
+            next_run = self.calculate_next_run()
 
             update_agent_config({
                 'last_run_at': now_iso,
@@ -402,7 +435,8 @@ class InstagramPRAgent:
 
     def generate_and_publish_reel(self, post_data: dict = None) -> dict:
         """
-        Creates a 9:16 vertical 5-second dynamic Reels teaser video and publishes it.
+        Creates a 9:16 vertical Reels video using Gemini Omni Flash (gemini-omni-1.1-flash) AI video
+        generation with ffmpeg fallback, and publishes it.
         """
         self.reload_config()
         post_id = f"ig_reel_{uuid.uuid4().hex[:12]}"
@@ -424,10 +458,15 @@ class InstagramPRAgent:
             post_data['id'] = post_id
 
         post_data['media_type'] = 'REEL'
-        video_rel_path = self.image_gen.generate_reels_video(post_data)
-        if not video_rel_path:
-            return {"success": False, "error": "Reels videosu ffmpeg ile olusturulamadi."}
 
+        # Generate cinematic video prompt via ContentGenerator
+        video_prompt = self.content_gen.generate_reels_video_prompt(post_data)
+
+        video_rel_path = self.image_gen.generate_reels_video(post_data, prompt=video_prompt)
+        if not video_rel_path:
+            return {"success": False, "error": "Reels videosu olusturulamadi (Gemini ve ffmpeg bos dondu)."}
+
+        video_engine = post_data.get('video_engine', 'unknown')
         post_data['video_url'] = video_rel_path
         post_data['local_image_path'] = video_rel_path
         post_data['image_url'] = post_data.get('image_url') or video_rel_path
@@ -444,6 +483,8 @@ class InstagramPRAgent:
             post_data['published_at'] = now_iso
             save_instagram_post(post_data)
             result['post'] = post_data
+        result['video_engine'] = video_engine
+        result['video_prompt'] = post_data.get('video_prompt', '')
         return result
 
     def process_comment_automations(self, test_comments: list = None) -> dict:
@@ -486,11 +527,7 @@ class InstagramPRAgent:
                 ig_permalink=result.get('ig_permalink'),
                 published_at=now_iso
             )
-            if self.config.get('peak_scheduler_enabled', 1):
-                next_run = calculate_next_peak_window().isoformat()
-            else:
-                freq_hours = self.config.get('posting_frequency_hours', 6)
-                next_run = (datetime.now() + timedelta(hours=freq_hours)).isoformat()
+            next_run = self.calculate_next_run()
 
             update_agent_config({
                 'last_run_at': now_iso,

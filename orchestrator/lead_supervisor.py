@@ -177,15 +177,15 @@ class LeadSupervisorAgent:
             "preferred_hardware_links": preferred_hardware_links
         }
 
-        # Step 8: Build SEO Content Directive (Subagent 4)
+        # Step 8: Build SEO Content Directive (Subagent 4 - Otonom Konu Secimi & Tekrari Onleme)
+        next_unwritten_topic = self.seo_agent.get_next_unwritten_topic()
         seo_content_directive = {
-            "target_keywords": [
+            "target_keywords": next_unwritten_topic.get("target_keywords", [
                 "FPV drone toplama rehberi 2026",
-                "Betaflight 4.5 UART port ayarlari",
-                "2207 vs 2306 motor verimlilik karsilastirmasi",
-                "Pozitron Market FPV donanim uyumlulugu"
-            ],
-            "component_focus": "Ucus Kontrol Kartlari, ESC Kalibrasyonu ve Motor Secimi"
+                "Betaflight 4.5 UART port ayarları",
+                "Pozitron Market FPV donanım uyumluluğu"
+            ]),
+            "component_focus": next_unwritten_topic.get("component_focus", "Uçuş Kontrol Kartları, ESC Kalibrasyonu ve Motor Seçimi")
         }
 
         directive_payload = {

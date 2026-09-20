@@ -202,20 +202,35 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON çıktısı üret, markdo
                 }
 
         sig = custom_signature or "*İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]*"
-        clean_sig = re.sub(r'[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf]', '', sig).strip()
+        clean_sig_tr = re.sub(r'[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf]', '', sig).strip()
+        clean_sig_en = "*Fly safe and happy flying! [POZITRON MARKET]*"
+
+        # Language detection (English vs Turkish)
+        turkish_chars = set("çğıöşüÇĞİÖŞÜ")
+        has_tr_chars = any(c in text for c in turkish_chars)
+        tr_indicators = ["nasıl", "neden", "hangisi", "tavsiye", "öneri", "almak", "arkadaşlar", "merhaba", "selam", "uçuş", "kullanıcı", "arızalandı", "çalışmıyor", "bağlantı"]
+        is_turkish = has_tr_chars or any(w in text for w in tr_indicators)
 
         # Intent 1: Buying / Recommendation Advice
         buying_terms = [
             "almak mantıklı", "alınır mı", "alinir mi", "tavsiye", "öneri", "oneri",
             "hangi drone", "başlangıç", "baslangic", "ilk drone", "bütçe", "butce",
-            "fiyat", "tercihiniz", "k arası", "k arasi", "ne kadara", "önerirsiniz", "onerirsiniz"
+            "fiyat", "tercihiniz", "k arası", "k arasi", "ne kadara", "önerirsiniz", "onerirsiniz",
+            "first fpv", "first drone", "buying", "recommend", "choice", "which drone", "budget", "worth it"
         ]
         if any(term in text for term in buying_terms):
-            reply = "Selamlar! Drone dünyasına adım atarken ya da bütçene en uygun tercihi yaparken dikkat etmeni önereceğim temel noktalar:\n\n"
-            reply += "1. **Kullanım Amacı & Sınıf:** Amacın sabit kadraj, manzara ve pratik video çekimi ise hazır GPS/gimbal donanımlı modeller (örneğin DJI Mini serisi) uygundur. Eğer serbest akrobasi, hız ve tam kontrol (FPV) istiyorsan kapalı mekanlarda kırılmadan antrenman yaptıran bir Whoop kiti (örneğin BetaFPV Cetus / Meteor serisi) çok daha doğru bir ilk adımdır.\n"
-            reply += "2. **Simülatör Önceliği:** FPV uçuşu düşünüyorsan drone'dan önce bilgisayara bağlanan ELRS destekli bir kumanda edinip (RadioMaster Pocket vb.) simülatörde (Velocidrone, Liftoff) 15-20 saat uçmak kırım masraflarını sıfıra indirir.\n"
-            reply += "3. **500 Gram Kuralı:** 500g altı mikro modeller hobi uçuşlarında SHGM kayıt zorunluluğu bakımından çok daha esnektir.\n\n"
-            reply += "Tam olarak bütçeni ve nasıl bir uçuş deneyimi hedeflediğini paylaşırsan doğrudan parça veya model bazında liste çıkarabilirim.\n\n" + clean_sig
+            if is_turkish:
+                reply = "Selamlar! Drone dünyasına adım atarken ya da bütçene en uygun tercihi yaparken dikkat etmeni önereceğim temel noktalar:\n\n"
+                reply += "1. **Kullanım Amacı & Sınıf:** Amacın sabit kadraj, manzara ve pratik video çekimi ise hazır GPS/gimbal donanımlı modeller (örneğin DJI Mini serisi) uygundur. Eğer serbest akrobasi, hız ve tam kontrol (FPV) istiyorsan kapalı mekanlarda kırılmadan antrenman yaptıran bir Whoop kiti (örneğin BetaFPV Cetus / Meteor serisi) çok daha doğru bir ilk adımdır.\n"
+                reply += "2. **Simülatör Önceliği:** FPV uçuşu düşünüyorsan drone'dan önce bilgisayara bağlanan ELRS destekli bir kumanda edinip (RadioMaster Pocket vb.) simülatörde (Velocidrone, Liftoff) 15-20 saat uçmak kırım masraflarını sıfıra indirir.\n"
+                reply += "3. **500 Gram Kuralı:** 500g altı mikro modeller hobi uçuşlarında SHGM kayıt zorunluluğu bakımından çok daha esnektir.\n\n"
+                reply += "Tam olarak bütçeni ve nasıl bir uçuş deneyimi hedeflediğini paylaşırsan doğrudan parça veya model bazında liste çıkarabilirim.\n\n" + clean_sig_tr
+            else:
+                reply = "Hey there! If you are getting started or picking your first drone setup, here are key tips:\n\n"
+                reply += "1. **Simulator First:** Before buying a complete quad, get an ELRS radio controller (e.g. RadioMaster Pocket) and log 15-20 hours in a simulator (Liftoff, Velocidrone). It saves a lot of repair money.\n"
+                reply += "2. **Tiny Whoop vs 5-inch:** For indoor practice and durability, a 1S Tiny Whoop (like BetaFPV Meteor65/75 or Mobula6/7) is the safest starting point.\n"
+                reply += "3. **Weight & Regulations:** Sub-250g quads have fewer regulatory restrictions in most countries.\n\n"
+                reply += "Feel free to share your budget and what kind of flying you want to do!\n\n" + clean_sig_en
             return {
                 "is_drone_question": True,
                 "confidence_score": 88,
@@ -224,13 +239,19 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON çıktısı üret, markdo
             }
 
         # Intent 2: Battery / LiPo Care
-        battery_terms = ["lipo", "batarya", "pil", "şarj", "sarj", "voltaj", "1s", "2s", "3s", "4s", "6s", "mah", "c rating", "depolama", "storage"]
+        battery_terms = ["lipo", "batarya", "pil", "şarj", "sarj", "voltaj", "1s", "2s", "3s", "4s", "6s", "mah", "c rating", "depolama", "storage", "battery", "voltage", "charger"]
         if any(term in text for term in battery_terms):
-            reply = "Selamlar! Drone ve FPV bataryalarının güvenliği ve uzun ömrü için dikkat edilmesi gereken kritik noktalar:\n\n"
-            reply += "1. **Hücre Başına Voltaj:** Uçuş sırasında hücre voltajını asla 3.5V altına düşürme (ideal iniş 3.6V-3.7V). Tam dolu hücre 4.20V (LiHV ise 4.35V) olmalıdır.\n"
-            reply += "2. **Depolama (Storage):** Bataryaları birkaç günden fazla tam dolu ya da tamamen boş bırakma. Şarj aletinden 'Storage' modunu açarak hücreleri 3.80V-3.85V seviyesine getir.\n"
-            reply += "3. **Şarj Akımı:** Pil sağlığı için standart olarak 1C şarj akımını geçmemeye özen göster (örneğin 1500mAh bir batarya için en fazla 1.5A).\n\n"
-            reply += "Balans kablolarını ve hücreler arası voltaj farkını düzenli kontrol etmeyi unutma.\n\n" + clean_sig
+            if is_turkish:
+                reply = "Selamlar! Drone ve FPV bataryalarının güvenliği ve uzun ömrü için dikkat edilmesi gereken kritik noktalar:\n\n"
+                reply += "1. **Hücre Başına Voltaj:** Uçuş sırasında hücre voltajını asla 3.5V altına düşürme (ideal iniş 3.6V-3.7V). Tam dolu hücre 4.20V (LiHV ise 4.35V) olmalıdır.\n"
+                reply += "2. **Depolama (Storage):** Bataryaları birkaç günden fazla tam dolu ya da tamamen boş bırakma. Şarj aletinden 'Storage' modunu açarak hücreleri 3.80V-3.85V seviyesine getir.\n"
+                reply += "3. **Şarj Akımı:** Pil sağlığı için standart olarak 1C şarj akımını geçmemeye özen göster (örneğin 1500mAh bir batarya için en fazla 1.5A).\n\n"
+                reply += "Balans kablolarını ve hücreler arası voltaj farkını düzenli kontrol etmeyi unutma.\n\n" + clean_sig_tr
+            else:
+                reply = "Hey! For LiPo battery safety and longevity, keep these guidelines in mind:\n\n"
+                reply += "1. **Per-Cell Voltage:** Never discharge below 3.5V per cell (aim to land around 3.6V-3.7V). Full charge is 4.20V (or 4.35V for LiHV).\n"
+                reply += "2. **Storage Charge:** Don't leave packs fully charged or depleted for more than 48 hours. Charge or discharge them to 3.80V-3.85V per cell.\n"
+                reply += "3. **Charge Rate:** Stick to 1C charge rate for longest cycle life (e.g. 1.5A for a 1500mAh pack).\n\n" + clean_sig_en
             return {
                 "is_drone_question": True,
                 "confidence_score": 88,
@@ -239,12 +260,18 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON çıktısı üret, markdo
             }
 
         # Intent 3: Regulation / SHGM Flying Rules
-        regulation_terms = ["shgm", "mevzuat", "ceza", "izin", "kayıt", "kayit", "yasak", "nerede uçulur", "nerede uculur", "yeşil alan", "yesil alan", "kırmızı alan", "kirmizi alan"]
+        regulation_terms = ["shgm", "mevzuat", "ceza", "izin", "kayıt", "kayit", "yasak", "nerede uçulur", "nerede uculur", "yeşil alan", "yesil alan", "kırmızı alan", "kirmizi alan", "faa", "easa", "regulation", "249g"]
         if any(term in text for term in regulation_terms):
-            reply = "Selamlar! Türkiye'de drone uçuş kuralları ve SHGM mevzuatı hakkında temel rehber:\n\n"
-            reply += "1. **500 Gram Sınırı:** Azami kalkış ağırlığı 500 gram ve üzeri olan tüm cihazlar ve pilotları SHGM İHA Kayıt Sistemi'ne (iha.shgm.gov.tr) kaydolmak zorundadır. 500g altındaki mikro cihazlar kayıt gerektirmese de genel uçuş kurallarına tabidir.\n"
-            reply += "2. **Hava Sahası & İzinler:** SHGM haritasındaki kırmızı/uçuşa yasak bölgelerde (havalimanı yaklaşma hatları, askeri üsler, kamu binaları) izinsiz uçuş kesinlikle yasaktır. Yeşil alanlarda hobi amaçlı görerek uçuş (VLOS) yapılabilir.\n"
-            reply += "3. **Maksimum İrtifa:** Yasal tavan irtifası 120 metredir (400 feet). Kalabalıkların ve otoyolların doğrudan üzerinden uçulmamalıdır.\n\n" + clean_sig
+            if is_turkish:
+                reply = "Selamlar! Türkiye'de drone uçuş kuralları ve SHGM mevzuatı hakkında temel rehber:\n\n"
+                reply += "1. **500 Gram Sınırı:** Azami kalkış ağırlığı 500 gram ve üzeri olan tüm cihazlar ve pilotları SHGM İHA Kayıt Sistemi'ne (iha.shgm.gov.tr) kaydolmak zorundadır. 500g altındaki mikro cihazlar kayıt gerektirmese de genel uçuş kurallarına tabidir.\n"
+                reply += "2. **Hava Sahası & İzinler:** SHGM haritasındaki kırmızı/uçuşa yasak bölgelerde (havalimanı yaklaşma hatları, askeri üsler, kamu binaları) izinsiz uçuş kesinlikle yasaktır. Yeşil alanlarda hobi amaçlı görerek uçuş (VLOS) yapılabilir.\n"
+                reply += "3. **Maksimum İrtifa:** Yasal tavan irtifası 120 metredir (400 feet). Kalabalıkların ve otoyolların doğrudan üzerinden uçulmamalıdır.\n\n" + clean_sig_tr
+            else:
+                reply = "Hey! For drone regulations and sub-250g rules:\n\n"
+                reply += "1. **Sub-250g Category:** Under most civil aviation frameworks (FAA, EASA, SHGM), drones weighing under 250g enjoy simplified registration and more flexible recreational flying permissions.\n"
+                reply += "2. **Airspace & Altitude:** Standard legal ceiling is 120m (400ft) AGL. Always steer clear of airport controlled airspaces and emergency zones.\n"
+                reply += "3. **Visual Line of Sight (VLOS):** Recreational flights generally require direct line-of-sight unless flying with a dedicated spotter for FPV goggles.\n\n" + clean_sig_en
             return {
                 "is_drone_question": True,
                 "confidence_score": 85,
@@ -253,13 +280,20 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON çıktısı üret, markdo
             }
 
         # Intent 4: Technical Troubleshooting / Hardware / Betaflight
-        tech_terms = ["betaflight", "lehim", "uart", "elrs", "crossfire", "esc", "motor", "vtx", "vrx", "bağlantı", "baglanti", "çalışmıyor", "calismiyor", "arızalandı", "arizalandi", "hata", "port", "f405", "f722", "dshot", "alici", "alıcı", "verici", "bind"]
+        tech_terms = ["betaflight", "lehim", "uart", "elrs", "crossfire", "esc", "motor", "vtx", "vrx", "bağlantı", "baglanti", "çalışmıyor", "calismiyor", "arızalandı", "arizalandi", "hata", "port", "f405", "f722", "dshot", "alici", "alıcı", "verici", "bind", "binding", "desync", "filter", "rpm", "inav", "solder", "troubleshoot", "desyncing"]
         if any(term in text for term in tech_terms):
-            reply = "Selamlar! FPV donanım ve yazılım arızalarında adım adım çözüm adımları:\n\n"
-            reply += "1. **Bağlantılar & Donanım:** Multimetre ile kısa devre (continuity) kontrolü yap. Lehim noktalarının parlak, temiz ve komşu pinlerle temas etmediğinden emin ol.\n"
-            reply += "2. **Betaflight Ports & Alıcı:** Ports sekmesinde alıcının bağlı olduğu UART portunda 'Serial RX' açık olmalı. Receiver sekmesinde doğru protokolün (CRSF/SBUS vb.) seçildiğini doğrula.\n"
-            reply += "3. **Güç & Duman Testi:** İlk güç vermeden önce mutlaka duman önleyici (Smoke Stopper) kullan. Parçaların çalışma voltaj aralığının (örn. 1S-6S) besleme kaynağıyla tam uyumlu olduğunu kontrol et.\n\n"
-            reply += "Kullandığın uçuş kartı modelini veya hata detayını paylaşırsan adım adım çözüme ulaşabiliriz.\n\n" + clean_sig
+            if is_turkish:
+                reply = "Selamlar! FPV donanım ve yazılım arızalarında adım adım çözüm adımları:\n\n"
+                reply += "1. **Bağlantılar & Donanım:** Multimetre ile kısa devre (continuity) kontrolü yap. Lehim noktalarının parlak, temiz ve komşu pinlerle temas etmediğinden emin ol.\n"
+                reply += "2. **Betaflight Ports & Alıcı:** Ports sekmesinde alıcının bağlı olduğu UART portunda 'Serial RX' açık olmalı. Receiver sekmesinde doğru protokolün (CRSF/SBUS vb.) seçildiğini doğrula.\n"
+                reply += "3. **Güç & Duman Testi:** İlk güç vermeden önce mutlaka duman önleyici (Smoke Stopper) kullan. Parçaların çalışma voltaj aralığının (örn. 1S-6S) besleme kaynağıyla tam uyumlu olduğunu kontrol et.\n\n"
+                reply += "Kullandığın uçuş kartı modelini veya hata detayını paylaşırsan adım adım çözüme ulaşabiliriz.\n\n" + clean_sig_tr
+            else:
+                reply = "Hey! For FPV hardware & Betaflight troubleshooting, here are the step-by-step checks:\n\n"
+                reply += "1. **Continuity & Soldering:** Check with a multimeter continuity buzzer to ensure no solder bridges between VTX, ESC, or battery pads.\n"
+                reply += "2. **Betaflight Ports & Receiver:** Verify that 'Serial RX' is enabled on the exact UART port the receiver is wired to (TX to RX, RX to TX). Check that CRSF/ELRS protocol is selected in the Receiver tab.\n"
+                reply += "3. **Power & Smoke Stopper:** Always use a smoke stopper on the first power-up. Check that your FC and ESC firmware match your hardware target.\n\n"
+                reply += "Let us know your FC/ESC model or what error you see if you need more help!\n\n" + clean_sig_en
             return {
                 "is_drone_question": True,
                 "confidence_score": 88,
@@ -268,9 +302,12 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON çıktısı üret, markdo
             }
 
         # Intent 5: Flight Showcase / Video
-        showcase_terms = ["nasıl olmuş", "nasil olmus", "ilk uçuşum", "ilk ucusum", "video", "gösteri", "gosteri", "freestyle", "gap", "dive"]
+        showcase_terms = ["nasıl olmuş", "nasil olmus", "ilk uçuşum", "ilk ucusum", "video", "gösteri", "gosteri", "freestyle", "gap", "dive", "flight clip"]
         if any(term in text for term in showcase_terms):
-            reply = "Tebrikler, elinize ve emeğinize sağlık! Uçuş hattı ve drone hakimiyeti oldukça akıcı görünüyor. Kırımsız ve keyifli uçuşlar dilerim!\n\n" + clean_sig
+            if is_turkish:
+                reply = "Tebrikler, elinize ve emeğinize sağlık! Uçuş hattı ve drone hakimiyeti oldukça akıcı görünüyor. Kırımsız ve keyifli uçuşlar dilerim!\n\n" + clean_sig_tr
+            else:
+                reply = "Awesome flying! Smooth lines and great throttle control. Keep ripping and fly safe!\n\n" + clean_sig_en
             return {
                 "is_drone_question": True,
                 "confidence_score": 80,

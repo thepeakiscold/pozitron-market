@@ -84,7 +84,8 @@ async function run() {
     process.exit(1);
   }
 
-  const isHeadless = Boolean(params.headless || process.env.HEADLESS === 'true' || (!process.env.DISPLAY && !process.env.WAYLAND_DISPLAY));
+  // Strictly default to headless 'new' so no window, popup or taskbar icon ever appears
+  const isHeadless = params.headless === 'false' ? false : 'new';
   const launchArgs = [
     '--no-sandbox',
     '--disable-setuid-sandbox',
@@ -94,7 +95,7 @@ async function run() {
     '--window-size=1440,900',
     '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36'
   ];
-  if (process.env.DISPLAY) {
+  if (process.env.DISPLAY && isHeadless === false) {
     launchArgs.push('--window-position=-2400,-2400');
   }
 
@@ -102,7 +103,7 @@ async function run() {
   try {
     browser = await puppeteer.launch({
       executablePath: chromePath,
-      headless: isHeadless ? 'new' : false,
+      headless: isHeadless,
       args: launchArgs
     });
 
@@ -125,6 +126,29 @@ async function run() {
 
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 35000 });
     await new Promise(r => setTimeout(r, 2000));
+
+    // Check if post is archived or locked before trying to find comment box
+    const postStatus = await page.evaluate(() => {
+      const post = document.querySelector('shreddit-post');
+      if (post && (post.hasAttribute('archived') || post.hasAttribute('locked'))) {
+        return { isClosed: true, reason: post.hasAttribute('archived') ? 'arsivlenmis' : 'kilitlenmis' };
+      }
+      const bodyText = document.body ? document.body.innerText : '';
+      if (bodyText.includes('This thread is archived') || bodyText.includes('Comments are locked') || bodyText.includes('Archived post.')) {
+        return { isClosed: true, reason: 'arsivlenmis veya kilitlenmis' };
+      }
+      return { isClosed: false };
+    });
+
+    if (postStatus.isClosed) {
+      console.log(JSON.stringify({
+        success: false,
+        archived: true,
+        error: `Bu Reddit gonderisi ${postStatus.reason}, yeni yorum eklenemez.`
+      }));
+      await browser.close();
+      process.exit(0);
+    }
 
     // 1. Scroll down past post body to hydrate the comment area
     await page.evaluate(() => {

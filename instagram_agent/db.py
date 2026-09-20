@@ -125,6 +125,8 @@ def init_instagram_tables():
         cursor.execute("ALTER TABLE instagram_posts ADD COLUMN image_mode TEXT DEFAULT 'canvas'")
     if 'media_type' not in ig_cols:
         cursor.execute("ALTER TABLE instagram_posts ADD COLUMN media_type TEXT DEFAULT 'IMAGE'")
+    if 'video_engine' not in ig_cols:
+        cursor.execute("ALTER TABLE instagram_posts ADD COLUMN video_engine TEXT DEFAULT NULL")
 
     # Migration: Ensure advanced PR config columns exist
     cursor.execute("PRAGMA table_info(instagram_agent_config)")
@@ -133,7 +135,7 @@ def init_instagram_tables():
         ('story_enabled', 'INTEGER', '1'),
         ('carousel_enabled', 'INTEGER', '1'),
         ('dm_automation_enabled', 'INTEGER', '1'),
-        ('peak_scheduler_enabled', 'INTEGER', '1'),
+        ('peak_scheduler_enabled', 'INTEGER', '0'),
         ('reels_enabled', 'INTEGER', '1')
     ]:
         if col_name not in cfg_cols:
@@ -236,8 +238,8 @@ def save_instagram_post(post_data: dict):
         INSERT OR REPLACE INTO instagram_posts (
             id, content_type, product_id, title, caption, hashtags,
             image_url, local_image_path, status, ig_media_id, ig_permalink,
-            error_message, scheduled_at, published_at, metadata_json, image_mode, media_type, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            error_message, scheduled_at, published_at, metadata_json, image_mode, media_type, video_engine, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         post_data['id'],
         post_data.get('content_type', 'product_spotlight'),
@@ -256,6 +258,7 @@ def save_instagram_post(post_data: dict):
         json.dumps(post_data.get('metadata', {}), ensure_ascii=False) if isinstance(post_data.get('metadata'), dict) else post_data.get('metadata_json', '{}'),
         post_data.get('image_mode', 'canvas'),
         post_data.get('media_type', 'IMAGE'),
+        post_data.get('video_engine'),
         post_data.get('created_at', datetime.now().isoformat())
     ))
     conn.commit()

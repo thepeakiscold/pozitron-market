@@ -1,5 +1,5 @@
 {
-  "today_date": "2026-09-19",
+  "today_date": "2026-09-20",
   "today_follows_count": 10,
   "today_comments_count": 10,
   "max_daily_limit": 10,
@@ -74,7 +74,17 @@
     "52977017500",
     "4201010703",
     "3689780968",
-    "55526286731"
+    "55526286731",
+    "52948516343",
+    "75066354331",
+    "206247844",
+    "77474153008",
+    "72859965577",
+    "77844848563",
+    "74081915907",
+    "80422478524",
+    "42186094087",
+    "31750279539"
   ],
   "commented_media_ids": [
     "3983912198478190450_73181351103",
@@ -147,7 +157,17 @@
     "2997538067032308293_52977017500",
     "3091109624903030213_4201010703",
     "3072936270795981807_55526286731",
-    "2792315574083017910_50658439945"
+    "2792315574083017910_50658439945",
+    "3747745322899450368_52948516343",
+    "3990249118919398209_75066354331",
+    "3726682141426792080_206247844",
+    "3989501650527603912_77474153008",
+    "3989557896549789543_72859965577",
+    "3990231714598432608_55177644370",
+    "3754150656349884898_52948516343",
+    "3989527229986082914_77844848563",
+    "3989797794413628256_74081915907",
+    "3990240889487262413_80422478524"
   ],
   "history": [
     {
@@ -1355,6 +1375,176 @@
       "media_code": "CbATDhmAly2",
       "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
       "timestamp": "2026-09-19T03:15:48.264250",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "sanayisavunmatr",
+      "user_id": "52948516343",
+      "timestamp": "2026-09-20T12:32:23.467426",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "sanayisavunmatr",
+      "user_id": "52948516343",
+      "media_id": "3747745322899450368_52948516343",
+      "media_code": "DQCqoPIDaoA",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-09-20T12:32:37.365542",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gundemamed",
+      "user_id": "75066354331",
+      "timestamp": "2026-09-20T12:33:06.774188",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "gundemamed",
+      "user_id": "75066354331",
+      "media_id": "3990249118919398209_75066354331",
+      "media_code": "DdgNm6ygZNB",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-09-20T12:33:18.881938",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "trthaber",
+      "user_id": "206247844",
+      "timestamp": "2026-09-20T12:33:45.292857",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "trthaber",
+      "user_id": "206247844",
+      "media_id": "3726682141426792080_206247844",
+      "media_code": "DO31amuiTaQ",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-09-20T12:33:57.771852",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "diyarbakirstm",
+      "user_id": "77474153008",
+      "timestamp": "2026-09-20T12:34:26.257245",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "diyarbakirstm",
+      "user_id": "77474153008",
+      "media_id": "3989501650527603912_77474153008",
+      "media_code": "Dddjp0miEzI",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-09-20T12:34:39.296225",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "everestbuzbardak",
+      "user_id": "72859965577",
+      "timestamp": "2026-09-20T12:35:03.490249",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "everestbuzbardak",
+      "user_id": "72859965577",
+      "media_id": "3989557896549789543_72859965577",
+      "media_code": "DddwcTytG9n",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-09-20T12:35:11.717654",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "hilal_onlyqueen",
+      "user_id": "55177644370",
+      "media_id": "3990231714598432608_55177644370",
+      "media_code": "DdgJppwIy9g",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-09-20T12:35:35.368409",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "sanayisavunmatr",
+      "user_id": "52948516343",
+      "media_id": "3754150656349884898_52948516343",
+      "media_code": "DQZbCGxCNHi",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-09-20T12:35:56.829586",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "uluyel.uav.team",
+      "user_id": "77844848563",
+      "timestamp": "2026-09-20T12:36:27.641717",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "uluyel.uav.team",
+      "user_id": "77844848563",
+      "media_id": "3989527229986082914_77844848563",
+      "media_code": "DddpeDVEZBi",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-09-20T12:36:40.430735",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "hilaltoptanci21",
+      "user_id": "74081915907",
+      "timestamp": "2026-09-20T12:37:08.004151",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "hilaltoptanci21",
+      "user_id": "74081915907",
+      "media_id": "3989797794413628256_74081915907",
+      "media_code": "Ddem_SFqUtg",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-09-20T12:37:20.432293",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "alorpetrol_ahmet_ustanin_yeri",
+      "user_id": "80422478524",
+      "timestamp": "2026-09-20T12:37:54.099627",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "alorpetrol_ahmet_ustanin_yeri",
+      "user_id": "80422478524",
+      "media_id": "3990240889487262413_80422478524",
+      "media_code": "DdgLvKiIILN",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-09-20T12:38:10.462375",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "didemyektaturkanak",
+      "user_id": "42186094087",
+      "timestamp": "2026-09-20T12:38:32.790620",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gaziuzay",
+      "user_id": "31750279539",
+      "timestamp": "2026-09-20T12:38:50.098595",
       "status": "success"
     }
   ]

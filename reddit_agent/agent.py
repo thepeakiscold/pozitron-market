@@ -70,7 +70,13 @@ class RedditDroneAgent:
 
     def reload_config(self):
         self.config = get_agent_config()
-        self.ai_engine.set_api_key(self.config.get("gemini_api_key", ""))
+        gemini_key = self.config.get("gemini_api_key", "").strip()
+        if not gemini_key:
+            gemini_key = self._find_fallback_gemini_key()
+            if gemini_key:
+                update_agent_config({"gemini_api_key": gemini_key})
+                self.config["gemini_api_key"] = gemini_key
+        self.ai_engine.set_api_key(gemini_key)
         self.reddit_client.configure(
             client_id=self.config.get("client_id", ""),
             client_secret=self.config.get("client_secret", ""),
@@ -274,8 +280,15 @@ class RedditDroneAgent:
             if daily_count < max_daily:
                 pending = get_interactions(limit=10, status="draft")
                 if not pending:
-                    # Also consider high-confidence failed items eligible for retry
-                    pending = [i for i in get_interactions(limit=10, status="failed") if i.get("confidence_score", 0) >= min_conf]
+                    # Also consider high-confidence failed items eligible for retry (excluding archived/locked posts)
+                    all_failed = get_interactions(limit=20, status="failed")
+                    pending = [
+                        i for i in all_failed
+                        if i.get("confidence_score", 0) >= min_conf
+                        and "arsivlenmis" not in (i.get("error_message") or "").lower()
+                        and "kilitlenmis" not in (i.get("error_message") or "").lower()
+                        and "archived" not in (i.get("error_message") or "").lower()
+                    ]
 
                 for candidate in pending:
                     if candidate.get("confidence_score", 0) >= min_conf and candidate.get("gemini_reply"):
@@ -309,6 +322,11 @@ class RedditDroneAgent:
         post_url = item.get("permalink") or item.get("url") or ""
         reply_text = item.get("gemini_reply") or ""
 
+        if item.get("reddit_id", "").startswith("t3_sample_") or "/comments/sample_" in post_url:
+            if not self.reddit_client.dry_run:
+                update_interaction_status(interaction_id, status="archived", error_message="Demo/ornek soru canli Reddit'te bulunmuyor.")
+                return {"success": False, "archived": True, "error": "Demo/ornek soru canli Reddit'te bulunmuyor."}
+
         res = self.reddit_client.post_reply(
             thing_id=item["reddit_id"],
             text=reply_text,
@@ -328,12 +346,21 @@ class RedditDroneAgent:
                 "published_at": datetime.now().isoformat()
             }
         else:
+            err_msg = res.get("error", "Bilinmeyen hata")
+            is_archived = (
+                res.get("archived") or
+                "arsivlenmis" in err_msg.lower() or
+                "kilitlenmis" in err_msg.lower() or
+                "archived" in err_msg.lower() or
+                "locked" in err_msg.lower()
+            )
+            new_status = "archived" if is_archived else "failed"
             update_interaction_status(
                 interaction_id,
-                status="failed",
-                error_message=res.get("error", "Bilinmeyen hata")
+                status=new_status,
+                error_message=err_msg
             )
-            return {"success": False, "error": res.get("error")}
+            return {"success": False, "archived": is_archived, "error": err_msg}
 
     def approve_reply(self, interaction_id: str) -> dict:
         """Alias for publish_reply used by manual review."""

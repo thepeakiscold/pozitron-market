@@ -1,10 +1,13 @@
 import os
 import io
 import math
+import random
+import subprocess
 import base64
 import json
 import re
 import urllib.request
+import urllib.error
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -68,9 +71,13 @@ def _load_product_image(local_path: str):
     return None
 
 class ImageGenerator:
-    def __init__(self, width: int = 1080, height: int = 1080):
+    def __init__(self, width: int = 1080, height: int = 1080, gemini_api_key: str = ""):
         self.width = width
         self.height = height
+        self.gemini_api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY", "")
+
+    def set_api_key(self, api_key: str):
+        self.gemini_api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
 
     def generate_post_image(self, post_data: dict) -> str:
         """
@@ -1043,21 +1050,652 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         img.save(file_path, format='JPEG', quality=93, optimize=True)
         return f"./assets/instagram/posts/{filename}"
 
-    def generate_reels_video(self, post_data: dict) -> str:
+    def generate_reels_video(self, post_data: dict, prompt: str = None) -> str:
         """
-        Creates a 1080x1920 (9:16) 5-second dynamic MP4 video clip for Instagram Reels using ffmpeg.
+        Creates a 1080x1920 (9:16) MP4 video clip for Instagram Reels.
+        Primary: Uses Gemini Omni Flash (gemini-omni-1.1-flash) via Google GenAI Interactions API.
+        Fallback: High-quality ffmpeg dynamic zoompan animation if Gemini API is unavailable or rate-limited.
         """
         post_id = post_data['id']
         reels_dir = os.path.join(BASE_DIR, 'assets', 'instagram', 'reels')
         os.makedirs(reels_dir, exist_ok=True)
 
-        story_img_rel = self.generate_story_image(post_data)
-        abs_story_img = os.path.join(BASE_DIR, story_img_rel.lstrip('./').lstrip('/'))
+        if prompt and not post_data.get('video_prompt'):
+            post_data['video_prompt'] = prompt
 
         video_filename = f"{post_id}.mp4"
         abs_video_path = os.path.join(reels_dir, video_filename)
 
-        import subprocess
+        # 1. Attempt Gemini Omni Flash Video Generation only if explicitly requested
+        engine_req = post_data.get('engine', 'creative')
+        if engine_req == 'gemini' and getattr(self, 'gemini_api_key', None):
+            gemini_res = self._generate_gemini_omni_video(post_data, prompt=prompt, output_abs_path=abs_video_path)
+            if gemini_res and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 5000:
+                post_data['video_engine'] = 'gemini-omni-1.1-flash'
+                return f"./assets/instagram/reels/{video_filename}"
+
+        # 2. Dynamic multi-slide or FPV B-roll video generator (Randomized 1 & 2)
+        return self._generate_ffmpeg_reels_video(post_data, abs_video_path, video_filename)
+
+    def _generate_gemini_omni_video(self, post_data: dict, prompt: str = None, output_abs_path: str = None) -> str:
+        """
+        Calls Gemini Omni Flash (gemini-omni-1.1-flash) via Google GenAI Interactions REST API.
+        Accepts product image or rendered story card as input image, producing 9:16 vertical video.
+        """
+        api_key = getattr(self, 'gemini_api_key', '')
+        if not api_key:
+            return ""
+
+        ref_image_bytes = None
+        prod = post_data.get('product_data') or {}
+        img_rel = prod.get('image_url') or prod.get('image')
+
+        # 1. Try to load the product image first
+        if img_rel:
+            clean_rel = img_rel.lstrip('./').lstrip('/')
+            abs_p = os.path.join(BASE_DIR, clean_rel)
+            if os.path.exists(abs_p):
+                loaded = _load_product_image(abs_p)
+                if loaded:
+                    buf = io.BytesIO()
+                    loaded.convert('RGB').save(buf, format='JPEG', quality=90)
+                    ref_image_bytes = buf.getvalue()
+
+        # 2. If no product image, generate/load story card
+        if not ref_image_bytes:
+            story_img_rel = self.generate_story_image(post_data)
+            abs_story_img = os.path.join(BASE_DIR, story_img_rel.lstrip('./').lstrip('/'))
+            if os.path.exists(abs_story_img):
+                with open(abs_story_img, 'rb') as f:
+                    ref_image_bytes = f.read()
+
+        if not ref_image_bytes:
+            return ""
+
+        b64_img = base64.b64encode(ref_image_bytes).decode('utf-8')
+
+        # 3. Formulate video prompt
+        if not prompt:
+            prod_name = prod.get('name_tr') or prod.get('name') or post_data.get('title', 'FPV Drone Technology')
+            prompt = (
+                f"Cinematic vertical 9:16 product reveal of {prod_name}. "
+                "Smooth continuous 360-degree camera orbit in a dark high-tech studio with neon cyan and amber rim lighting. "
+                "Crisp details of carbon fiber weave, copper motor coils, and precision electronics. "
+                "Photorealistic 8k, smooth 60fps movement, unbroken single shot, no text, no captions."
+            )
+
+        post_data['video_prompt'] = prompt
+        print(f"[Gemini Omni Video] Reels videosu uretiliyor: '{prompt[:70]}...'")
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/interactions?key={api_key}"
+        payload = {
+            "model": "gemini-omni-1.1-flash",
+            "input": [
+                {
+                    "type": "image",
+                    "data": b64_img,
+                    "mime_type": "image/jpeg"
+                },
+                {
+                    "type": "text",
+                    "text": prompt
+                }
+            ],
+            "response_format": {
+                "type": "video",
+                "aspect_ratio": "9:16",
+                "resolution": "720p",
+                "delivery": "inline"
+            }
+        }
+
+        try:
+            req_data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(
+                url,
+                data=req_data,
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                if resp.status == 200:
+                    resp_json = json.loads(resp.read().decode('utf-8'))
+                    raw_video = None
+
+                    # 1. Primary: Check top-level output_video in Interactions API response
+                    out_vid = resp_json.get('output_video') or {}
+                    if out_vid.get('data'):
+                        raw_video = base64.b64decode(out_vid['data'])
+                    elif out_vid.get('uri'):
+                        try:
+                            req_dl = urllib.request.Request(out_vid['uri'])
+                            with urllib.request.urlopen(req_dl, timeout=60) as dl_resp:
+                                raw_video = dl_resp.read()
+                        except Exception as e_dl:
+                            print(f"[Gemini Omni Video] Video URI indirme hatasi: {e_dl}")
+
+                    # 2. Secondary: Check steps[].content[] structure
+                    if not raw_video:
+                        steps = resp_json.get('steps', [])
+                        for step in steps:
+                            for content_item in step.get('content', []):
+                                if content_item.get('type') == 'video':
+                                    if content_item.get('data'):
+                                        raw_video = base64.b64decode(content_item['data'])
+                                        break
+                                    elif content_item.get('uri'):
+                                        try:
+                                            req_dl = urllib.request.Request(content_item['uri'])
+                                            with urllib.request.urlopen(req_dl, timeout=60) as dl_resp:
+                                                raw_video = dl_resp.read()
+                                                break
+                                        except Exception:
+                                            pass
+                            if raw_video:
+                                break
+
+                    if raw_video and len(raw_video) > 1000:
+                        with open(output_abs_path, 'wb') as vf:
+                            vf.write(raw_video)
+                        print(f"[Gemini Omni Video] Basariyla Reels videosu olusturuldu ({len(raw_video)} bayt).")
+                        return output_abs_path
+                    else:
+                        print(f"[Gemini Omni Video] Yanitta gecerli video verisi bulunamadi. Yanit ozeti: {str(resp_json)[:250]}")
+        except urllib.error.HTTPError as he:
+            err_body = ""
+            try:
+                err_body = he.read().decode('utf-8', errors='ignore')
+            except Exception:
+                pass
+            print(f"[Gemini Video UYARI] HTTP {he.code}: {err_body[:200]}")
+            if "limit: 0 requests per day on Free Tier" in err_body or "limit: 0" in err_body:
+                post_data['fallback_reason'] = "Google Free Tier kısıtlaması: gemini-omni-1.1-flash video modeli Free Tier'da günlük 0 istekle sınırlandırılmıştır. Google AI Studio projenize kart/faturalandırma (Pay-as-you-go) ekleyip Paid Tier'a geçmeniz gerekir."
+            elif he.code == 429:
+                post_data['fallback_reason'] = f"Gemini API Hız Limiti (HTTP 429): {err_body[:140]}"
+            else:
+                post_data['fallback_reason'] = f"Gemini API Hatası (HTTP {he.code}): {err_body[:140]}"
+        except Exception as e:
+            print(f"[Gemini Video UYARI] Video olusturma hatasi: {e}")
+            post_data['fallback_reason'] = f"Bağlantı Hatası: {str(e)}"
+
+        return ""
+
+    def _get_reels_audio(self) -> str:
+        """
+        Returns a custom user audio track from assets/instagram/audio.
+        If no user audio files exist, returns empty string so video remains clean without artificial rhythm.
+        """
+        audio_dir = os.path.join(BASE_DIR, 'assets', 'instagram', 'audio')
+        os.makedirs(audio_dir, exist_ok=True)
+        exts = ('.mp3', '.wav', '.aac', '.m4a', '.ogg')
+        files = [
+            os.path.join(audio_dir, f) for f in os.listdir(audio_dir)
+            if f.lower().endswith(exts) and 'fpv_beat_default' not in f.lower()
+        ]
+        if files:
+            return random.choice(files)
+        return ""
+
+    def _check_video_has_audio(self, video_path: str) -> bool:
+        """Checks if a video file contains an audio stream using ffprobe."""
+        try:
+            cmd = [
+                'ffprobe',
+                '-v', 'error',
+                '-select_streams', 'a',
+                '-show_entries', 'stream=codec_type',
+                '-of', 'csv=p=0',
+                video_path
+            ]
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+            return 'audio' in (res.stdout or '').lower()
+        except Exception:
+            return False
+
+    def _get_broll_clip(self) -> str:
+        """
+        Returns a random FPV drone video clip from assets/instagram/broll.
+        """
+        broll_dir = os.path.join(BASE_DIR, 'assets', 'instagram', 'broll')
+        os.makedirs(broll_dir, exist_ok=True)
+        exts = ('.mp4', '.mov', '.webm', '.mkv')
+        files = [os.path.join(broll_dir, f) for f in os.listdir(broll_dir) if f.lower().endswith(exts)]
+        if files:
+            return os.path.join(broll_dir, random.choice(files))
+        return ""
+
+    def generate_reels_slides(self, post_data: dict) -> list:
+        """
+        Creates 3 vertical 1080x1920 (9:16) slides for Reels:
+        Slide 1: Hero Product & Hook
+        Slide 2: Technical Specifications & Features
+        Slide 3: Pozitron Advantage & Call-To-Action (CTA)
+        """
+        post_id = post_data['id']
+        story_w, story_h = 1080, 1920
+        slides = []
+        prod = post_data.get('product_data') or {}
+        brand = clean_canvas_text(prod.get('brand', 'Pozitron')).upper()
+        prod_name = clean_canvas_text(prod.get('name_tr') or prod.get('name') or post_data.get('title', 'Pozitron FPV'))
+        price_val = prod.get('price_try')
+        price_str = f"{float(price_val):.2f} TL" if price_val else "En Iyi Fiyat"
+        visual = post_data.get('visual_summary') or {}
+        points = visual.get('key_points') or [
+            "Yuksek verimlilik ve hassas kontrol tepkisi",
+            "Karbon fiber ve titanyum guclendirilmis govde",
+            "Betaflight ve tum modern FPV stack uyumu"
+        ]
+
+        # Load product image if available
+        prod_img = None
+        if prod and prod.get('image_url'):
+            local_p = prod.get('image_url', '').lstrip('/')
+            abs_p = os.path.join(BASE_DIR, local_p)
+            prod_img = _load_product_image(abs_p)
+
+        def make_base_canvas():
+            img = Image.new('RGB', (story_w, story_h), color=(11, 15, 25))
+            draw = ImageDraw.Draw(img)
+            # Cyber Gradient
+            for y in range(story_h):
+                ratio = y / story_h
+                r = int(11 * (1 - ratio) + 20 * ratio)
+                g = int(15 * (1 - ratio) + 30 * ratio)
+                b = int(25 * (1 - ratio) + 55 * ratio)
+                draw.line([(0, y), (story_w, y)], fill=(r, g, b))
+            # Radial glow
+            glow = Image.new('RGBA', (story_w, story_h), (0, 0, 0, 0))
+            gdraw = ImageDraw.Draw(glow)
+            gdraw.ellipse([(story_w // 2 - 380, 420), (story_w // 2 + 380, 1180)], fill=(2, 132, 199, 45))
+            glow = glow.filter(ImageFilter.GaussianBlur(120))
+            img.paste(glow, (0, 0), glow)
+            return img, draw
+
+        # ==========================================
+        # SLIDE 1: Hero & Hook
+        # ==========================================
+        s1_img, s1_draw = make_base_canvas()
+        s1_draw.rounded_rectangle([(60, 120), (430, 185)], radius=14, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        font_brand = get_font(28, bold=True)
+        s1_draw.text((85, 137), "POZITRON MARKET", fill=(255, 255, 255), font=font_brand)
+
+        s1_draw.rounded_rectangle([(story_w - 440, 120), (story_w - 60, 185)], radius=14, fill=(2, 132, 199), outline=(56, 189, 248), width=2)
+        font_badge = get_font(22, bold=True)
+        s1_draw.text((story_w - 415, 139), "GUNUN FPV DONANIMI", fill=(255, 255, 255), font=font_badge)
+
+        # Center Photo Container
+        photo_box = [(60, 230), (story_w - 60, 960)]
+        s1_draw.rounded_rectangle(photo_box, radius=24, fill=(15, 23, 42), outline=(30, 58, 95), width=3)
+        inner_box = [(85, 255), (story_w - 85, 935)]
+        s1_draw.rounded_rectangle(inner_box, radius=18, fill=(248, 250, 252))
+
+        # Brand Badge
+        s1_draw.rounded_rectangle([(110, 280), (110 + len(brand) * 16 + 45, 335)], radius=10, fill=(15, 23, 42))
+        s1_draw.text((125, 292), brand, fill=(255, 255, 255), font=get_font(22, bold=True))
+
+        # Discount if any
+        disc = prod.get('discount_pct', 0)
+        if disc and disc > 0:
+            s1_draw.rounded_rectangle([(story_w - 280, 280), (story_w - 110, 335)], radius=10, fill=(220, 38, 38))
+            s1_draw.text((story_w - 265, 292), f"-%{disc} INDIRIM", fill=(255, 255, 255), font=get_font(22, bold=True))
+
+        # Paste Product Image
+        if prod_img:
+            p1 = prod_img.copy()
+            p1.thumbnail((720, 560), Image.Resampling.LANCZOS)
+            px = 85 + (story_w - 170 - p1.width) // 2
+            py = 255 + (680 - p1.height) // 2
+            s1_img.paste(p1, (px, py), p1 if p1.mode == 'RGBA' else None)
+
+        font_title = get_font(38, bold=True)
+        title_disp = prod_name[:42] + "..." if len(prod_name) > 45 else prod_name
+        s1_draw.text((70, 1000), title_disp, fill=(255, 255, 255), font=font_title)
+
+        s1_draw.rounded_rectangle([(70, 1070), (430, 1145)], radius=14, fill=(22, 101, 52), outline=(74, 222, 128), width=2)
+        s1_draw.text((95, 1088), price_str, fill=(255, 255, 255), font=get_font(30, bold=True))
+
+        s1_draw.rounded_rectangle([(60, 1180), (story_w - 60, 1560)], radius=20, fill=(15, 23, 42, 230), outline=(30, 41, 59), width=2)
+        font_pt = get_font(24, bold=True)
+        y_pt = 1215
+        for pt in points[:3]:
+            s1_draw.rounded_rectangle([(90, y_pt), (story_w - 90, y_pt + 90)], radius=12, fill=(24, 34, 53), outline=(51, 65, 85), width=1)
+            clean_pt = clean_canvas_text(pt)
+            s1_draw.text((120, y_pt + 30), clean_pt[:48], fill=(248, 250, 252), font=font_pt)
+            y_pt += 110
+
+        s1_draw.rounded_rectangle([(story_w // 2 - 240, 1640), (story_w // 2 + 240, 1715)], radius=16, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        s1_draw.text((story_w // 2 - 210, 1662), "⚡ TEKNIK DETAYLAR >>", fill=(56, 189, 248), font=get_font(26, bold=True))
+
+        s1_filename = f"{post_id}_reels_slide1.jpg"
+        s1_path = os.path.join(OUTPUT_DIR, s1_filename)
+        s1_img.save(s1_path, 'JPEG', quality=93)
+        slides.append(s1_path)
+
+        # ==========================================
+        # SLIDE 2: Technical Specs
+        # ==========================================
+        s2_img, s2_draw = make_base_canvas()
+        s2_draw.rounded_rectangle([(60, 120), (430, 185)], radius=14, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        s2_draw.text((85, 137), "POZITRON MARKET", fill=(255, 255, 255), font=font_brand)
+
+        s2_draw.rounded_rectangle([(story_w - 440, 120), (story_w - 60, 185)], radius=14, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        s2_draw.text((story_w - 410, 139), "⚡ TEKNIK ANALIZ", fill=(56, 189, 248), font=font_badge)
+
+        s2_draw.rounded_rectangle([(60, 220), (story_w - 60, 480)], radius=20, fill=(15, 23, 42), outline=(30, 58, 95), width=2)
+        if prod_img:
+            p2 = prod_img.copy()
+            p2.thumbnail((220, 220), Image.Resampling.LANCZOS)
+            s2_img.paste(p2, (90, 240), p2 if p2.mode == 'RGBA' else None)
+        s2_draw.text((340, 260), brand, fill=(56, 189, 248), font=get_font(24, bold=True))
+        s2_draw.text((340, 305), title_disp[:34], fill=(255, 255, 255), font=get_font(28, bold=True))
+        s2_draw.text((340, 370), f"Fiyat: {price_str}", fill=(74, 222, 128), font=get_font(26, bold=True))
+
+        specs_data = [
+            ("MAKSIMUM PERFORMANS", points[0] if len(points) > 0 else "Yuksek itis gucu ve hassas kontrol"),
+            ("DAYANIKLI DONANIM", points[1] if len(points) > 1 else "Karbon fiber ve darbelere dayanikli govde"),
+            ("TAM ENTEGRASYON", points[2] if len(points) > 2 else "Betaflight ve modern FPV sistemlerle tam uyum")
+        ]
+        y_spec = 520
+        for title_s, desc_s in specs_data:
+            s2_draw.rounded_rectangle([(60, y_spec), (story_w - 60, y_spec + 320)], radius=20, fill=(15, 23, 42, 240), outline=(56, 189, 248), width=2)
+            s2_draw.rounded_rectangle([(90, y_spec + 25), (430, y_spec + 75)], radius=10, fill=(2, 132, 199))
+            s2_draw.text((105, y_spec + 35), title_s, fill=(255, 255, 255), font=get_font(20, bold=True))
+            
+            clean_desc = clean_canvas_text(desc_s)
+            font_desc = get_font(24, bold=False)
+            if len(clean_desc) > 42:
+                s2_draw.text((90, y_spec + 110), clean_desc[:40] + "-", fill=(241, 245, 249), font=font_desc)
+                s2_draw.text((90, y_spec + 155), clean_desc[40:84], fill=(241, 245, 249), font=font_desc)
+            else:
+                s2_draw.text((90, y_spec + 125), clean_desc, fill=(241, 245, 249), font=font_desc)
+
+            s2_draw.text((90, y_spec + 245), "• Pozitron Laboratuvar Onayli", fill=(74, 222, 128), font=get_font(20, bold=True))
+            y_spec += 360
+
+        s2_draw.rounded_rectangle([(story_w // 2 - 240, 1640), (story_w // 2 + 240, 1715)], radius=16, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        s2_draw.text((story_w // 2 - 200, 1662), ">> NEDEN POZITRON? >>", fill=(56, 189, 248), font=get_font(26, bold=True))
+
+        s2_filename = f"{post_id}_reels_slide2.jpg"
+        s2_path = os.path.join(OUTPUT_DIR, s2_filename)
+        s2_img.save(s2_path, 'JPEG', quality=93)
+        slides.append(s2_path)
+
+        # ==========================================
+        # SLIDE 3: Advantage & Call-To-Action (CTA)
+        # ==========================================
+        s3_img, s3_draw = make_base_canvas()
+        s3_draw.rounded_rectangle([(60, 120), (430, 185)], radius=14, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        s3_draw.text((85, 137), "POZITRON MARKET", fill=(255, 255, 255), font=font_brand)
+
+        s3_draw.rounded_rectangle([(story_w - 440, 120), (story_w - 60, 185)], radius=14, fill=(2, 132, 199), outline=(56, 189, 248), width=2)
+        s3_draw.text((story_w - 410, 139), "🔥 GUVENLI ALISVERIS", fill=(255, 255, 255), font=font_badge)
+
+        s3_draw.rounded_rectangle([(60, 230), (story_w - 60, 520)], radius=24, fill=(15, 23, 42), outline=(30, 58, 95), width=2)
+        s3_draw.text((100, 275), "NEDEN POZITRON MARKET?", fill=(56, 189, 248), font=get_font(36, bold=True))
+        s3_draw.text((100, 340), "Turkiye'nin Lider FPV & Yaris Teknolojileri", fill=(203, 213, 225), font=get_font(26, bold=False))
+        s3_draw.text((100, 410), "En yeni donanimlar, resmi garanti, uzman destek.", fill=(148, 163, 184), font=get_font(22, bold=False))
+
+        adv_items = [
+            ("AYNI GUN HIZLI KARGO", "Saat 16:00'ya kadar verilen tum siparisler ayni gun kargoda."),
+            ("%100 ORIJINAL DISTRIBUTOR", "Sifir, adiniza faturali ve resmi garantili guvenilir urun."),
+            ("UZMAN PILOT DESTEGI", "Ucus, lehim ve yazilim ayarlarinda ekibimiz yaninizda.")
+        ]
+        y_adv = 570
+        for adv_title, adv_desc in adv_items:
+            s3_draw.rounded_rectangle([(60, y_adv), (story_w - 60, y_adv + 260)], radius=18, fill=(20, 29, 45), outline=(51, 65, 85), width=2)
+            s3_draw.text((100, y_adv + 40), f"[+] {adv_title}", fill=(74, 222, 128), font=get_font(26, bold=True))
+            s3_draw.text((100, y_adv + 105), clean_canvas_text(adv_desc), fill=(241, 245, 249), font=get_font(22, bold=False))
+            y_adv += 295
+
+        s3_draw.rounded_rectangle([(80, 1500), (story_w - 80, 1720)], radius=32, fill=(2, 132, 199), outline=(56, 189, 248), width=4)
+        s3_draw.text((story_w // 2 - 250, 1545), "pozitronmarket.com", fill=(255, 255, 255), font=get_font(38, bold=True))
+        s3_draw.text((story_w // 2 - 290, 1625), "Yoruma 'LINK' yaz veya Profilden Incele >", fill=(224, 242, 254), font=get_font(24, bold=False))
+
+        s3_filename = f"{post_id}_reels_slide3.jpg"
+        s3_path = os.path.join(OUTPUT_DIR, s3_filename)
+        s3_img.save(s3_path, 'JPEG', quality=93)
+        slides.append(s3_path)
+
+        return slides
+
+    def _generate_dynamic_template_video(self, post_data: dict, abs_video_path: str, video_filename: str) -> str:
+        """
+        Mode 1: Generates a 7.5-second dynamic 3-slide vertical Reels video with smooth transitions and audio beat.
+        """
+        try:
+            slides = self.generate_reels_slides(post_data)
+            if len(slides) < 3:
+                return self._fallback_single_slide_video(post_data, abs_video_path, video_filename)
+
+            s1, s2, s3 = slides[0], slides[1], slides[2]
+            audio_path = self._get_reels_audio()
+
+            filter_str = (
+                "[0:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v0];"
+                "[1:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v1];"
+                "[2:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v2];"
+                "[v0][v1]xfade=transition=wipeleft:duration=0.5:offset=2.5[v01];"
+                "[v01][v2]xfade=transition=wipeleft:duration=0.5:offset=5.0[v]"
+            )
+
+            cmd = [
+                'ffmpeg',
+                '-loop', '1', '-t', '3', '-i', s1,
+                '-loop', '1', '-t', '3', '-i', s2,
+                '-loop', '1', '-t', '3', '-i', s3,
+            ]
+
+            if audio_path and os.path.exists(audio_path):
+                cmd.extend(['-i', audio_path])
+                cmd.extend([
+                    '-filter_complex', filter_str,
+                    '-map', '[v]',
+                    '-map', '3:a',
+                    '-c:v', 'libx264',
+                    '-c:a', 'aac',
+                    '-b:a', '192k',
+                    '-t', '7.5',
+                    '-pix_fmt', 'yuv420p',
+                    '-af', 'afade=t=out:st=6.8:d=0.7',
+                    '-movflags', '+faststart',
+                    abs_video_path,
+                    '-y'
+                ])
+            else:
+                cmd.extend([
+                    '-filter_complex', filter_str,
+                    '-map', '[v]',
+                    '-c:v', 'libx264',
+                    '-t', '7.5',
+                    '-pix_fmt', 'yuv420p',
+                    '-movflags', '+faststart',
+                    abs_video_path,
+                    '-y'
+                ])
+
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=45)
+            if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 1000:
+                print(f"[FFmpeg Dinamik Sablon] Reels basariyla olusturuldu: {video_filename}")
+                if post_data.get('reel_mode') == 'broll_hook':
+                    post_data['video_engine'] = 'FFmpeg Dinamik Çok Slaytlı Şablon (1. Yol - B-Roll Hatası Nedeniyle Fallback)'
+                else:
+                    post_data['video_engine'] = 'FFmpeg Dinamik Çok Slaytlı Şablon (1. Yol)'
+                    post_data['reel_mode'] = 'dynamic_template'
+                    post_data['reel_mode_info'] = '1. Yol: 3 Slaytlı Dinamik Şablon + Cyberpunk Beat Müzik'
+                return f"./assets/instagram/reels/{video_filename}"
+        except Exception as e:
+            print(f"[UYARI] Dinamik sablon olusturma hatasi: {e}")
+
+        return self._fallback_single_slide_video(post_data, abs_video_path, video_filename)
+
+    def generate_reels_bottom_overlay(self, post_data: dict) -> str:
+        """
+        Generates a transparent 1080x1920 RGBA image.
+        The top ~76% (y < 1460) is completely transparent so the background FPV drone video is fully visible.
+        The bottom ~20% (y: 1460 to 1840) contains a sleek, compact lower-third glassmorphic product showcase card.
+        """
+        post_id = post_data['id']
+        story_w, story_h = 1080, 1920
+        img = Image.new('RGBA', (story_w, story_h), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+
+        prod = post_data.get('product_data') or {}
+        brand = clean_canvas_text(prod.get('brand', 'Pozitron')).upper()
+        prod_name = clean_canvas_text(prod.get('name_tr') or prod.get('name') or post_data.get('title', 'Pozitron FPV'))
+        price_val = prod.get('price_try')
+        price_str = f"{float(price_val):.2f} TL" if price_val else "En İyi Fiyat"
+
+        # Compact Bottom Card Box (y: 1460 to 1840 - Height: 380px)
+        card_box = [(40, 1460), (story_w - 40, 1840)]
+        draw.rounded_rectangle(card_box, radius=22, fill=(11, 15, 25, 235), outline=(56, 189, 248, 220), width=2)
+
+        # Product Photo Container (Left Column: 200x200 px)
+        photo_box = [(65, 1480), (265, 1680)]
+        draw.rounded_rectangle(photo_box, radius=14, fill=(248, 250, 252, 245), outline=(30, 58, 95, 180), width=1)
+
+        # Load and paste product image
+        prod_img = None
+        if prod and prod.get('image_url'):
+            local_p = prod.get('image_url', '').lstrip('/')
+            abs_p = os.path.join(BASE_DIR, local_p)
+            prod_img = _load_product_image(abs_p)
+
+        if prod_img:
+            p = prod_img.copy()
+            p.thumbnail((180, 180), Image.Resampling.LANCZOS)
+            px = 65 + (200 - p.width) // 2
+            py = 1480 + (200 - p.height) // 2
+            img.paste(p, (px, py), p if p.mode == 'RGBA' else None)
+
+        # Discount badge if any
+        disc = prod.get('discount_pct', 0)
+        if disc and disc > 0:
+            draw.rounded_rectangle([(70, 1485), (175, 1515)], radius=6, fill=(220, 38, 38, 240))
+            draw.text((78, 1490), f"-%{disc} İNDİRİM", fill=(255, 255, 255), font=get_font(13, bold=True))
+
+        # Product Info (Right Column: x: 285 to 1015)
+        # Row 1: Brand & Pilot Rating
+        draw.text((285, 1482), brand, fill=(56, 189, 248), font=get_font(20, bold=True))
+        draw.text((440, 1484), "TOP RATED  •  Pilot Onaylı", fill=(251, 191, 36), font=get_font(18, bold=True))
+
+        # Row 2: Product Name (Wrapped cleanly)
+        clean_name = clean_canvas_text(prod_name)
+        if len(clean_name) > 34:
+            line1 = clean_name[:34]
+            line2 = clean_name[34:68] + ("..." if len(clean_name) > 68 else "")
+            draw.text((285, 1510), line1, fill=(255, 255, 255), font=get_font(23, bold=True))
+            draw.text((285, 1538), line2, fill=(255, 255, 255), font=get_font(23, bold=True))
+        else:
+            draw.text((285, 1518), clean_name, fill=(255, 255, 255), font=get_font(26, bold=True))
+
+        # Row 3: Badges (Price + Shipping + Warranty)
+        # Price tag
+        draw.rounded_rectangle([(285, 1595), (555, 1665)], radius=12, fill=(22, 101, 52, 240), outline=(74, 222, 128, 220), width=2)
+        draw.text((305, 1612), price_str, fill=(255, 255, 255), font=get_font(26, bold=True))
+
+        # Fast Shipping Badge
+        draw.rounded_rectangle([(570, 1595), (825, 1665)], radius=12, fill=(2, 132, 199, 230), outline=(56, 189, 248, 180), width=1)
+        draw.text((605, 1618), "AYNI GÜN KARGO", fill=(255, 255, 255), font=get_font(18, bold=True))
+
+        # Distributor / Warranty Badge
+        draw.rounded_rectangle([(840, 1595), (1015, 1665)], radius=12, fill=(15, 23, 42, 240), outline=(100, 116, 139, 180), width=1)
+        draw.text((865, 1618), "TR GARANTİ", fill=(148, 163, 184), font=get_font(17, bold=True))
+
+        # Row 4: Compact CTA Button (Full width of the card)
+        draw.rounded_rectangle([(65, 1705), (1015, 1815)], radius=16, fill=(2, 132, 199, 240), outline=(56, 189, 248, 240), width=2)
+        cta_main = "pozitronmarket.com"
+        cta_sub = "Profilden İncele veya Yoruma 'LİNK' Yaz >"
+        font_cta_main = get_font(30, bold=True)
+        font_cta_sub = get_font(18, bold=True)
+
+        try:
+            bb1 = draw.textbbox((0, 0), cta_main, font=font_cta_main)
+            w1 = int(bb1[2] - bb1[0])
+        except Exception:
+            w1 = int(len(cta_main) * 16)
+        draw.text((int((story_w - w1) // 2), 1720), cta_main, fill=(255, 255, 255), font=font_cta_main)
+
+        try:
+            bb2 = draw.textbbox((0, 0), cta_sub, font=font_cta_sub)
+            w2 = int(bb2[2] - bb2[0])
+        except Exception:
+            w2 = int(len(cta_sub) * 10)
+        draw.text((int((story_w - w2) // 2), 1768), cta_sub, fill=(224, 242, 254), font=font_cta_sub)
+
+        filename = f"{post_id}_reels_overlay.png"
+        abs_overlay_path = os.path.join(OUTPUT_DIR, filename)
+        img.save(abs_overlay_path, 'PNG')
+        return abs_overlay_path
+
+    def _generate_broll_hook_video(self, post_data: dict, abs_video_path: str, video_filename: str, broll_path: str) -> str:
+        """
+        Mode 2: The entire FPV drone video plays continuously from start to finish.
+        At t=1.0s, the bottom product showcase card smoothly fades in over the lower half of the screen.
+        Uses the native audio track from the drone video itself (no synthetic rhythm).
+        """
+        try:
+            overlay_path = self.generate_reels_bottom_overlay(post_data)
+            has_audio = self._check_video_has_audio(broll_path)
+
+            filter_str = (
+                "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30[bg];"
+                "[1:v]format=rgba,fade=t=in:st=1.0:d=0.5:alpha=1[ovl];"
+                "[bg][ovl]overlay=0:0:enable='gte(t,1.0)':shortest=1[v]"
+            )
+
+            cmd = [
+                'ffmpeg',
+                '-i', broll_path,
+                '-loop', '1', '-i', overlay_path,
+                '-filter_complex', filter_str,
+                '-map', '[v]',
+            ]
+
+            if has_audio:
+                cmd.extend([
+                    '-map', '0:a',
+                    '-c:a', 'aac',
+                    '-b:a', '192k'
+                ])
+            else:
+                cmd.extend(['-an'])
+
+            cmd.extend([
+                '-c:v', 'libx264',
+                '-pix_fmt', 'yuv420p',
+                '-movflags', '+faststart',
+                '-shortest',
+                abs_video_path,
+                '-y'
+            ])
+
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=60)
+            if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 1000:
+                print(f"[FFmpeg FPV B-Roll Overlay] Reels basariyla olusturuldu: {video_filename}")
+                post_data['video_engine'] = 'FFmpeg FPV Drone + Alt Ürün Kartı (2. Yol)'
+                post_data['reel_mode'] = 'broll_hook'
+                broll_name = os.path.basename(broll_path)
+                post_data['reel_mode_info'] = f"2. Yol: Tam FPV Uçuşu ({broll_name}) + Alt Ürün Kartı + Orijinal Ses"
+                post_data.pop('fallback_reason', None)
+                return f"./assets/instagram/reels/{video_filename}"
+            else:
+                err_msg = res.stderr[-250:] if res.stderr else "Bilinmeyen FFmpeg hatası"
+                print(f"[FFmpeg FPV B-Roll Overlay HATA] code={res.returncode}, stderr={err_msg}")
+                post_data['fallback_reason'] = f"B-Roll birleştirme hatası: {err_msg}"
+        except Exception as e:
+            print(f"[UYARI] B-Roll video birlestirme hatasi: {e}")
+            post_data['fallback_reason'] = f"B-Roll hata: {str(e)}"
+
+        # Fallback to dynamic template if B-Roll assembly fails
+        return self._generate_dynamic_template_video(post_data, abs_video_path, video_filename)
+
+    def _fallback_single_slide_video(self, post_data: dict, abs_video_path: str, video_filename: str) -> str:
+        """
+        Ultimate fallback: 5-second single image zoompan video.
+        """
+        story_img_rel = self.generate_story_image(post_data)
+        abs_story_img = os.path.join(BASE_DIR, story_img_rel.lstrip('./').lstrip('/'))
+
         try:
             cmd = [
                 'ffmpeg',
@@ -1076,7 +1714,52 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 1000:
                 return f"./assets/instagram/reels/{video_filename}"
         except Exception as e:
-            print(f"[UYARI] Reels video uretim hatasi: {e}")
+            print(f"[UYARI] Fallback video hatasi: {e}")
 
         return ""
+
+    def _generate_ffmpeg_reels_video(self, post_data: dict, abs_video_path: str, video_filename: str) -> str:
+        """
+        Generates video based on user selection or random choice:
+        - mode1: 1. Yol (Dinamik Cok Slaytli Sablon)
+        - mode2: 2. Yol (FPV B-Roll Ucus Klibi Hook + Urun Gecisi)
+        - random: %50 / %50 Rastgele Secim
+        """
+        broll_clip = self._get_broll_clip()
+        req_mode = post_data.get('engine', 'random')
+
+        if req_mode == 'mode1':
+            chosen_mode = 'dynamic_template'
+        elif req_mode == 'mode2':
+            if broll_clip:
+                chosen_mode = 'broll_hook'
+            else:
+                chosen_mode = 'dynamic_template'
+                post_data['fallback_reason'] = (
+                    "2. Yol seçildi ancak assets/instagram/broll klasöründe FPV videosu bulunamadı. "
+                    "Bu nedenle 1. Yol (Dinamik Çok Slaytlı Şablon) kullanıldı. Klasöre dikey FPV videosu ekleyiniz."
+                )
+        else: # 'random' or 'creative'
+            available_modes = ['dynamic_template']
+            if broll_clip:
+                available_modes.append('broll_hook')
+            chosen_mode = random.choice(available_modes)
+            if not broll_clip:
+                post_data['fallback_reason'] = (
+                    "assets/instagram/broll klasöründe FPV videosu olmadığı için 1. Yol (Dinamik Çok Slaytlı Şablon) kullanıldı. "
+                    "Klasöre FPV drone videoları eklediğinizde sistem iki mod arasında rastgele geçiş yapacaktır."
+                )
+
+        post_data['reel_mode'] = chosen_mode
+
+        if chosen_mode == 'broll_hook' and broll_clip:
+            post_data['video_engine'] = 'FFmpeg FPV Drone + Alt Ürün Kartı (2. Yol)'
+            broll_name = os.path.basename(broll_clip)
+            post_data['reel_mode_info'] = f"2. Yol: Tam FPV Drone Uçuşu ({broll_name}) + Alt Ürün Kartı + Orijinal Ses"
+            return self._generate_broll_hook_video(post_data, abs_video_path, video_filename, broll_clip)
+        else:
+            post_data['video_engine'] = 'FFmpeg Dinamik Çok Slaytlı Şablon (1. Yol)'
+            post_data['reel_mode_info'] = '1. Yol: 3 Slaytlı Dinamik Şablon'
+            return self._generate_dynamic_template_video(post_data, abs_video_path, video_filename)
+
 

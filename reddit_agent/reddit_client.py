@@ -22,21 +22,24 @@ class RedditClient:
         self.user_agent = user_agent.strip() or f"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         self.dry_run = dry_run
 
-        self.access_token = self.bearer_token or None
-        self.token_expires_at = time.time() + 86400 if self.bearer_token else 0
+        self.token_v2 = ""
+        self.cookies = {}
+        self.is_chrome_session = False
+        self.access_token = None
+        self.token_expires_at = 0
 
         # Auto-detect Chrome session if empty
-        if not self.has_credentials():
+        if not self.has_oauth():
             self._try_load_chrome_session()
 
     def _try_load_chrome_session(self) -> bool:
         """Attempts to load active Reddit session from Chrome."""
         try:
             res = extract_chrome_reddit_session()
-            if res.get("success") and res.get("token_v2"):
-                self.bearer_token = res["token_v2"]
-                self.access_token = res["token_v2"]
-                self.token_expires_at = time.time() + 86400
+            if res.get("success"):
+                self.token_v2 = res.get("token_v2", "")
+                self.cookies = res.get("cookies", {})
+                self.is_chrome_session = True
                 if not self.username:
                     self.username = res.get("username", "")
                 return True
@@ -58,23 +61,20 @@ class RedditClient:
             self.user_agent = user_agent.strip()
         self.dry_run = dry_run
 
-        if not self.has_credentials():
+        if not self.has_oauth():
             self._try_load_chrome_session()
 
-    def has_credentials(self) -> bool:
-        if self.bearer_token:
-            return True
+    def has_oauth(self) -> bool:
         return bool(self.client_id and self.client_secret and self.username and self.password)
 
-    def _authenticate(self) -> bool:
-        """Acquires or refreshes OAuth2 Bearer token from Reddit."""
-        if self.bearer_token:
-            self.access_token = self.bearer_token
+    def has_credentials(self) -> bool:
+        if self.token_v2 or self.is_chrome_session:
             return True
+        return self.has_oauth()
 
-        if not self.has_credentials():
-            if self._try_load_chrome_session():
-                return True
+    def _authenticate(self) -> bool:
+        """Acquires or refreshes official OAuth2 Bearer token from Reddit."""
+        if not self.has_oauth():
             return False
 
         if self.access_token and time.time() < self.token_expires_at - 60:
@@ -110,7 +110,7 @@ class RedditClient:
     def search_drone_questions(self, subreddit: str, query: str = "drone OR fpv OR iha OR dji", limit: int = 15) -> list:
         """
         Searches a subreddit specifically for drone questions.
-        Uses authenticated oauth.reddit.com if access_token exists;
+        Uses authenticated oauth.reddit.com if OAuth is configured;
         otherwise falls back to public Reddit search endpoint.
         """
         subreddit = subreddit.strip().lstrip("r/")
@@ -118,53 +118,59 @@ class RedditClient:
             return []
 
         posts = []
-        is_auth = self._authenticate()
         headers = {"User-Agent": self.user_agent}
+        cookies = self.cookies if hasattr(self, 'cookies') and self.cookies else None
 
-        if is_auth and self.access_token:
-            url = f"https://oauth.reddit.com/r/{subreddit}/search"
-            headers["Authorization"] = f"bearer {self.access_token}"
-        else:
-            url = f"https://www.reddit.com/r/{subreddit}/search.json"
+        data = None
+        # Try OAuth if genuinely configured
+        if self.has_oauth() and self._authenticate() and self.access_token:
+            try:
+                url = f"https://oauth.reddit.com/r/{subreddit}/search"
+                oauth_headers = dict(headers)
+                oauth_headers["Authorization"] = f"bearer {self.access_token}"
+                res = requests.get(url, headers=oauth_headers, params={"q": query, "restrict_sr": "1", "sort": "new", "limit": limit}, timeout=12)
+                if res.status_code == 200:
+                    data = res.json()
+            except Exception:
+                pass
 
-        params = {
-            "q": query,
-            "restrict_sr": "1",
-            "sort": "new",
-            "limit": limit
-        }
+        # Fallback to public JSON endpoint
+        if not data:
+            try:
+                url = f"https://www.reddit.com/r/{subreddit}/search.json"
+                params = {"q": query, "restrict_sr": "1", "sort": "new", "limit": limit}
+                res = requests.get(url, headers=headers, params=params, cookies=cookies, timeout=12)
+                if res.status_code == 200:
+                    data = res.json()
+            except Exception:
+                pass
 
-        try:
-            res = requests.get(url, headers=headers, params=params, timeout=12)
-            if res.status_code == 200:
-                data = res.json()
-                children = data.get("data", {}).get("children", [])
-                now_ts = time.time()
-                for child in children:
-                    cdata = child.get("data", {})
-                    # Skip locked, archived, or posts older than 90 days
-                    if cdata.get("archived") or cdata.get("locked"):
-                        continue
-                    post_ts = cdata.get("created_utc", 0)
-                    if post_ts and (now_ts - post_ts) > (90 * 86400):
-                        continue
+        if data:
+            children = data.get("data", {}).get("children", [])
+            now_ts = time.time()
+            for child in children:
+                cdata = child.get("data", {})
+                # Skip locked, archived, or posts older than 90 days
+                if cdata.get("archived") or cdata.get("locked"):
+                    continue
+                post_ts = cdata.get("created_utc", 0)
+                if post_ts and (now_ts - post_ts) > (90 * 86400):
+                    continue
 
-                    posts.append({
-                        "reddit_id": f"t3_{cdata.get('id')}",
-                        "short_id": cdata.get("id"),
-                        "reddit_type": "submission",
-                        "title": cdata.get("title", ""),
-                        "body": cdata.get("selftext", ""),
-                        "author": cdata.get("author", ""),
-                        "subreddit": cdata.get("subreddit", subreddit),
-                        "url": cdata.get("url", ""),
-                        "permalink": f"https://reddit.com{cdata.get('permalink', '')}",
-                        "created_utc": post_ts,
-                        "score": cdata.get("score", 0),
-                        "num_comments": cdata.get("num_comments", 0)
-                    })
-        except Exception:
-            pass
+                posts.append({
+                    "reddit_id": f"t3_{cdata.get('id')}",
+                    "short_id": cdata.get("id"),
+                    "reddit_type": "submission",
+                    "title": cdata.get("title", ""),
+                    "body": cdata.get("selftext", ""),
+                    "author": cdata.get("author", ""),
+                    "subreddit": cdata.get("subreddit", subreddit),
+                    "url": cdata.get("url", ""),
+                    "permalink": f"https://reddit.com{cdata.get('permalink', '')}",
+                    "created_utc": post_ts,
+                    "score": cdata.get("score", 0),
+                    "num_comments": cdata.get("num_comments", 0)
+                })
 
         return posts
 
@@ -179,50 +185,60 @@ class RedditClient:
 
         posts = []
         seen_ids = set()
-        is_auth = self._authenticate()
-
         headers = {"User-Agent": self.user_agent}
-        if is_auth and self.access_token:
-            url = f"https://oauth.reddit.com/r/{subreddit}/new"
-            headers["Authorization"] = f"bearer {self.access_token}"
-        else:
-            url = f"https://www.reddit.com/r/{subreddit}/new.json"
+        cookies = self.cookies if hasattr(self, 'cookies') and self.cookies else None
 
-        params = {"limit": limit}
+        data = None
+        # Try OAuth if genuinely configured
+        if self.has_oauth() and self._authenticate() and self.access_token:
+            try:
+                url = f"https://oauth.reddit.com/r/{subreddit}/new"
+                oauth_headers = dict(headers)
+                oauth_headers["Authorization"] = f"bearer {self.access_token}"
+                res = requests.get(url, headers=oauth_headers, params={"limit": limit}, timeout=12)
+                if res.status_code == 200:
+                    data = res.json()
+            except Exception:
+                pass
 
-        try:
-            res = requests.get(url, headers=headers, params=params, timeout=12)
-            if res.status_code == 200:
-                data = res.json()
-                children = data.get("data", {}).get("children", [])
-                now_ts = time.time()
-                for child in children:
-                    cdata = child.get("data", {})
-                    # Skip locked, archived, or posts older than 90 days
-                    if cdata.get("archived") or cdata.get("locked"):
-                        continue
-                    post_ts = cdata.get("created_utc", 0)
-                    if post_ts and (now_ts - post_ts) > (90 * 86400):
-                        continue
+        # Fallback to public JSON endpoint
+        if not data:
+            try:
+                url = f"https://www.reddit.com/r/{subreddit}/new.json"
+                res = requests.get(url, headers=headers, params={"limit": limit}, cookies=cookies, timeout=12)
+                if res.status_code == 200:
+                    data = res.json()
+            except Exception:
+                pass
 
-                    rid = f"t3_{cdata.get('id')}"
-                    seen_ids.add(rid)
-                    posts.append({
-                        "reddit_id": rid,
-                        "short_id": cdata.get("id"),
-                        "reddit_type": "submission",
-                        "title": cdata.get("title", ""),
-                        "body": cdata.get("selftext", ""),
-                        "author": cdata.get("author", ""),
-                        "subreddit": cdata.get("subreddit", subreddit),
-                        "url": cdata.get("url", ""),
-                        "permalink": f"https://reddit.com{cdata.get('permalink', '')}",
-                        "created_utc": post_ts,
-                        "score": cdata.get("score", 0),
-                        "num_comments": cdata.get("num_comments", 0)
-                    })
-        except Exception:
-            pass
+        if data:
+            children = data.get("data", {}).get("children", [])
+            now_ts = time.time()
+            for child in children:
+                cdata = child.get("data", {})
+                # Skip locked, archived, or posts older than 90 days
+                if cdata.get("archived") or cdata.get("locked"):
+                    continue
+                post_ts = cdata.get("created_utc", 0)
+                if post_ts and (now_ts - post_ts) > (90 * 86400):
+                    continue
+
+                rid = f"t3_{cdata.get('id')}"
+                seen_ids.add(rid)
+                posts.append({
+                    "reddit_id": rid,
+                    "short_id": cdata.get("id"),
+                    "reddit_type": "submission",
+                    "title": cdata.get("title", ""),
+                    "body": cdata.get("selftext", ""),
+                    "author": cdata.get("author", ""),
+                    "subreddit": cdata.get("subreddit", subreddit),
+                    "url": cdata.get("url", ""),
+                    "permalink": f"https://reddit.com{cdata.get('permalink', '')}",
+                    "created_utc": post_ts,
+                    "score": cdata.get("score", 0),
+                    "num_comments": cdata.get("num_comments", 0)
+                })
 
         # Augmented targeted search discovery
         if include_search:
@@ -376,14 +392,20 @@ class RedditClient:
                         "permalink": chrome_res.get("permalink") or post_url,
                         "published_at": datetime.now().isoformat()
                     }
+                elif chrome_res.get("archived"):
+                    return {
+                        "success": False,
+                        "archived": True,
+                        "error": chrome_res.get("error", "Bu Reddit gonderisi arsivlenmis veya kilitlenmis, yeni yorum yapilamaz.")
+                    }
                 else:
                     chrome_err = chrome_res.get("error", "Chrome gonderim basarisiz")
             except Exception as ce:
                 chrome_err = f"Chrome otomasyon hatasi: {str(ce)}"
 
-        # 2. Secondary Method: Direct OAuth REST API (via access_token / token_v2)
-        if not self._authenticate():
-            err_details = f"Reddit oturum anahtari bulunamadi. (Chrome hatasi: {chrome_err})" if chrome_err else "Reddit oturum anahtari bulunamadi."
+        # 2. Secondary Method: Direct OAuth REST API (only if official OAuth app is configured)
+        if not self.has_oauth() or not self._authenticate():
+            err_details = chrome_err or "Reddit Chrome oturumu ile gonderilemedi ve OAuth2 yapilandirilmamis."
             return {
                 "success": False,
                 "error": err_details

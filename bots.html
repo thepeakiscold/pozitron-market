@@ -1207,9 +1207,58 @@
             <button type="button" class="btn-action btn-ig" onclick="triggerDirectPublishNow()" id="btn-ig-direct-publish">
               <span>Yeni Gönderi Yayınla</span>
             </button>
+            <!-- Reels Mode Selection and Generate Button -->
+            <div style="display:inline-flex; align-items:center; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:3px 6px; gap:8px;">
+              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">Reels Modu:</span>
+              <select id="reels-mode-select" style="background:#1e293b; color:#38bdf8; border:1px solid #0284c7; border-radius:6px; padding:6px 12px; font-size:0.82rem; font-weight:700; cursor:pointer; outline:none;">
+                <option value="random" selected>🎲 Rastgele (1. veya 2. Yol)</option>
+                <option value="mode1">🎬 1. Yol: Dinamik Çok Slaytlı Şablon (0 TL)</option>
+                <option value="mode2">⚡ 2. Yol: Tam FPV Uçuşu + Alt Ürün Kartı (0 TL)</option>
+                <option value="gemini">💎 Gemini Omni AI Video (Ücretli API)</option>
+              </select>
+              <button type="button" class="btn-action" onclick="triggerSelectedReelGenerate()" id="btn-ig-reels-generate" style="background:linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%); color:#fff; border:1px solid rgba(56,189,248,0.4); font-weight:700; margin:0; padding:6px 14px;">
+                <span>🎬 Reels Üret</span>
+              </button>
+            </div>
             <button type="button" class="btn-action btn-secondary" onclick="loadInstagramData()">
               <span>Yenile</span>
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gemini Reels Generation Result Panel (hidden by default) -->
+      <div id="gemini-reel-result-panel" class="bots-card" style="display:none; background:#0d0f25; border-color:#8b5cf6; margin-bottom:20px;">
+        <div class="bots-card-header" style="border-color:#6366f1;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="status-pill status-pill-purple">Gemini Omni Flash</span>
+              <h3 style="font-size:1.05rem; font-weight:700; margin:0; color:#fff;">AI Video Reels Önizleme</h3>
+            </div>
+            <p class="card-desc" id="gemini-reel-engine-info">Video motoru: Bekliyor...</p>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div>
+            <video id="gemini-reel-preview" controls style="width:100%; max-height:480px; border-radius:8px; background:#000; border:1px solid #334155;" poster="">
+              Video yükleniyor...
+            </video>
+          </div>
+          <div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-bottom:4px;">Video Prompt</div>
+            <pre id="gemini-reel-prompt-text" style="font-size:0.72rem; color:#c084fc; background:#111827; padding:10px; border-radius:6px; white-space:pre-wrap; max-height:140px; overflow-y:auto; border:1px solid #374151;"></pre>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:8px; margin-bottom:4px;">Başlık</div>
+            <div id="gemini-reel-title" style="font-size:0.88rem; color:#fff; font-weight:600;"></div>
+            <div style="font-size:0.78rem; color:var(--text-muted); margin-top:8px; margin-bottom:4px;">Açıklama</div>
+            <div id="gemini-reel-caption" style="font-size:0.75rem; color:#94a3b8; max-height:120px; overflow-y:auto;"></div>
+            <div style="margin-top:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button type="button" class="btn-action btn-ig" onclick="publishLastGeneratedReel()" id="btn-publish-last-reel">
+                <span>🚀 Instagram'da Reels Olarak Yayınla</span>
+              </button>
+              <a id="btn-download-last-reel" href="#" download="pozitron_reel.mp4" class="btn-action btn-secondary" style="text-decoration:none;">
+                <span>⬇️ Videoyu İndir</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -1335,6 +1384,19 @@
                 </button>
               </div>
             </div>
+
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid #1e293b;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label style="font-size:0.72rem; color:var(--text-muted);">Gemini AI API Key (Video &amp; Metin):</label>
+                <span id="ig-gemini-status-badge" class="status-pill status-pill-warn" style="font-size:0.65rem;">Kontrol Ediliyor...</span>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <input type="password" id="ig-new-gemini-key" placeholder="AIzaSy..." style="flex:1; background:#0d1527; border:1px solid #334155; color:#fff; padding:5px 8px; border-radius:6px; font-size:0.75rem; font-family:var(--font-mono);">
+                <button type="button" class="btn-action btn-secondary" onclick="saveNewGeminiKey()" style="padding:4px 10px; font-size:0.72rem;">
+                  <span>Kaydet</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Frequency Selector -->
@@ -1344,12 +1406,13 @@
               <span id="ig-freq-label" style="font-size:0.75rem; font-weight:700; color:#38bdf8;">Her 6 Saatte Bir</span>
             </div>
             <select id="ig-quick-freq-select" onchange="changeInstagramPostingFrequency(this.value)" style="width:100%; background:#0d1527; border:1px solid #334155; color:#fff; padding:6px 8px; border-radius:6px; font-size:0.78rem;">
+              <option value="peak">⭐ Zirve Saatler (12:30 &amp; 20:00 TRT)</option>
               <option value="1">Her 1 Saatte Bir (Günde 24 Post)</option>
               <option value="2">Her 2 Saatte Bir (Günde 12 Post)</option>
               <option value="4">Her 4 Saatte Bir (Günde 6 Post)</option>
               <option value="6" selected>Her 6 Saatte Bir (Günde 4 Post)</option>
               <option value="12">Her 12 Saatte Bir (Günde 2 Post)</option>
-              <option value="24">Günde 1 Kez</option>
+              <option value="24">Günde 1 Kez (24 Saat)</option>
             </select>
           </div>
 
@@ -2574,13 +2637,21 @@
         const cRes = await fetch('/api/instagram/config');
         if (cRes.ok) {
           const cfg = await cRes.json();
+          const isPeak = Boolean(cfg.peak_scheduler_enabled);
           const freq = cfg.posting_frequency_hours || 6;
           const freqSelect = document.getElementById('ig-quick-freq-select');
           const freqLbl = document.getElementById('ig-freq-label');
           const cycleBadge = document.getElementById('ig-post-cycle-badge');
-          if (freqSelect) freqSelect.value = freq;
-          if (freqLbl) freqLbl.textContent = `Her ${freq} Saatte Bir`;
-          if (cycleBadge) cycleBadge.textContent = `${freq} Saatte Bir`;
+
+          if (isPeak) {
+            if (freqSelect) freqSelect.value = 'peak';
+            if (freqLbl) freqLbl.textContent = 'Zirve Saatler (12:30 & 20:00)';
+            if (cycleBadge) cycleBadge.textContent = 'Zirve Saatler';
+          } else {
+            if (freqSelect) freqSelect.value = freq;
+            if (freqLbl) freqLbl.textContent = `Her ${freq} Saatte Bir`;
+            if (cycleBadge) cycleBadge.textContent = `${freq} Saatte Bir`;
+          }
 
           if (cfg.next_run_at) {
             _nextPostTargetDate = new Date(cfg.next_run_at);
@@ -2612,6 +2683,17 @@
 
           if (liveToggle) {
             liveToggle.checked = !cfg.dry_run_mode;
+          }
+
+          const geminiBadge = document.getElementById('ig-gemini-status-badge');
+          if (geminiBadge) {
+            if (cfg.has_gemini_key) {
+              geminiBadge.textContent = 'Bağlı (' + (cfg.gemini_api_key_masked || 'Aktif') + ')';
+              geminiBadge.className = 'status-pill status-pill-active';
+            } else {
+              geminiBadge.textContent = 'Tanımsız (FFmpeg Fallback)';
+              geminiBadge.className = 'status-pill status-pill-warn';
+            }
           }
         }
       } catch(e) {
@@ -2743,6 +2825,11 @@
                 </h4>
                 <div style="display:flex; gap:6px; align-items:center;">
                   ${auditBadge}
+                  ${p.media_type === 'REEL' ? `
+                    <span class="status-pill status-pill-purple" style="font-size:0.66rem;">
+                      ${p.video_engine === 'gemini-omni-1.1-flash' ? '🎬 Gemini Video' : '🎞️ FFmpeg'}
+                    </span>
+                  ` : ''}
                   <span class="status-pill ${isPub ? 'status-pill-active' : 'status-pill-warn'}" style="font-size:0.68rem;">
                     ${isPub ? 'Yayınlandı' : 'Taslak'}
                   </span>
@@ -2824,17 +2911,182 @@
       }
     }
 
-    async function changeInstagramPostingFrequency(hours) {
+    async function triggerSelectedReelGenerate() {
+      const modeSelect = document.getElementById('reels-mode-select');
+      const selectedMode = modeSelect ? modeSelect.value : 'random';
+      return triggerReelGenerate(selectedMode);
+    }
+
+    async function triggerReelGenerate(engine = 'random') {
+      const btn = document.getElementById('btn-ig-reels-generate');
+      const modeSelect = document.getElementById('reels-mode-select');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.querySelector('span').textContent = engine === 'gemini'
+          ? '⏳ AI Video Üretiliyor (60-90 sn)...'
+          : '⏳ Reels Hazırlanıyor (3-5 sn)...';
+      }
+      if (modeSelect) modeSelect.disabled = true;
+
+      let msg = "Reels videosu üretiliyor...";
+      if (engine === 'mode1') msg = "🎬 1. Yol: Dinamik Çok Slaytlı Şablon hazırlanıyor (0 TL)...";
+      else if (engine === 'mode2') msg = "⚡ 2. Yol: Tam FPV Uçuşu + Alt Ürün Kartı hazırlanıyor (0 TL)...";
+      else if (engine === 'gemini') msg = "💎 Gemini Omni Flash ile AI video üretiliyor...";
+      else msg = "🎲 Rastgele mod (1. veya 2. Yol) ile Reels hazırlanıyor...";
+      
+      showToast(msg, "info");
+
+      const panel = document.getElementById('gemini-reel-result-panel');
+      if (panel) panel.style.display = 'none';
+
       try {
+        const res = await fetch('/api/instagram/generate-reel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ engine: engine })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const engineLabel = data.video_engine || 'Dinamik Reels Motoru';
+          showToast(`Reels videosu başarıyla oluşturuldu!`, "success");
+
+          if (data.fallback_reason) {
+            showToast(`Bilgi: ${data.fallback_reason}`, "warning");
+          }
+
+          window._lastGeneratedReelPostId = data.post_id;
+          const cleanVideoPath = (data.video_path || '').replace(/^\.\//, '/');
+          window._lastGeneratedReelPath = cleanVideoPath;
+
+          // Show result panel
+          if (panel) {
+            panel.style.display = 'block';
+            const engineInfo = document.getElementById('gemini-reel-engine-info');
+            if (engineInfo) {
+              const reasonHtml = data.fallback_reason ? `<div style="font-size:0.75rem; color:#f59e0b; margin-top:6px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 10px; border-radius:6px; line-height:1.4;">💡 <strong>Bilgi:</strong> ${data.fallback_reason}</div>` : '';
+              const modeInfoHtml = data.reel_mode_info ? `<div style="font-size:0.75rem; color:#38bdf8; margin-top:4px;">🎯 <strong>Kullanılan Mod:</strong> ${data.reel_mode_info}</div>` : '';
+              engineInfo.innerHTML = `Video Motoru: <strong style="color:#38bdf8;">${engineLabel}</strong>${modeInfoHtml}${reasonHtml}`;
+            }
+            const video = document.getElementById('gemini-reel-preview');
+            if (video) { video.src = cleanVideoPath + '?t=' + Date.now(); video.load(); }
+            const dlBtn = document.getElementById('btn-download-last-reel');
+            if (dlBtn) { dlBtn.href = cleanVideoPath; dlBtn.download = `${data.post_id || 'reel'}.mp4`; }
+            const promptEl = document.getElementById('gemini-reel-prompt-text');
+            if (promptEl) promptEl.textContent = data.video_prompt || '';
+            const titleEl = document.getElementById('gemini-reel-title');
+            if (titleEl) titleEl.textContent = data.title || '';
+            const captionEl = document.getElementById('gemini-reel-caption');
+            if (captionEl) captionEl.textContent = data.caption || '';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          loadInstagramData();
+        } else {
+          showToast(`Hata: ${data.error || 'Video oluşturulamadı'}`, "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn) { btn.disabled = false; btn.querySelector('span').textContent = '🎬 Reels Üret'; }
+        if (modeSelect) modeSelect.disabled = false;
+      }
+    }
+    window.triggerGeminiReelGenerate = () => triggerReelGenerate('gemini');
+
+    async function publishLastGeneratedReel() {
+      const postId = window._lastGeneratedReelPostId;
+      if (!postId) {
+        showToast("Yayınlanacak bir Reels videosu bulunamadı. Lütfen önce video üretin.", "error");
+        return;
+      }
+      const btn = document.getElementById('btn-publish-last-reel');
+      if (btn) { btn.disabled = true; btn.querySelector('span').textContent = '🚀 Reels Yayınlanıyor...'; }
+      try {
+        const res = await fetch('/api/instagram/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: postId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast("Reels videosu başarıyla Instagram'da yayınlandı!", "success");
+          loadInstagramData();
+        } else {
+          showToast(`Hata: ${data.error || 'Reels paylaşılamadı'}`, "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn) { btn.disabled = false; btn.querySelector('span').textContent = '🚀 Instagram\'da Reels Olarak Yayınla'; }
+      }
+    }
+
+    async function saveNewGeminiKey() {
+      const input = document.getElementById('ig-new-gemini-key');
+      if (!input || !input.value.trim()) {
+        showToast("Lütfen geçerli bir Gemini API anahtarı girin.", "error");
+        return;
+      }
+      const key = input.value.trim();
+      try {
+        showToast("Gemini API anahtarı kaydediliyor...", "info");
         const res = await fetch('/api/instagram/config', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ posting_frequency_hours: parseInt(hours, 10) })
+          body: JSON.stringify({ gemini_api_key: key })
+        });
+        const data = await res.json();
+        if (data.success) {
+          input.value = '';
+          showToast("Gemini API anahtarı başarıyla kaydedildi!", "success");
+          loadInstagramData();
+        } else {
+          showToast(`Hata: ${data.error || 'Kaydedilemedi'}`, "error");
+        }
+      } catch(e) {
+        showToast("Hata: " + e.message, "error");
+      }
+    }
+
+    async function changeInstagramPostingFrequency(val) {
+      try {
+        let payload;
+        if (val === 'peak') {
+          payload = { peak_scheduler_enabled: 1 };
+        } else {
+          payload = { posting_frequency_hours: parseInt(val, 10), peak_scheduler_enabled: 0 };
+        }
+        const res = await fetch('/api/instagram/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
         });
         if (res.ok) {
+          const data = await res.json();
+          const cfg = data.config || {};
+          const isPeak = Boolean(cfg.peak_scheduler_enabled);
           const lbl = document.getElementById('ig-freq-label');
-          if (lbl) lbl.textContent = `Her ${hours} Saatte Bir`;
-          showToast(`Paylaşım sıklığı güncellendi: Her ${hours} saatte bir.`, "success");
+          const cycleBadge = document.getElementById('ig-post-cycle-badge');
+          const postNextEl = document.getElementById('ig-post-next-target-time');
+
+          if (isPeak) {
+            if (lbl) lbl.textContent = 'Zirve Saatler (12:30 & 20:00)';
+            if (cycleBadge) cycleBadge.textContent = 'Zirve Saatler';
+          } else {
+            const h = cfg.posting_frequency_hours || val;
+            if (lbl) lbl.textContent = `Her ${h} Saatte Bir`;
+            if (cycleBadge) cycleBadge.textContent = `${h} Saatte Bir`;
+          }
+
+          if (cfg.next_run_at) {
+            _nextPostTargetDate = new Date(cfg.next_run_at);
+            const targetStr = _nextPostTargetDate.toLocaleString('tr-TR', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+            if (postNextEl) postNextEl.textContent = `Planlanan Hedef: ${targetStr}`;
+          } else {
+            _nextPostTargetDate = new Date(Date.now() + (parseInt(val, 10) || 6) * 3600 * 1000);
+          }
+
+          showToast(isPeak ? 'Paylaşım modu: Zirve Saatler (12:30 & 20:00).' : `Paylaşım sıklığı güncellendi: Her ${val} saatte bir.`, "success");
         }
       } catch(e) {
         showToast("Hata: " + e.message, "error");

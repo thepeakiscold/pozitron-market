@@ -1441,3 +1441,59 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
             'tool_info': None
         }
 
+    def generate_reels_video_prompt(self, post_data: dict) -> str:
+        """
+        Generates an optimized, cinematic video generation prompt for Gemini Omni Flash (gemini-omni-1.1-flash).
+        Directs camera motion, lighting, focus on FPV/drone hardware or 3D printing details, and 9:16 vertical staging.
+        """
+        title = post_data.get('title', 'FPV Drone & Maker Technology')
+        prod = post_data.get('product_data') or {}
+        prod_name = prod.get('name_tr') or prod.get('name') or title
+        category = prod.get('category', 'FPV Drone Components')
+        description = prod.get('description_tr') or prod.get('description') or ''
+
+        # If Gemini API key is available, craft a dynamic prompt via Gemini 3.8 Flash
+        if self.gemini_api_key:
+            system_instruction = (
+                "You are an award-winning cinematic director and prompt engineer for Gemini Omni Flash (gemini-omni-1.1-flash). "
+                "Write a single concise video generation prompt (40-60 words) for a 9:16 vertical commercial video. "
+                "Specify: subject, camera movement (slow 360 orbit or dynamic macro pan), atmospheric lighting (dark tech studio, neon cyan/orange accents), "
+                "textures (matte carbon fiber, copper motor windings, PCB traces, titanium hardware), and continuous unbroken shot. "
+                "NO text, NO logo overlays, NO scene cuts, NO speech, photorealistic 8K."
+            )
+            user_msg = f"Product: {prod_name}\nCategory: {category}\nDetails: {description[:200]}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.gemini_api_key}"
+            payload = {
+                "contents": [
+                    {"role": "user", "parts": [{"text": f"{system_instruction}\n\n{user_msg}"}]}
+                ],
+                "generationConfig": {
+                    "temperature": 0.7,
+                    "maxOutputTokens": 150
+                }
+            }
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'},
+                    method='POST'
+                )
+                with urllib.request.urlopen(req, timeout=12) as response:
+                    res_body = json.loads(response.read().decode('utf-8'))
+                    text = res_body['candidates'][0]['content']['parts'][0]['text'].strip()
+                    text = text.strip('"\'`')
+                    if len(text) > 20:
+                        return text
+            except Exception:
+                pass
+
+        # High-quality rule-based fallback prompt
+        return (
+            f"Cinematic vertical 9:16 product showcase of {prod_name}. "
+            "Smooth 360-degree rotating camera shot in a sleek minimalist dark tech studio with neon cyan and amber rim lighting. "
+            "Macro close-up detailing carbon fiber patterns, gold soldering contacts, and brushless motor mechanics. "
+            "Smooth 60fps motion, realistic reflections, continuous unbroken single shot, photorealistic commercial quality, no text."
+        )
+
+

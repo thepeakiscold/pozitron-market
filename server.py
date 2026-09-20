@@ -33,7 +33,7 @@ BLOCKED_STATIC_EXTENSIONS = {
 ALLOWED_STATIC_EXTENSIONS = {
     '', '.html', '.htm', '.css', '.js', '.mjs', '.png', '.jpg', '.jpeg', '.webp',
     '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.xml', '.txt',
-    '.tsv', '.json', '.step', '.stp', '.stl', '.obj', '.map'
+    '.tsv', '.json', '.step', '.stp', '.stl', '.obj', '.map', '.mp4', '.webm', '.ogg'
 }
 
 BLOCKED_SENSITIVE_FILES = {
@@ -1857,6 +1857,60 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 result = instagram_pr_agent.generate_and_publish_reel(data.get('post_data'))
                 status_code = 200 if result.get('success') else 400
                 self.send_json(status_code, result)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Generate Reel (Gemini Omni Flash AI Video or ffmpeg fallback, no publish)
+        if path == '/api/instagram/generate-reel':
+            try:
+                import uuid as _uuid
+                post_id = f"ig_reel_{_uuid.uuid4().hex[:12]}"
+                product_id = data.get('product_id')
+                content_type = data.get('content_type', 'product_spotlight')
+
+                content = instagram_pr_agent.content_gen.generate_content(
+                    content_type=content_type, product_id=product_id
+                )
+                post_data = {
+                    'id': post_id,
+                    'content_type': content_type,
+                    'title': content['title'],
+                    'caption': content['caption'],
+                    'hashtags': content['hashtags'],
+                    'product_data': content.get('product_data'),
+                    'visual_summary': content.get('visual_summary'),
+                    'media_type': 'REEL',
+                    'engine': data.get('engine', 'random'),
+                    'created_at': __import__('datetime').datetime.now().isoformat()
+                }
+
+                video_prompt = instagram_pr_agent.content_gen.generate_reels_video_prompt(post_data)
+                post_data['video_prompt'] = video_prompt
+                video_rel_path = instagram_pr_agent.image_gen.generate_reels_video(post_data, prompt=video_prompt)
+
+                if video_rel_path:
+                    from instagram_agent.db import save_instagram_post
+                    post_data['video_url'] = video_rel_path
+                    post_data['local_image_path'] = video_rel_path
+                    post_data['image_url'] = video_rel_path
+                    post_data['status'] = 'draft'
+                    save_instagram_post(post_data)
+                    clean_video_url = '/' + video_rel_path.lstrip('./')
+                    self.send_json(200, {
+                        "success": True,
+                        "post_id": post_id,
+                        "video_path": clean_video_url,
+                        "video_engine": post_data.get('video_engine', 'unknown'),
+                        "reel_mode": post_data.get('reel_mode', ''),
+                        "reel_mode_info": post_data.get('reel_mode_info', ''),
+                        "fallback_reason": post_data.get('fallback_reason', ''),
+                        "video_prompt": post_data.get('video_prompt', ''),
+                        "title": post_data['title'],
+                        "caption": post_data['caption']
+                    })
+                else:
+                    self.send_json(400, {"success": False, "error": "Video olusturulamadi."})
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return

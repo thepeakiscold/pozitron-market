@@ -49,7 +49,8 @@ def publish_via_chrome(post_url: str, reply_text: str, username: str = "") -> di
             "--url", post_url,
             "--text-file", text_file.name,
             "--cookies", cookie_file.name,
-            "--username", active_username
+            "--username", active_username,
+            "--headless", "true"
         ]
 
         proc = subprocess.run(
