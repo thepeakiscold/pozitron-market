@@ -25,6 +25,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
 
+  <!-- Core Design System CSS -->
+  <link rel="stylesheet" href="./styles.css?v=20260920_v1">
+
   <!-- Dynamic JSON-LD Article Schema Container -->
   <script id="article-schema" type="application/ld+json">
   {
@@ -54,92 +57,6 @@
       --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-heading: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background-color: var(--bg-body);
-      color: var(--text-main);
-      font-family: var(--font-body);
-      line-height: 1.6;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Container */
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
-
-    /* Header Navigation */
-    .rehber-header {
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-subtle);
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-    }
-
-    .header-inner {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      height: 70px;
-    }
-
-    .brand-logo-link {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-      color: var(--text-main);
-    }
-
-    .brand-badge {
-      background: linear-gradient(135deg, #0284c7, #38bdf8);
-      color: #fff;
-      font-family: var(--font-heading);
-      font-weight: 800;
-      font-size: 1.1rem;
-      padding: 6px 12px;
-      border-radius: 8px;
-      letter-spacing: 0.05em;
-    }
-
-    .brand-text-wrap {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .brand-name {
-      font-family: var(--font-heading);
-      font-weight: 800;
-      font-size: 1.15rem;
-      letter-spacing: -0.02em;
-      color: var(--text-main);
-    }
-
-    .brand-sub {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 500;
-    }
-
-    .header-nav-links {
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
     .nav-link-btn {
@@ -571,51 +488,74 @@
       font-weight: 600;
     }
 
-    /* Footer */
-    .rehber-footer {
-      background: #ffffff;
-      border-top: 1px solid var(--border-subtle);
-      padding: 30px 0;
-      margin-top: auto;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      text-align: center;
-    }
-
-    .rehber-footer a {
-      color: var(--brand-primary);
-      text-decoration: none;
-    }
-
     /* Utility */
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Header -->
-  <header class="rehber-header">
-    <div class="container header-inner">
-      <a href="/" class="brand-logo-link">
-        <div class="brand-badge">PZ</div>
-        <div class="brand-text-wrap">
-          <span class="brand-name">POZİTRON MARKET</span>
-          <span class="brand-sub">Teknik Mühendislik &amp; FPV Rehberleri</span>
-        </div>
+  <!-- Top Announcement Bar -->
+  <div class="announcement-bar" role="region" aria-label="Duyuru">
+    <div class="container announcement-container">
+      <div class="announcement-text">
+        <span class="badge-flash">AYNI GÜN KARGO</span>
+        <span>Saat 16:00'a kadar verilen tüm FPV ve drone siparişleriniz aynı gün kargoda!</span>
+      </div>
+      <div class="announcement-actions">
+        <a href="/" style="color:rgba(255,255,255,0.9); text-decoration:none; font-size:0.8rem; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+          &larr; Pozitron Market Mağaza
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Minimalist Main Header -->
+  <header class="main-header" role="banner">
+    <div class="container header-container">
+      
+      <!-- Brand Logo -->
+      <a href="/" class="brand-link" id="brand-logo-link" aria-label="Pozitron Market Anasayfa">
+        <img src="./assets/logo.svg" alt="Pozitron Market - Drone &amp; FPV Donanım Mağazası" class="brand-logo" width="280" height="56">
       </a>
 
-      <nav class="header-nav-links">
-        <a href="/" class="nav-link-btn">
-          <span>&larr; Mağazaya Dön</span>
+      <!-- Search Bar in Header -->
+      <div class="header-search-wrap" role="search">
+        <form class="search-form" id="header-search-form" onsubmit="event.preventDefault(); handleHeaderSearch();">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input 
+            type="search" 
+            id="header-search-input" 
+            class="search-input" 
+            placeholder="Rehber veya ürün ara..." 
+            autocomplete="off"
+            aria-label="Rehber ve Ürün Arama"
+          >
+        </form>
+      </div>
+
+      <!-- Action Nav Buttons -->
+      <nav class="header-actions" aria-label="Gezinti Menüsü">
+        <a href="/" class="btn-builder-nav" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>Mağaza</span>
         </a>
-        <a href="/drone-toplama-sihirbazi.html" class="nav-link-btn">
+
+        <a href="/drone-toplama-sihirbazi.html" class="btn-builder-nav" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
           <span>Drone Topla</span>
         </a>
-        <a href="/3d-baski-studio.html" class="nav-link-btn">
-          <span>3D Baskı</span>
+
+        <a href="/3d-baski-studio.html" class="btn-3d-print-nav" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>3D Baskı Studio</span>
         </a>
-        <a href="/rehber.html" class="nav-link-btn btn-highlight">
-          <span>Tüm Rehberler</span>
+
+        <a href="/rehber.html" class="btn-builder-nav" style="text-decoration:none; background:#0284c7; color:#ffffff; border-color:#0284c7; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(2,132,199,0.25);">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <span>Rehberler</span>
         </a>
       </nav>
     </div>
@@ -662,7 +602,7 @@
         <span>&rsaquo;</span>
         <a href="/rehber.html">Teknik Rehberler</a>
         <span>&rsaquo;</span>
-        <span id="breadcrumb-title" style="color:#fff;">Rehber Detayı</span>
+        <span id="breadcrumb-title" style="color:var(--text-main); font-weight:600;">Rehber Detayı</span>
       </div>
 
       <div class="article-layout">
@@ -689,12 +629,12 @@
             <!-- Rendered Markdown HTML goes here -->
           </div>
 
-          <div style="margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <a href="/rehber.html" class="nav-link-btn" style="background:#1e293b;">
+          <div style="margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <a href="/rehber.html" class="nav-link-btn">
               &larr; Tüm Rehberlere Dön
             </a>
             <div style="display:flex; gap:8px;">
-              <button type="button" class="nav-link-btn" onclick="copyArticleLink()" style="background:#070b14; border:1px solid #1e293b; cursor:pointer;">
+              <button type="button" class="nav-link-btn" onclick="copyArticleLink()" style="cursor:pointer;">
                 Bağlantıyı Kopyala
               </button>
               <button type="button" class="nav-link-btn btn-highlight" onclick="shareOnWhatsApp()" style="cursor:pointer;">
@@ -721,10 +661,98 @@
 
   </main>
 
-  <!-- Footer -->
-  <footer class="rehber-footer">
-    <div class="container">
-      <p>&copy; 2026 Pozitron Market FPV Hardware Ltd. Tüm hakları saklıdır. &bull; <a href="/">Mağaza Ana Sayfası</a> &bull; <a href="/rehber.html">Teknik Blog</a> &bull; <a href="/drone-toplama-sihirbazi.html">Drone Toplama Sihirbazı</a></p>
+  <!-- Minimalist Clean Footer with Google SEO Links -->
+  <footer class="main-footer" role="contentinfo">
+    <div class="container footer-container">
+      
+      <!-- Col 1: About & Info -->
+      <div class="footer-col footer-about">
+        <a href="/" class="brand-link" aria-label="Pozitron Market">
+          <img src="./assets/logo.svg" alt="Pozitron Market Logo" class="footer-logo" width="200" height="38">
+        </a>
+        <p class="footer-desc">
+          Pozitron Market, Türkiye'nin lider FPV ve drone donanım e-ticaret platformudur. Sertifikalı motor, ESC, uçuş kontrol kartı ve geniş yedek parça stoğuyla pilotların yanındayız.
+        </p>
+        <div class="footer-contacts">
+          <div class="contact-line">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <span>Teknopark İstanbul &amp; Ankara ODTÜ Teknokent</span>
+          </div>
+          <div class="contact-line">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            <span>+90 (542) 546 55 62</span>
+          </div>
+          <div class="contact-line">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+            <span>destek@pozitronmarket.com</span>
+          </div>
+          <div class="contact-line">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            <a href="https://www.instagram.com/pozitronmarket/" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:none; font-weight:600;">@pozitronmarket</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 2: SEO Category Directory -->
+      <div class="footer-col">
+        <h3 class="footer-heading">Drone Donanımları</h3>
+        <ul class="footer-links">
+          <li><a href="/#category=motors">Brushless FPV Motorlar (1804 - 2807)</a></li>
+          <li><a href="/#category=esc">ESC Hız Kontrol Sürücüleri (4-in-1 / Tekli)</a></li>
+          <li><a href="/#category=flight_controllers">Uçuş Kontrol Kartları (F405, F722, H743)</a></li>
+          <li><a href="/#category=cameras">FPV &amp; HD Kameralar (DJI O3, Walksnail, Caddx)</a></li>
+          <li><a href="/#category=vtx">Video Vericiler (VTX 5.8GHz / HD)</a></li>
+          <li><a href="/#category=batteries_chargers">LiPo Bataryalar (4S, 6S) &amp; Akıllı Şarj Cihazları</a></li>
+          <li><a href="/#category=propellers">FPV Pervaneler (3-inç, 5-inç, 7-inç)</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Customer Service & Security -->
+      <div class="footer-col">
+        <h3 class="footer-heading">Müşteri &amp; Güvenlik</h3>
+        <ul class="footer-links">
+          <li><a href="/drone-toplama-sihirbazi.html">Drone Uyumluluk Sihirbazı</a></li>
+          <li><a href="/3d-baski-studio.html">3D Baskı Studio (Özel İmalat)</a></li>
+          <li><a href="/rehber.html">Teknik FPV Rehberleri &amp; Blog</a></li>
+          <li><a href="/#shipping">Teslimat &amp; Aynı Gün Kargo</a></li>
+          <li><a href="/iade-politikasi.html" target="_blank" rel="noopener">İade ve Geri Ödeme Politikası (14 Gün İade)</a></li>
+          <li><a href="/#faq">Sıkça Sorulan Sorular (SSS)</a></li>
+          <li><a href="/#privacy">KVKK &amp; Gizlilik Politikası</a></li>
+          <li><a href="/#terms">Mesafeli Satış Sözleşmesi</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Payment & Trust Badges -->
+      <div class="footer-col">
+        <h3 class="footer-heading">Güvenli Ödeme</h3>
+        <p class="footer-text">
+          Tüm işlemler 256-Bit SSL sertifikası ve 3D Secure banka güvenlik protokolüyle korunmaktadır.
+        </p>
+        <div class="payment-badges-row">
+          <span class="pay-badge">iyzico</span>
+          <span class="pay-badge">PayTR</span>
+          <span class="pay-badge">Troy</span>
+          <span class="pay-badge">Visa</span>
+          <span class="pay-badge">Mastercard</span>
+          <span class="pay-badge">Havale/EFT</span>
+        </div>
+        <p class="footer-text" style="font-size:0.75rem; color:var(--text-muted);">
+          Türkiye'nin her yerine MNG &amp; Yurtiçi Kargo güvencesiyle 24 saatte sevk.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Sub Footer Bottom Bar -->
+    <div class="footer-bottom">
+      <div class="container footer-bottom-inner">
+        <div>&copy; 2026 Pozitron Market. Tüm hakları saklıdır.</div>
+        <div class="footer-bottom-links">
+          <a href="/#privacy">Gizlilik</a>
+          <a href="/#terms">Kullanım Şartları</a>
+          <a href="/iade-politikasi.html">İade Koşulları</a>
+        </div>
+      </div>
     </div>
   </footer>
 
@@ -1019,8 +1047,34 @@
       window.open(`https://api.whatsapp.com/send?text=${text}%20${url}`, '_blank');
     }
 
+    function handleHeaderSearch() {
+      const q = (document.getElementById('header-search-input')?.value || '').trim();
+      if (!q) return;
+      const dirSearch = document.getElementById('rehber-search');
+      if (dirSearch) {
+        dirSearch.value = q;
+        if (document.getElementById('directory-view').classList.contains('hidden')) {
+          showDirectory();
+        }
+        filterArticles();
+      }
+    }
+
     // Initialize on page load
-    window.addEventListener('DOMContentLoaded', initRehber);
+    window.addEventListener('DOMContentLoaded', () => {
+      initRehber();
+      document.getElementById('header-search-input')?.addEventListener('input', (e) => {
+        const q = e.target.value;
+        const dirSearch = document.getElementById('rehber-search');
+        if (dirSearch) {
+          dirSearch.value = q;
+          if (document.getElementById('directory-view').classList.contains('hidden')) {
+            showDirectory();
+          }
+          filterArticles();
+        }
+      });
+    });
   </script>
 </body>
 </html>
