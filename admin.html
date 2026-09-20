@@ -1739,7 +1739,7 @@
     let _adminMemoryProducts = null;
 
     async function getLocalAdminProducts(forceRefresh = false) {
-      if (!forceRefresh && _adminMemoryProducts && Array.isArray(_adminMemoryProducts) && _adminMemoryProducts.length > 0) {
+      if (!forceRefresh && _adminMemoryProducts && Array.isArray(_adminMemoryProducts) && _adminMemoryProducts.length >= 506) {
         return _adminMemoryProducts;
       }
 
@@ -1774,7 +1774,7 @@
       if (cached && typeof cached === 'string' && cached.trim().startsWith('[')) {
         try {
           const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed) && parsed.length >= 506) {
             _adminMemoryProducts = parsed;
             return parsed;
           }

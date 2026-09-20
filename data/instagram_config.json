@@ -1,5 +1,5 @@
 {
-  "posting_frequency_hours": 6,
+  "posting_frequency_hours": 2,
   "daily_engagement_limit": 10,
   "is_autonomous_enabled": 1,
   "dry_run_mode": 0,
@@ -18,9 +18,9 @@
     "fpvfreestyle",
     "fpvracing"
   ],
-  "updated_at": "2026-09-20T19:52:23.530995",
-  "last_run_at": "2026-09-20T19:39:53.751094",
-  "next_run_at": "2026-09-21T01:39:53.751094",
+  "updated_at": "2026-09-20T22:33:24.652950",
+  "last_run_at": "2026-09-20T22:33:09.800501",
+  "next_run_at": "2026-09-21T00:33:09.800501",
   "story_enabled": 1,
   "carousel_enabled": 0,
   "dm_automation_enabled": 0,

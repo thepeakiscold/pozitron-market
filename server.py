@@ -1802,6 +1802,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "limit": limit,
                 "total_pages": (total_items + limit - 1) // limit if limit > 0 else 1
             })
+            return
         # Admin: Export Products to Excel (XML Spreadsheet 2003 format)
         if path == '/api/admin/products/export-excel':
             conn = get_db()
@@ -3977,7 +3978,15 @@ def run_server():
         raise RuntimeError(f"Could not bind to any port in {ports_to_try}")
     print(f"==================================================")
     print(f" Pozitron Drone Shopping Platform Running on http://localhost:{PORT}")
-    print(f" 500 Drone Items Active in SQLite Database")
+    try:
+        _c_db = get_db()
+        _cur = _c_db.cursor()
+        _cur.execute("SELECT count(*) FROM products")
+        _active_count = _cur.fetchone()[0]
+        _c_db.close()
+    except Exception:
+        _active_count = 506
+    print(f" {_active_count} Drone Items Active in SQLite Database")
     print(f" Languages: Turkish (TR) & English (EN)")
     print(f"==================================================")
     start_all_schedulers()

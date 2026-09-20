@@ -27,11 +27,15 @@ class TestServerInstagramAPI(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        from instagram_agent.db import update_agent_config
+        from server import instagram_pr_agent
         cls.httpd.shutdown()
         cls.httpd.server_close()
         if hasattr(cls, 'orig_config') and cls.orig_config:
-            update_agent_config({'dry_run_mode': cls.orig_config.get('dry_run_mode', 1)})
+            instagram_pr_agent.update_config({
+                'dry_run_mode': cls.orig_config.get('dry_run_mode', 0),
+                'posting_frequency_hours': cls.orig_config.get('posting_frequency_hours', 2),
+                'peak_scheduler_enabled': cls.orig_config.get('peak_scheduler_enabled', 0)
+            })
 
     def _get(self, path):
         url = f"http://127.0.0.1:{self.port}{path}"

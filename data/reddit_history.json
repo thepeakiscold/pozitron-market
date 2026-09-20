@@ -152,6 +152,25 @@
     "created_at": "2026-09-20T08:13:01.694043"
   },
   {
+    "id": "d8ef300725b6",
+    "reddit_id": "t3_1wlly58",
+    "reddit_type": "submission",
+    "title": "Radiomaster Boxer red light blinking when charging",
+    "body": "Specs:\n\n* Radiomaster Boxer\n* 7.4V LiPo battery\n\n\n\nI haven't used or charged the radio for several years, and I wanted to bring it out to use it again:\n\nWhen I turn the radio on without plugging it in for USB charging, it powers up, displays \"EdgeTX\" on the screen, and then suddenly shuts off.\n\nWhen I charge it via USB-C, the power button LED flashes red.\n\nIt doesn't seem like charging is working properly, as the flashing pattern is the same as when I plug the radio in without a battery.\n\nI can keep the radio on if I unplug the charging cable, turn the radio on, and then plug the cable in while it's booting up. At that point, the radio displays 4.5V.\n\n\n\nHas my battery dropped below its minimum voltage threshold?\n\n\n\nThanks for your help!",
+    "author": "Responsible-Leg1369",
+    "subreddit": "fpv",
+    "url": "https://www.reddit.com/r/fpv/comments/1wlly58/radiomaster_boxer_red_light_blinking_when_charging/",
+    "permalink": "https://reddit.com/r/fpv/comments/1wlly58/radiomaster_boxer_red_light_blinking_when_charging/",
+    "question_summary": "Radiomaster Boxer red light blinking when charging",
+    "gemini_reply": "Hey! For LiPo battery safety and longevity, keep these guidelines in mind:\n\n1. **Per-Cell Voltage:** Never discharge below 3.5V per cell (aim to land around 3.6V-3.7V). Full charge is 4.20V (or 4.35V for LiHV).\n2. **Storage Charge:** Don't leave packs fully charged or depleted for more than 48 hours. Charge or discharge them to 3.80V-3.85V per cell.\n3. **Charge Rate:** Stick to 1C charge rate for longest cycle life (e.g. 1.5A for a 1500mAh pack).\n\n*Fly safe and happy flying! [POZITRON MARKET]*",
+    "status": "failed",
+    "confidence_score": 88,
+    "upvotes": 1,
+    "error_message": "Gönderim hatası: [Errno 2] No such file or directory: 'node'",
+    "published_at": null,
+    "created_at": "2026-09-20T19:53:15.694049"
+  },
+  {
     "id": "d2459ba080fa",
     "reddit_id": "t3_1wkwk03",
     "reddit_type": "submission",
@@ -530,6 +549,25 @@
     "error_message": "Demo/ornek soru canli Reddit'te bulunmuyor.",
     "published_at": null,
     "created_at": "2026-09-20T08:46:37.620088"
+  },
+  {
+    "id": "8dcf42496e05",
+    "reddit_id": "t3_1wlmni4",
+    "reddit_type": "submission",
+    "title": "Is a loud fan normal on the HDZero BoxPro?",
+    "body": "Just bought a new pair of HDZero BoxPro goggles, opened them up and noticed the fan is pretty loud. This is the noise it makes even when set to the lowest speed setting.\n\nThese are my first FPV goggles, so I wanted to ask if a noisy fan is normal for this model or if I might have a defective unit.",
+    "author": "LiutasTheUnknown",
+    "subreddit": "fpv",
+    "url": "https://v.redd.it/b5erfortipqh1",
+    "permalink": "https://reddit.com/r/fpv/comments/1wlmni4/is_a_loud_fan_normal_on_the_hdzero_boxpro/",
+    "question_summary": "Is a loud fan normal on the HDZero BoxPro?",
+    "gemini_reply": "Hey there! If you are getting started or picking your first drone setup, here are key tips:\n\n1. **Simulator First:** Before buying a complete quad, get an ELRS radio controller (e.g. RadioMaster Pocket) and log 15-20 hours in a simulator (Liftoff, Velocidrone). It saves a lot of repair money.\n2. **Tiny Whoop vs 5-inch:** For indoor practice and durability, a 1S Tiny Whoop (like BetaFPV Meteor65/75 or Mobula6/7) is the safest starting point.\n3. **Weight & Regulations:** Sub-250g quads have fewer regulatory restrictions in most countries.\n\nFeel free to share your budget and what kind of flying you want to do!\n\n*Fly safe and happy flying! [POZITRON MARKET]*",
+    "status": "failed",
+    "confidence_score": 88,
+    "upvotes": 1,
+    "error_message": "Gönderim hatası: [Errno 2] No such file or directory: 'node'",
+    "published_at": null,
+    "created_at": "2026-09-20T20:24:12.236168"
   },
   {
     "id": "8d8d6a980688",

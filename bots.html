@@ -1004,7 +1004,7 @@
           </div>
           <div class="kpi-value" style="color:#10b981;" id="tel-price-advantages">0</div>
           <div class="kpi-subtext">
-            Taranan: <strong id="tel-price-total" style="color:#f8fafc;">500 SKU</strong> &bull; Oran: <strong id="tel-price-pct" style="color:#10b981;">0%</strong>
+            Taranan: <strong id="tel-price-total" style="color:#f8fafc;">506 SKU</strong> &bull; Oran: <strong id="tel-price-pct" style="color:#10b981;">0%</strong>
           </div>
         </div>
 
@@ -1123,7 +1123,7 @@
         <div class="bots-card-header">
           <div>
             <h3 class="card-title">Türkiye Pazarı Fiyat &amp; Arbitraj Analizi</h3>
-            <p class="card-desc">Dronmarket, Robotistan, SAMM, Robolink ve FPVTR ile 500 Pozitron ürününün anlık fiyat kıyası</p>
+            <p class="card-desc">Dronmarket, Robotistan, SAMM, Robolink ve FPVTR ile 506 Pozitron ürününün anlık fiyat kıyası</p>
           </div>
 
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1199,7 +1199,7 @@
               Otonom Instagram PR ve Topluluk Etkileşimi
             </h2>
             <p class="card-desc" style="max-width:850px;">
-              500 Pozitron donanımını ve FPV rehberlerini Gemini 3.8 Flash özetleriyle 1080x1080 afişler halinde <strong>@pozitronmarket</strong> hesabında otonom yayınlar.
+              506 Pozitron donanımını ve FPV rehberlerini Gemini 3.8 Flash özetleriyle 1080x1080 afişler halinde <strong>@pozitronmarket</strong> hesabında otomatik yayınlar.
             </p>
             <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.78rem; color:var(--text-muted); margin-top:10px;">
               <span>Hesap: <strong style="color:#f8fafc;">@pozitronmarket</strong></span>
@@ -1274,7 +1274,7 @@
         <div class="bots-card" style="background:#0c1122; border-color:#6366f1; padding:16px 20px; margin-bottom:0;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
             <span style="font-size:0.75rem; font-weight:600; color:#a5b4fc; text-transform:uppercase;">Sonraki Otomatik Paylaşım</span>
-            <span class="status-pill status-pill-info" id="ig-post-cycle-badge">6 Saatte Bir</span>
+            <span class="status-pill status-pill-info" id="ig-post-cycle-badge">Otomatik</span>
           </div>
           <div style="font-size:1.8rem; font-weight:800; color:#fff; font-family:var(--font-mono); font-variant-numeric:tabular-nums;" id="ig-post-countdown-timer">
             --:--:--
@@ -1408,14 +1408,14 @@
           <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px; margin-bottom:14px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
               <label style="font-size:0.75rem; font-weight:600; color:#f1f5f9;">Paylaşım Sıklığı:</label>
-              <span id="ig-freq-label" style="font-size:0.75rem; font-weight:700; color:#38bdf8;">Her 6 Saatte Bir</span>
+              <span id="ig-freq-label" style="font-size:0.75rem; font-weight:700; color:#38bdf8;">Yükleniyor...</span>
             </div>
             <select id="ig-quick-freq-select" onchange="changeInstagramPostingFrequency(this.value)" style="width:100%; background:#0d1527; border:1px solid #334155; color:#fff; padding:6px 8px; border-radius:6px; font-size:0.78rem;">
               <option value="peak">⭐ Zirve Saatler (12:30 &amp; 20:00 TRT)</option>
               <option value="1">Her 1 Saatte Bir (Günde 24 Post)</option>
               <option value="2">Her 2 Saatte Bir (Günde 12 Post)</option>
               <option value="4">Her 4 Saatte Bir (Günde 6 Post)</option>
-              <option value="6" selected>Her 6 Saatte Bir (Günde 4 Post)</option>
+              <option value="6">Her 6 Saatte Bir (Günde 4 Post)</option>
               <option value="12">Her 12 Saatte Bir (Günde 2 Post)</option>
               <option value="24">Günde 1 Kez (24 Saat)</option>
             </select>
@@ -2653,7 +2653,7 @@
             if (freqLbl) freqLbl.textContent = 'Zirve Saatler (12:30 & 20:00)';
             if (cycleBadge) cycleBadge.textContent = 'Zirve Saatler';
           } else {
-            if (freqSelect) freqSelect.value = freq;
+            if (freqSelect) freqSelect.value = String(freq);
             if (freqLbl) freqLbl.textContent = `Her ${freq} Saatte Bir`;
             if (cycleBadge) cycleBadge.textContent = `${freq} Saatte Bir`;
           }
@@ -3550,7 +3550,7 @@
       const priceTotEl = document.getElementById('tel-price-total');
       const pricePctEl = document.getElementById('tel-price-pct');
       const advCount = t.price_intelligence?.price_advantage_count ?? 0;
-      const totCount = t.price_intelligence?.tracked_skus ?? 500;
+      const totCount = t.price_intelligence?.tracked_skus ?? 506;
       if (priceAdvEl) priceAdvEl.textContent = advCount;
       if (priceTotEl) priceTotEl.textContent = totCount + ' SKU';
       if (pricePctEl) pricePctEl.textContent = Math.round((advCount / (totCount || 1)) * 100) + '%';
@@ -4290,6 +4290,7 @@
     // Auto-initialize on page load: Start on the clean Overview dashboard
     document.addEventListener('DOMContentLoaded', () => {
       switchBotsTab('orchestrator');
+      loadInstagramData();
     });
   </script>
 </body>

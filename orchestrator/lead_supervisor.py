@@ -275,9 +275,10 @@ class LeadSupervisorAgent:
         cursor.execute("SELECT count(*) FROM price_intelligence_logs")
         total_price_scans = max(1, cursor.fetchone()[0])
 
-        cursor.execute("SELECT posting_frequency_hours FROM instagram_agent_config WHERE id = 1")
+        cursor.execute("SELECT posting_frequency_hours, peak_scheduler_enabled FROM instagram_agent_config WHERE id = 1")
         row_ig = cursor.fetchone()
         current_ig_freq = row_ig[0] if row_ig else 6
+        peak_enabled = bool(row_ig[1]) if row_ig and len(row_ig) > 1 else False
 
         cursor.execute("SELECT scan_interval_minutes FROM reddit_agent_config WHERE id = 1")
         row_red = cursor.fetchone()
@@ -293,12 +294,13 @@ class LeadSupervisorAgent:
         applied_changes = {}
 
         # Engagement evaluation:
-        # Rule A: If Instagram posts are sparse or pilot interaction quota can be increased
-        if total_ig_posts < 5 or current_ig_freq > 4:
+        # Rule A: Only optimize Instagram frequency if it is exceptionally slow (> 6h) and not explicitly set to peak hours
+        if not peak_enabled and current_ig_freq > 6:
             new_freq = 4
-            cursor.execute("UPDATE instagram_agent_config SET posting_frequency_hours = ?, updated_at = ? WHERE id = 1", (new_freq, now_iso))
-            bottlenecks.append("Instagram yayin frekansi organik erisimi maksimize etmek icin yetersiz (mevcut: 6 saat).")
-            adjustments.append(f"Instagram paylasim frekansi 4 saate indirildi. Turk FPV pilotlarina yonelik gunluk etkilesim kotasi 15 pilote yukseltildi.")
+            from instagram_agent.db import update_agent_config
+            update_agent_config({'posting_frequency_hours': new_freq})
+            bottlenecks.append("Instagram yayin frekansi organik erisimi maksimize etmek icin optimize edildi.")
+            adjustments.append(f"Instagram paylasim frekansi 4 saate optimize edildi.")
             applied_changes["instagram_posting_frequency_hours"] = new_freq
 
         # Rule B: Reddit responsiveness

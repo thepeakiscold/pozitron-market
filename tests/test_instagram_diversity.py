@@ -21,7 +21,7 @@ class TestInstagramDiversity(unittest.TestCase):
     def tearDown(self):
         if self.original_config:
             update_agent_config({
-                'posting_frequency_hours': self.original_config.get('posting_frequency_hours', 6),
+                'posting_frequency_hours': self.original_config.get('posting_frequency_hours', 2),
                 'dry_run_mode': self.original_config.get('dry_run_mode', 0),
                 'is_autonomous_enabled': self.original_config.get('is_autonomous_enabled', 1)
             })

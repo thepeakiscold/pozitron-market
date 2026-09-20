@@ -26,8 +26,10 @@ class TestInstagramPRAgent(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         if cls.original_config:
-            update_agent_config({
-                'posting_frequency_hours': cls.original_config.get('posting_frequency_hours', 6),
+            from instagram_agent.agent import InstagramPRAgent
+            agent = InstagramPRAgent()
+            agent.update_config({
+                'posting_frequency_hours': cls.original_config.get('posting_frequency_hours', 2),
                 'dry_run_mode': cls.original_config.get('dry_run_mode', 0),
                 'preferred_language': cls.original_config.get('preferred_language', 'tr'),
                 'is_autonomous_enabled': cls.original_config.get('is_autonomous_enabled', 1)
