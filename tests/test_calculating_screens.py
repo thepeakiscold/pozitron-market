@@ -49,12 +49,13 @@ class TestCalculatingScreens(unittest.TestCase):
         self.assertIn('Dilim Katmanı', self.app_js)
         self.assertIn('Dilimleniyor', self.app_js)
 
-    def test_3d_studio_presets_and_recalculate(self):
-        """3D Studio must have sample model presets and recalculate actions."""
-        self.assertIn('load3DSamplePreset', self.app_js)
+    def test_3d_studio_no_sample_presets_and_recalculate(self):
+        """Sample model presets must be removed from the UI, and recalculate action present."""
+        self.assertNotIn("load3DSamplePreset('gopro_mount')", self.index_html)
+        self.assertNotIn("load3DSamplePreset('motor_guard')", self.index_html)
+        self.assertNotIn('Örnek GoPro Mount', self.index_html)
+        self.assertNotIn('Örnek Motor Koruma', self.index_html)
         self.assertIn('trigger3DRecalculate', self.app_js)
-        self.assertIn("load3DSamplePreset('gopro_mount')", self.index_html)
-        self.assertIn("load3DSamplePreset('motor_guard')", self.index_html)
         self.assertIn('trigger3DRecalculate()', self.index_html)
 
     def test_css_styles_exist(self):
