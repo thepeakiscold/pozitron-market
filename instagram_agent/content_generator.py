@@ -289,7 +289,11 @@ class ContentGenerator:
             'tool_info': dict or None
         }
         """
-        valid_types = ['product_spotlight', 'pilot_tip', 'tool_showcase', 'deal_drop', 'seo_article', 'review_highlight']
+        valid_types = [
+            'product_spotlight', 'drone_build_showcase', 'carousel_guide',
+            'flight_weather_radar', 'pilot_tip', 'tool_showcase',
+            'spot_guide', 'deal_drop', 'seo_article', 'review_highlight'
+        ]
         
         recent_types = get_recent_posted_content_types(limit=5)
         db_titles = set(get_recent_posted_titles(limit=40))
@@ -297,22 +301,24 @@ class ContentGenerator:
 
         explicit_type = content_type if (content_type and content_type in valid_types) else None
 
-        # 1. Smart Pillar Selection (prevent consecutive identical types, focus on catalog products)
+        # 1. Smart Pillar Selection (diverse PR feed: builds, weather, guides, products, tips)
         if not content_type or content_type not in valid_types:
             candidate_types = [t for t in valid_types if not (recent_types and t == recent_types[0])]
             if not candidate_types:
                 candidate_types = valid_types
 
-            # Balanced e-commerce weights: 60% products, 15% tips, 10% tools, 8% deals, 5% seo guides, 2% reviews
+            # Balanced PR & e-commerce diversity weights
             type_weights = {
-                'product_spotlight': 0.60,
-                'pilot_tip': 0.15,
-                'tool_showcase': 0.10,
-                'deal_drop': 0.08,
-                'seo_article': 0.05,
-                'review_highlight': 0.02
+                'product_spotlight': 0.30,
+                'drone_build_showcase': 0.22,
+                'carousel_guide': 0.18,
+                'flight_weather_radar': 0.12,
+                'pilot_tip': 0.08,
+                'tool_showcase': 0.05,
+                'spot_guide': 0.03,
+                'deal_drop': 0.02
             }
-            weights = [type_weights.get(t, 0.1) for t in candidate_types]
+            weights = [type_weights.get(t, 0.05) for t in candidate_types]
             content_type = random.choices(candidate_types, weights=weights, k=1)[0]
 
         # 2. Multi-attempt anti-duplicate generation loop
@@ -321,6 +327,14 @@ class ContentGenerator:
             cur_type = explicit_type or content_type
             if cur_type == 'product_spotlight':
                 content = self._generate_product_spotlight(product_id)
+            elif cur_type == 'drone_build_showcase':
+                content = self._generate_drone_build_showcase()
+            elif cur_type == 'carousel_guide':
+                content = self._generate_carousel_guide()
+            elif cur_type == 'flight_weather_radar':
+                content = self._generate_flight_weather_radar()
+            elif cur_type == 'spot_guide':
+                content = self._generate_spot_guide()
             elif cur_type == 'tool_showcase':
                 content = self._generate_tool_showcase()
             elif cur_type == 'deal_drop':
@@ -344,6 +358,8 @@ class ContentGenerator:
                 product_id = None
 
         if content:
+            # Ensure DM / Comment Call-To-Action is attached to caption
+            content['caption'] = self._append_dm_cta(content['caption'])
             self._session_recent_titles.append(content['title'])
             if len(self._session_recent_titles) > 50:
                 self._session_recent_titles = self._session_recent_titles[-50:]
@@ -1055,3 +1071,373 @@ SADECE gecerli bir JSON objesi dondur:
             except Exception:
                 continue
         return None
+
+    def _append_dm_cta(self, caption: str, keyword: str = 'KUPON') -> str:
+        if 'Yoruma' in caption or 'DM' in caption:
+            return caption
+        cta = (
+            "\n\n[OTOMATIK DM ALARMI]\n"
+            "Yoruma 'KUPON', 'LINK' veya 'FIYAT' yaz, sana ozel indirim kodunu ve urun baglantisini aninda DM kutuna iletelim!"
+        )
+        return caption + cta
+
+    def _generate_carousel_guide(self) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+
+        carousel_guides = [
+            {
+                'title': '[REHBER] 4S vs 6S Batarya: Hangisini Secmelisin?',
+                'headline': '4S VS 6S SECIM REHBERI',
+                'subhead': 'Voltaj Cokmesi, Agirlik ve Verimlilik',
+                'points': [
+                    "[VOLTAJ] 6S Dusuk Amper ile Minimum Cokme Saglar",
+                    "[MOTOR] 6S 5 Inc Icin 1750-1950KV Idealdir",
+                    "[VERIM] ESC ve Kablo Isinmalarini %40 Azaltir"
+                ],
+                'caption': """[KAYDIRMALI REHBER] 4S vs 6S LiPo Batarya Karsilastirmasi
+
+FPV drone toplarken en cok sorulan soru: "4S mi toplamaliyim, 6S mi?"
+
+Bu 4 slaytlik detayli rehberde:
+- Voltaj cokmesi (voltage sag) neden olusur?
+- 6S bataryanin motor ve ESC uzerindeki elektriksel avantaji nedir?
+- Hangi KV degerinde motor secmelisiniz?
+Hepsini adim adim acikliyoruz!
+
+Slaytlari kaydirarak detaylari inceleyin ve ileride lazim oldugunda bulmak icin gonderiyi kaydetmeyi unutmayin!
+
+> Tum LiPo batarya ve sarj aletleri: pozitronmarket.com""",
+                'tags': '#fpvlipo #6sbattery #fpvrehber #pozitronmarket #dronetopla #kaydirmalipost'
+            },
+            {
+                'title': '[REHBER] Dijital HD (O3, Walksnail) vs Analog Video',
+                'headline': 'DIJITAL HD VS ANALOG VTX',
+                'subhead': 'Kristal Netlik mi, Ultra Dusuk Gecikme mi?',
+                'points': [
+                    "[DJI O3 / WALKSNAIL] 1080p Kristal Netlik ve Dahili Kayit",
+                    "[ANALOG / HDZERO] 15ms Ultra Dusuk Sabit Gecikme",
+                    "[STOK] En Guncel Dijital VTX Sistemleri Pozitron'da"
+                ],
+                'caption': """[KAYDIRMALI REHBER] Dijital HD vs Analog FPV Video Sistemleri
+
+Gozlugunuzdeki goruntu ucus keyfinizi ve tepki surenizi dogrudan belirler!
+
+Bu rehberde karsilastiriyoruz:
+- DJI O3 Air Unit & Walksnail Avatar (1080p dijital netlik)
+- HDZero & Klasik Analog 5.8GHz (Ultra dusuk 15ms gecikme)
+- Agirlik, menzil ve maliyet analizi
+
+Slaytlari sola kaydirarak ihtiyaciniza en uygun sistemi secin!
+
+> Dijital HD ve Analog VTX donanimlari: pozitronmarket.com""",
+                'tags': '#djio3 #walksnail #analogfpv #vtxrehber #pozitronmarket #fpvturkey'
+            },
+            {
+                'title': '[REHBER] ExpressLRS 2.4GHz: Paket Hizi ve Guvenlik',
+                'headline': 'EXPRESSLRS 2.4GHZ AYARLARI',
+                'subhead': 'Paket Hizi, Dinamik Guc ve Failsafe',
+                'points': [
+                    "[HIZ] 500Hz Paket Hizi ile 2ms Pruzsuz Tepki",
+                    "[GUC] Dinamik Guc ile Pil Tasarrufu ve Uzun Menzil",
+                    "[GUVENLIK] Failsafe Testi ve Model Match Onlemi"
+                ],
+                'caption': """[KAYDIRMALI REHBER] ExpressLRS (ELRS) Kumanda Protokolu Ayar Rehberi
+
+Menzil kaygilarina ve failsafe korkularina ExpressLRS ile son verin!
+
+Bu rehberde:
+- 250Hz vs 500Hz paket hizi farki
+- Telemetri orani (1:64 / 1:32) neden onemlidir?
+- Dinamik guc ayari ile menzili garantiye alma
+
+Rehberi kaydet, atolyede setup kurarken basucu kaynagin olsun!
+
+> Radiomaster ve ELRS kumanda donanimlari: pozitronmarket.com""",
+                'tags': '#expresslrs #elrs #radiomaster #fpvkumanda #pozitronmarket #fpvturkey'
+            },
+            {
+                'title': '[REHBER] Betaflight 4.5 GPS Rescue: Drone Kurtarma',
+                'headline': 'BETAFLIGHT GPS RESCUE',
+                'subhead': 'Sinyal Koptugunda Otonom Eve Donus',
+                'points': [
+                    "[UYDU] Minimum 8 Uydu Kilidi ile Guvenli Kalkis",
+                    "[FAILSAFE] Agac ve Bina Ustu Guvenli Tirmanma",
+                    "[PUSULASIZ] Betaflight 4.5 ile Pusulasiz Yon Bulma"
+                ],
+                'caption': """[KAYDIRMALI REHBER] Betaflight 4.5 GPS Rescue Kurulumu ve Ayarlari
+
+Video veya kumanda sinyali koptugunda drone'unuzu kaybetmeyin!
+
+Bu 4 slaytlik rehberde:
+- GPS modulu baglantisi ve UART ayarlari
+- Minimum uydu sayisi ve arm korumasi
+- Guvenli donus irtifasi (Sanity Check) ayarlari
+
+Slaytlari kaydir, drone'unu guvenceye al!
+
+> M10 GPS modulleri ve aksesuarlari: pozitronmarket.com""",
+                'tags': '#betaflight #gpsrescue #longrangefpv #pozitronmarket #fpvdrone'
+            }
+        ]
+
+        eligible = [g for g in carousel_guides if g['title'] not in recent_titles]
+        if not eligible:
+            eligible = carousel_guides
+        guide = random.choice(eligible)
+
+        visual_summary = {
+            'badge': 'KAYDIRMALI REHBER [4 SLAYT]',
+            'headline': guide['headline'],
+            'subhead': guide['subhead'],
+            'key_points': guide['points'],
+            'cta': 'KAYDIR > 1/4'
+        }
+
+        return {
+            'content_type': 'carousel_guide',
+            'media_type': 'CAROUSEL',
+            'product_id': None,
+            'title': guide['title'],
+            'caption': guide['caption'].strip(),
+            'hashtags': guide['tags'],
+            'visual_summary': visual_summary,
+            'product_data': None,
+            'tool_info': None
+        }
+
+    def _generate_drone_build_showcase(self) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+
+        builds = [
+            {
+                'title': '[POZITRON BUILD] 5 Inc 6S Freestyle Canavari',
+                'headline': '5 INC 6S FREESTYLE BEAST',
+                'subhead': 'Pozitron Atolye Referans Freestyle Kurulumu',
+                'pills': ['6S LiPo', '~370g', 'Gemfan 51433', 'Betaflight 4.5'],
+                'specs': [
+                    "[FRAME] 5 Inc 3K Karbon Fiber Guclendirilmis Sasisi",
+                    "[STACK] SpeedyBee F405 V4 55A BLS Stack",
+                    "[MOTOR] T-Motor F60 PRO V 1950KV 6S Motorlar",
+                    "[VTX] Walksnail Avatar HD Pro / DJI O3 Dijital VTX"
+                ],
+                'desc': 'Pozitron Atolye muhendislerimizin sahada test ettigi referans 5 inc freestyle konfigurasyonu. Titresimsiz RPM filtreleme, yuksek torklu 1950KV motorlar ve mukemmel agirlik merkezi.',
+                'tags': '#fpvdrone #fpvbuild #freestylefpv #pozitronmarket #dronetopla #betaflight #fpvturkey'
+            },
+            {
+                'title': '[POZITRON BUILD] 3.5 Inc CineWhoop Pro',
+                'headline': '3.5 INC CINEWHOOP PRO',
+                'subhead': 'Kapali Alan & Yakin Cekim Sinematik Quad',
+                'pills': ['4S LiPo', '~215g', 'Kanalli Koruma', 'Dusuk Desibel'],
+                'specs': [
+                    "[FRAME] CineWhoop 3.5 Inc Darbe Korumali Kanalli Govde",
+                    "[STACK] AIO F722 40A Entegre Ucus Kontrol Karti",
+                    "[MOTOR] 1404 3800KV Sinematik Motorlar",
+                    "[KAMERA] Caddx Ratel 2 Pro / Avatar HD Mini"
+                ],
+                'desc': 'Insan ve mekan yakin cekimlerinde maksimum guvenlik saglayan kanal korumali sinematik setup. Yumusak gaz tepkisi ve uzun havada kalis suresi.',
+                'tags': '#cinewhoop #sinematikfpv #pozitronmarket #fpvturkey #dronetopla #videography'
+            },
+            {
+                'title': '[POZITRON BUILD] 7 Inc Long Range Explorer',
+                'headline': '7 INC LONG RANGE EXPLORER',
+                'subhead': 'Dag Ucusu & 15KM+ Guvenli Kesif',
+                'pills': ['6S Li-Ion', '~540g', 'M10 GPS', '25+ Dk Ucus'],
+                'specs': [
+                    "[FRAME] 7 Inc Deadcat Karbon Uzun Menzil Sasisi",
+                    "[STACK] Matek F722-HD & 60A BLHeli32 ESC",
+                    "[MOTOR] 2807 1300KV Dusuk KV Yuksek Verim Motor",
+                    "[GPS] M10-5883 Pusulali Hassas GPS ve RTH"
+                ],
+                'desc': 'Zirve tirmanislari ve uzun menzilli doga kesifleri icin tasarlandi. Deadcat geometrisi sayesinde pervaneler kamera acisina girmez.',
+                'tags': '#longrangefpv #dagucusu #fpvturkey #pozitronmarket #dronetopla #expresslrs'
+            },
+            {
+                'title': '[POZITRON BUILD] 2 Inc Toothpick Atolye Canavari',
+                'headline': '2 INC TOOTHPICK POCKET',
+                'subhead': 'Mikro Boyut & Sinirsiz Atolye Eglencesi',
+                'pills': ['1-2S LiPo', '~48g', 'Sub-250g', 'Sessiz Ucus'],
+                'specs': [
+                    "[FRAME] 2 Inc Ultralight 1.5mm Karbon Sasi",
+                    "[STACK] 1-2S AIO 12A Entegre Kart",
+                    "[MOTOR] 1103 11000KV Ultra Hizli Motorlar",
+                    "[VTX] 400mW Mini Analog VTX ve Nano Kamera"
+                ],
+                'desc': 'Bahcede, parkta veya atolye icinde guvenle ucabileceginiz cevik mikro FPV drone. Dusuk agirlik sayesinde kirilma riski minimumdur.',
+                'tags': '#toothpickdrone #microfpv #pozitronmarket #fpvturkey #tinydrone'
+            }
+        ]
+
+        eligible = [b for b in builds if b['title'] not in recent_titles]
+        if not eligible:
+            eligible = builds
+        b = random.choice(eligible)
+
+        specs_text = "\n".join(b['specs'])
+        caption = f"""[POZITRON BUILD REHBERI] {b['headline']}
+
+Pozitron Market Atolye Referans Kurulumu:
+{b['subhead']}
+
+[DONANIM LISTESI]
+{specs_text}
+
+[POZITRON MUHENDISLIK NOTU]
+{b['desc']}
+
+> Bu kurulumda kullanilan tum parcalar Pozitron Market stoklarinda ve ayni gun kargoda: pozitronmarket.com
+
+[OTOMATIK DM ALARMI]
+Yoruma 'KUPON', 'PARCA' veya 'FIYAT' yaz, bu build'in parca listesini ve ozel indirim kodunu aninda DM ile gonderelim!"""
+
+        visual_summary = {
+            'badge': 'POZITRON BUILD REHBERI',
+            'headline': b['headline'],
+            'subhead': b['subhead'],
+            'pills': b['pills'],
+            'key_points': b['specs'],
+            'cta': '> TUM PARCALAR STOKTA: pozitronmarket.com <'
+        }
+
+        return {
+            'content_type': 'drone_build_showcase',
+            'media_type': 'IMAGE',
+            'product_id': None,
+            'title': b['title'],
+            'caption': caption.strip(),
+            'hashtags': b['tags'],
+            'visual_summary': visual_summary,
+            'product_data': None,
+            'tool_info': None
+        }
+
+    def _generate_flight_weather_radar(self) -> dict:
+        now = datetime.now()
+        is_weekend = now.weekday() in (4, 5, 6)
+
+        wind_speed = random.randint(7, 14)
+        temp_c = random.randint(19, 25)
+        kp_index = random.choice([1, 1, 2, 2, 3])
+
+        if wind_speed <= 10 and kp_index <= 2:
+            score = "9 / 10"
+            status_text = "MUKEMMEL UCUS GUNU"
+            advice = "Ruzgar hizi son derece dusuk, termal akimlar sakin. Freestyle ve sinematik cekimler icin kusursuz bir gokyuzu var."
+        elif wind_speed <= 15:
+            score = "8 / 10"
+            status_text = "HARIKA UCUS GUNU"
+            advice = "Hafif esinti mevcut, 5 inc ve uzeri build'ler icin hicbir engel yok. RTH ve GPS baglantilarinizi kalkis oncesi test edin."
+        else:
+            score = "7 / 10"
+            status_text = "ORTA — ATOLYE VEYA ALCAK UCUS"
+            advice = "Ruzgar hizi hissedilir duzeyde. Agac alti veya vadi ici korunakli spotlari tercih edin."
+
+        header_prefix = "HAFTA SONU" if is_weekend else "GUNLUK"
+        title = f"[UCUS RADARI] {header_prefix} FPV Hava Durumu — {status_text}"
+
+        caption = f"""[UCUS RADARI] {header_prefix} FPV Ucus ve Hava Durumu Raporu
+
+Bugun gokyuzunde yerinizi alin! Pozitron Pilot Masasi Ucus Durumu: {score} ({status_text})
+
+[METEOROLOJIK METRIKLER]
+• Ruzgar Hizi: {wind_speed} km/s (Ucus icin elverisli)
+• Sicaklik: {temp_c}°C (LiPo bataryalar ideal calisma sicakliginda)
+• GPS Kp Indeksi: {kp_index} (Uydu kilidi ve Manyetik Alan Stabil)
+• Gorus Mesafesi: Acik ve Net
+
+[PILOT TAVSIYESI]
+{advice}
+
+Pervanelerinizi sikin, LiPo'larinizi tam voltaja (4.20V / hucre) sarj edin ve guvenli ucus alanlarinda gorusmek uzere!
+
+> Yedek pervane, LiPo sarj aletleri ve anten ihtiyaclarin icin: pozitronmarket.com"""
+
+        visual_summary = {
+            'badge': f'{header_prefix} UCUS RADARI',
+            'headline': 'BUGUN UCUS ICIN HARIKA BIR GUN!',
+            'subhead': f'Ucus Skoru: {score} — {status_text}',
+            'score': f'UCUS SKORU: {score}',
+            'wind': f'Ruzgar: {wind_speed} km/s',
+            'temp': f'Sicaklik: {temp_c}°C',
+            'kp': f'GPS Kp: {kp_index} (Temiz)',
+            'key_points': [
+                f"Ruzgar: {wind_speed} km/s (Ideal)",
+                f"Sicaklik: {temp_c}°C (LiPo Optimum)",
+                f"GPS Kp Indeksi: {kp_index} (Kararli)",
+                "Ucus Durumu: Guvenli ve Acik"
+            ],
+            'cta': '> LiPo\'lari Doldur ve Sahaya Cik <'
+        }
+
+        return {
+            'content_type': 'flight_weather_radar',
+            'media_type': 'IMAGE',
+            'product_id': None,
+            'title': title,
+            'caption': caption.strip(),
+            'hashtags': '#fpvturkey #ucusradari #fpvhavadurumu #pozitronmarket #fpvpilot #dronepilot #haftasonu',
+            'visual_summary': visual_summary,
+            'product_data': None,
+            'tool_info': None
+        }
+
+    def _generate_spot_guide(self) -> dict:
+        spots = [
+            {
+                'title': '[SAHA REHBERI] FPV Ucus Alanlari ve Guvenlik Kurallari',
+                'headline': 'GUVENLI FPV UCUS SAHASI SECIMI',
+                'subhead': 'Pilot Guvenligi ve Yasal Kurallar',
+                'points': [
+                    "[MESAFE] Yerlesim yeri ve otoyollardan min. 500m uzaklik",
+                    "[FAILSAFE] Her ucus oncesi motor kapatma testini yapin",
+                    "[VTX KANALI] Ortak sahada ucus sirasinda frekans cakismasini onleyin",
+                    "[GORMEYI KORU] Spotter (gozlemci) ile ucmak her zaman guvenlidir"
+                ],
+                'desc': 'FPV ucarken hem kendinizi hem de cevrenizi korumak en oncelikli gorevimizdir. Guvenli acik sahalar, vadiler ve izinli model ucak pistleri en ideal noktalardir.'
+            },
+            {
+                'title': '[SAHA REHBERI] Terk Edilmis Binalarda (Bando) Ucus Rehberi',
+                'headline': 'BANDO & KAPALI ALAN FPV REHBERI',
+                'subhead': 'Sinyal Yansimalari ve RF Guvenligi',
+                'points': [
+                    "[BETON VE DEMIR] Betonarme yapilar 5.8GHz sinyali ciddi sekilde yutar",
+                    "[DIVERSITY] Dual alicili gozluk ve yuksek kazancli patch anten kullanin",
+                    "[MOTOR GUCU] Dar alanlarda 3.5 inc ve 4S Cinewhoop tercih edin",
+                    "[KORUMA EKIPMANI] Kask ve saglam ayakkabi olmadan bando sahaya girmeyin"
+                ],
+                'desc': 'Bando ucuslari son derece keyifli olsa da RF sinyali zayifladigi anda goruntu kaybi yasanabilir. Guclu VTX ve guvenli RTH ayarlari sarttir.'
+            }
+        ]
+        s = random.choice(spots)
+        caption = f"""[FPV SAHA REHBERI] {s['headline']}
+
+{s['subhead']}
+
+[ONEMLI SAHA KURALLARI]
+{chr(10).join(s['points'])}
+
+[POZITRON PILOT TAVSIYESI]
+{s['desc']}
+
+Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
+> pozitronmarket.com"""
+
+        visual_summary = {
+            'badge': 'FPV SAHA REHBERI',
+            'headline': s['headline'],
+            'subhead': s['subhead'],
+            'key_points': s['points'],
+            'cta': '> GUVENLE UC: pozitronmarket.com <'
+        }
+
+        return {
+            'content_type': 'spot_guide',
+            'media_type': 'IMAGE',
+            'product_id': None,
+            'title': s['title'],
+            'caption': caption.strip(),
+            'hashtags': '#fpvturkey #spotrehberi #fpvspot #pozitronmarket #guvenliucus #fpvpilot',
+            'visual_summary': visual_summary,
+            'product_data': None,
+            'tool_info': None
+        }
+

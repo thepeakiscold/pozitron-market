@@ -18,7 +18,12 @@
     "fpvfreestyle",
     "fpvracing"
   ],
-  "updated_at": "2026-09-18T23:08:33.488535",
-  "last_run_at": "2026-09-18T23:08:19.204873",
-  "next_run_at": "2026-09-19T03:08:19.207876"
+  "updated_at": "2026-09-20T07:51:19.057421",
+  "last_run_at": "2026-09-20T07:51:17.884216",
+  "next_run_at": "2026-09-20T12:30:00",
+  "story_enabled": 1,
+  "carousel_enabled": 0,
+  "dm_automation_enabled": 0,
+  "peak_scheduler_enabled": 1,
+  "reels_enabled": 1
 }

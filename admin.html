@@ -938,6 +938,67 @@
             <div id="api-test-result" style="display:none; border-radius:8px; padding:10px 14px; font-size:0.8rem;"></div>
           </div>
 
+          <!-- 6. INSTAGRAM GELİŞMİŞ PR BOTU AYARLARI -->
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.4rem;">📸</span>
+                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#0f172a;">Instagram Gelişmiş PR Botu</h3>
+              </div>
+              <span id="ig-pr-badge" style="font-size:0.75rem; font-weight:700; background:#dcfce7; color:#166534; padding:3px 10px; border-radius:12px;">🟢 Aktif</span>
+            </div>
+
+            <p style="font-size:0.8rem; color:#64748b; margin:0; line-height:1.4;">
+              Marka bilinirliği, çoklu görsel rehberler, 9:16 hikayeler, otomatik DM/yorum kupon dağıtımı ve zirve saat planlayıcısı.
+            </p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;">
+                <input type="checkbox" id="cfg-ig-carousel" checked style="width:16px; height:16px;">
+                Çoklu Carousel
+              </label>
+
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;">
+                <input type="checkbox" id="cfg-ig-story" checked style="width:16px; height:16px;">
+                9:16 Hikaye Üretimi
+              </label>
+
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;">
+                <input type="checkbox" id="cfg-ig-dm" checked style="width:16px; height:16px;">
+                Yorum &amp; DM Kupon Botu
+              </label>
+
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;">
+                <input type="checkbox" id="cfg-ig-peak" checked style="width:16px; height:16px;">
+                Zirve Saat Planlayıcı
+              </label>
+
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;">
+                <input type="checkbox" id="cfg-ig-reels" checked style="width:16px; height:16px;">
+                Reels Teaser Desteği
+              </label>
+
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;">
+                <input type="checkbox" id="cfg-ig-autonomous" checked style="width:16px; height:16px;">
+                Otonom Döngü
+              </label>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+              <button type="button" class="admin-btn-primary" onclick="saveInstagramPrSettings()" style="background:#0284c7; border-color:#0284c7; font-size:0.8rem; padding:6px 12px;">
+                ✓ PR Ayarlarını Kaydet
+              </button>
+              <button type="button" class="admin-btn-secondary" onclick="triggerInstagramPostNow()" style="font-size:0.8rem; padding:6px 12px;">
+                Hemen Gönderi Paylaş
+              </button>
+              <button type="button" class="admin-btn-secondary" onclick="triggerInstagramDmNow()" style="font-size:0.8rem; padding:6px 12px;">
+                DM Botunu Çalıştır
+              </button>
+            </div>
+
+            <div id="ig-pr-test-result" style="display:none; border-radius:8px; padding:8px 12px; font-size:0.8rem;"></div>
+          </div>
+
         </div>
 
       </div>
@@ -1608,6 +1669,152 @@
     });
 
     // -------------------------------------------------------------
+    // Instagram PR Bot Settings & Actions
+    // -------------------------------------------------------------
+    async function loadInstagramPrSettings() {
+      try {
+        const res = await fetch('/api/instagram/config');
+        if (res.ok) {
+          const cfg = await res.json();
+          const elCar = document.getElementById('cfg-ig-carousel');
+          const elStory = document.getElementById('cfg-ig-story');
+          const elDm = document.getElementById('cfg-ig-dm');
+          const elPeak = document.getElementById('cfg-ig-peak');
+          const elReels = document.getElementById('cfg-ig-reels');
+          const elAuto = document.getElementById('cfg-ig-autonomous');
+
+          if (elCar) elCar.checked = cfg.carousel_enabled !== false && cfg.carousel_enabled !== 0;
+          if (elStory) elStory.checked = cfg.story_enabled !== false && cfg.story_enabled !== 0;
+          if (elDm) elDm.checked = cfg.dm_automation_enabled !== false && cfg.dm_automation_enabled !== 0;
+          if (elPeak) elPeak.checked = cfg.peak_scheduler_enabled !== false && cfg.peak_scheduler_enabled !== 0;
+          if (elReels) elReels.checked = cfg.reels_enabled !== false && cfg.reels_enabled !== 0;
+          if (elAuto) elAuto.checked = cfg.is_autonomous_enabled !== false && cfg.is_autonomous_enabled !== 0;
+        }
+      } catch (e) {
+        console.warn('loadInstagramPrSettings error:', e);
+      }
+    }
+
+    async function saveInstagramPrSettings() {
+      const resDiv = document.getElementById('ig-pr-test-result');
+      const payload = {
+        carousel_enabled: document.getElementById('cfg-ig-carousel')?.checked ? 1 : 0,
+        story_enabled: document.getElementById('cfg-ig-story')?.checked ? 1 : 0,
+        dm_automation_enabled: document.getElementById('cfg-ig-dm')?.checked ? 1 : 0,
+        peak_scheduler_enabled: document.getElementById('cfg-ig-peak')?.checked ? 1 : 0,
+        reels_enabled: document.getElementById('cfg-ig-reels')?.checked ? 1 : 0,
+        is_autonomous_enabled: document.getElementById('cfg-ig-autonomous')?.checked ? 1 : 0
+      };
+
+      if (resDiv) {
+        resDiv.style.display = 'block';
+        resDiv.style.background = '#f1f5f9';
+        resDiv.style.color = '#334155';
+        resDiv.textContent = 'Kaydediliyor...';
+      }
+
+      try {
+        const res = await fetch('/api/instagram/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (resDiv) {
+            resDiv.style.background = '#dcfce7';
+            resDiv.style.color = '#166534';
+            resDiv.textContent = 'PR Botu ayarları başarıyla kaydedildi.';
+          }
+          showAdminToast('Instagram PR ayarları kaydedildi!', 'success');
+        } else {
+          throw new Error(data.error || 'Kaydetme hatası');
+        }
+      } catch (err) {
+        if (resDiv) {
+          resDiv.style.background = '#fee2e2';
+          resDiv.style.color = '#991b1b';
+          resDiv.textContent = 'Hata: ' + err.message;
+        }
+        showAdminToast('Hata: ' + err.message, 'error');
+      }
+    }
+
+    async function triggerInstagramPostNow() {
+      const resDiv = document.getElementById('ig-pr-test-result');
+      if (resDiv) {
+        resDiv.style.display = 'block';
+        resDiv.style.background = '#f1f5f9';
+        resDiv.style.color = '#334155';
+        resDiv.textContent = 'Gönderi hazırlanıyor ve yayınlanıyor...';
+      }
+
+      try {
+        const isCarousel = document.getElementById('cfg-ig-carousel')?.checked;
+        const endpoint = isCarousel ? '/api/instagram/publish-carousel' : '/api/instagram/direct-publish';
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (resDiv) {
+            resDiv.style.background = '#dcfce7';
+            resDiv.style.color = '#166534';
+            resDiv.textContent = 'Başarıyla yayınlandı! ID: ' + (data.ig_media_id || 'OK');
+          }
+          showAdminToast('Gönderi yayınlandı!', 'success');
+        } else {
+          throw new Error(data.error || 'Yayınlama hatası');
+        }
+      } catch (err) {
+        if (resDiv) {
+          resDiv.style.background = '#fee2e2';
+          resDiv.style.color = '#991b1b';
+          resDiv.textContent = 'Hata: ' + err.message;
+        }
+        showAdminToast('Hata: ' + err.message, 'error');
+      }
+    }
+
+    async function triggerInstagramDmNow() {
+      const resDiv = document.getElementById('ig-pr-test-result');
+      if (resDiv) {
+        resDiv.style.display = 'block';
+        resDiv.style.background = '#f1f5f9';
+        resDiv.style.color = '#334155';
+        resDiv.textContent = 'Yorum ve DM kontrolleri çalıştırılıyor...';
+      }
+
+      try {
+        const res = await fetch('/api/instagram/process-dms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          if (resDiv) {
+            resDiv.style.background = '#dcfce7';
+            resDiv.style.color = '#166534';
+            resDiv.textContent = `DM Botu çalıştı. İşlenen: ${data.processed_comments}, Gönderilen DM: ${data.dms_sent}`;
+          }
+          showAdminToast('DM botu tamamlandı!', 'success');
+        } else {
+          throw new Error(data.error || 'DM otomasyon hatası');
+        }
+      } catch (err) {
+        if (resDiv) {
+          resDiv.style.background = '#fee2e2';
+          resDiv.style.color = '#991b1b';
+          resDiv.textContent = 'Hata: ' + err.message;
+        }
+        showAdminToast('Hata: ' + err.message, 'error');
+      }
+    }
+
+    // -------------------------------------------------------------
     // UI Helpers & Tab Switching
     // -------------------------------------------------------------
     function switchAdminTab(tabId) {
@@ -1631,6 +1838,7 @@
         load3DAdminSettings();
       } else if (tabId === 'tab-payment-settings') {
         loadPaymentSettings();
+        loadInstagramPrSettings();
       }
     }
 

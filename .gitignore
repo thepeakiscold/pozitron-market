@@ -19,6 +19,7 @@ data/*users*
 
 # Test & Temporary Files
 /test_*.py
+assets/instagram/**/test_*
 *.stl
 *.step
 *.stp

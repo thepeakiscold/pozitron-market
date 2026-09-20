@@ -97,7 +97,7 @@ def init_instagram_tables():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS instagram_posts (
             id TEXT PRIMARY KEY,
-            content_type TEXT NOT NULL, -- 'product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight'
+            content_type TEXT NOT NULL, -- 'product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight', 'carousel_guide', 'pilot_spotlight'
             product_id TEXT,
             title TEXT NOT NULL,
             caption TEXT NOT NULL,
@@ -112,16 +112,46 @@ def init_instagram_tables():
             published_at TEXT,
             metadata_json TEXT,
             image_mode TEXT DEFAULT 'canvas', -- 'canvas' or 'gemini_image'
+            media_type TEXT DEFAULT 'IMAGE', -- 'IMAGE', 'CAROUSEL', 'STORY', 'REEL'
             created_at TEXT NOT NULL,
             FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
         )
     ''')
 
-    # Migration: Ensure image_mode exists
+    # Migration: Ensure image_mode and media_type exist
     cursor.execute("PRAGMA table_info(instagram_posts)")
     ig_cols = [c[1] for c in cursor.fetchall()]
     if 'image_mode' not in ig_cols:
         cursor.execute("ALTER TABLE instagram_posts ADD COLUMN image_mode TEXT DEFAULT 'canvas'")
+    if 'media_type' not in ig_cols:
+        cursor.execute("ALTER TABLE instagram_posts ADD COLUMN media_type TEXT DEFAULT 'IMAGE'")
+
+    # Migration: Ensure advanced PR config columns exist
+    cursor.execute("PRAGMA table_info(instagram_agent_config)")
+    cfg_cols = [c[1] for c in cursor.fetchall()]
+    for col_name, col_type, default_val in [
+        ('story_enabled', 'INTEGER', '1'),
+        ('carousel_enabled', 'INTEGER', '1'),
+        ('dm_automation_enabled', 'INTEGER', '1'),
+        ('peak_scheduler_enabled', 'INTEGER', '1'),
+        ('reels_enabled', 'INTEGER', '1')
+    ]:
+        if col_name not in cfg_cols:
+            cursor.execute(f"ALTER TABLE instagram_agent_config ADD COLUMN {col_name} {col_type} DEFAULT {default_val}")
+
+    # Instagram Comment & DM Interactions Table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS instagram_comment_interactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            comment_id TEXT UNIQUE,
+            user_id TEXT,
+            username TEXT,
+            keyword TEXT,
+            reply_text TEXT,
+            dm_status TEXT DEFAULT 'pending', -- 'sent', 'pending', 'failed', 'dry_run'
+            created_at TEXT NOT NULL
+        )
+    ''')
 
     # Seed from data/instagram_posts.json if present
     sync_posts_from_json(cursor)
@@ -158,7 +188,9 @@ def update_agent_config(updates: dict):
         'access_token', 'instagram_account_id', 'gemini_api_key',
         'is_autonomous_enabled', 'posting_frequency_hours', 'dry_run_mode',
         'public_base_url', 'preferred_language', 'default_hashtags',
-        'last_run_at', 'next_run_at'
+        'last_run_at', 'next_run_at',
+        'story_enabled', 'carousel_enabled', 'dm_automation_enabled',
+        'peak_scheduler_enabled', 'reels_enabled'
     ]
     fields = []
     params = []
@@ -204,8 +236,8 @@ def save_instagram_post(post_data: dict):
         INSERT OR REPLACE INTO instagram_posts (
             id, content_type, product_id, title, caption, hashtags,
             image_url, local_image_path, status, ig_media_id, ig_permalink,
-            error_message, scheduled_at, published_at, metadata_json, image_mode, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            error_message, scheduled_at, published_at, metadata_json, image_mode, media_type, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         post_data['id'],
         post_data.get('content_type', 'product_spotlight'),
@@ -223,11 +255,50 @@ def save_instagram_post(post_data: dict):
         post_data.get('published_at'),
         json.dumps(post_data.get('metadata', {}), ensure_ascii=False) if isinstance(post_data.get('metadata'), dict) else post_data.get('metadata_json', '{}'),
         post_data.get('image_mode', 'canvas'),
+        post_data.get('media_type', 'IMAGE'),
         post_data.get('created_at', datetime.now().isoformat())
     ))
     conn.commit()
     conn.close()
     sync_posts_to_json()
+
+def record_comment_interaction(comment_id: str, user_id: str, username: str, keyword: str, reply_text: str, dm_status: str = 'sent') -> bool:
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            INSERT OR REPLACE INTO instagram_comment_interactions (
+                comment_id, user_id, username, keyword, reply_text, dm_status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            str(comment_id), str(user_id), str(username), str(keyword), str(reply_text), str(dm_status), datetime.now().isoformat()
+        ))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error recording comment interaction: {e}")
+        return False
+    finally:
+        conn.close()
+
+def is_comment_processed(comment_id: str) -> bool:
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT count(*) FROM instagram_comment_interactions WHERE comment_id = ?", (str(comment_id),))
+    cnt = cursor.fetchone()[0]
+    conn.close()
+    return cnt > 0
+
+def get_recent_comment_interactions(limit: int = 50) -> list:
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM instagram_comment_interactions ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 def get_last_post_image_mode() -> str:
     init_instagram_tables()

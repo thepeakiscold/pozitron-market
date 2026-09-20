@@ -474,3 +474,109 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             "today_comments": data.get('today_comments_count', 0),
             "interacted_pilots": interacted_pilots
         }
+
+    def process_post_comments_and_dms(self, publisher=None, test_comments: list = None) -> dict:
+        """
+        Scans comments on recent Pozitron posts for engagement keywords ('KUPON', 'LINK', 'FIYAT', 'PARCA').
+        Replies publicly to the comment and dispatches a personalized DM with discount code & product link.
+        Guarantees zero duplicate DMs using instagram_comment_interactions.
+        """
+        from .db import is_comment_processed, record_comment_interaction
+        from .meta_publisher import MetaPublisher
+
+        if publisher is None:
+            publisher = MetaPublisher(dry_run=True)
+
+        target_keywords = ['kupon', 'link', 'fiyat', 'parca', 'parça', 'indirim', 'kod']
+        
+        comments_to_process = []
+        if test_comments is not None:
+            comments_to_process = test_comments
+        else:
+            # If live, query recent media comments via Meta Graph API
+            from .db import get_instagram_posts
+            recent_posts = get_instagram_posts(limit=5, status='published')
+            if not publisher.dry_run and publisher.access_token:
+                for p in recent_posts:
+                    m_id = p.get('ig_media_id')
+                    if m_id and not m_id.startswith('sim_'):
+                        try:
+                            c_url = f"https://graph.facebook.com/{publisher.graph_api_version}/{m_id}/comments?fields=id,text,from,timestamp&access_token={publisher.access_token}"
+                            import urllib.request
+                            req = urllib.request.Request(c_url)
+                            with urllib.request.urlopen(req, timeout=10) as resp:
+                                c_data = json.loads(resp.read().decode('utf-8'))
+                                for c_item in c_data.get('data', []):
+                                    comments_to_process.append({
+                                        'id': c_item.get('id'),
+                                        'text': c_item.get('text', ''),
+                                        'user_id': (c_item.get('from') or {}).get('id', 'unknown_user'),
+                                        'username': (c_item.get('from') or {}).get('username', 'pilot')
+                                    })
+                        except Exception:
+                            pass
+
+        processed_count = 0
+        replies_sent = 0
+        dms_sent = 0
+        interactions = []
+
+        for c in comments_to_process:
+            c_id = str(c.get('id'))
+            text = c.get('text', '').lower()
+            u_id = str(c.get('user_id', 'unknown_user'))
+            u_name = c.get('username', 'pilot')
+
+            # Skip if already processed
+            if is_comment_processed(c_id):
+                continue
+
+            matched_kw = next((kw for kw in target_keywords if kw in text), None)
+            if not matched_kw:
+                continue
+
+            # 1. Public comment reply
+            reply_text = f"@{u_name} Harika! Ozel indirim kodunu ve urun baglantisini DM kutuna ilettik. Keyifli ve kirimsiz ucuslar dileriz!"
+            reply_res = publisher.reply_to_comment(c_id, reply_text)
+            if reply_res.get('success'):
+                replies_sent += 1
+
+            # 2. Private direct message
+            dm_text = (
+                f"Selam @{u_name}! Pozitron Market FPV ailesine hos geldin.\n\n"
+                f"[KUPON] Sana ozel %10 indirim kodun: POZITRON10\n"
+                f"[LINK] Dogrudan alisveris ve urun linki: https://pozitronmarket.com\n\n"
+                f"Teknik sorularin ve donanim secimi icin bize buradan her zaman yazabilirsin. Kirimsiz ucuslar dileriz!"
+            )
+            dm_res = publisher.send_direct_message(u_id, dm_text)
+            dm_status = 'sent' if dm_res.get('success') else 'failed'
+            if dm_res.get('success'):
+                dms_sent += 1
+
+            # 3. Record interaction in database
+            record_comment_interaction(
+                comment_id=c_id,
+                user_id=u_id,
+                username=u_name,
+                keyword=matched_kw.upper(),
+                reply_text=reply_text,
+                dm_status=dm_status
+            )
+
+            processed_count += 1
+            interactions.append({
+                'comment_id': c_id,
+                'username': u_name,
+                'keyword': matched_kw.upper(),
+                'reply': reply_text,
+                'dm_status': dm_status
+            })
+
+        return {
+            "success": True,
+            "processed_comments": processed_count,
+            "replies_sent": replies_sent,
+            "dms_sent": dms_sent,
+            "interactions": interactions
+        }
+

@@ -826,6 +826,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
+        # Instagram PR: Comment & DM Interactions
+        if path == '/api/instagram/comment-interactions':
+            from instagram_agent.db import get_recent_comment_interactions
+            limit = int(query.get('limit', [50])[0])
+            interactions = get_recent_comment_interactions(limit=limit)
+            self.send_json(200, {"interactions": interactions})
+            return
+
         # Reddit Drone Bot: Status
         if path == '/api/reddit/status':
             self.send_json(200, reddit_drone_agent.get_status())
@@ -1627,6 +1635,49 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 else:
                     # Direct generation and instant publish without leftover draft
                     result = instagram_pr_agent.generate_and_publish_now(content_type=content_type, product_id=product_id)
+                status_code = 200 if result.get('success') else 400
+                self.send_json(status_code, result)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Publish Carousel
+        if path == '/api/instagram/publish-carousel':
+            content_type = data.get('content_type', 'carousel_guide')
+            product_id = data.get('product_id')
+            try:
+                result = instagram_pr_agent.generate_and_publish_carousel(content_type=content_type, product_id=product_id)
+                status_code = 200 if result.get('success') else 400
+                self.send_json(status_code, result)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Publish Story
+        if path == '/api/instagram/publish-story':
+            try:
+                result = instagram_pr_agent.generate_and_publish_story(data.get('post_data'))
+                status_code = 200 if result.get('success') else 400
+                self.send_json(status_code, result)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Publish Reel
+        if path == '/api/instagram/publish-reel':
+            try:
+                result = instagram_pr_agent.generate_and_publish_reel(data.get('post_data'))
+                status_code = 200 if result.get('success') else 400
+                self.send_json(status_code, result)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Instagram PR: Process Comment & DM Automations
+        if path == '/api/instagram/process-dms':
+            test_comments = data.get('test_comments')
+            try:
+                result = instagram_pr_agent.process_comment_automations(test_comments=test_comments)
                 status_code = 200 if result.get('success') else 400
                 self.send_json(status_code, result)
             except Exception as e:

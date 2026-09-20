@@ -3,6 +3,36 @@ import threading
 from datetime import datetime, timedelta
 from .db import get_agent_config, update_agent_config
 
+def calculate_next_peak_window(from_dt: datetime = None) -> datetime:
+    """
+    Calculates the next optimal posting timestamp targeting Turkish FPV drone community peak engagement:
+    - Weekdays (Mon-Fri): Evening 19:30 - 22:00 TRT (UTC+3)
+    - Weekends (Sat-Sun): Midday 11:00 - 14:00 TRT (UTC+3) & Evening 19:30 - 22:00 TRT
+    """
+    if from_dt is None:
+        from_dt = datetime.now()
+
+    min_future = from_dt + timedelta(minutes=15)
+    candidates = []
+
+    for day_offset in range(8):
+        check_date = (from_dt + timedelta(days=day_offset)).date()
+        is_weekend = check_date.weekday() in (5, 6)
+
+        # Evening window: 20:00 (19:30 - 22:00)
+        evening_target = datetime(check_date.year, check_date.month, check_date.day, 20, 0, 0)
+        if evening_target > min_future:
+            candidates.append(evening_target)
+
+        # Weekend midday window: 12:30 (11:00 - 14:00)
+        if is_weekend:
+            midday_target = datetime(check_date.year, check_date.month, check_date.day, 12, 30, 0)
+            if midday_target > min_future:
+                candidates.append(midday_target)
+
+    candidates.sort()
+    return candidates[0] if candidates else (from_dt + timedelta(hours=6))
+
 class InstagramScheduler:
     def __init__(self, agent):
         self.agent = agent

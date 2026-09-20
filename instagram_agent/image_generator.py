@@ -92,7 +92,11 @@ class ImageGenerator:
 
         # Center Content Area
         visual_summary = post_data.get('visual_summary') or {}
-        if content_type in ('product_spotlight', 'review_highlight') and prod:
+        if content_type == 'drone_build_showcase':
+            self._draw_drone_build_card(img, draw, post_data, visual_summary)
+        elif content_type == 'flight_weather_radar':
+            self._draw_weather_radar_card(img, draw, post_data, visual_summary)
+        elif content_type in ('product_spotlight', 'review_highlight') and prod:
             self._draw_product_card(img, draw, prod, visual_summary)
         else:
             self._draw_tool_or_tip_card(img, draw, post_data, visual_summary)
@@ -151,6 +155,9 @@ class ImageGenerator:
         # Right-side Category Tag
         type_labels = {
             'product_spotlight': 'PRO FPV DONANIM',
+            'drone_build_showcase': 'POZITRON BUILD REHBERI',
+            'flight_weather_radar': 'GUNLUK UCUS RADARI',
+            'spot_guide': 'FPV SAHA VE SPOT REHBERI',
             'tool_showcase': 'ONLINE DRONE ARACLARI',
             'deal_drop': 'HAFTANIN KAMPANYASI',
             'pilot_tip': 'FPV PILOT AKADEMISI',
@@ -159,8 +166,8 @@ class ImageGenerator:
         }
         tag_text = type_labels.get(content_type, 'PRO FPV DONANIM')
         font_tag = get_font(20, bold=True)
-        draw.rounded_rectangle([(self.width - 390, 50), (self.width - 60, 105)], radius=12, fill=(2, 132, 199, 50), outline=(2, 132, 199), width=2)
-        draw.text((self.width - 370, 66), tag_text, fill=(56, 189, 248), font=font_tag)
+        draw.rounded_rectangle([(self.width - 410, 50), (self.width - 60, 105)], radius=12, fill=(2, 132, 199, 50), outline=(2, 132, 199), width=2)
+        draw.text((self.width - 390, 66), tag_text, fill=(56, 189, 248), font=font_tag)
 
     def _draw_product_card(self, img: Image, draw: ImageDraw.Draw, prod: dict, visual_summary: dict = None):
         if visual_summary is None:
@@ -309,13 +316,131 @@ class ImageGenerator:
             draw.text((125, item_y), f"•  {clean_it[:58]}", fill=(241, 245, 249), font=font_item)
             item_y += 54
 
-        # Call to Action Button
-        cta_text = clean_canvas_text(visual_summary.get('cta', '> PROFILDEKI LINKTEN HEMEN KESFET <'))
-        draw.rounded_rectangle([(95, 818), (self.width - 95, 888)], radius=14, fill=(2, 132, 199))
-        font_action = get_font(28, bold=True)
-        btn_w = len(cta_text) * 15
-        btn_x = max(115, (self.width - btn_w) // 2)
-        draw.text((btn_x, 836), cta_text, fill=(255, 255, 255), font=font_action)
+    def _draw_drone_build_card(self, img: Image, draw: ImageDraw.Draw, post_data: dict, visual_summary: dict = None):
+        if visual_summary is None:
+            visual_summary = post_data.get('visual_summary') or {}
+
+        # Outer Glassmorphic Card
+        card_box = [(60, 130), (self.width - 60, 935)]
+        draw.rounded_rectangle(card_box, radius=24, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+
+        # Top Badge
+        badge_text = clean_canvas_text(visual_summary.get('badge') or 'POZITRON BUILD REHBERI')
+        draw.rounded_rectangle([(95, 160), (430, 208)], radius=10, fill=(2, 132, 199))
+        font_b = get_font(22, bold=True)
+        draw.text((115, 172), badge_text, fill=(255, 255, 255), font=font_b)
+
+        # Build Headline
+        headline = clean_canvas_text(visual_summary.get('headline') or post_data.get('title', '5 INC FREESTYLE BUILD'))
+        font_hl = get_font(38, bold=True)
+        draw.text((95, 225), headline[:32], fill=(255, 255, 255), font=font_hl)
+
+        # Subhead
+        subhead = clean_canvas_text(visual_summary.get('subhead') or 'Pozitron Atolye Referans Kurulumu')
+        font_sub = get_font(24, bold=False)
+        draw.text((95, 275), subhead[:46], fill=(148, 163, 184), font=font_sub)
+
+        # Spec Pills in a row (e.g. 6S LiPo, ~370g, Gemfan, Betaflight)
+        pills = visual_summary.get('pills') or ['6S LiPo', '~370g Agirlik', 'Yuksek Tork', 'Betaflight 4.5']
+        px = 95
+        font_pill = get_font(18, bold=True)
+        for pill in pills[:4]:
+            p_text = clean_canvas_text(pill)
+            p_w = len(p_text) * 11 + 24
+            draw.rounded_rectangle([(px, 320), (px + p_w, 360)], radius=12, fill=(30, 41, 59), outline=(56, 189, 248), width=1)
+            draw.text((px + 12, 330), p_text, fill=(56, 189, 248), font=font_pill)
+            px += p_w + 14
+
+        # Hardware Parts Breakdown Container
+        parts_box = [(95, 380), (self.width - 95, 800)]
+        draw.rounded_rectangle(parts_box, radius=18, fill=(20, 29, 45), outline=(30, 58, 95), width=2)
+
+        # Container Title
+        draw.text((125, 400), "• TAVSIYE EDILEN DONANIM & PARCA LISTESI", fill=(56, 189, 248), font=get_font(20, bold=True))
+        draw.line([(125, 430), (self.width - 125, 430)], fill=(30, 41, 59), width=1)
+
+        # Parts Items
+        specs = visual_summary.get('key_points') or []
+        font_spec = get_font(22, bold=True)
+        sy = 450
+        for sp in specs[:4]:
+            clean_sp = clean_canvas_text(sp)
+            draw.rounded_rectangle([(120, sy), (self.width - 120, sy + 65)], radius=10, fill=(15, 23, 42), outline=(51, 65, 85), width=1)
+            draw.text((140, sy + 18), clean_sp[:50], fill=(241, 245, 249), font=font_spec)
+            sy += 80
+
+        # Bottom Trust & CTA
+        draw.rounded_rectangle([(95, 825), (self.width - 95, 895)], radius=14, fill=(2, 132, 199))
+        font_cta = get_font(26, bold=True)
+        cta_text = clean_canvas_text(visual_summary.get('cta') or '> TUM PARCALAR STOKTA: pozitronmarket.com <')
+        cta_w = len(cta_text) * 14
+        cta_x = max(115, (self.width - cta_w) // 2)
+        draw.text((cta_x, 843), cta_text, fill=(255, 255, 255), font=font_cta)
+
+    def _draw_weather_radar_card(self, img: Image, draw: ImageDraw.Draw, post_data: dict, visual_summary: dict = None):
+        if visual_summary is None:
+            visual_summary = post_data.get('visual_summary') or {}
+
+        # Outer Glassmorphic Card
+        card_box = [(60, 130), (self.width - 60, 935)]
+        draw.rounded_rectangle(card_box, radius=24, fill=(15, 23, 42), outline=(34, 197, 94), width=2)
+
+        # Top Badge
+        badge_text = clean_canvas_text(visual_summary.get('badge') or 'GUNLUK UCUS RADARI')
+        draw.rounded_rectangle([(95, 160), (430, 208)], radius=10, fill=(22, 101, 52), outline=(74, 222, 128), width=1)
+        font_b = get_font(22, bold=True)
+        draw.text((115, 172), badge_text, fill=(255, 255, 255), font=font_b)
+
+        # Headline
+        headline = clean_canvas_text(visual_summary.get('headline') or 'BUGUN UCUS ICIN HARIKA BIR GUN!')
+        font_hl = get_font(36, bold=True)
+        draw.text((95, 225), headline[:36], fill=(255, 255, 255), font=font_hl)
+
+        # Big Flight Score Banner
+        score_text = clean_canvas_text(visual_summary.get('score') or 'UCUS SKORU: 9 / 10 — MUKEMMEL')
+        draw.rounded_rectangle([(95, 280), (self.width - 95, 360)], radius=16, fill=(20, 83, 45), outline=(34, 197, 94), width=2)
+        font_score = get_font(30, bold=True)
+        draw.text((130, 302), score_text, fill=(255, 255, 255), font=font_score)
+
+        # 3 Metric Cards in a row (Wind, Temp, Kp)
+        col_w = (self.width - 190 - 30) // 3
+        metrics = [
+            (visual_summary.get('wind') or 'Ruzgar: 9 km/s', 'Ucus Elverisli', (56, 189, 248)),
+            (visual_summary.get('temp') or 'Sicaklik: 22°C', 'LiPo Optimum', (250, 204, 21)),
+            (visual_summary.get('kp') or 'GPS Kp: 1', 'Uydu Guvenli', (74, 222, 128))
+        ]
+        m_x = 95
+        for m_val, m_desc, m_color in metrics:
+            draw.rounded_rectangle([(m_x, 380), (m_x + col_w, 490)], radius=14, fill=(24, 33, 47), outline=(51, 65, 85), width=1)
+            draw.text((m_x + 16, 405), clean_canvas_text(m_val), fill=m_color, font=get_font(20, bold=True))
+            draw.text((m_x + 16, 445), clean_canvas_text(m_desc), fill=(148, 163, 184), font=get_font(18, bold=False))
+            m_x += col_w + 15
+
+        # Pilot Callout Advice Box
+        advice_box = [(95, 515), (self.width - 95, 800)]
+        draw.rounded_rectangle(advice_box, radius=18, fill=(20, 29, 45), outline=(30, 58, 95), width=2)
+
+        draw.text((125, 540), "• PILOT MASASI TAVSIYELERI & UCUS NOTU", fill=(56, 189, 248), font=get_font(20, bold=True))
+        draw.line([(125, 570), (self.width - 125, 570)], fill=(30, 41, 59), width=1)
+
+        points = visual_summary.get('key_points') or [
+            "Ruzgar hizi serbest ucus ve freestyle icin son derece uygun.",
+            "LiPo bataryalari 4.20V tam voltaja sarj edip sahaya cikin.",
+            "Kalkis oncesi FailSafe ve GPS RTH kilidini mutlaka test edin."
+        ]
+        py = 595
+        font_p = get_font(22, bold=True)
+        for p in points[:3]:
+            draw.text((125, py), f"•  {clean_canvas_text(p)[:52]}", fill=(241, 245, 249), font=font_p)
+            py += 60
+
+        # CTA Button
+        draw.rounded_rectangle([(95, 825), (self.width - 95, 895)], radius=14, fill=(22, 101, 52), outline=(34, 197, 94), width=2)
+        font_cta = get_font(28, bold=True)
+        cta_text = clean_canvas_text(visual_summary.get('cta') or '> LiPo\'lari Doldur ve Sahaya Cik <')
+        cta_w = len(cta_text) * 14
+        cta_x = max(115, (self.width - cta_w) // 2)
+        draw.text((cta_x, 843), cta_text, fill=(255, 255, 255), font=font_cta)
 
     def _draw_footer(self, draw: ImageDraw.Draw):
         # Footer text
@@ -563,14 +688,14 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 except Exception:
                     pass
 
-        # 3. Procedural AI visual generator if offline, key missing, or error
+        # 3. If Imagen failed or is unavailable, fallback to our sleek high-converting canvas post card
         if ai_image is None:
-            ai_image = self._generate_procedural_ai_visual(title, content_type, prod)
+            return self.generate_post_image(post_data)
 
         # 4. Guarantee 1080x1080 dimensions
         ai_image = ai_image.resize((self.width, self.height), Image.Resampling.LANCZOS)
 
-        # 5. Overlay Pozitron Cyber Branding
+        # 5. Overlay Pozitron Premium Branding
         self._overlay_ai_branding(ai_image, post_data)
 
         # 6. Save image to disk
@@ -581,7 +706,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
     def _generate_procedural_ai_visual(self, title: str, content_type: str, prod: dict) -> Image.Image:
         """
-        Creates an intricate, high-tech procedural AI visual with cyber lighting, glowing grid,
+        Creates a sleek, modern dark-tech visual backdrop with subtle ambient lighting
         and centered hardware component.
         """
         base = Image.new('RGB', (self.width, self.height), color=(8, 12, 22))
@@ -595,23 +720,11 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             b = int(24 * (1 - ratio) + 42 * ratio)
             draw.line([(0, y), (self.width, y)], fill=(r, g, b))
 
-        # Cyan / Blue hexagonal matrix & circuit lines
         cx, cy = self.width // 2, self.height // 2 - 20
-        for radius in (120, 200, 280, 360, 440):
-            draw.ellipse(
-                [(cx - radius, cy - radius), (cx + radius, cy + radius)],
-                outline=(14, 165, 233),
-                width=1
-            )
 
-        # High-tech radial rays
-        for angle_deg in range(0, 360, 30):
-            rad = math.radians(angle_deg)
-            x1 = cx + int(140 * math.cos(rad))
-            y1 = cy + int(140 * math.sin(rad))
-            x2 = cx + int(480 * math.cos(rad))
-            y2 = cy + int(480 * math.sin(rad))
-            draw.line([(x1, y1), (x2, y2)], fill=(2, 132, 199), width=1)
+        # Sleek modern glassmorphic pedestal / backdrop box
+        box_rect = [(cx - 360, cy - 260), (cx + 360, cy + 260)]
+        draw.rounded_rectangle(box_rect, radius=24, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
 
         # Load product image if available
         prod_img = None
@@ -635,17 +748,14 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
             base.paste(prod_img, (px, py), prod_img if prod_img.mode == 'RGBA' else None)
         else:
-            # Stylized Quadcopter Drone Frame Vector
-            draw.line([(cx - 200, cy - 200), (cx + 200, cy + 200)], fill=(56, 189, 248), width=5)
-            draw.line([(cx - 200, cy + 200), (cx + 200, cy - 200)], fill=(56, 189, 248), width=5)
-            # Motor Bells
-            for mx, my in [(cx - 200, cy - 200), (cx + 200, cy - 200), (cx - 200, cy + 200), (cx + 200, cy + 200)]:
-                draw.ellipse([(mx - 35, my - 35), (mx + 35, my + 35)], fill=(15, 23, 42), outline=(14, 165, 233), width=3)
-                draw.ellipse([(mx - 15, my - 15), (mx + 15, my + 15)], fill=(2, 132, 199))
-            # Center Core
-            draw.rectangle([(cx - 65, cy - 50), (cx + 65, cy + 50)], fill=(15, 23, 42), outline=(56, 189, 248), width=3)
-            # Center Optics Camera
-            draw.ellipse([(cx - 20, cy - 60), (cx + 20, cy - 20)], fill=(234, 179, 8), outline=(255, 255, 255), width=2)
+            # Modern minimalist engineering graphic
+            font_title = get_font(32, bold=True)
+            font_sub = get_font(20, bold=False)
+            t_clean = clean_canvas_text(title or 'POZITRON FPV DONANIM')
+            draw.text((cx - 280, cy - 60), t_clean[:34], fill=(255, 255, 255), font=font_title)
+            draw.text((cx - 280, cy), "Turkiye'nin Guvenilir FPV Drone ve Robotik Pazari", fill=(148, 163, 184), font=font_sub)
+            draw.rounded_rectangle([(cx - 280, cy + 60), (cx + 120, cy + 120)], radius=12, fill=(2, 132, 199))
+            draw.text((cx - 260, cy + 78), "POZITRON ATOLYE & AR-GE", fill=(255, 255, 255), font=get_font(22, bold=True))
 
         return base
 
@@ -664,9 +774,9 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         draw.rounded_rectangle([(30, 24), (380, 76)], radius=12, fill=(2, 132, 199), outline=(56, 189, 248), width=2)
         draw.text((45, 36), "POZITRON MARKET", fill=(255, 255, 255), font=font_brand)
 
-        # AI Badge Right
+        # Lab / Tech Badge Right
         draw.rounded_rectangle([(self.width - 320, 24), (self.width - 30, 76)], radius=12, fill=(15, 23, 42), outline=(14, 165, 233), width=2)
-        draw.text((self.width - 305, 38), "AI FPV VISUAL", fill=(56, 189, 248), font=font_brand)
+        draw.text((self.width - 295, 38), "POZITRON LABS", fill=(56, 189, 248), font=font_brand)
 
         # 2. Bottom Bar Overlay (Title and Call to Action)
         footer_height = 200
@@ -697,3 +807,276 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             fill=(148, 163, 184),
             font=font_footer_sub
         )
+
+    def generate_carousel_slides(self, post_data: dict) -> list:
+        """
+        Generates a 4-slide carousel image set (1080x1080 each):
+        Slide 1: Cover / Hook (Banner or Gemini AI visual with Slide Indicator 1/4)
+        Slide 2: Specs & Technical Details (2/4)
+        Slide 3: Pozitron Advantage & Price / Stock Info (3/4)
+        Slide 4: Call-to-Action & Community Save/Follow (4/4)
+        """
+        post_id = post_data['id']
+        slides = []
+
+        # Slayt 1: Cover Slide
+        cover_path = self.generate_post_image(post_data)
+        # Modify cover to add 1/4 indicator
+        abs_cover = os.path.join(BASE_DIR, cover_path.lstrip('./').lstrip('/'))
+        if os.path.exists(abs_cover):
+            s1_img = Image.open(abs_cover).convert('RGB')
+            s1_draw = ImageDraw.Draw(s1_img)
+            font_slide = get_font(20, bold=True)
+            s1_draw.rounded_rectangle([(self.width - 240, self.height - 180), (self.width - 50, self.height - 135)], radius=10, fill=(2, 132, 199), outline=(56, 189, 248), width=2)
+            s1_draw.text((self.width - 225, self.height - 170), "1 / 4  KAYDIR >", fill=(255, 255, 255), font=font_slide)
+            s1_filename = f"{post_id}_slide1.jpg"
+            s1_out = os.path.join(OUTPUT_DIR, s1_filename)
+            s1_img.save(s1_out, 'JPEG', quality=93)
+            slides.append(f"./assets/instagram/posts/{s1_filename}")
+        else:
+            slides.append(cover_path)
+
+        # Slayt 2: Specs & Details (2/4)
+        s2_img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
+        s2_draw = ImageDraw.Draw(s2_img)
+        self._draw_background(s2_img, s2_draw)
+        self._draw_header(s2_draw, post_data.get('content_type', 'product_spotlight'))
+
+        font_heading = get_font(34, bold=True)
+        font_body = get_font(22, bold=False)
+        font_bold = get_font(24, bold=True)
+        font_tag = get_font(18, bold=True)
+
+        # Top Slide Indicator
+        s2_draw.rounded_rectangle([(self.width - 240, 50), (self.width - 60, 105)], radius=12, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        s2_draw.text((self.width - 215, 68), "2 / 4  DETAYLAR", fill=(56, 189, 248), font=font_tag)
+
+        # Card Box
+        s2_draw.rounded_rectangle([(60, 140), (self.width - 60, 930)], radius=20, fill=(15, 23, 42, 230), outline=(30, 41, 59), width=2)
+        s2_draw.text((100, 180), "TEKNIK DETAYLAR & OZELLIKLER", fill=(56, 189, 248), font=font_heading)
+
+        # Points
+        visual = post_data.get('visual_summary') or {}
+        points = visual.get('key_points') or [
+            "[PERFORMANS] Yuksek verimlilik ve hassas kontrol",
+            "[DAYANIKLILIK] Karbon fiber ve titanyum guclendirme",
+            "[UYUMLULUK] Betaflight ve tum modern FPV stack uyumu"
+        ]
+
+        y_pos = 260
+        for idx, pt in enumerate(points[:4], 1):
+            s2_draw.rounded_rectangle([(100, y_pos), (self.width - 100, y_pos + 120)], radius=14, fill=(24, 34, 53), outline=(51, 65, 85), width=1)
+            clean_pt = clean_canvas_text(pt)
+            s2_draw.text((130, y_pos + 42), clean_pt[:55], fill=(248, 250, 252), font=font_bold)
+            y_pos += 150
+
+        # Footer
+        s2_draw.text((100, 870), "pozitronmarket.com | Donanim & Teknik Destek", fill=(148, 163, 184), font=font_body)
+        s2_filename = f"{post_id}_slide2.jpg"
+        s2_out = os.path.join(OUTPUT_DIR, s2_filename)
+        s2_img.save(s2_out, 'JPEG', quality=93)
+        slides.append(f"./assets/instagram/posts/{s2_filename}")
+
+        # Slayt 3: Pozitron Advantage & Pricing (3/4)
+        s3_img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
+        s3_draw = ImageDraw.Draw(s3_img)
+        self._draw_background(s3_img, s3_draw)
+        self._draw_header(s3_draw, post_data.get('content_type', 'product_spotlight'))
+
+        s3_draw.rounded_rectangle([(self.width - 240, 50), (self.width - 60, 105)], radius=12, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        s3_draw.text((self.width - 220, 68), "3 / 4  AVANTAJ", fill=(56, 189, 248), font=font_tag)
+
+        s3_draw.rounded_rectangle([(60, 140), (self.width - 60, 930)], radius=20, fill=(15, 23, 42, 230), outline=(30, 41, 59), width=2)
+        s3_draw.text((100, 180), "NEDEN POZITRON MARKET?", fill=(74, 222, 128), font=font_heading)
+
+        advantages = [
+            ("[ORIJINAL]", "%100 Orijinal Urun Garantisi & Yetkili Tedarik"),
+            ("[HIZLI KARGO]", "Hafta ici Saat 16:00'ya Kadar Ayni Gun Sevkiyat"),
+            ("[TEKNIK DESTEK]", "FPV Pilotlari ve Muhendislerinden Birebir Destek"),
+            ("[GUVENLI ODEME]", "256-Bit SSL & 3D Secure / Havale-FAST Kolayligi")
+        ]
+
+        y_adv = 260
+        for tag, desc in advantages:
+            s3_draw.rounded_rectangle([(100, y_adv), (self.width - 100, y_adv + 115)], radius=14, fill=(24, 34, 53), outline=(51, 65, 85), width=1)
+            s3_draw.text((130, y_adv + 25), tag, fill=(56, 189, 248), font=font_tag)
+            s3_draw.text((130, y_adv + 60), desc, fill=(248, 250, 252), font=font_bold)
+            y_adv += 140
+
+        prod = post_data.get('product_data') or {}
+        if prod and prod.get('price_try'):
+            price_str = f"{float(prod['price_try']):.2f} TL"
+            s3_draw.rounded_rectangle([(100, 830), (self.width - 100, 900)], radius=12, fill=(22, 101, 52), outline=(74, 222, 128), width=2)
+            s3_draw.text((130, 848), f"GUNCEL FIYAT: {price_str}", fill=(255, 255, 255), font=font_bold)
+
+        s3_filename = f"{post_id}_slide3.jpg"
+        s3_out = os.path.join(OUTPUT_DIR, s3_filename)
+        s3_img.save(s3_out, 'JPEG', quality=93)
+        slides.append(f"./assets/instagram/posts/{s3_filename}")
+
+        # Slayt 4: Save & Follow CTA (4/4)
+        s4_img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
+        s4_draw = ImageDraw.Draw(s4_img)
+        self._draw_background(s4_img, s4_draw)
+        self._draw_header(s4_draw, post_data.get('content_type', 'product_spotlight'))
+
+        s4_draw.rounded_rectangle([(self.width - 240, 50), (self.width - 60, 105)], radius=12, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        s4_draw.text((self.width - 215, 68), "4 / 4  KAYDET", fill=(56, 189, 248), font=font_tag)
+
+        s4_draw.rounded_rectangle([(60, 140), (self.width - 60, 930)], radius=20, fill=(15, 23, 42, 230), outline=(30, 41, 59), width=2)
+        s4_draw.text((100, 180), "BU REHBERI KAYDET!", fill=(250, 204, 21), font=font_heading)
+
+        s4_draw.text((100, 270), "Ileride build yaparken veya parca secerken", fill=(226, 232, 240), font=font_bold)
+        s4_draw.text((100, 310), "bu bilgileri kolayca bulabilmek icin gonderiyi kaydet.", fill=(148, 163, 184), font=font_body)
+
+        # DM CTA Box
+        s4_draw.rounded_rectangle([(100, 390), (self.width - 100, 600)], radius=16, fill=(24, 34, 53), outline=(56, 189, 248), width=2)
+        s4_draw.text((140, 430), "[OTOMATIK DM ALARMI]", fill=(56, 189, 248), font=font_bold)
+        s4_draw.text((140, 480), "Yoruma 'KUPON' veya 'LINK' yaz,", fill=(255, 255, 255), font=font_heading)
+        s4_draw.text((140, 535), "ozel indirim kodunu ve urun linkini aninda DM ile gonderelim!", fill=(203, 213, 225), font=font_body)
+
+        # Follow Box
+        s4_draw.rounded_rectangle([(100, 640), (self.width - 100, 810)], radius=16, fill=(2, 132, 199, 50), outline=(2, 132, 199), width=2)
+        s4_draw.text((140, 675), "TAKIPTE KAL: @pozitronmarket", fill=(56, 189, 248), font=font_heading)
+        s4_draw.text((140, 735), "Turkiye'nin FPV Drone ve Robotik Ekosistemi", fill=(226, 232, 240), font=font_body)
+
+        s4_draw.text((100, 870), "Web: pozitronmarket.com | Siparis ve Destek", fill=(148, 163, 184), font=font_body)
+
+        s4_filename = f"{post_id}_slide4.jpg"
+        s4_out = os.path.join(OUTPUT_DIR, s4_filename)
+        s4_img.save(s4_out, 'JPEG', quality=93)
+        slides.append(f"./assets/instagram/posts/{s4_filename}")
+
+        return slides
+
+    def generate_story_image(self, post_data: dict) -> str:
+        """
+        Creates a 1080x1920 (9:16) vertical Story graphic and returns the relative image path.
+        """
+        post_id = post_data['id']
+        story_w, story_h = 1080, 1920
+        img = Image.new('RGB', (story_w, story_h), color=(11, 15, 25))
+        draw = ImageDraw.Draw(img)
+
+        # Vertical Cyber Gradient
+        for y in range(story_h):
+            ratio = y / story_h
+            r = int(11 * (1 - ratio) + 20 * ratio)
+            g = int(15 * (1 - ratio) + 30 * ratio)
+            b = int(25 * (1 - ratio) + 55 * ratio)
+            draw.line([(0, y), (story_w, y)], fill=(r, g, b))
+
+        # Glowing circles
+        glow = Image.new('RGBA', (story_w, story_h), (0, 0, 0, 0))
+        gdraw = ImageDraw.Draw(glow)
+        gdraw.ellipse([(story_w // 2 - 350, 400), (story_w // 2 + 350, 1100)], fill=(2, 132, 199, 45))
+        glow = glow.filter(ImageFilter.GaussianBlur(100))
+        img.paste(glow, (0, 0), glow)
+
+        # Top Header (y: 120-220)
+        draw.rounded_rectangle([(60, 130), (420, 195)], radius=14, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+        font_brand = get_font(28, bold=True)
+        draw.text((85, 147), "POZITRON MARKET", fill=(255, 255, 255), font=font_brand)
+
+        if post_data.get('content_type') == 'deal_drop':
+            draw.rounded_rectangle([(story_w - 400, 130), (story_w - 60, 195)], radius=14, fill=(2, 132, 199), outline=(56, 189, 248), width=2)
+            font_badge = get_font(22, bold=True)
+            draw.text((story_w - 375, 149), "GUNUN FIRSATI", fill=(255, 255, 255), font=font_badge)
+
+        # Center Visual / Product Area (y: 280-950)
+        prod = post_data.get('product_data') or {}
+        prod_img = None
+        if prod and prod.get('image_url'):
+            local_p = prod.get('image_url', '').lstrip('/')
+            abs_p = os.path.join(BASE_DIR, local_p)
+            prod_img = _load_product_image(abs_p)
+
+        if prod_img:
+            prod_img.thumbnail((620, 620), Image.Resampling.LANCZOS)
+            px = (story_w - prod_img.width) // 2
+            py = 350 + (620 - prod_img.height) // 2
+            img.paste(prod_img, (px, py), prod_img if prod_img.mode == 'RGBA' else None)
+        else:
+            # Procedural Drone Frame Vector
+            cx, cy = story_w // 2, 620
+            draw.line([(cx - 240, cy - 240), (cx + 240, cy + 240)], fill=(56, 189, 248), width=6)
+            draw.line([(cx - 240, cy + 240), (cx + 240, cy - 240)], fill=(56, 189, 248), width=6)
+            for mx, my in [(cx - 240, cy - 240), (cx + 240, cy - 240), (cx - 240, cy + 240), (cx + 240, cy + 240)]:
+                draw.ellipse([(mx - 40, my - 40), (mx + 40, my + 40)], fill=(15, 23, 42), outline=(14, 165, 233), width=4)
+            draw.rectangle([(cx - 70, cy - 60), (cx + 70, cy + 60)], fill=(15, 23, 42), outline=(56, 189, 248), width=4)
+
+        # Title Card (y: 1000-1160)
+        title = clean_canvas_text(post_data.get('title', 'Pozitron Market FPV'))
+        font_story_title = get_font(36, bold=True)
+        if len(title) > 48:
+            title = title[:45] + "..."
+        draw.text((70, 1020), title, fill=(255, 255, 255), font=font_story_title)
+
+        if prod and prod.get('price_try'):
+            price_str = f"{float(prod['price_try']):.2f} TL"
+            draw.rounded_rectangle([(70, 1080), (380, 1145)], radius=12, fill=(22, 101, 52), outline=(74, 222, 128), width=2)
+            draw.text((95, 1098), price_str, fill=(255, 255, 255), font=font_brand)
+
+        # Feature Card (y: 1180-1580)
+        draw.rounded_rectangle([(60, 1180), (story_w - 60, 1580)], radius=20, fill=(15, 23, 42, 230), outline=(30, 41, 59), width=2)
+        font_point = get_font(24, bold=True)
+        points = (post_data.get('visual_summary') or {}).get('key_points') or [
+            "[ORIJINAL] %100 Orijinal Urun ve Guvenli Teslimat",
+            "[AYNI GUN] Saat 16:00'ya Kadar Verilen Siparisler Kargoda",
+            "[TEKNIK] FPV Pilotlarindan Uzman Destek"
+        ]
+        y_pt = 1220
+        for pt in points[:3]:
+            draw.rounded_rectangle([(90, y_pt), (story_w - 90, y_pt + 100)], radius=12, fill=(24, 34, 53), outline=(51, 65, 85), width=1)
+            draw.text((120, y_pt + 35), clean_canvas_text(pt)[:48], fill=(248, 250, 252), font=font_point)
+            y_pt += 115
+
+        # Bottom Link Sticker Box (y: 1620-1800)
+        draw.rounded_rectangle([(100, 1630), (story_w - 100, 1780)], radius=30, fill=(2, 132, 199), outline=(56, 189, 248), width=3)
+        font_sticker = get_font(30, bold=True)
+        font_sticker_sub = get_font(20, bold=False)
+        draw.text((story_w // 2 - 220, 1665), "🔗 pozitronmarket.com", fill=(255, 255, 255), font=font_sticker)
+        draw.text((story_w // 2 - 160, 1720), "Linke Tikla ve Incele >", fill=(224, 242, 254), font=font_sticker_sub)
+
+        filename = f"{post_id}_story.jpg"
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        img.save(file_path, format='JPEG', quality=93, optimize=True)
+        return f"./assets/instagram/posts/{filename}"
+
+    def generate_reels_video(self, post_data: dict) -> str:
+        """
+        Creates a 1080x1920 (9:16) 5-second dynamic MP4 video clip for Instagram Reels using ffmpeg.
+        """
+        post_id = post_data['id']
+        reels_dir = os.path.join(BASE_DIR, 'assets', 'instagram', 'reels')
+        os.makedirs(reels_dir, exist_ok=True)
+
+        story_img_rel = self.generate_story_image(post_data)
+        abs_story_img = os.path.join(BASE_DIR, story_img_rel.lstrip('./').lstrip('/'))
+
+        video_filename = f"{post_id}.mp4"
+        abs_video_path = os.path.join(reels_dir, video_filename)
+
+        import subprocess
+        try:
+            cmd = [
+                'ffmpeg',
+                '-loop', '1',
+                '-i', abs_story_img,
+                '-vf', "zoompan=z='min(zoom+0.0015,1.08)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=150:s=1080x1920:fps=30",
+                '-c:v', 'libx264',
+                '-t', '5',
+                '-pix_fmt', 'yuv420p',
+                '-movflags', '+faststart',
+                abs_video_path,
+                '-y',
+                '-loglevel', 'quiet'
+            ]
+            res = subprocess.run(cmd, timeout=30)
+            if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 1000:
+                return f"./assets/instagram/reels/{video_filename}"
+        except Exception as e:
+            print(f"[UYARI] Reels video uretim hatasi: {e}")
+
+        return ""
+
