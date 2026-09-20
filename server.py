@@ -140,29 +140,46 @@ https://pozitronmarket.com
 </body>
 </html>"""
 
-    if not smtp_user or not smtp_password:
-        print(f"[AUTH EMAIL] SMTP credentials not set. Reset code for {to_email}: {code}")
-        return False
+    # 1. Try direct SMTP if credentials provided
+    if smtp_user and smtp_password:
+        try:
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = smtp_from
+            msg['To'] = to_email
+            msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+            msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server_conn:
+                server_conn.ehlo()
+                server_conn.starttls()
+                server_conn.ehlo()
+                server_conn.login(smtp_user, smtp_password)
+                server_conn.send_message(msg)
+            print(f"[AUTH EMAIL] Verification code email sent successfully via SMTP to {to_email}")
+            return True
+        except Exception as e:
+            print(f"[AUTH EMAIL ERROR] Failed to send email via SMTP to {to_email}: {e}")
+
+    # 2. Relay via Google Apps Script Webhook
+    gas_url = os.environ.get('GAS_RELAY_URL', 'https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec')
     try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = smtp_from
-        msg['To'] = to_email
-        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
-        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        gas_payload = json.dumps({
+            "type": "password_reset",
+            "email": to_email,
+            "code": code,
+            "html_content": html_content
+        }).encode('utf-8')
+        gas_req = urllib.request.Request(gas_url, data=gas_payload, headers={'Content-Type': 'application/json'}, method='POST')
+        with urllib.request.urlopen(gas_req, timeout=12) as gas_resp:
+            gas_result = gas_resp.read().decode('utf-8')
+            print(f"[AUTH EMAIL] GAS Relay sent for {to_email}. Response: {gas_result[:200]}")
+            return True
+    except Exception as gas_e:
+        print(f"[AUTH EMAIL] GAS Relay notice for {to_email}: {gas_e}")
 
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server_conn:
-            server_conn.ehlo()
-            server_conn.starttls()
-            server_conn.ehlo()
-            server_conn.login(smtp_user, smtp_password)
-            server_conn.send_message(msg)
-        print(f"[AUTH EMAIL] Verification code email sent successfully to {to_email}")
-        return True
-    except Exception as e:
-        print(f"[AUTH EMAIL ERROR] Failed to send email to {to_email}: {e}")
-        return False
+    print(f"[AUTH EMAIL NOTICE] Email delivery not configured. Reset code for {to_email}: {code}")
+    return False
 
 # Ensure database tables and initial data exist (Crucial for fresh cloud deployments like Render)
 def ensure_database_ready():

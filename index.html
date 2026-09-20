@@ -918,7 +918,7 @@
           <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:10px; font-size:0.8rem; color:#1e40af; margin-bottom:12px;" id="forgot-code-notice"></div>
           <div class="form-group">
             <label for="reset-code" data-i18n="enter_code_label">6 Haneli Doğrulama Kodu</label>
-            <input type="text" id="reset-code" class="form-input" placeholder="123456" maxlength="6" required style="letter-spacing:4px; font-size:1.1rem; text-align:center; font-weight:700;">
+            <input type="text" id="reset-code" class="form-input" placeholder="6 haneli kodu giriniz" data-i18n-placeholder="enter_code_placeholder" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" required style="font-size:1.15rem; text-align:center; font-weight:700; color:var(--brand-primary, #0284c7);">
           </div>
           <div class="form-group">
             <label for="reset-new-password" data-i18n="new_password_label">Yeni Şifre</label>

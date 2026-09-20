@@ -58,6 +58,21 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    // 2b. Password Reset Verification Code Email Relay
+    if (data.type === 'password_reset') {
+      var resetEmail = data.email;
+      var resetCode = data.code;
+      if (resetEmail && resetCode) {
+        MailApp.sendEmail({
+          to: resetEmail,
+          subject: "[Pozitron Market] Şifre Sıfırlama Doğrulama Kodu: " + resetCode,
+          htmlBody: data.html_content || ("<p>Pozitron Market şifre sıfırlama kodunuz: <b>" + resetCode + "</b> (30 dakika geçerlidir).</p>")
+        });
+        return ContentService.createTextOutput(JSON.stringify({ status: "success", type: "password_reset_sent" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
     // 3. Purchase Order Handler
     var orderSheet = ss.getSheetByName("Siparişler") || ss.insertSheet("Siparişler");
     if (orderSheet.getLastRow() === 0) {

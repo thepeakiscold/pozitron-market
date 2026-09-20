@@ -6307,3 +6307,24 @@ img {
 .studio-telem-item #studio-stat-layer {
   color: #0284c7;
 }
+
+/* Password Reset Verification Code Input Styling */
+#reset-code {
+  letter-spacing: normal;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+#reset-code:not(:placeholder-shown) {
+  letter-spacing: 8px;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+#reset-code::placeholder {
+  letter-spacing: normal !important;
+  font-size: 0.88rem !important;
+  font-weight: 400 !important;
+  color: #94a3b8 !important;
+}
+#reset-code:focus::placeholder {
+  opacity: 0.4;
+}
