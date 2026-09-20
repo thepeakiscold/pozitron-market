@@ -2139,7 +2139,6 @@ class PozitronApp {
     const dropEmail = document.getElementById('user-email-text');
     const avatarImg = document.getElementById('user-avatar-img');
     const adminLink = document.getElementById('admin-panel-link');
-    const headerAdminBtn = document.getElementById('header-admin-btn');
 
     if (this.user) {
       if (this.isUserAdmin(this.user)) {
@@ -2157,14 +2156,10 @@ class PozitronApp {
       if (adminLink) {
         adminLink.style.display = isAdmin ? 'flex' : 'none';
       }
-      if (headerAdminBtn) {
-        headerAdminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-      }
     } else {
       if (nameEl) nameEl.textContent = window.i18n.t('nav_login');
       if (avatarImg) avatarImg.src = '';
       if (adminLink) adminLink.style.display = 'none';
-      if (headerAdminBtn) headerAdminBtn.style.display = 'none';
     }
   }
 
