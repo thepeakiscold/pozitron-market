@@ -220,7 +220,7 @@ class InstagramPRAgent:
             import subprocess
             cmd_add = ["git", "add"] + clean_paths
             subprocess.run(cmd_add, cwd=repo_root, check=False, timeout=10)
-            subprocess.run(["git", "commit", "-m", f"chore(assets): auto-sync {commit_subject} [skip ci]"], cwd=repo_root, check=False, timeout=10)
+            subprocess.run(["git", "commit", "-m", f"chore(assets): auto-sync {commit_subject} [skip ci] [skip render]"], cwd=repo_root, check=False, timeout=10)
             subprocess.run(["git", "push", "origin", "main"], cwd=repo_root, check=False, timeout=20)
 
             # Wait for GitHub CDN to return HTTP 200 for public raw url
@@ -594,7 +594,15 @@ class InstagramPRAgent:
                 print(f"[UYARI] Etkilesim dongusu hatasi: {e}")
                 engagement_res = {"success": False, "error": str(e)}
 
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TAMAMLANDI] Otonom dongu tamamlandi. Gonderi Durumu: {post_res.get('success')}")
+        # Ensure next_run_at is always pushed forward to prevent rapid re-trigger loops on API errors
+        now_iso = datetime.now().isoformat()
+        next_run = self.calculate_next_run()
+        update_agent_config({
+            'last_run_at': now_iso,
+            'next_run_at': next_run
+        })
+
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TAMAMLANDI] Otonom dongu tamamlandi. Gonderi Durumu: {post_res.get('success')}. Sonraki plan: {next_run}")
         return {
             "success": post_res.get('success', False),
             "post_result": post_res,

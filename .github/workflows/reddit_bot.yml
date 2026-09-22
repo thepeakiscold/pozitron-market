@@ -73,6 +73,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "Yeni soru yok veya kayitlar guncel."
           else
-            git commit -m "chore(reddit-bot): update processed questions history [skip ci]"
+            git commit -m "chore(reddit-bot): update processed questions history [skip ci] [skip render]"
             git push
           fi

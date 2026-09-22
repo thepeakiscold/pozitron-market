@@ -98,7 +98,7 @@ jobs:
           # Commit updated posts, config, and interactions history
           git pull --rebase origin main || true
           git add assets/instagram/posts/ data/instagram_posts.json data/instagram_config.json data/instagram_interactions.json || true
-          git commit -m "chore(instagram-pr): autonomous post & drone engagement update [skip ci]" || true
+          git commit -m "chore(instagram-pr): autonomous post & drone engagement update [skip ci] [skip render]" || true
           git push origin main || echo "Git push tamamlandi veya degisiklik yok"
 
           python3 instagram_pr_agent.py --list --limit 10

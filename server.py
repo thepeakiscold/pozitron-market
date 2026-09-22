@@ -889,6 +889,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 return
 
+        if path == '/api/health':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            return
+
         if not self.is_static_path_allowed(self.path):
             self.send_response(404)
             self.end_headers()

@@ -10,6 +10,14 @@ services:
     startCommand: "python3 server.py"
     healthCheckPath: /api/health
     autoDeploy: true
+    buildFilter:
+      ignoredPaths:
+        - assets/**
+        - products/**
+        - data/**
+        - tests/**
+        - docs/**
+        - "*.md"
     envVars:
       - key: POZITRON_ENV
         value: production

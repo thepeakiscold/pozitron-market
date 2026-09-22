@@ -41,7 +41,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "[skip ci] chore(market): auto deduct stock"
+          git commit -m "[skip ci] [skip render] chore(market): auto deduct stock"
           
           # Retry loop to pull changes if a concurrent push occurred
           for i in {1..5}; do
