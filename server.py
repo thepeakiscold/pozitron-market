@@ -149,7 +149,74 @@ https://pozitronmarket.com
 </body>
 </html>"""
 
-    # 1. Try direct SMTP if credentials provided
+    # 1. Try Resend HTTP API (Recommended for Cloud / Render without blocked SMTP ports)
+    resend_key = os.environ.get('RESEND_API_KEY', '').strip()
+    if resend_key:
+        try:
+            resend_from = os.environ.get('RESEND_FROM', 'Pozitron Market <onboarding@resend.dev>')
+            payload = json.dumps({
+                "from": resend_from,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content
+            }).encode('utf-8')
+            req = urllib.request.Request(
+                'https://api.resend.com/emails',
+                data=payload,
+                headers={
+                    'Authorization': f'Bearer {resend_key}',
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'PozitronMarket-Cloud/1.0'
+                },
+                method='POST'
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if 200 <= resp.status < 300:
+                    print(f"[AUTH EMAIL] Verification code sent successfully via Resend API to {to_email}")
+                    LAST_EMAIL_STATUS = {
+                        "timestamp": datetime.now().isoformat(),
+                        "to": to_email,
+                        "success": True,
+                        "status": "Sent via Resend HTTP API"
+                    }
+                    return True
+        except Exception as re_err:
+            print(f"[AUTH EMAIL ERROR] Resend API failed: {re_err}")
+
+    # 2. Try Brevo HTTP API (Alternative HTTP Email API)
+    brevo_key = os.environ.get('BREVO_API_KEY', '').strip()
+    if brevo_key:
+        try:
+            payload = json.dumps({
+                "sender": {"name": "Pozitron Market", "email": smtp_user or "noreply@pozitronmarkets.com"},
+                "to": [{"email": to_email}],
+                "subject": subject,
+                "htmlContent": html_content
+            }).encode('utf-8')
+            req = urllib.request.Request(
+                'https://api.brevo.com/v3/smtp/email',
+                data=payload,
+                headers={
+                    'api-key': brevo_key,
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'PozitronMarket-Cloud/1.0'
+                },
+                method='POST'
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if 200 <= resp.status < 300:
+                    print(f"[AUTH EMAIL] Verification code sent successfully via Brevo API to {to_email}")
+                    LAST_EMAIL_STATUS = {
+                        "timestamp": datetime.now().isoformat(),
+                        "to": to_email,
+                        "success": True,
+                        "status": "Sent via Brevo HTTP API"
+                    }
+                    return True
+        except Exception as br_err:
+            print(f"[AUTH EMAIL ERROR] Brevo API failed: {br_err}")
+
+    # 3. Try direct SMTP if credentials provided (Default on localhost / VPS)
     if smtp_user and smtp_password:
         try:
             msg = MIMEMultipart('alternative')
