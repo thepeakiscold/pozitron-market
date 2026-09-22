@@ -24,6 +24,22 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
+    // 0. Password Reset Verification Email Handler
+    if (data.type === 'password_reset') {
+      try {
+        MailApp.sendEmail({
+          to: data.email,
+          subject: "[Pozitron Market] Şifre Sıfırlama Doğrulama Kodu: " + data.code,
+          htmlBody: data.html_content || ("<p>Pozitron Market şifre sıfırlama kodunuz: <b>" + data.code + "</b></p>")
+        });
+        return ContentService.createTextOutput(JSON.stringify({ status: "success", type: "email_sent" }))
+          .setMimeType(ContentService.MimeType.JSON);
+      } catch (mailErr) {
+        return ContentService.createTextOutput(JSON.stringify({ status: "error", message: mailErr.toString() }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+
     // 1. User Registration Handler
     if (data.type === 'user') {
       var userSheet = ss.getSheetByName("Kullanıcılar") || ss.insertSheet("Kullanıcılar");

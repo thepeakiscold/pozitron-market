@@ -19,6 +19,7 @@ from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formatdate, make_msgid
 from database import get_db, init_db, hash_password, get_setting, set_setting, get_all_settings
 from seed_data import seed_database
 from export_data import export_static_data
@@ -155,6 +156,11 @@ https://pozitronmarket.com
             msg['Subject'] = subject
             msg['From'] = smtp_from
             msg['To'] = to_email
+            msg['Reply-To'] = smtp_user
+            msg['Date'] = formatdate(localtime=True)
+            msg['Message-ID'] = make_msgid(domain='pozitronmarkets.com')
+            msg['Auto-Submitted'] = 'auto-generated'
+            msg['X-Mailer'] = 'PozitronMarket-Mailer/1.0'
             msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
             msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
@@ -194,14 +200,23 @@ https://pozitronmarket.com
         gas_req = urllib.request.Request(gas_url, data=gas_payload, headers={'Content-Type': 'application/json'}, method='POST')
         with urllib.request.urlopen(gas_req, timeout=12) as gas_resp:
             gas_result = gas_resp.read().decode('utf-8')
-            print(f"[AUTH EMAIL] GAS Relay sent for {to_email}. Response: {gas_result[:200]}")
-            LAST_EMAIL_STATUS = {
-                "timestamp": datetime.now().isoformat(),
-                "to": to_email,
-                "success": True,
-                "status": "Sent via GAS Relay"
-            }
-            return True
+            if gas_result.strip().startswith('{') and '"status"' in gas_result and '"success"' in gas_result:
+                print(f"[AUTH EMAIL] GAS Relay sent successfully for {to_email}")
+                LAST_EMAIL_STATUS = {
+                    "timestamp": datetime.now().isoformat(),
+                    "to": to_email,
+                    "success": True,
+                    "status": "Sent via GAS Relay"
+                }
+                return True
+            else:
+                print(f"[AUTH EMAIL ERROR] GAS Relay returned non-success response for {to_email}: {gas_result[:160]}")
+                LAST_EMAIL_STATUS = {
+                    "timestamp": datetime.now().isoformat(),
+                    "to": to_email,
+                    "success": False,
+                    "status": f"GAS Relay Error: {gas_result[:100]}"
+                }
     except Exception as gas_e:
         print(f"[AUTH EMAIL] GAS Relay notice for {to_email}: {gas_e}")
 
@@ -222,9 +237,6 @@ def ensure_database_ready():
         cursor = conn.cursor()
         cursor.execute("SELECT count(*) FROM products")
         count = cursor.fetchone()[0]
-        # Purge legacy removed accounts
-        cursor.execute("DELETE FROM users WHERE LOWER(email) = 'eyuppekoz@gmail.com'")
-        conn.commit()
         conn.close()
         if count == 0:
             print("[INIT] Database empty on fresh deployment. Seeding initial products and categories...")

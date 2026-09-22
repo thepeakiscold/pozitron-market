@@ -14,19 +14,19 @@
     }
 
     initUrl() {
-      // 1. Check custom configured URL from localStorage
-      const customUrl = localStorage.getItem(this.storageKey);
-      if (customUrl && customUrl.trim()) {
-        this.baseUrl = customUrl.trim().replace(/\/+$/, '');
+      const hostname = window.location.hostname;
+
+      // 1. Local development: On localhost / 127.0.0.1, always bind to local server
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+        const port = window.location.port;
+        this.baseUrl = (port === '8000' || port === '5000') ? window.location.origin : 'http://localhost:8000';
         return;
       }
 
-      // 2. Local development fallback
-      const hostname = window.location.hostname;
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
-        const port = window.location.port;
-        // If frontend is running on 8000 or 5000, use origin, otherwise default backend port 8000
-        this.baseUrl = (port === '8000' || port === '5000') ? window.location.origin : 'http://localhost:8000';
+      // 2. Custom configured URL from localStorage (for production / custom testing)
+      const customUrl = localStorage.getItem(this.storageKey);
+      if (customUrl && customUrl.trim()) {
+        this.baseUrl = customUrl.trim().replace(/\/+$/, '');
         return;
       }
 
