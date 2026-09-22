@@ -19,6 +19,7 @@ import os
 import html
 import re
 import sqlite3
+import zlib
 from datetime import datetime
 
 BASE_URL = "https://pozitronmarket.com"
@@ -26,6 +27,22 @@ PRODUCTS_JSON_PATH = "data/products.json"
 CATEGORIES_JSON_PATH = "data/categories.json"
 OUTPUT_DIR = "products"
 SITEMAP_PATH = "sitemap.xml"
+
+def get_db_usd_rate():
+    """Fetch current USD to TRY exchange rate from database settings."""
+    db_path = os.environ.get('DATABASE_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pozitron.db')
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            c = conn.cursor()
+            c.execute("SELECT value FROM settings WHERE key = 'usd_rate'")
+            row = c.fetchone()
+            conn.close()
+            if row and row[0]:
+                return float(row[0])
+        except Exception as e:
+            print(f"Warning: Could not fetch usd_rate from DB: {e}")
+    return 50.0
 
 def get_db_review_stats():
     """Fetch aggregated real reviews from SQLite database."""
@@ -85,7 +102,7 @@ def get_bundle_items(current_prod, by_category, all_products):
         candidates = by_category.get(t_cid, [])
         valid = [p for p in candidates if p.get("slug") != current_slug and p not in bundle]
         if valid:
-            idx = abs(hash(current_slug + t_cid)) % len(valid)
+            idx = zlib.crc32((current_slug + t_cid).encode('utf-8')) % len(valid)
             bundle.append(valid[idx])
         if len(bundle) == 2:
             break
@@ -98,7 +115,7 @@ def get_bundle_items(current_prod, by_category, all_products):
                 break
     return bundle
 
-def generate_product_page(product, category, related_products, all_products, by_category, db_reviews=None):
+def generate_product_page(product, category, related_products, all_products, by_category, db_reviews=None, usd_rate=50.0):
     p_id = product.get("id", "")
     slug = product.get("slug", "")
     sku = product.get("sku", "")
@@ -981,7 +998,7 @@ def generate_product_page(product, category, related_products, all_products, by_
           name_tr: name,
           name_en: name,
           price_try: priceTry,
-          price_usd: priceTry / 47.0,
+          price_usd: priceTry / {usd_rate:.2f},
           image_url: imgUrl,
           quantity: 1
         }});
@@ -1041,7 +1058,7 @@ def generate_product_page(product, category, related_products, all_products, by_
             name_tr: name,
             name_en: name,
             price_try: price,
-            price_usd: price / 47.0,
+            price_usd: price / {usd_rate:.2f},
             image_url: img,
             quantity: 1
           }});
@@ -1330,6 +1347,7 @@ def main():
         by_category[cid].append(p)
 
     db_reviews = get_db_review_stats()
+    usd_rate = get_db_usd_rate()
     generated_count = 0
     sitemap_product_urls = []
 
@@ -1342,7 +1360,7 @@ def main():
         cat = cat_map.get(cid)
         related = [rp for rp in by_category.get(cid, []) if rp.get("slug") != slug]
 
-        content = generate_product_page(p, cat, related, products, by_category, db_reviews=db_reviews)
+        content = generate_product_page(p, cat, related, products, by_category, db_reviews=db_reviews, usd_rate=usd_rate)
         out_file = os.path.join(OUTPUT_DIR, f"{slug}.html")
         with open(out_file, "w", encoding="utf-8") as f:
             f.write(content)

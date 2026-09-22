@@ -133,5 +133,12 @@ def export_static_data():
     except Exception as fe:
         print(f"Feed generation note: {fe}")
 
+    # Regenerate static product HTML pages so products/*.html are always 100% in sync
+    try:
+        from generate_product_pages import main as generate_product_pages_main
+        generate_product_pages_main()
+    except Exception as pe:
+        print(f"Product pages generation note: {pe}")
+
 if __name__ == "__main__":
     export_static_data()

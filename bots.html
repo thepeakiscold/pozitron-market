@@ -1586,23 +1586,30 @@
           <div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
               <span class="status-pill status-pill-purple">Trend Avcısı</span>
-              <span class="status-pill status-pill-active">Aktif</span>
+              <span class="status-pill status-pill-active">Aktif Fiyat Kıyaslama &amp; Tedarik</span>
             </div>
             <h2 style="font-size:1.25rem; font-weight:800; margin:0 0 6px 0; color:#ffffff; font-family:var(--font-heading);">
-              Küresel Trend ve Donanım Tedarik Avcısı
+              Türkiye Fiyat Karşılaştırması &amp; Küresel Donanım Avcısı
             </h2>
             <p class="card-desc" style="max-width:850px;">
-              Dünya genelindeki FPV yeniliklerini tarar; katalogda bulunmayan ürünler için yerel rekabetçi fiyatlar hesaplar ve onaya sunar.
+              Mağazadaki tüm ürünleri Türkiye'nin yerel satıcılarıyla (Dronmarket, Robotistan, Robolink, SAMM, FPVTR) karşılaştırır; <strong>stokta olmayan eski fiyatları eler</strong> ve aşırı ucuza koyduğumuz ürünler için zarar/hata uyarısı verir.
             </p>
             <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.78rem; color:var(--text-muted); margin-top:10px;">
-              <span>Kaynaklar: <strong style="color:#f8fafc;">Rotor Riot &bull; GetFPV &bull; BetaFPV &bull; Caddx</strong></span>
-              <span>Politika: <strong style="color:#34d399;">%8-%12 Fiyat Avantajı</strong></span>
+              <span>Yerel Satıcılar: <strong style="color:#f8fafc;">Dronmarket &bull; Robotistan &bull; Robolink &bull; SAMM &bull; FPVTR &bull; QuadHobby</strong></span>
+              <span>Stok Filtresi: <strong style="color:#10b981;">Yalnızca Stoklu Fiyatlar (Eski Fiyatlar Elendi)</strong></span>
+              <span>Uyarı Eşiği: <strong style="color:#fb7185;">%25+ Aşırı Ucuzluk Uyarısı</strong></span>
             </div>
           </div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            <button type="button" class="btn-action btn-purple" onclick="scanGlobalTrends()" id="btn-scan-trends">
-              <span>Trendleri Tara</span>
+            <button type="button" class="btn-action btn-danger" onclick="filterTrendPrices('TOO_CHEAP_ALERT')" id="btn-show-too-cheap-quick" style="display:none; background:#ef4444; border-color:#dc2626;">
+              <span>⚠️ Aşırı Ucuz Uyarıları (<span id="btn-too-cheap-count">0</span>)</span>
+            </button>
+            <button type="button" class="btn-action btn-purple" onclick="scanTrendPrices()" id="btn-scan-trend-prices">
+              <span>⚡ Fiyatları Şimdi Tara</span>
+            </button>
+            <button type="button" class="btn-action btn-secondary" onclick="scanGlobalTrends()" id="btn-scan-trends">
+              <span>🌐 Yeni Trend Donanım Tara</span>
             </button>
             <button type="button" class="btn-action btn-secondary" onclick="loadTrendHunterData()">
               <span>Yenile</span>
@@ -1611,41 +1618,142 @@
         </div>
       </div>
 
-      <!-- Trend Hunter Metrics -->
-      <div class="kpi-grid">
-        <div class="kpi-card">
-          <span class="kpi-label">Keşfedilen Trend</span>
-          <div class="kpi-value" style="color:#c084fc;" id="th-stat-total">0</div>
-          <div class="kpi-subtext">Küresel pazar analiz havuzu</div>
-        </div>
-
-        <div class="kpi-card">
-          <span class="kpi-label">Bekleyen Öneriler</span>
-          <div class="kpi-value" style="color:#f59e0b;" id="th-stat-pending">0</div>
-          <div class="kpi-subtext">Operatör onayı bekliyor</div>
-        </div>
-
-        <div class="kpi-card">
-          <span class="kpi-label">Eklenen Donanımlar</span>
-          <div class="kpi-value" style="color:#10b981;" id="th-stat-approved">0</div>
-          <div class="kpi-subtext">Mağazada aktif satışta</div>
-        </div>
-
-        <div class="kpi-card">
-          <span class="kpi-label">Fiyat Avantajı</span>
-          <div class="kpi-value" style="color:#38bdf8;">%10-%15</div>
-          <div class="kpi-subtext">Yerel rakiplere kıyasla</div>
+      <!-- Critical Underpricing Warning Banner (Alert Box) -->
+      <div id="trend-critical-alert-box" class="bots-card" style="display:none; background:linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border:1px solid #ef4444; box-shadow:0 0 20px rgba(239,68,68,0.2);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:42px; height:42px; border-radius:10px; background:rgba(239,68,68,0.2); border:1px solid #ef4444; display:flex; align-items:center; justify-content:center; font-size:1.4rem;">
+              ⚠️
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="status-pill status-pill-danger" style="font-weight:700; font-size:0.72rem;">KRİTİK FİYAT UYARISI</span>
+                <h3 style="font-size:1rem; font-weight:800; color:#fff; margin:0;" id="trend-alert-title">
+                  0 Adet Ürün Türkiye Pazarının Çok Altında Satılıyor!
+                </h3>
+              </div>
+              <p style="font-size:0.8rem; color:#fca5a5; margin:4px 0 0 0; line-height:1.4;">
+                Bu ürünler Türkiye'deki <strong>en ucuz aktif stoklu</strong> satıcıdan en az %25 daha ucuza satılmaktadır. Stokta olmayan eski/geçersiz satıcı fiyatları elenmiştir. Zarar veya hatalı fiyatlandırmayı önlemek için fiyatları önerilen seviyeye çekebilirsiniz.
+              </p>
+            </div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn-action btn-danger" onclick="filterTrendPrices('TOO_CHEAP_ALERT')" style="font-size:0.78rem; padding:6px 14px;">
+              <span>Uyarı Verilenleri İncele &rarr;</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Pending Trend Proposals Grid -->
+      <!-- Trend Hunter Price & Sourcing KPI Grid -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="border-color:rgba(239,68,68,0.4);">
+          <span class="kpi-label" style="color:#f87171;">Aşırı Ucuz Uyarıları</span>
+          <div class="kpi-value" style="color:#ef4444;" id="th-stat-too-cheap">0</div>
+          <div class="kpi-subtext" id="th-stat-too-cheap-sub">Türkiye min stok fiyatından %25+ ucuz</div>
+        </div>
+
+        <div class="kpi-card" style="border-color:rgba(168,85,247,0.4);">
+          <span class="kpi-label" style="color:#c084fc;">Yok Sayılan Eski Fiyatlar</span>
+          <div class="kpi-value" style="color:#a855f7;" id="th-stat-stale-ignored">0</div>
+          <div class="kpi-subtext">Stokta yok (Bayat fiyat elendi)</div>
+        </div>
+
+        <div class="kpi-card" style="border-color:rgba(56,189,248,0.4);">
+          <span class="kpi-label" style="color:#7dd3fc;">Piyasada Stoksuz Donanım</span>
+          <div class="kpi-value" style="color:#38bdf8;" id="th-stat-out-of-stock-market">0</div>
+          <div class="kpi-subtext">Türkiye'de tüm satıcılar tükenmiş</div>
+        </div>
+
+        <div class="kpi-card" style="border-color:rgba(16,185,129,0.4);">
+          <span class="kpi-label" style="color:#6ee7b7;">Rekabetçi Fiyat Avantajı</span>
+          <div class="kpi-value" style="color:#10b981;" id="th-stat-competitive">0</div>
+          <div class="kpi-subtext">En ucuz stoklu satıcıdan %8-%24 uygun</div>
+        </div>
+      </div>
+
+      <!-- Store Products Turkey Price Comparison & Warning Table Card -->
+      <div class="bots-card">
+        <div class="bots-card-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="status-pill status-pill-purple">Canlı Piyasa Kıyası</span>
+              <h3 class="card-title">Türkiye Pazarı Fiyat Karşılaştırması &amp; Fiyat Uyarıları</h3>
+            </div>
+            <p class="card-desc">
+              506 Pozitron Market donanımı, Türkiye'nin yetkili FPV/robotik satıcılarının güncel stoklu fiyatlarıyla canlı olarak karşılaştırılır.
+            </p>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div style="position:relative;">
+              <input type="text" id="trend-price-search-input" placeholder="SKU, Ürün veya Kategori ara..." 
+                oninput="searchTrendPrices(this.value)"
+                style="background:#070b14; border:1px solid #1e293b; border-radius:6px; color:#f8fafc; font-size:0.75rem; padding:6px 10px; width:220px; outline:none;">
+            </div>
+            <button type="button" class="btn-action btn-purple" onclick="scanTrendPrices()" style="font-size:0.75rem; padding:6px 12px;">
+              <span>⚡ Yeniden Tara</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Pills Bar -->
+        <div style="display:flex; gap:6px; background:#070b14; padding:8px 12px; border-radius:8px; border:1px solid #1e293b; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+          <span style="font-size:0.72rem; color:#64748b; font-weight:700; text-transform:uppercase; margin-right:4px;">Filtrele:</span>
+          <button type="button" class="btn-secondary active" id="filter-btn-ALL" onclick="filterTrendPrices('ALL')" style="padding:4px 10px; font-size:0.75rem; border-radius:6px;">Tümü (506)</button>
+          <button type="button" class="btn-secondary" id="filter-btn-TOO_CHEAP_ALERT" onclick="filterTrendPrices('TOO_CHEAP_ALERT')" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; color:#ef4444; border-color:rgba(239,68,68,0.4);">
+            🚨 Aşırı Ucuz Uyarıları (<span id="filter-badge-too-cheap">0</span>)
+          </button>
+          <button type="button" class="btn-secondary" id="filter-btn-COMPETITIVE" onclick="filterTrendPrices('COMPETITIVE')" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; color:#10b981; border-color:rgba(16,185,129,0.4);">
+            ✅ Rekabetçi Fiyatlar
+          </button>
+          <button type="button" class="btn-secondary" id="filter-btn-EQUAL" onclick="filterTrendPrices('EQUAL')" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; color:#cbd5e1;">
+            ⚖️ Piyasa ile Dengeli
+          </button>
+          <button type="button" class="btn-secondary" id="filter-btn-EXPENSIVE" onclick="filterTrendPrices('EXPENSIVE')" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; color:#f59e0b; border-color:rgba(245,158,11,0.4);">
+            ⚠️ Piyasa Üstünde
+          </button>
+          <button type="button" class="btn-secondary" id="filter-btn-OUT_OF_STOCK_MARKET" onclick="filterTrendPrices('OUT_OF_STOCK_MARKET')" style="padding:4px 10px; font-size:0.75rem; border-radius:6px; color:#38bdf8; border-color:rgba(56,189,248,0.4);">
+            📦 Piyasada Stok Yok
+          </button>
+          <span style="margin-left:auto; font-size:0.72rem; color:#10b981; display:flex; align-items:center; gap:4px;">
+            <span>🛡️</span> Stokta olmayan eski fiyatlar otomatik filtrelenmektedir
+          </span>
+        </div>
+
+        <!-- Table Container -->
+        <div class="table-container" style="max-height:520px; overflow-y:auto;">
+          <table class="clean-table">
+            <thead style="position:sticky; top:0; z-index:10;">
+              <tr>
+                <th>Ürün Bilgisi</th>
+                <th>SKU</th>
+                <th>Pozitron Fiyatı</th>
+                <th>Türkiye En Ucuz (Stoklu)</th>
+                <th>En Ucuz Satıcı</th>
+                <th>Elenen Eski Fiyatlar</th>
+                <th>Fiyat Farkı</th>
+                <th>Durum / Uyarı</th>
+                <th>Aksiyon</th>
+              </tr>
+            </thead>
+            <tbody id="trend-price-table-body">
+              <tr>
+                <td colspan="9" style="padding:24px; text-align:center; color:#94a3b8;">Fiyat karşılaştırma verileri yükleniyor...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Pending Trend Proposals Grid (Sourcing Module) -->
       <div class="bots-card">
         <div class="bots-card-header">
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="status-pill status-pill-warn">Onay Bekleyenler</span>
-            <h3 class="card-title">Kataloğa Ekleme Önerileri</h3>
+            <h3 class="card-title">Küresel Donanım Tedarik Önerileri</h3>
           </div>
-          <span style="font-size:0.75rem; color:var(--text-muted);">Trend skoru 95+ ürünler otomatik onaylanabilir</span>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Trend skoru 95+ ürünler Lead Supervisor tarafından otomatik onaylanabilir</span>
         </div>
 
         <div id="trend-proposals-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:14px;">
@@ -3835,9 +3943,342 @@
     }
 
     // =========================================================================
-    // SUBAGENT 6: GLOBAL TREND HUNTER CONTROLLER
+    // SUBAGENT 6: GLOBAL TREND HUNTER CONTROLLER & PRICE COMPARISON ENGINE
     // =========================================================================
+    let _allTrendPriceRows = [];
+    let _currentTrendPriceFilter = 'ALL';
+    let _trendPriceSearchQuery = '';
+    let _currentPriceModalData = null;
+
     async function loadTrendHunterData() {
+      loadTrendProposalsData();
+      loadTrendPriceComparisonData();
+    }
+
+    async function loadTrendPriceComparisonData() {
+      try {
+        const res = await fetch('/api/trend-hunter/price-comparison?limit=506');
+        const data = await res.json();
+        _allTrendPriceRows = data.items || [];
+        const summary = data.summary || {};
+
+        // Update KPIs
+        const elTooCheap = document.getElementById('th-stat-too-cheap');
+        const elTooCheapSub = document.getElementById('th-stat-too-cheap-sub');
+        const elStaleIgnored = document.getElementById('th-stat-stale-ignored');
+        const elOutOfStock = document.getElementById('th-stat-out-of-stock-market');
+        const elComp = document.getElementById('th-stat-competitive');
+        const filterBadgeTooCheap = document.getElementById('filter-badge-too-cheap');
+        const btnTooCheapCount = document.getElementById('btn-too-cheap-count');
+        const btnQuickTooCheap = document.getElementById('btn-show-too-cheap-quick');
+        const alertBox = document.getElementById('trend-critical-alert-box');
+        const alertTitle = document.getElementById('trend-alert-title');
+
+        const tooCheapCount = summary.too_cheap_count || 0;
+        const criticalCount = summary.critical_count || 0;
+
+        if (elTooCheap) elTooCheap.textContent = tooCheapCount;
+        if (elTooCheapSub) elTooCheapSub.textContent = `${criticalCount} kritik zarar riski`;
+        if (elStaleIgnored) elStaleIgnored.textContent = (summary.total_stale_prices_ignored || 0).toLocaleString();
+        if (elOutOfStock) elOutOfStock.textContent = summary.out_of_stock_market_count || 0;
+        if (elComp) elComp.textContent = summary.competitive_count || 0;
+
+        if (filterBadgeTooCheap) filterBadgeTooCheap.textContent = tooCheapCount;
+        if (btnTooCheapCount) btnTooCheapCount.textContent = tooCheapCount;
+
+        if (tooCheapCount > 0) {
+          if (alertBox) alertBox.style.display = 'block';
+          if (btnQuickTooCheap) btnQuickTooCheap.style.display = 'inline-flex';
+          if (alertTitle) alertTitle.textContent = `${tooCheapCount} Adet Ürün Türkiye Pazarının Çok Altında Satılıyor!`;
+        } else {
+          if (alertBox) alertBox.style.display = 'none';
+          if (btnQuickTooCheap) btnQuickTooCheap.style.display = 'none';
+        }
+
+        applyTrendPriceFilterAndRender();
+      } catch (err) {
+        console.error("Trend price load error:", err);
+      }
+    }
+
+    function applyTrendPriceFilterAndRender() {
+      let filtered = _allTrendPriceRows;
+
+      if (_currentTrendPriceFilter !== 'ALL') {
+        filtered = filtered.filter(r => r.status === _currentTrendPriceFilter);
+      }
+
+      if (_trendPriceSearchQuery) {
+        const q = _trendPriceSearchQuery.toLowerCase();
+        filtered = filtered.filter(r => 
+          (r.sku && r.sku.toLowerCase().includes(q)) ||
+          (r.product_name && r.product_name.toLowerCase().includes(q)) ||
+          (r.category_id && r.category_id.toLowerCase().includes(q)) ||
+          (r.cheapest_vendor && r.cheapest_vendor.toLowerCase().includes(q))
+        );
+      }
+
+      renderTrendPriceTable(filtered);
+    }
+
+    function renderTrendPriceTable(rows) {
+      const tbody = document.getElementById('trend-price-table-body');
+      if (!tbody) return;
+
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="padding:28px; text-align:center; color:#94a3b8;">Filtre veya arama kriterine uygun donanım bulunamadı.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = rows.map(r => {
+        let statusBadge = '';
+        if (r.status === 'TOO_CHEAP_ALERT') {
+          const isCrit = r.warning_level === 'CRITICAL';
+          statusBadge = `<span class="status-pill status-pill-danger" style="font-weight:700; font-size:0.68rem; ${isCrit ? 'box-shadow:0 0 8px rgba(239,68,68,0.5);' : ''}">
+            🚨 AŞIRI UCUZ (%${r.price_diff_pct})
+          </span>`;
+        } else if (r.status === 'COMPETITIVE') {
+          statusBadge = `<span class="status-pill status-pill-active" style="font-size:0.68rem;">✅ Rekabetçi (%${r.price_diff_pct})</span>`;
+        } else if (r.status === 'EQUAL') {
+          statusBadge = `<span class="status-pill status-pill-neutral" style="font-size:0.68rem;">⚖️ Dengeli</span>`;
+        } else if (r.status === 'EXPENSIVE') {
+          statusBadge = `<span class="status-pill status-pill-warn" style="font-size:0.68rem;">⚠️ Pahalı (+%${Math.abs(r.price_diff_pct)})</span>`;
+        } else {
+          statusBadge = `<span class="status-pill status-pill-info" style="font-size:0.68rem;">📦 Piyasada Stok Yok</span>`;
+        }
+
+        const marketMinDisplay = r.turkey_min_price_try !== null && r.turkey_min_price_try !== undefined
+          ? `<span style="font-weight:700; color:#f8fafc;">${Number(r.turkey_min_price_try).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</span>`
+          : `<span style="color:#64748b; font-size:0.75rem;">Piyasada Stoksuz</span>`;
+
+        const vendorDisplay = r.cheapest_vendor && r.cheapest_vendor !== 'Stok Yok'
+          ? `<div style="display:flex; align-items:center; gap:6px;">
+               <span style="color:#38bdf8; font-weight:600; font-size:0.75rem;">${r.cheapest_vendor}</span>
+               <span class="status-pill status-pill-active" style="font-size:0.6rem; padding:1px 4px;">Stokta</span>
+             </div>`
+          : `<span style="color:#64748b; font-size:0.75rem;">Stok Bulunamadı</span>`;
+
+        let staleBadge = '';
+        if (r.out_of_stock_vendors_count > 0) {
+          const rawStale = JSON.stringify(r.stale_prices_ignored || []).replace(/"/g, '&quot;');
+          staleBadge = `
+            <button type="button" class="status-pill status-pill-purple" 
+              onclick="openStalePricesModal('${r.sku}', '${encodeURIComponent(r.product_name)}', '${rawStale}')"
+              style="font-size:0.68rem; cursor:pointer; background:rgba(168,85,247,0.15); border:1px solid #8b5cf6;"
+              title="Tıklayarak stokta olmayan ve elenen satıcıları görün">
+              🛡️ ${r.out_of_stock_vendors_count} Satıcı Elendi
+            </button>
+          `;
+        } else {
+          staleBadge = `<span style="color:#64748b; font-size:0.75rem;">Yok (Tüm satıcılar stoklu)</span>`;
+        }
+
+        let diffDisplay = '';
+        if (r.status === 'OUT_OF_STOCK_MARKET') {
+          diffDisplay = '<span style="color:#64748b; font-size:0.72rem;">Kıyaslanamaz</span>';
+        } else if (r.price_diff_pct >= 0) {
+          const diffClass = r.price_diff_pct >= 25 ? '#ef4444' : '#10b981';
+          diffDisplay = `<strong style="color:${diffClass}; font-size:0.8rem;">-%${r.price_diff_pct}</strong> <span style="font-size:0.7rem; color:#94a3b8;">(${Number(r.price_diff_try).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL)</span>`;
+        } else {
+          diffDisplay = `<strong style="color:#f59e0b; font-size:0.8rem;">+%{Math.abs(r.price_diff_pct)}</strong> <span style="font-size:0.7rem; color:#94a3b8;">(${Number(Math.abs(r.price_diff_try)).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL pahalı)</span>`;
+        }
+
+        let actionBtn = '';
+        if (r.status === 'TOO_CHEAP_ALERT') {
+          actionBtn = `
+            <button type="button" class="btn-action btn-danger" style="padding:4px 10px; font-size:0.72rem; white-space:nowrap;"
+              onclick="openPriceUpdateModal('${r.sku}', '${encodeURIComponent(r.product_name)}', ${r.pozitron_price_try}, ${r.recommended_price_try}, ${r.turkey_min_price_try || 0}, '${r.cheapest_vendor || ''}')">
+              <span>Fiyatı Düzelt &rarr;</span>
+            </button>
+          `;
+        } else {
+          actionBtn = `
+            <button type="button" class="btn-secondary" style="padding:4px 8px; font-size:0.72rem; border-radius:6px; white-space:nowrap;"
+              onclick="openPriceUpdateModal('${r.sku}', '${encodeURIComponent(r.product_name)}', ${r.pozitron_price_try}, ${r.recommended_price_try || r.pozitron_price_try}, ${r.turkey_min_price_try || 0}, '${r.cheapest_vendor || ''}')">
+              Fiyat Düzenle
+            </button>
+          `;
+        }
+
+        return `
+          <tr style="${r.status === 'TOO_CHEAP_ALERT' ? 'background:rgba(239,68,68,0.04);' : ''}">
+            <td>
+              <div style="display:flex; align-items:center; gap:10px; min-width:240px; max-width:320px;">
+                <img src="${r.image_url}" alt="${r.sku}" style="width:36px; height:36px; object-fit:cover; border-radius:6px; border:1px solid #1e293b; flex-shrink:0;">
+                <div style="overflow:hidden;">
+                  <div style="color:#ffffff; font-weight:600; font-size:0.82rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.product_name}">
+                    ${r.product_name}
+                  </div>
+                  <div style="font-size:0.68rem; color:#64748b;">${r.category_id || ''}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-family:var(--font-mono); color:#38bdf8; font-weight:600; font-size:0.75rem;">${r.sku}</td>
+            <td style="color:${r.status === 'TOO_CHEAP_ALERT' ? '#ef4444' : '#10b981'}; font-weight:700; font-size:0.85rem;">
+              ${Number(r.pozitron_price_try).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL
+            </td>
+            <td>${marketMinDisplay}</td>
+            <td>${vendorDisplay}</td>
+            <td>${staleBadge}</td>
+            <td>${diffDisplay}</td>
+            <td>${statusBadge}</td>
+            <td>${actionBtn}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterTrendPrices(status) {
+      _currentTrendPriceFilter = status;
+      const buttons = [
+        'filter-btn-ALL', 'filter-btn-TOO_CHEAP_ALERT', 'filter-btn-COMPETITIVE',
+        'filter-btn-EQUAL', 'filter-btn-EXPENSIVE', 'filter-btn-OUT_OF_STOCK_MARKET'
+      ];
+      buttons.forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        if (id === `filter-btn-${status}`) {
+          btn.classList.add('active');
+          btn.style.background = '#1e293b';
+        } else {
+          btn.classList.remove('active');
+          btn.style.background = 'transparent';
+        }
+      });
+      applyTrendPriceFilterAndRender();
+    }
+
+    function searchTrendPrices(query) {
+      _trendPriceSearchQuery = query;
+      applyTrendPriceFilterAndRender();
+    }
+
+    async function scanTrendPrices() {
+      showToast("Pozitron donanımları Türkiye piyasasıyla canlı kıyaslanıyor...", "info");
+      const btn = document.getElementById('btn-scan-trend-prices');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/trend-hunter/scan-prices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Tarama tamamlandı: ${data.total_scanned} ürün tarandı. ${data.too_cheap_alerts} adet aşırı ucuzluk uyarısı tespit edildi. ${data.total_stale_prices_ignored} adet stoksuz eski fiyat elendi.`, "success");
+          loadTrendPriceComparisonData();
+          loadOrchestratorData();
+        } else {
+          showToast("Tarama hatası: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch (e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function openPriceUpdateModal(sku, encodedName, currPrice, recPrice, marketMin, vendor) {
+      const name = decodeURIComponent(encodedName);
+      _currentPriceModalData = { sku, name, currPrice, recPrice, marketMin, vendor };
+
+      const modal = document.getElementById('modal-trend-price-update');
+      document.getElementById('modal-update-product-name').textContent = name;
+      document.getElementById('modal-update-sku').textContent = sku;
+      document.getElementById('modal-curr-price').textContent = `${Number(currPrice).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL`;
+      document.getElementById('modal-market-min').textContent = `${Number(marketMin).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL`;
+      document.getElementById('modal-vendor').textContent = vendor || 'Bilinmiyor';
+      document.getElementById('modal-rec-price').textContent = `${Number(recPrice).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL`;
+      document.getElementById('modal-input-new-price').value = recPrice;
+
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeTrendPriceModal() {
+      const modal = document.getElementById('modal-trend-price-update');
+      if (modal) modal.style.display = 'none';
+      _currentPriceModalData = null;
+    }
+
+    function applyModalRecommendedPrice() {
+      if (_currentPriceModalData && _currentPriceModalData.recPrice) {
+        document.getElementById('modal-input-new-price').value = _currentPriceModalData.recPrice;
+      }
+    }
+
+    async function submitTrendPriceUpdate() {
+      if (!_currentPriceModalData) return;
+      const sku = _currentPriceModalData.sku;
+      const inputEl = document.getElementById('modal-input-new-price');
+      const newPrice = parseFloat(inputEl.value);
+      if (isNaN(newPrice) || newPrice <= 0) {
+        showToast("Geçerli bir fiyat tutarı giriniz.", "error");
+        return;
+      }
+
+      showToast(`SKU ${sku} fiyatı güncelleniyor...`, "info");
+      try {
+        const res = await fetch('/api/trend-hunter/update-product-price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sku: sku, new_price_try: newPrice })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message, "success");
+          closeTrendPriceModal();
+          loadTrendPriceComparisonData();
+          loadOrchestratorData();
+        } else {
+          showToast("Güncelleme hatası: " + (data.error || 'Bilinmeyen hata'), "error");
+        }
+      } catch (e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      }
+    }
+
+    function openStalePricesModal(sku, encodedName, rawStaleJson) {
+      const name = decodeURIComponent(encodedName);
+      let staleList = [];
+      try {
+        staleList = JSON.parse(rawStaleJson);
+      } catch(e) {
+        staleList = [];
+      }
+
+      document.getElementById('modal-stale-product-name').textContent = `${name} (${sku})`;
+      const container = document.getElementById('modal-stale-list');
+      if (container) {
+        if (!staleList || staleList.length === 0) {
+          container.innerHTML = '<div style="color:#64748b; text-align:center; padding:12px;">Elenen satıcı verisi bulunamadı.</div>';
+        } else {
+          container.innerHTML = staleList.map(s => {
+            return `
+              <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-weight:700; color:#cbd5e1; font-size:0.85rem;">${s.vendor}</div>
+                  <div style="font-size:0.72rem; color:#ef4444; margin-top:2px;">${s.reason || 'Stokta Yok (Bayat Fiyat)'}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="text-decoration:line-through; color:#94a3b8; font-size:0.82rem;">${Number(s.stale_price || s.price_try || 0).toLocaleString('tr-TR', {minimumFractionDigits:2})} TL</div>
+                  <span class="status-pill status-pill-neutral" style="font-size:0.62rem; padding:1px 5px;">YOK SAYILDI</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      const modal = document.getElementById('modal-trend-stale-details');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeStaleDetailsModal() {
+      const modal = document.getElementById('modal-trend-stale-details');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function loadTrendProposalsData() {
       try {
         const res = await fetch('/api/trend-hunter/proposals?limit=100');
         const data = await res.json();
@@ -4293,5 +4734,81 @@
       loadInstagramData();
     });
   </script>
+  <!-- Modal: Trend Avcısı Ürün Fiyatını Güncelle -->
+  <div id="modal-trend-price-update" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#0b1329; border:1px solid #38bdf8; border-radius:12px; width:100%; max-width:500px; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+        <div>
+          <span class="status-pill status-pill-warn" id="modal-update-badge" style="margin-bottom:6px; display:inline-block;">Aşırı Ucuz Fiyat Düzeltme</span>
+          <h3 id="modal-update-product-name" style="color:#ffffff; font-size:1.05rem; font-weight:800; margin:0; line-height:1.3;">Ürün Adı</h3>
+          <div id="modal-update-sku" style="font-size:0.75rem; color:#38bdf8; font-family:var(--font-mono); margin-top:2px;">SKU</div>
+        </div>
+        <button type="button" onclick="closeTrendPriceModal()" style="background:transparent; border:none; color:#94a3b8; font-size:1.4rem; cursor:pointer; padding:0 4px;">&times;</button>
+      </div>
+
+      <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:14px; margin-bottom:16px; font-size:0.8rem;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#94a3b8;">Mevcut Pozitron Fiyatı:</span>
+          <strong id="modal-curr-price" style="color:#ef4444; font-size:0.95rem;">- TL</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#94a3b8;">Türkiye En Ucuz (Stoklu):</span>
+          <strong id="modal-market-min" style="color:#f8fafc;">- TL</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:#94a3b8;">En Ucuz Satıcı:</span>
+          <strong id="modal-vendor" style="color:#38bdf8;">-</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; border-top:1px dashed #1e293b; padding-top:6px; margin-top:6px;">
+          <span style="color:#10b981; font-weight:600;">Önerilen Güvenli Fiyat (-%10):</span>
+          <strong id="modal-rec-price" style="color:#10b981; font-size:0.95rem;">- TL</strong>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="display:block; font-size:0.75rem; color:#94a3b8; font-weight:700; margin-bottom:6px; text-transform:uppercase;">
+          Yeni Satış Fiyatı (TL):
+        </label>
+        <div style="display:flex; gap:8px;">
+          <input type="number" id="modal-input-new-price" step="10" 
+            style="flex:1; background:#020617; border:1px solid #0284c7; border-radius:6px; color:#fff; font-size:1.1rem; font-weight:700; padding:10px 14px; outline:none;">
+          <button type="button" class="btn-action btn-secondary" onclick="applyModalRecommendedPrice()" style="font-size:0.75rem; white-space:nowrap;">
+            Önerilen Fiyatı Kullan
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="btn-action btn-secondary" onclick="closeTrendPriceModal()">İptal</button>
+        <button type="button" class="btn-action btn-success" id="modal-btn-confirm" onclick="submitTrendPriceUpdate()">
+          <span>Fiyatı Güncelle</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Elenen Eski/Stoksuz Fiyat Detayları -->
+  <div id="modal-trend-stale-details" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#0b1329; border:1px solid #8b5cf6; border-radius:12px; width:100%; max-width:540px; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+        <div>
+          <span class="status-pill status-pill-purple" style="margin-bottom:6px; display:inline-block;">Bayat Fiyat Filtresi</span>
+          <h3 id="modal-stale-product-name" style="color:#ffffff; font-size:1rem; font-weight:800; margin:0;">Stok Dışı Bırakılan Satıcılar</h3>
+          <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">
+            Aşağıdaki satıcılar bu üründe stoksuz olduğu için fiyatları eski/geçersiz kabul edilerek en ucuz fiyat hesabına katılmamıştır:
+          </div>
+        </div>
+        <button type="button" onclick="closeStaleDetailsModal()" style="background:transparent; border:none; color:#94a3b8; font-size:1.4rem; cursor:pointer; padding:0 4px;">&times;</button>
+      </div>
+
+      <div id="modal-stale-list" style="display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; margin-bottom:16px;">
+      </div>
+
+      <div style="display:flex; justify-content:flex-end;">
+        <button type="button" class="btn-action btn-secondary" onclick="closeStaleDetailsModal()">Kapat</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

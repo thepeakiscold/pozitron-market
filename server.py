@@ -1373,6 +1373,32 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"proposals": proposals, "count": len(proposals)})
             return
 
+        # Subagent 6: Store Products Turkey Price Comparison & Undervaluation Alerts
+        if path == '/api/trend-hunter/price-comparison':
+            status_filter = query.get('status', ['ALL'])[0]
+            search_query = query.get('q', [None])[0]
+            warning_only = query.get('warning_only', ['false'])[0].lower() in ['true', '1', 'yes']
+            limit = int(query.get('limit', [100])[0])
+            offset = int(query.get('offset', [0])[0])
+            report = lead_supervisor_agent.trend_agent.get_price_comparison_report(
+                status_filter=status_filter,
+                search_query=search_query,
+                warning_only=warning_only,
+                limit=limit,
+                offset=offset
+            )
+            self.send_json(200, report)
+            return
+
+        if path == '/api/trend-hunter/price-warnings':
+            limit = int(query.get('limit', [50])[0])
+            report = lead_supervisor_agent.trend_agent.get_price_comparison_report(
+                warning_only=True,
+                limit=limit
+            )
+            self.send_json(200, report)
+            return
+
         # Subagent 7: PR Health, Diagnostics & QA Sentinel Status
         if path == '/api/qa/status':
             self.send_json(200, qa_agent.get_status())
@@ -2576,6 +2602,33 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 reason = data.get("reason", "Operator rejected")
                 res = lead_supervisor_agent.trend_agent.reject_proposal(proposal_id, reason=reason)
+                self.send_json(200, res)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 6: Scan Store Products Against Turkey Market Prices
+        if path == '/api/trend-hunter/scan-prices':
+            try:
+                limit = data.get("limit")
+                if limit is not None:
+                    limit = int(limit)
+                res = lead_supervisor_agent.trend_agent.scan_store_price_comparison(limit=limit)
+                self.send_json(200, res)
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 6: Update Product Price from Trend Hunter Warning Action
+        if path == '/api/trend-hunter/update-product-price':
+            try:
+                sku = data.get("sku")
+                new_price_try = data.get("new_price_try")
+                if not sku or new_price_try is None:
+                    self.send_json(400, {"error": "sku and new_price_try are required"})
+                    return
+                new_price_try = float(new_price_try)
+                res = lead_supervisor_agent.trend_agent.update_product_price(sku=sku, new_price_try=new_price_try)
                 self.send_json(200, res)
             except Exception as e:
                 self.send_json(500, {"error": str(e)})

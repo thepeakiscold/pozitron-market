@@ -763,9 +763,11 @@ class PozitronApp {
     }
 
     if (this.currency === 'TRY') {
-      return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(tryVal);
+      const formatted = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(tryVal);
+      return `${formatted} ₺`;
     }
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(usdVal);
+    const formattedUSD = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(usdVal);
+    return `$${formattedUSD}`;
   }
 
   formatImgUrl(url) {
@@ -1293,9 +1295,14 @@ class PozitronApp {
       const priceFormatted = this.formatPrice(p.price_usd, p.price_try);
       
       let origPriceHtml = '';
-      if (p.discount_pct > 0) {
-        const origUSD = p.price_usd * (1 + p.discount_pct / 100);
-        const origTRY = p.price_try * (1 + p.discount_pct / 100);
+      const origTRY = (p.original_price_try !== null && p.original_price_try !== undefined && p.original_price_try !== '')
+        ? Number(p.original_price_try)
+        : (p.discount_pct > 0 ? (p.price_try / (1 - p.discount_pct / 100)) : 0);
+      const origUSD = (p.original_price_usd !== null && p.original_price_usd !== undefined && p.original_price_usd !== '')
+        ? Number(p.original_price_usd)
+        : (p.discount_pct > 0 ? (p.price_usd / (1 - p.discount_pct / 100)) : 0);
+
+      if (origTRY > (Number(p.price_try) || 0)) {
         origPriceHtml = `<span class="original-price">${this.formatPrice(origUSD, origTRY)}</span>`;
       }
 

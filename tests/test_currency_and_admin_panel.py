@@ -29,10 +29,13 @@ class TestCurrencyAndAdminPanel(unittest.TestCase):
     def tearDownClass(cls):
         # Restore original currency rate
         set_setting('usd_rate', cls.orig_rate)
-        # Restore product prices to original rate
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE products SET price_try = ROUND(price_usd * ?, 2)", (cls.orig_rate,))
+        cursor.execute("""
+            UPDATE products 
+            SET price_try = ROUND(price_usd * ?, 2),
+                original_price_try = CASE WHEN original_price_usd IS NOT NULL THEN ROUND(original_price_usd * ?, 2) ELSE NULL END
+        """, (cls.orig_rate, cls.orig_rate))
         # Remove test user and test order if any
         cursor.execute("DELETE FROM orders WHERE id = 'test_order_999'")
         cursor.execute("DELETE FROM users WHERE LOWER(email) = 'new_pilot@pozitron.test'")
@@ -195,6 +198,46 @@ class TestCurrencyAndAdminPanel(unittest.TestCase):
         self.assertEqual(row['role'], 'customer')
         self.assertEqual(row['city'], 'Izmir')
         conn.close()
+
+    def test_06_homepage_and_pdp_price_parity(self):
+        # Verify that all products in data/products.json match their static HTML pages exactly
+        json_path = os.path.join(BASE_DIR, 'data', 'products.json')
+        self.assertTrue(os.path.exists(json_path))
+        with open(json_path, 'r', encoding='utf-8') as f:
+            products = json.load(f)
+
+        self.assertGreaterEqual(len(products), 500)
+        import re
+
+        for p in products:
+            slug = p.get('slug')
+            html_path = os.path.join(BASE_DIR, 'products', f'{slug}.html')
+            self.assertTrue(os.path.exists(html_path), f"PDP HTML missing for slug: {slug}")
+
+            with open(html_path, 'r', encoding='utf-8') as hf:
+                html_content = hf.read()
+
+            # Verify current price in PDP HTML matches products.json price_try
+            m_curr = re.search(r'<div class="pdp-price-current">([^<]+)</div>', html_content)
+            self.assertIsNotNone(m_curr, f"pdp-price-current missing in {slug}.html")
+            pdp_curr_text = m_curr.group(1).strip()
+            self.assertTrue(pdp_curr_text.endswith('₺'), f"pdp-price-current format must end with ₺: {pdp_curr_text}")
+            pdp_curr_val = float(pdp_curr_text.replace('₺', '').strip().replace('.', '').replace(',', '.'))
+            self.assertAlmostEqual(pdp_curr_val, float(p['price_try']), places=2,
+                                   msg=f"Price mismatch in {slug}: PDP={pdp_curr_val}, JSON={p['price_try']}")
+
+            # Verify old price if discounted
+            m_old = re.search(r'<div class="pdp-price-old">([^<]+)</div>', html_content)
+            has_discount = bool(p.get('original_price_try') and float(p['original_price_try']) > float(p['price_try']))
+            if has_discount:
+                self.assertIsNotNone(m_old, f"pdp-price-old missing in discounted product {slug}.html")
+                pdp_old_text = m_old.group(1).strip()
+                self.assertTrue(pdp_old_text.endswith('₺'), f"pdp-price-old format must end with ₺: {pdp_old_text}")
+                pdp_old_val = float(pdp_old_text.replace('₺', '').strip().replace('.', '').replace(',', '.'))
+                self.assertAlmostEqual(pdp_old_val, float(p['original_price_try']), places=2,
+                                       msg=f"Old price mismatch in {slug}: PDP={pdp_old_val}, JSON={p['original_price_try']}")
+            else:
+                self.assertIsNone(m_old, f"pdp-price-old should not exist in non-discounted product {slug}.html")
 
 if __name__ == '__main__':
     unittest.main()

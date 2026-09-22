@@ -350,6 +350,35 @@ def init_db():
         )
     ''')
 
+    # Trend Hunter: Store Products Turkey Price Comparison & Undervaluation Alerts (Subagent 6)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS trend_price_comparisons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT NOT NULL,
+            sku TEXT UNIQUE NOT NULL,
+            product_name TEXT NOT NULL,
+            category_id TEXT,
+            image_url TEXT,
+            pozitron_price_try REAL NOT NULL,
+            turkey_min_price_try REAL,
+            turkey_avg_price_try REAL,
+            cheapest_vendor TEXT,
+            in_stock_vendors_count INTEGER DEFAULT 0,
+            out_of_stock_vendors_count INTEGER DEFAULT 0,
+            stale_prices_ignored_json TEXT,
+            price_diff_try REAL DEFAULT 0,
+            price_diff_pct REAL DEFAULT 0,
+            status TEXT NOT NULL,
+            warning_level TEXT DEFAULT 'NONE',
+            warning_message TEXT,
+            recommended_price_try REAL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_trend_price_sku ON trend_price_comparisons(sku)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_trend_price_status ON trend_price_comparisons(status)")
+
     # Technical Documentation & SEO Articles Table (Subagent 4)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS seo_articles (

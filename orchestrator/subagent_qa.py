@@ -803,10 +803,15 @@ class QASentinelAgent:
                 total_trends = cursor.execute("SELECT count(*) FROM global_trend_proposals").fetchone()[0]
                 result["subagents"]["trend_hunter"]["count"] = total_trends
                 result["subagents"]["trend_hunter"]["last_run_at"] = tr_dict.get('created_at')
+                cursor.execute("SELECT count(*) FROM trend_price_comparisons WHERE status = 'TOO_CHEAP_ALERT'")
+                too_cheap_c = cursor.fetchone()[0]
                 result["subagents"]["trend_hunter"]["details"] = {
                     "latest_trend_name": tr_dict.get('name_tr'),
-                    "trend_score": tr_dict.get('trend_score', 0)
+                    "trend_score": tr_dict.get('trend_score', 0),
+                    "too_cheap_warnings": too_cheap_c
                 }
+                if too_cheap_c > 0:
+                    result["subagents"]["trend_hunter"]["issues"].append(f"{too_cheap_c} üründe aşırı ucuz fiyat uyarısı tespit edildi.")
             else:
                 result["subagents"]["trend_hunter"]["status"] = "DEGRADED"
                 result["issues"].append("Subagent 6 Trend Avcisi henuz bir donanim onerisi uretmemis.")

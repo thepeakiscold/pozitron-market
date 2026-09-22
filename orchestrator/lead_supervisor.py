@@ -94,9 +94,11 @@ class LeadSupervisorAgent:
         # Step 1: Subagent 5 Price Intelligence Scan
         price_report = self.price_agent.scan_market(lead_cycle_id=cycle_id)
 
-        # Step 2: Subagent 6 Global Trend Scan (keep pipeline populated)
+        # Step 2: Subagent 6 Global Trend Scan & Store Price Warnings
+        trend_summary = {}
         try:
             self.trend_agent.scan_global_trends(limit=2)
+            trend_summary = self.trend_agent.get_price_warning_summary()
         except Exception as e:
             print(f"[Lead Supervisor] Trend hunt notice: {e}")
 
@@ -195,7 +197,13 @@ class LeadSupervisorAgent:
             "instagram_directive": instagram_directive,
             "reddit_directive": reddit_directive,
             "seo_content_directive": seo_content_directive,
-            "price_action_flags": price_action_flags
+            "price_action_flags": price_action_flags,
+            "trend_price_warnings": {
+                "too_cheap_count": trend_summary.get("too_cheap_count", 0),
+                "critical_count": trend_summary.get("critical_count", 0),
+                "stale_prices_ignored": trend_summary.get("total_stale_prices_ignored", 0),
+                "status": "ALERT" if trend_summary.get("too_cheap_count", 0) > 0 else "HEALTHY"
+            }
         }
 
         # Autonomously apply bestseller promotion for top price advantage products
