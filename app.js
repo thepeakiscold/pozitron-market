@@ -2600,7 +2600,11 @@ class PozitronApp {
         this.showToast('Doğrulama kodu e-posta adresinize gönderildi!', 'success');
       } else {
         if (errEl) {
-          errEl.textContent = data.error || 'Şifre sıfırlama kodu gönderilemedi.';
+          if (data.is_google_user) {
+            errEl.innerHTML = `<div style="line-height:1.4; margin-bottom:8px;"><strong>${this.escapeHTML(data.error)}</strong></div><button type="button" class="btn-primary" style="padding:6px 14px; font-size:0.8rem; width:auto;" onclick="window.app && window.app.hideForgotPassword()">← Giriş Ekranına Dön</button>`;
+          } else {
+            errEl.textContent = data.error || 'Şifre sıfırlama kodu gönderilemedi.';
+          }
           errEl.style.display = 'block';
         }
       }

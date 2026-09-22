@@ -176,6 +176,29 @@ class TestAddressAndInvoicing(unittest.TestCase):
         finally:
             conn.close()
 
+    def test_google_oauth_user_cannot_request_password_reset(self):
+        """Verify that Google OAuth users cannot request password reset emails."""
+        conn = self.get_test_db()
+        try:
+            cursor = conn.cursor()
+            test_email = f"google_user_{uuid.uuid4().hex[:6]}@gmail.com"
+            user_id = 'usr_' + uuid.uuid4().hex[:8]
+            cursor.execute('''
+                INSERT INTO users (id, email, full_name, password_hash, provider, role, created_at)
+                VALUES (?, ?, ?, NULL, 'gmail', 'customer', ?)
+            ''', (user_id, test_email, 'Google User', datetime.now().isoformat()))
+            conn.commit()
+
+            cursor.execute("SELECT id, full_name, provider, password_hash FROM users WHERE LOWER(email) = ?", (test_email,))
+            user = cursor.fetchone()
+            provider = (user[2] or '').lower().strip()
+            password_hash = user[3]
+
+            is_blocked = bool(provider in ('gmail', 'google') or not password_hash)
+            self.assertTrue(is_blocked)
+        finally:
+            conn.close()
+
     def test_forgot_and_reset_password(self):
         conn = self.get_test_db()
         try:

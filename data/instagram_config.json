@@ -2,7 +2,7 @@
   "posting_frequency_hours": 2,
   "daily_engagement_limit": 10,
   "is_autonomous_enabled": 1,
-  "dry_run_mode": 1,
+  "dry_run_mode": 0,
   "public_base_url": "https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main",
   "preferred_language": "tr",
   "default_hashtags": "#fpvturkey #fpvdrone #pozitronmarket #dronetopla #fpvpilot #fpvracing #betafpv #iflight #tmotor #teknofest",
@@ -18,7 +18,7 @@
     "fpvfreestyle",
     "fpvracing"
   ],
-  "updated_at": "2026-09-22T21:47:27.070305",
+  "updated_at": "2026-09-22T21:48:42.605544",
   "last_run_at": "2026-09-22T21:47:25.715527",
   "next_run_at": "2026-09-22T23:47:25.715527",
   "story_enabled": 1,

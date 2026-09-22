@@ -3005,8 +3005,25 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(400, {"error": "Geçerli bir e-posta adresi giriniz."})
                 return
 
-            cursor.execute("SELECT id, full_name FROM users WHERE LOWER(email) = ?", (email,))
+            cursor.execute("SELECT id, full_name, provider, password_hash FROM users WHERE LOWER(email) = ?", (email,))
             user = cursor.fetchone()
+
+            if not user:
+                conn.close()
+                self.send_json(404, {"error": "Bu e-posta adresiyle kayıtlı bir hesap bulunamadı."})
+                return
+
+            provider = (user[2] or '').lower().strip()
+            password_hash = user[3]
+
+            # Google / Gmail OAuth users have no password; prevent sending reset codes
+            if provider in ('gmail', 'google') or not password_hash:
+                conn.close()
+                self.send_json(400, {
+                    "error": "Bu hesap Google ile kayıt olmuştur ve şifresi bulunmamaktadır. Lütfen 'Google ile Giriş Yap' butonunu kullanarak giriş yapınız.",
+                    "is_google_user": True
+                })
+                return
 
             # Generate 6-digit code
             code = str(random.randint(100000, 999999))

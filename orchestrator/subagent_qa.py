@@ -1135,7 +1135,7 @@ KURALLAR:
                 # 2. Enforce live autonomous mode and ensure active drone subreddits are monitored
                 cursor.execute("""
                     UPDATE reddit_agent_config 
-                    SET subreddits = 'fpv, drones, teknoloji, Turkey, AskTurkey, multicopter',
+                    SET subreddits = 'fpv, drones, teknoloji, Turkey, AskTurkey, multicopter, bilim',
                         is_autonomous_enabled = 1, 
                         dry_run_mode = 0, 
                         updated_at = ? 

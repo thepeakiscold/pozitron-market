@@ -760,6 +760,25 @@
     "created_at": "2026-09-22T18:33:00.654689"
   },
   {
+    "id": "d3dabc5e65ff",
+    "reddit_id": "t3_1wni6tq",
+    "reddit_type": "submission",
+    "title": "Flight in rain or snow",
+    "body": "Hi everyone, I’d like to ask a question. I have a DJI Lito 1 and I want to know if anyone has flown it in the rain or snow—what was it like, and would you recommend it? I don't want to ruin it.",
+    "author": "Spiritual_Prior9465",
+    "subreddit": "drones",
+    "url": "https://www.reddit.com/r/drones/comments/1wni6tq/flight_in_rain_or_snow/",
+    "permalink": "https://reddit.com/r/drones/comments/1wni6tq/flight_in_rain_or_snow/",
+    "question_summary": "Flight in rain or snow",
+    "gemini_reply": "Hey there! If you are getting started or picking your first drone setup, here are key tips:\n\n1. **Simulator First:** Before buying a complete quad, get an ELRS radio controller (e.g. RadioMaster Pocket) and log 15-20 hours in a simulator (Liftoff, Velocidrone). It saves a lot of repair money.\n2. **Tiny Whoop vs 5-inch:** For indoor practice and durability, a 1S Tiny Whoop (like BetaFPV Meteor65/75 or Mobula6/7) is the safest starting point.\n3. **Weight & Regulations:** Sub-250g quads have fewer regulatory restrictions in most countries.\n\nFeel free to share your budget and what kind of flying you want to do!\n\n*Fly safe and happy flying! [POZITRON MARKET]*",
+    "status": "failed",
+    "confidence_score": 88,
+    "upvotes": 1,
+    "error_message": "Yorum yazma alani (shreddit-composer RTE) bulunamadi.",
+    "published_at": null,
+    "created_at": "2026-09-22T21:48:50.751950"
+  },
+  {
     "id": "d3413ac65c29",
     "reddit_id": "t3_sample_1790025169_3",
     "reddit_type": "submission",
@@ -853,6 +872,25 @@
     "error_message": "Reddit Yanıt Kodu 401: {\"success\":false,\"error\":{\"reason\":\"UNAUTHORIZED\",\"explanation\":\"This server could not verify that you are authorized to access the document you requested.\"}}\n",
     "published_at": null,
     "created_at": "2026-09-20T08:13:01.739841"
+  },
+  {
+    "id": "ce7b5489c825",
+    "reddit_id": "t3_sample_1790103155_2",
+    "reddit_type": "submission",
+    "title": "RadioMaster Pocket ile BetaFPV ELRS alıcıyı eşleştiremiyorum (binding sorunu)",
+    "body": "Merhabalar, ExpressLRS 2.4GHz alıcımda ve kumandamda aynı binding phrase'i tanımlamama rağmen alıcı yeşil ışığı hızlı yanıp sönüyor ve bağlanmıyor. Alıcı firmware sürümü 3.x, kumanda da 3.3. UART portları doğru TX->RX lehimlendi. Neyi atlıyor olabilirim?",
+    "author": "GokturkDrone",
+    "subreddit": "droneturkey",
+    "url": "https://reddit.com/r/droneturkey/comments/sample_2",
+    "permalink": "https://reddit.com/r/droneturkey/comments/sample_2",
+    "question_summary": "RadioMaster Pocket ile BetaFPV ELRS alıcıyı eşleştiremiyorum (binding sorunu)",
+    "gemini_reply": "Selamlar! FPV donanım ve yazılım arızalarında adım adım çözüm adımları:\n\n1. **Bağlantılar & Donanım:** Multimetre ile kısa devre (continuity) kontrolü yap. Lehim noktalarının parlak, temiz ve komşu pinlerle temas etmediğinden emin ol.\n2. **Betaflight Ports & Alıcı:** Ports sekmesinde alıcının bağlı olduğu UART portunda 'Serial RX' açık olmalı. Receiver sekmesinde doğru protokolün (CRSF/SBUS vb.) seçildiğini doğrula.\n3. **Güç & Duman Testi:** İlk güç vermeden önce mutlaka duman önleyici (Smoke Stopper) kullan. Parçaların çalışma voltaj aralığının (örn. 1S-6S) besleme kaynağıyla tam uyumlu olduğunu kontrol et.\n\nKullandığın uçuş kartı modelini veya hata detayını paylaşırsan adım adım çözüme ulaşabiliriz.\n\nİyi uçuşlar ve kırımsız günler!",
+    "status": "archived",
+    "confidence_score": 88,
+    "upvotes": 5,
+    "error_message": "Demo/ornek soru canli Reddit'te bulunmuyor.",
+    "published_at": null,
+    "created_at": "2026-09-22T21:52:38.436931"
   },
   {
     "id": "ce7510270b92",
@@ -2147,6 +2185,25 @@
     "created_at": "2026-09-20T20:24:12.236168"
   },
   {
+    "id": "8dbdfad2690b",
+    "reddit_id": "t3_sample_1790103155_1",
+    "reddit_type": "submission",
+    "title": "5 inç freestyle FPV drone için 4S mi yoksa 6S batarya mı tercih etmeliyim?",
+    "body": "Yeni başlayan bir pilotum. Betaflight üzerinden 5 inçlik bir quad topluyorum. Motor KV değerleri ile batarya voltajı ilişkisini tam oturtamadım. Sizce 4S 2400KV mi yoksa 6S 1750KV mi toplamalıyım? Avantaj ve dezavantajları nelerdir?",
+    "author": "PilotCenk_FPV",
+    "subreddit": "fpvturkey",
+    "url": "https://reddit.com/r/fpvturkey/comments/sample_1",
+    "permalink": "https://reddit.com/r/fpvturkey/comments/sample_1",
+    "question_summary": "5 inç freestyle FPV drone için 4S mi yoksa 6S batarya mı tercih etmeliyim?",
+    "gemini_reply": "Selamlar! Drone ve FPV bataryalarının güvenliği ve uzun ömrü için dikkat edilmesi gereken kritik noktalar:\n\n1. **Hücre Başına Voltaj:** Uçuş sırasında hücre voltajını asla 3.5V altına düşürme (ideal iniş 3.6V-3.7V). Tam dolu hücre 4.20V (LiHV ise 4.35V) olmalıdır.\n2. **Depolama (Storage):** Bataryaları birkaç günden fazla tam dolu ya da tamamen boş bırakma. Şarj aletinden 'Storage' modunu açarak hücreleri 3.80V-3.85V seviyesine getir.\n3. **Şarj Akımı:** Pil sağlığı için standart olarak 1C şarj akımını geçmemeye özen göster (örneğin 1500mAh bir batarya için en fazla 1.5A).\n\nBalans kablolarını ve hücreler arası voltaj farkını düzenli kontrol etmeyi unutma.\n\nİyi uçuşlar ve kırımsız günler!",
+    "status": "archived",
+    "confidence_score": 88,
+    "upvotes": 5,
+    "error_message": "Demo/ornek soru canli Reddit'te bulunmuyor.",
+    "published_at": null,
+    "created_at": "2026-09-22T21:52:37.251220"
+  },
+  {
     "id": "8d8d6a980688",
     "reddit_id": "t3_1wdck13",
     "reddit_type": "submission",
@@ -2316,6 +2373,25 @@
     "error_message": "Demo/ornek soru canli Reddit'te bulunmuyor.",
     "published_at": null,
     "created_at": "2026-09-22T18:02:23.061111"
+  },
+  {
+    "id": "87fea0134964",
+    "reddit_id": "t3_sample_1790103155_3",
+    "reddit_type": "submission",
+    "title": "TEKNOFEST İHA kategorisi için hafif karbon fiber frame ve motor önerisi olan var mı?",
+    "body": "Takım olarak bu seneki TEKNOFEST yarışmasına hazırlanıyoruz. 500 gram altı kalacak şekilde güçlü itki veren motor ve dayanıklı frame arıyoruz. Türkiye'de parça tedariğini hızlı yapabileceğimiz güvenilir yerli kaynak ve önerileriniz var mıdır?",
+    "author": "MuhendisAdayi24",
+    "subreddit": "teknoloji",
+    "url": "https://reddit.com/r/teknoloji/comments/sample_3",
+    "permalink": "https://reddit.com/r/teknoloji/comments/sample_3",
+    "question_summary": "TEKNOFEST İHA kategorisi için hafif karbon fiber frame ve motor önerisi olan var mı?",
+    "gemini_reply": "Selamlar! Drone dünyasına adım atarken ya da bütçene en uygun tercihi yaparken dikkat etmeni önereceğim temel noktalar:\n\n1. **Kullanım Amacı & Sınıf:** Amacın sabit kadraj, manzara ve pratik video çekimi ise hazır GPS/gimbal donanımlı modeller (örneğin DJI Mini serisi) uygundur. Eğer serbest akrobasi, hız ve tam kontrol (FPV) istiyorsan kapalı mekanlarda kırılmadan antrenman yaptıran bir Whoop kiti (örneğin BetaFPV Cetus / Meteor serisi) çok daha doğru bir ilk adımdır.\n2. **Simülatör Önceliği:** FPV uçuşu düşünüyorsan drone'dan önce bilgisayara bağlanan ELRS destekli bir kumanda edinip (RadioMaster Pocket vb.) simülatörde (Velocidrone, Liftoff) 15-20 saat uçmak kırım masraflarını sıfıra indirir.\n3. **500 Gram Kuralı:** 500g altı mikro modeller hobi uçuşlarında SHGM kayıt zorunluluğu bakımından çok daha esnektir.\n\nTam olarak bütçeni ve nasıl bir uçuş deneyimi hedeflediğini paylaşırsan doğrudan parça veya model bazında liste çıkarabilirim.\n\nİyi uçuşlar ve kırımsız günler!",
+    "status": "archived",
+    "confidence_score": 88,
+    "upvotes": 5,
+    "error_message": "Demo/ornek soru canli Reddit'te bulunmuyor.",
+    "published_at": null,
+    "created_at": "2026-09-22T21:52:39.614573"
   },
   {
     "id": "875a9b630d48",
