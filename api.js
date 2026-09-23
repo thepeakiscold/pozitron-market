@@ -26,7 +26,13 @@
       // 2. Custom configured URL from localStorage (for production / custom testing)
       const customUrl = localStorage.getItem(this.storageKey);
       if (customUrl && customUrl.trim()) {
-        this.baseUrl = customUrl.trim().replace(/\/+$/, '');
+        const trimmed = customUrl.trim().replace(/\/+$/, '');
+        if (trimmed.includes('onrender.com')) {
+          localStorage.removeItem(this.storageKey);
+          this.baseUrl = DEFAULT_CLOUD_API;
+          return;
+        }
+        this.baseUrl = trimmed;
         return;
       }
 
