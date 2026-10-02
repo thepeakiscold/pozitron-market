@@ -710,7 +710,9 @@ class QASentinelAgent:
                 "lead_supervisor": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
                 "lead_evolution": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
                 "trend_hunter": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
-                "procurement": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []}
+                "procurement": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
+                "cyber_security": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
+                "media_inspector": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []}
             },
             "issues": []
         }
@@ -895,6 +897,40 @@ class QASentinelAgent:
                     result["subagents"]["procurement"]["status"] = "DEGRADED"
                     result["subagents"]["procurement"]["fresh"] = False
                     result["issues"].append("Subagent 8 Siparis & Tedarik plani henuz olusturulmamis.")
+
+            # 7. Subagent 9: Cyber Security Sentinel
+            if not is_subagent_enabled("subagent_9_security"):
+                result["subagents"]["cyber_security"]["status"] = "DISABLED"
+            else:
+                cursor.execute("SELECT * FROM security_audit_logs ORDER BY created_at DESC LIMIT 1")
+                sec_row = cursor.fetchone()
+                if sec_row:
+                    s_dict = dict(sec_row)
+                    score = s_dict.get('score', 100)
+                    result["subagents"]["cyber_security"]["count"] = 1
+                    result["subagents"]["cyber_security"]["last_run_at"] = s_dict.get('created_at')
+                    result["subagents"]["cyber_security"]["details"] = {
+                        "score": score,
+                        "status": s_dict.get('status'),
+                        "summary": s_dict.get('summary')
+                    }
+                    if score < 70:
+                        result["subagents"]["cyber_security"]["status"] = "DEGRADED"
+                        result["subagents"]["cyber_security"]["issues"].append(f"Guvenlik skoru dusuk ({score}/100).")
+                else:
+                    result["subagents"]["cyber_security"]["status"] = "HEALTHY"
+
+            # 8. Subagent 10: Product Media & Content Inspector
+            if not is_subagent_enabled("subagent_10_media"):
+                result["subagents"]["media_inspector"]["status"] = "DISABLED"
+            else:
+                cursor.execute("SELECT count(*) FROM product_media_audits")
+                m_count = cursor.fetchone()[0]
+                result["subagents"]["media_inspector"]["count"] = m_count
+                result["subagents"]["media_inspector"]["status"] = "HEALTHY"
+                result["subagents"]["media_inspector"]["details"] = {
+                    "audited_products_count": m_count
+                }
 
             conn.close()
 

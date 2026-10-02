@@ -16,6 +16,8 @@ from .subagent_seo import TechnicalSeoAgent
 from .subagent_trend_hunter import GlobalTrendHunterAgent
 from .subagent_qa import QASentinelAgent
 from .subagent_procurement import ProcurementOrderAgent
+from .subagent_security import CyberSecurityAgent
+from .subagent_media_inspector import ProductMediaInspectorAgent
 from database import is_subagent_enabled
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pozitron.db')
@@ -35,6 +37,8 @@ class LeadSupervisorAgent:
     - Subagent 6 (Global Trend Hunter) onerilerini degerlendirir ve onaylayip magazaya ekler.
     - Subagent 7 (QA Sentinel) denetim sonuclarini takip eder ve sistem sagligini guvenceye alir.
     - Subagent 8 (Procurement Order Agent) stok ve marj analizine gore siparis listesi olusturur.
+    - Subagent 9 (Cyber Security Sentinel) WAF, SSL, Brute Force ve Webhook butunlugunu denetler.
+    - Subagent 10 (Product Media & Content Inspector) gorsel ve aciklama kalitesini kontrol eder.
     """
     def __init__(self):
         self.model_code = "gemini-3.8-flash"
@@ -45,6 +49,8 @@ class LeadSupervisorAgent:
         self.trend_agent = GlobalTrendHunterAgent()
         self.qa_agent = QASentinelAgent()
         self.procurement_agent = ProcurementOrderAgent()
+        self.security_agent = CyberSecurityAgent()
+        self.media_agent = ProductMediaInspectorAgent()
         self.current_directive: Optional[Dict] = None
         self._load_latest_directive()
 
@@ -235,6 +241,33 @@ class LeadSupervisorAgent:
             except Exception as e:
                 print(f"[Lead Supervisor] Procurement order notice: {e}")
 
+        # Step 10: Trigger Subagent 9 Cyber Security Audit
+        security_summary = {}
+        if is_subagent_enabled("subagent_9_security"):
+            try:
+                sec_audit = self.security_agent.run_full_security_audit()
+                security_summary = {
+                    "score": sec_audit.get("score", 100),
+                    "status": sec_audit.get("status", "SECURE"),
+                    "probes_passed": sec_audit.get("probes_passed", 6),
+                    "findings_count": sec_audit.get("findings_count", 0)
+                }
+            except Exception as e:
+                print(f"[Lead Supervisor] Security audit notice: {e}")
+
+        # Step 11: Trigger Subagent 10 Product Media & Copy Inspection
+        media_summary = {}
+        if is_subagent_enabled("subagent_10_media"):
+            try:
+                media_audit = self.media_agent.scan_all_products(limit=50)
+                media_summary = {
+                    "visual_health_score": media_audit.get("visual_health_score", 100),
+                    "quarantine_candidates": media_audit.get("quarantine_candidates_count", 0),
+                    "issues": media_audit.get("issues_summary", {})
+                }
+            except Exception as e:
+                print(f"[Lead Supervisor] Media inspector notice: {e}")
+
         directive_payload = {
             "lead_cycle_id": cycle_id,
             "timestamp": now_iso,
@@ -243,6 +276,8 @@ class LeadSupervisorAgent:
             "reddit_directive": reddit_directive,
             "seo_content_directive": seo_content_directive,
             "procurement_summary": procurement_summary,
+            "security_summary": security_summary,
+            "media_summary": media_summary,
             "price_action_flags": price_action_flags,
             "trend_price_warnings": {
                 "too_cheap_count": trend_summary.get("too_cheap_count", 0),

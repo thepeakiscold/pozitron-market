@@ -930,6 +930,113 @@
       padding: 20px;
       margin-top: 16px;
     }
+  
+    /* ========================================================================= */
+    /* Vertical Subgroup Pipeline Styles                                         */
+    /* ========================================================================= */
+    .n8n-nodes-wrapper.vertical-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      min-width: 900px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 20px 60px 20px;
+      pointer-events: none;
+    }
+    .n8n-subgroup-layer {
+      background: rgba(11, 19, 38, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 16px 20px;
+      position: relative;
+      pointer-events: auto;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .n8n-subgroup-layer:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(13, 23, 46, 0.85);
+    }
+    .n8n-subgroup-layer.filtered-out {
+      opacity: 0.2;
+      filter: grayscale(80%);
+    }
+    .n8n-subgroup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .n8n-subgroup-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .n8n-subgroup-nodes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      align-items: stretch;
+    }
+    .n8n-port-dot-top {
+      position: absolute;
+      top: -6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #060a12;
+      z-index: 10;
+      transform: translateX(-50%);
+    }
+    .n8n-port-dot-bottom {
+      position: absolute;
+      bottom: -6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #060a12;
+      z-index: 10;
+      transform: translateX(-50%);
+    }
+    .btn-n8n-filter {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      color: #94a3b8;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-n8n-filter:hover {
+      background: #1e293b;
+      color: #38bdf8;
+      border-color: #38bdf8;
+    }
+    .btn-n8n-filter.active {
+      background: #0284c722;
+      color: #38bdf8;
+      border-color: #38bdf8;
+      font-weight: 700;
+    }
+    .media-thumb-preview {
+      width: 52px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #020617;
+    }
+    
   </style>
   <script>
     if (window.location.pathname.endsWith('.html')) {
@@ -1022,6 +1129,16 @@
       <button type="button" class="bots-nav-tab" id="tab-btn-daemon" onclick="switchBotsTab('daemon')">
         <span class="tab-dot"></span>
         <span>Arka Plan Servisi</span>
+      </button>
+
+      <button type="button" class="bots-nav-tab" id="tab-btn-security" onclick="switchBotsTab('security')">
+        <span class="tab-dot"></span>
+        <span>🔒 Siber Güvenlik</span>
+      </button>
+
+      <button type="button" class="bots-nav-tab" id="tab-btn-media" onclick="switchBotsTab('media')">
+        <span class="tab-dot"></span>
+        <span>🖼️ Medya &amp; Kalite</span>
       </button>
 
     </div>
@@ -2131,6 +2248,18 @@
           </div>
           <span style="margin-left:auto; color:#64748b; font-size:0.68rem;">💡 Düğümlere veya hatlara tıklayarak filtreleyin</span>
         </div>
+        <!-- Subgroup & Layer Filter Tabs -->
+        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:0.72rem; font-weight:700; color:#94a3b8;">Hızlı Katman Filtresi:</span>
+          <button type="button" class="btn-n8n-filter active" id="btn-flt-all" onclick="filterPipelineLayer('all')">Tüm Mimari (6 Katman &amp; 22 Düğüm)</button>
+          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_triggers" onclick="filterPipelineLayer('grp_triggers')">1. Tetikleyiciler</button>
+          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_infrastructure" onclick="filterPipelineLayer('grp_infrastructure')">2. Bulut &amp; Sunucular</button>
+          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_security_services" onclick="filterPipelineLayer('grp_security_services')">3. Güvenlik &amp; Ödeme</button>
+          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_orchestration_quality" onclick="filterPipelineLayer('grp_orchestration_quality')">4. Zeka &amp; Kalite</button>
+          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_commerce_supply" onclick="filterPipelineLayer('grp_commerce_supply')">5. Ticaret &amp; Tedarik</button>
+          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_marketing_distribution" onclick="filterPipelineLayer('grp_marketing_distribution')">6. Dağıtım &amp; PR</button>
+          <span style="margin-left:auto; color:#64748b; font-size:0.68rem;">💡 Düğüm üzerine gelerek sinyal odaklama yapın</span>
+        </div>
       </div>
 
       <!-- n8n Interactive Canvas -->
@@ -2600,6 +2729,201 @@
       </div>
     </section>
 
+  
+    <!-- ===================================================================== -->
+    <!-- SECTION 8: CYBER SECURITY SENTINEL (SUBAGENT 9)                       -->
+    <!-- ===================================================================== -->
+    <section id="pane-security" style="display:none;">
+      
+      <div class="bots-card" style="background:#090f1e; border-color:#0284c7;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="status-pill status-pill-active">Subagent 9</span>
+              <span class="status-pill" style="background:#10b98122; color:#10b981; border:1px solid #10b98144;">GÜVENLİ &amp; SAVUNMADA</span>
+              <h2 style="font-size:1.25rem; font-weight:800; margin:0; color:#ffffff; font-family:var(--font-heading);">
+                Siber Güvenlik ve Savunma Sentineli
+              </h2>
+            </div>
+            <p class="card-desc" style="max-width:850px;">
+              WAF, kaba kuvvet (brute-force) koruması, SQL Injection &amp; XSS filtre denetimi, PayTR HMAC-SHA256 webhook doğrulaması ve SSL süre takibi.
+            </p>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button type="button" class="btn-action btn-success" onclick="runSecurityScan()" id="btn-run-sec-scan">
+              <span>⚡ Şimdi Güvenlik Taraması Başlat</span>
+            </button>
+            <button type="button" class="btn-action btn-secondary" onclick="loadSecurityData()">
+              <span>Yenile</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security KPI Stats -->
+      <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:18px;">
+        <div class="kpi-card" style="border-top:3px solid #10b981;">
+          <div class="kpi-title">Güvenlik Sağlık Skoru</div>
+          <div class="kpi-value" id="sec-score" style="color:#10b981;">%100</div>
+          <div class="kpi-sub" id="sec-status">Durum: GÜVENLİ (SECURE)</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #38bdf8;">
+          <div class="kpi-title">Başarılı Güvenlik Probu</div>
+          <div class="kpi-value" id="sec-probes" style="color:#38bdf8;">6 / 6</div>
+          <div class="kpi-sub">WAF, SQLi, XSS, PayTR, Token, SSL</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #f59e0b;">
+          <div class="kpi-title">Tespit Edilen Zafiyet</div>
+          <div class="kpi-value" id="sec-findings" style="color:#f59e0b;">0 Kritik</div>
+          <div class="kpi-sub">İstemci ve API parametreleri temiz</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #8b5cf6;">
+          <div class="kpi-title">SSL / TLS &amp; Şifreleme</div>
+          <div class="kpi-value" style="color:#8b5cf6;">TLS 1.3</div>
+          <div class="kpi-sub">Let's Encrypt • Otomatik Yenileme</div>
+        </div>
+      </div>
+
+      <!-- Probes List Card -->
+      <div class="bots-card">
+        <div class="bots-card-header">
+          <div>
+            <h3 class="card-title">Aktif Siber Güvenlik ve Savunma Probları</h3>
+            <p class="card-desc">Sistem ve kod tabanı üzerinde periyodik olarak koşturulan güvenlik doğrulama testleri</p>
+          </div>
+          <span style="font-size:0.75rem; color:#94a3b8;" id="sec-last-scan-time">Son Tarama: --</span>
+        </div>
+
+        <div class="table-container">
+          <table class="clean-table">
+            <thead>
+              <tr>
+                <th>Prob Adı</th>
+                <th>Kapsam &amp; Açıklama</th>
+                <th>Durum</th>
+                <th>Ceza Puanı</th>
+                <th>Bulgular &amp; Notlar</th>
+              </tr>
+            </thead>
+            <tbody id="sec-probes-tbody">
+              <tr>
+                <td colspan="5" style="text-align:center; padding:24px; color:#64748b;">
+                  Güvenlik verileri yükleniyor...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 9: PRODUCT MEDIA & CONTENT QUALITY (SUBAGENT 10)              -->
+    <!-- ===================================================================== -->
+    <section id="pane-media" style="display:none;">
+      
+      <div class="bots-card" style="background:#090f1e; border-color:#0ea5e9;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="status-pill status-pill-active">Subagent 10</span>
+              <span class="status-pill" style="background:#0ea5e922; color:#0ea5e9; border:1px solid #0ea5e944;">VISION AI &amp; ASSET SOURCING</span>
+              <h2 style="font-size:1.25rem; font-weight:800; margin:0; color:#ffffff; font-family:var(--font-heading);">
+                Ürün Medya &amp; İçerik Kalite Denetleyicisi
+              </h2>
+            </div>
+            <p class="card-desc" style="max-width:850px;">
+              508 ürünün fotoğraflarını, çözünürlüklerini, pHash mükerrerliklerini ve kategori uyumluluğunu Vision AI ile denetler; üretici stüdyo görselleriyle otonom onarır.
+            </p>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="btn-action btn-secondary" onclick="runMediaScan(50)" id="btn-scan-media">
+              <span>🔍 Hızlı Tara (50 SKU)</span>
+            </button>
+            <button type="button" class="btn-action btn-secondary" onclick="runMediaScan(null)" id="btn-scan-media-full">
+              <span>⚡ Tüm Kataloğu Tara (508 SKU)</span>
+            </button>
+            <button type="button" class="btn-action btn-success" onclick="autoFixMedia(false)" id="btn-fix-media">
+              <span>🛠️ Karantinadaki Ürünleri Düzelt</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Media KPI Stats -->
+      <div class="kpi-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:18px;">
+        <div class="kpi-card" style="border-top:3px solid #38bdf8;">
+          <div class="kpi-title">Görsel Sağlık Skoru</div>
+          <div class="kpi-value" id="media-health-score" style="color:#38bdf8;">%--</div>
+          <div class="kpi-sub">Doğrulanmış Temiz Görsel Oranı</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #10b981;">
+          <div class="kpi-title">Taranan Toplam Ürün</div>
+          <div class="kpi-value" id="media-total-scanned" style="color:#10b981;">--</div>
+          <div class="kpi-sub">Pozitron Aktif Kataloğu</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #f59e0b;">
+          <div class="kpi-title">Mükerrer / Kopya Görseller</div>
+          <div class="kpi-value" id="media-dup-count" style="color:#f59e0b;">--</div>
+          <div class="kpi-sub">pHash ile aynı resmi paylaşanlar</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #ef4444;">
+          <div class="kpi-title">Karantina / İnceleme Bekleyen</div>
+          <div class="kpi-value" id="media-quarantine-count" style="color:#ef4444;">--</div>
+          <div class="kpi-sub">Bozuk, eksik veya uyuşmayan SKU</div>
+        </div>
+      </div>
+
+      <!-- Strategy & Professional E-Commerce Insight -->
+      <div class="bots-card" style="background:rgba(2,132,199,0.06); border-color:rgba(56,189,248,0.3);">
+        <h4 style="color:#38bdf8; margin:0 0 8px 0; font-size:0.92rem; display:flex; align-items:center; gap:8px;">
+          <span>💡 Profesyonel E-Ticaret Sitelerinde Görsel Yönetim Standardı (Amazon, Trendyol, GetFPV)</span>
+        </h4>
+        <p style="font-size:0.8rem; color:#cbd5e1; line-height:1.5; margin:0;">
+          <strong>Kök Neden:</strong> İnternet genelinde Bing aramasıyla indirilen görseller bazen yanlış yedek parçayı, blog afişini veya marka logosunu ilk sırada getirebilmektedir.<br>
+          <strong>Endüstri Standardı Çözüm:</strong> Profesyonel pazar yerleri doğrudan üreticilerin resmi dijital varlık yönetim (DAM) sistemlerinden beyaz fonlu stüdyo görselleri çeker, <strong>Gemini Flash Vision</strong> ile görseldeki nesneyi ürün kategorisiyle çapraz doğrular ve uyuşmayan fotoğrafları derhal karantinaya alır.
+        </p>
+      </div>
+
+      <!-- Quarantine & Correction Preview Table -->
+      <div class="bots-card">
+        <div class="bots-card-header">
+          <div>
+            <h3 class="card-title">Karantina &amp; Düzeltme Adayları Listesi (Öncesi / Sonrası)</h3>
+            <p class="card-desc">Hatalı görsel tespit edilen ürünler ve üretici kaynaklı stüdyo alternatifi önizlemesi</p>
+          </div>
+          <span style="font-size:0.75rem; color:#94a3b8;" id="media-last-scan-time">Son Tarama: --</span>
+        </div>
+
+        <div class="table-container" style="max-height:560px; overflow-y:auto;">
+          <table class="clean-table">
+            <thead style="position:sticky; top:0; z-index:10;">
+              <tr>
+                <th>SKU</th>
+                <th>Ürün Bilgisi</th>
+                <th>Kategori</th>
+                <th>Mevcut Görsel</th>
+                <th>Hata Türü</th>
+                <th>Önerilen Stüdyo Görseli</th>
+                <th>İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="media-quarantine-tbody">
+              <tr>
+                <td colspan="7" style="text-align:center; padding:30px; color:#64748b;">
+                  Medya denetim verileri yükleniyor...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
   </main>
 
   <!-- Toast Notification Popup -->
@@ -2652,7 +2976,12 @@
       const btnQa = document.getElementById('tab-btn-qa');
       const btnDaemon = document.getElementById('tab-btn-daemon');
 
-      [btnPipeline, btnOrch, btnTrend, btnProc, btnIg, btnReddit, btnQa, btnDaemon].forEach(b => {
+      const paneSecurity = document.getElementById('pane-security');
+      const paneMedia = document.getElementById('pane-media');
+      const btnSecurity = document.getElementById('tab-btn-security');
+      const btnMedia = document.getElementById('tab-btn-media');
+
+      [btnPipeline, btnOrch, btnTrend, btnProc, btnIg, btnReddit, btnQa, btnDaemon, btnSecurity, btnMedia].forEach(b => {
         if (b) b.classList.remove('active');
       });
 
@@ -2664,6 +2993,8 @@
       if (paneReddit) paneReddit.style.display = tabName === 'reddit' ? 'block' : 'none';
       if (paneQa) paneQa.style.display = tabName === 'qa' ? 'block' : 'none';
       if (paneDaemon) paneDaemon.style.display = tabName === 'daemon' ? 'block' : 'none';
+      if (paneSecurity) paneSecurity.style.display = tabName === 'security' ? 'block' : 'none';
+      if (paneMedia) paneMedia.style.display = tabName === 'media' ? 'block' : 'none';
 
       if (tabName === 'pipeline') {
         if (btnPipeline) btnPipeline.classList.add('active');
@@ -2689,6 +3020,12 @@
         loadQAData();
       } else if (tabName === 'daemon') {
         if (btnDaemon) btnDaemon.classList.add('active');
+      } else if (tabName === 'security') {
+        if (btnSecurity) btnSecurity.classList.add('active');
+        loadSecurityData();
+      } else if (tabName === 'media') {
+        if (btnMedia) btnMedia.classList.add('active');
+        loadMediaData();
       }
     }
 
@@ -2719,106 +3056,140 @@
 
     function renderN8nNodes(data) {
       if (!data || !data.nodes) return;
+      const container = document.getElementById('n8n-nodes-container');
+      if (!container) return;
 
-      const numCols = (data.columns && data.columns.length) || 6;
-      for (let i = 1; i <= numCols; i++) {
-        const col = document.getElementById(`n8n-col-${i}`);
-        if (col) {
-          let cardsContainer = col.querySelector('.n8n-column-cards');
-          if (!cardsContainer) {
-            cardsContainer = document.createElement('div');
-            cardsContainer.className = 'n8n-column-cards';
-            col.appendChild(cardsContainer);
-          } else {
-            cardsContainer.innerHTML = '';
-          }
-          if (data.columns && data.columns[i - 1]) {
-            const colDef = data.columns[i - 1];
-            const headerSpans = col.querySelectorAll('.n8n-column-header span');
-            if (headerSpans.length >= 2) {
-              headerSpans[0].textContent = colDef.name;
-              headerSpans[1].textContent = colDef.desc || '';
-            }
-          }
-        }
-      }
+      container.className = 'n8n-nodes-wrapper vertical-layout';
+      container.innerHTML = '';
 
-      data.nodes.forEach(node => {
-        const colId = node.column || 1;
-        const col = document.getElementById(`n8n-col-${colId}`);
-        if (!col) return;
-        const cardsContainer = col.querySelector('.n8n-column-cards') || col;
+      const subgroups = data.subgroups || [
+        { id: 'grp_triggers', name: '1. GİRİŞ & DIŞ TETİKLEYİCİLER', badge: '3 Tetikleyici', desc: 'Müşteri Trafiği, Sistem Cron & GitHub Actions CI/CD Tetikleyicileri', accent: '#10b981' },
+        { id: 'grp_infrastructure', name: '2. BULUT & SUNUCU ALTYAPISI', badge: '4 Sunucu & Veri', desc: 'GitHub Pages CDN, Hetzner VPS (Ubuntu 24.04), Nginx SSL Proxy & SQLite Veritabanı', accent: '#0284c7' },
+        { id: 'grp_security_services', name: '3. SİBER GÜVENLİK & DIŞ SERVİSLER', badge: '4 Güvenlik & Servis', desc: 'Siber Güvenlik Sentineli, PayTR Sanal POS, Google Gemini AI & Gmail SMTP', accent: '#f59e0b' },
+        { id: 'grp_orchestration_quality', name: '4. MERKEZİ İSTİHBARAT & KALİTE GÜVENCESİ', badge: '4 Yönetim & Kalite', desc: 'Lead Supervisor, QA Sentinel, Ürün Medya & İçerik Denetleyicisi, Telemetri', accent: '#0ea5e9' },
+        { id: 'grp_commerce_supply', name: '5. TİCARET, TEDARİK & FİYATLANDIRMA', badge: '3 Ticari Ajan', desc: 'Sipariş & Tedarik Optimizasyonu, Dinamik Fiyatlandırma & Küresel Trend Avcısı', accent: '#8b5cf6' },
+        { id: 'grp_marketing_distribution', name: '6. PAZARLAMA & DAĞITIM KANALLARI', badge: '4 Yayın Kanalı', desc: 'Instagram PR & Reels, SEO Dokümantasyon, Reddit Asistanı & Google Merchant Center', accent: '#f43f5e' }
+      ];
 
-        let topColor = '#38bdf8';
-        if (node.type === 'trigger') topColor = '#10b981';
-        else if (node.type === 'client') topColor = '#38bdf8';
-        else if (node.type === 'server') {
-          topColor = (node.id && node.id.includes('hetzner')) ? '#0284c7' : '#6366f1';
-        }
-        else if (node.type === 'service' || node.type === 'payment') {
-          topColor = (node.id && node.id.includes('paytr')) ? '#f59e0b' : '#a855f7';
-        }
-        else if (node.type === 'ai') topColor = '#10b981';
-        else if (node.id && node.id.includes('procurement')) topColor = '#10b981';
-        else if (node.id && node.id.includes('trend')) topColor = '#a855f7';
-        else if (node.type === 'sentinel' || (node.id && node.id.includes('qa'))) topColor = '#14b8a6';
-        else if (node.type === 'agent') topColor = '#6366f1';
-        else if (node.type === 'supervisor') topColor = '#0ea5e9';
-        else if (node.type === 'worker') {
-          if (node.id.includes('instagram')) topColor = '#f43f5e';
-          else if (node.id.includes('reddit')) topColor = '#ea580c';
-          else if (node.id.includes('qa')) topColor = '#14b8a6';
-          else topColor = '#0ea5e9';
-        } else if (node.type === 'destination') topColor = '#64748b';
+      subgroups.forEach(sg => {
+        const layerEl = document.createElement('div');
+        layerEl.className = 'n8n-subgroup-layer';
+        layerEl.id = `subgroup-${sg.id}`;
+        layerEl.dataset.subgroupId = sg.id;
+        layerEl.style.borderTop = `3px solid ${sg.accent || '#38bdf8'}`;
 
-        const isSelected = _selectedNodeId === node.id;
-        const isDisabled = node.status === 'disabled';
-
-        const card = document.createElement('div');
-        card.className = `n8n-node-card ${isSelected ? 'selected' : ''}`;
-        card.id = `node-${node.id}`;
-        card.onclick = () => selectN8nNode(node.id);
-        card.onmouseenter = () => onNodeHover(node.id, true);
-        card.onmouseleave = () => onNodeHover(node.id, false);
-
-        card.innerHTML = `
-          <div class="n8n-node-topbar" style="background:${topColor};"></div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span class="n8n-badge" style="background:${topColor}22; color:${topColor}; border:1px solid ${topColor}44;">
-              ${(node.tag || 'NODE').replace(/[\[\]]/g, '')}
-            </span>
-            <span class="status-dot ${isDisabled ? 'offline' : 'online'} ${node.status === 'running' || node.status === 'active' ? 'active-pulse' : ''}"></span>
+        layerEl.innerHTML = `
+          <div class="n8n-subgroup-header">
+            <div class="n8n-subgroup-title" style="color:#ffffff;">
+              <span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${sg.accent || '#38bdf8'}; box-shadow:0 0 10px ${sg.accent};"></span>
+              <span>${sg.name}</span>
+              <span class="n8n-badge" style="background:${sg.accent}22; color:${sg.accent}; border:1px solid ${sg.accent}55; font-size:0.68rem; margin-left:6px;">${sg.badge || ''}</span>
+            </div>
+            <span style="font-size:0.72rem; color:#94a3b8;">${sg.desc || ''}</span>
           </div>
-
-          <div class="n8n-card-title">
-            ${node.label}
-          </div>
-
-          <div class="n8n-card-desc" title="${node.category || ''}">
-            ${node.category}
-          </div>
-
-          <div class="n8n-card-footer">
-            <span style="color:#64748b;">DURUM:</span>
-            <span class="code-chip" style="font-size:0.65rem; padding:1px 5px; color:${isDisabled ? '#94a3b8' : topColor};">${(node.status_text || node.status || '').replace(/[\[\]]/g, '')}</span>
-          </div>
+          <div class="n8n-subgroup-nodes" id="subgroup-nodes-${sg.id}"></div>
         `;
 
-        cardsContainer.appendChild(card);
+        container.appendChild(layerEl);
+
+        const nodesGrid = layerEl.querySelector('.n8n-subgroup-nodes');
+        const nodesInGroup = data.nodes.filter(n => n.subgroup === sg.id || (sg.node_ids && sg.node_ids.includes(n.id)));
+
+        nodesInGroup.forEach(node => {
+          let topColor = '#38bdf8';
+          if (node.type === 'trigger') topColor = '#10b981';
+          else if (node.type === 'client') topColor = '#38bdf8';
+          else if (node.type === 'server') {
+            topColor = (node.id && node.id.includes('hetzner')) ? '#0284c7' : '#6366f1';
+          }
+          else if (node.type === 'service' || node.type === 'payment') {
+            topColor = (node.id && node.id.includes('paytr')) ? '#f59e0b' : '#a855f7';
+          }
+          else if (node.type === 'ai') topColor = '#10b981';
+          else if (node.type === 'security') topColor = '#10b981';
+          else if (node.type === 'media') topColor = '#0ea5e9';
+          else if (node.id && node.id.includes('procurement')) topColor = '#10b981';
+          else if (node.id && node.id.includes('trend')) topColor = '#a855f7';
+          else if (node.type === 'sentinel' || (node.id && node.id.includes('qa'))) topColor = '#14b8a6';
+          else if (node.type === 'agent') topColor = '#6366f1';
+          else if (node.type === 'supervisor') topColor = '#0ea5e9';
+          else if (node.type === 'marketing' || node.type === 'worker') {
+            if (node.id.includes('instagram')) topColor = '#f43f5e';
+            else if (node.id.includes('reddit')) topColor = '#ea580c';
+            else if (node.id.includes('seo')) topColor = '#818cf8';
+            else topColor = '#0ea5e9';
+          } else if (node.type === 'destination') topColor = '#64748b';
+
+          const isSelected = _selectedNodeId === node.id;
+          const isDisabled = node.status === 'disabled';
+
+          const card = document.createElement('div');
+          card.className = `n8n-node-card ${isSelected ? 'selected' : ''}`;
+          card.id = `node-${node.id}`;
+          card.onclick = () => selectN8nNode(node.id);
+          card.onmouseenter = () => onNodeHover(node.id, true);
+          card.onmouseleave = () => onNodeHover(node.id, false);
+
+          card.innerHTML = `
+            <div class="n8n-node-topbar" style="background:${topColor};"></div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span class="n8n-badge" style="background:${topColor}22; color:${topColor}; border:1px solid ${topColor}44;">
+                ${(node.tag || 'NODE').replace(/[\[\]]/g, '')}
+              </span>
+              <span class="status-dot ${isDisabled ? 'offline' : 'online'} ${node.status === 'running' || node.status === 'active' ? 'active-pulse' : ''}"></span>
+            </div>
+
+            <div class="n8n-card-title">
+              ${node.label}
+            </div>
+
+            <div class="n8n-card-desc" title="${node.category || ''}">
+              ${node.category}
+            </div>
+
+            <div class="n8n-card-footer">
+              <span style="color:#64748b;">DURUM:</span>
+              <span class="code-chip" style="font-size:0.65rem; padding:1px 5px; color:${isDisabled ? '#94a3b8' : topColor};">${(node.status_text || node.status || '').replace(/[\[\]]/g, '')}</span>
+            </div>
+          `;
+
+          nodesGrid.appendChild(card);
+        });
       });
     }
 
     function onNodeHover(nodeId, isEnter) {
-      if (_selectedNodeId) return; // don't override if a node is selected
+      if (_selectedNodeId) return;
       _hoveredNodeId = isEnter ? nodeId : null;
       if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
     }
 
-    function renderPortDot(cardEl, direction, fracY, type) {
+    function filterPipelineLayer(layerId) {
+      document.querySelectorAll('.btn-n8n-filter').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`btn-flt-${layerId}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const layers = document.querySelectorAll('.n8n-subgroup-layer');
+      layers.forEach(l => {
+        if (layerId === 'all' || l.dataset.subgroupId === layerId) {
+          l.classList.remove('filtered-out');
+          l.style.display = 'block';
+        } else {
+          l.classList.add('filtered-out');
+          l.style.display = 'none';
+        }
+      });
+
+      setTimeout(() => {
+        if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
+      }, 50);
+    }
+
+    function renderPortDot(cardEl, edge, frac, type) {
       const dot = document.createElement('div');
-      dot.className = `n8n-port-dot n8n-port-dot-${direction} n8n-dynamic-port`;
-      dot.style.top = `${fracY * 100}%`;
+      dot.className = `n8n-port-dot n8n-port-dot-${edge} n8n-dynamic-port`;
+      dot.style.left = `${frac * 100}%`;
 
       let col = '#38bdf8';
       if (type === 'trigger') col = '#10b981';
@@ -2828,6 +3199,7 @@
       else if (type === 'directive') col = '#38bdf8';
       else if (type === 'publish') col = '#f43f5e';
       else if (type === 'probe') col = '#14b8a6';
+      else if (type === 'security') col = '#10b981';
 
       dot.style.background = col;
       dot.style.boxShadow = `0 0 6px ${col}`;
@@ -2888,26 +3260,6 @@
         inConnsByNode[conn.to].push(conn);
       });
 
-      Object.keys(outConnsByNode).forEach(fromId => {
-        outConnsByNode[fromId].sort((a, b) => {
-          const elA = document.getElementById(`node-${a.to}`);
-          const elB = document.getElementById(`node-${b.to}`);
-          const yA = elA ? elA.getBoundingClientRect().top : 0;
-          const yB = elB ? elB.getBoundingClientRect().top : 0;
-          return yA - yB;
-        });
-      });
-
-      Object.keys(inConnsByNode).forEach(toId => {
-        inConnsByNode[toId].sort((a, b) => {
-          const elA = document.getElementById(`node-${a.from}`);
-          const elB = document.getElementById(`node-${b.from}`);
-          const yA = elA ? elA.getBoundingClientRect().top : 0;
-          const yB = elB ? elB.getBoundingClientRect().top : 0;
-          return yA - yB;
-        });
-      });
-
       const activeFilterId = _selectedNodeId || _hoveredNodeId;
 
       data.connections.forEach(conn => {
@@ -2915,8 +3267,11 @@
         const toEl = document.getElementById(`node-${conn.to}`);
         if (!fromEl || !toEl) return;
 
-        const fromNodeData = data.nodes.find(n => n.id === conn.from);
-        const toNodeData = data.nodes.find(n => n.id === conn.to);
+        // Skip if either layer is hidden
+        const fromLayer = fromEl.closest('.n8n-subgroup-layer');
+        const toLayer = toEl.closest('.n8n-subgroup-layer');
+        if (fromLayer && fromLayer.style.display === 'none') return;
+        if (toLayer && toLayer.style.display === 'none') return;
 
         const r1 = fromEl.getBoundingClientRect();
         const r2 = toEl.getBoundingClientRect();
@@ -2926,7 +3281,7 @@
         const outCount = outList.length;
         let outFrac = 0.5;
         if (outCount > 1) {
-          outFrac = 0.22 + (0.56 * outIdx) / (outCount - 1);
+          outFrac = 0.2 + (0.6 * outIdx) / (outCount - 1);
         }
 
         const inList = inConnsByNode[conn.to] || [conn];
@@ -2934,48 +3289,33 @@
         const inCount = inList.length;
         let inFrac = 0.5;
         if (inCount > 1) {
-          inFrac = 0.22 + (0.56 * inIdx) / (inCount - 1);
+          inFrac = 0.2 + (0.6 * inIdx) / (inCount - 1);
         }
-
-        const x1 = r1.right - canvasRect.left + scrollLeft;
-        const y1 = r1.top + r1.height * outFrac - canvasRect.top + scrollTop;
-
-        const x2 = r2.left - canvasRect.left + scrollLeft;
-        const y2 = r2.top + r2.height * inFrac - canvasRect.top + scrollTop;
 
         const isProbe = conn.type === 'probe' || (conn.from === 'subagent_7_qa' && conn.to !== 'lead_supervisor') || (conn.label && conn.label.toLowerCase().includes('probu'));
         const effectiveType = isProbe ? 'probe' : conn.type;
 
-        renderPortDot(fromEl, 'out', outFrac, effectiveType);
-        renderPortDot(toEl, 'in', inFrac, effectiveType);
+        // Out port at bottom of r1
+        const x1 = r1.left + r1.width * outFrac - canvasRect.left + scrollLeft;
+        const y1 = r1.bottom - canvasRect.top + scrollTop;
 
+        // In port at top of r2
+        const x2 = r2.left + r2.width * inFrac - canvasRect.left + scrollLeft;
+        const y2 = r2.top - canvasRect.top + scrollTop;
+
+        renderPortDot(fromEl, 'bottom', outFrac, effectiveType);
+        renderPortDot(toEl, 'top', inFrac, effectiveType);
+
+        const dy = Math.max(28, Math.abs(y2 - y1) * 0.45);
         let d = '';
-        const colFrom = (fromNodeData && fromNodeData.column) || 1;
-        const colTo = (toNodeData && toNodeData.column) || 1;
-
-        if (colTo - colFrom > 1) {
-          let maxBottom = Math.max(r1.bottom, r2.bottom);
-          for (let c = colFrom + 1; c < colTo; c++) {
-            const colEl = document.getElementById(`n8n-col-${c}`);
-            if (colEl) {
-              const colRect = colEl.getBoundingClientRect();
-              maxBottom = Math.max(maxBottom, colRect.bottom);
-            }
-          }
-          const bypassY = maxBottom - canvasRect.top + scrollTop + 32;
-          const rCurve = 20;
-
-          d = `M ${x1} ${y1} ` +
-              `C ${x1 + 35} ${y1}, ${x1 + 35} ${bypassY}, ${x1 + 35 + rCurve} ${bypassY} ` +
-              `L ${x2 - 35 - rCurve} ${bypassY} ` +
-              `C ${x2 - 35} ${bypassY}, ${x2 - 35} ${y2}, ${x2} ${y2}`;
-        } else if (colTo < colFrom || x2 <= x1) {
-          const loopY = Math.max(r1.bottom, r2.bottom) - canvasRect.top + scrollTop + 26;
-          d = `M ${x1} ${y1} C ${x1 + 25} ${y1}, ${x1 + 25} ${loopY}, ${x1} ${loopY} L ${x2} ${loopY} C ${x2 - 25} ${loopY}, ${x2 - 25} ${y2}, ${x2} ${y2}`;
+        if (y2 >= y1 - 15) {
+          // Direct downward vertical curve
+          d = `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
         } else {
-          const dist = Math.max(20, x2 - x1);
-          const dx = Math.min(dist * 0.45, Math.max(16, dist * 0.4));
-          d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+          // Side loopback curve
+          const isLeft = x1 < canvasRect.width / 2;
+          const loopX = isLeft ? Math.max(20, Math.min(x1, x2) - 40) : (canvasRect.width - 25);
+          d = `M ${x1} ${y1} C ${x1} ${y1 + 35}, ${loopX} ${y1 + 35}, ${loopX} ${(y1 + y2) / 2} C ${loopX} ${y2 - 35}, ${x2} ${y2 - 35}, ${x2} ${y2}`;
         }
 
         const isHighlighted = activeFilterId && (activeFilterId === conn.from || activeFilterId === conn.to);
@@ -3005,6 +3345,9 @@
         } else if (effectiveType === 'probe') {
           strokeColor = '#14b8a6';
           markerId = 'n8n-arrow-probe';
+        } else if (effectiveType === 'security') {
+          strokeColor = '#10b981';
+          markerId = 'n8n-arrow-trigger';
         }
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -3017,6 +3360,14 @@
         path.setAttribute('class', wireClasses);
         path.setAttribute('id', `wire-${conn.from}-${conn.to}`);
         path.style.stroke = strokeColor;
+        if (isDimmed) {
+          path.style.opacity = '0.06';
+          path.style.strokeWidth = '1';
+        } else if (isHighlighted) {
+          path.style.opacity = '1';
+          path.style.strokeWidth = '3.5';
+          path.style.filter = `drop-shadow(0 0 8px ${strokeColor})`;
+        }
         path.setAttribute('marker-end', isHighlighted ? 'url(#n8n-arrow-active)' : (isDimmed ? 'url(#n8n-arrow-dim)' : `url(#${markerId})`));
 
         const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
@@ -3970,7 +4321,9 @@
         'subagent_5_price': '🏷️',
         'subagent_6_trend': '🔍',
         'subagent_7_qa': '🛡️',
-        'subagent_8_procurement': '📦'
+        'subagent_8_procurement': '📦',
+        'subagent_9_security': '🔒',
+        'subagent_10_media': '🖼️'
       };
 
       const html = _subagentsConfig.map(s => {

@@ -1,0 +1,52 @@
+{
+  "timestamp": "2026-10-02T20:50:47.467217",
+  "total_products_scanned": 15,
+  "verified_clean_count": 13,
+  "visual_health_score": 86,
+  "issues_summary": {
+    "category_mismatch": 0,
+    "duplicate_images": 2,
+    "low_resolution": 0,
+    "corrupt_or_missing": 0,
+    "description_issues": 0
+  },
+  "quarantine_candidates_count": 2,
+  "findings": [
+    {
+      "product_id": "716dde25-4d11-4718-b6ac-e1e790e8faf9",
+      "sku": "PZTR-MOT-0012",
+      "name": "T-Motor F60 PRO V 2207.5 V2 Fırçasız FPV Drone Motoru (2550KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0012.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 136201,
+        "width": 940,
+        "height": 1051,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0001"
+      }
+    },
+    {
+      "product_id": "aa88b086-17df-4d92-aaab-c31f6d46ebf3",
+      "sku": "PZTR-MOT-0013",
+      "name": "EMAX ECO II 2207 V2 Fırçasız FPV Drone Motoru (1700KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0013.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 67318,
+        "width": 1400,
+        "height": 1400,
+        "format": "WEBP",
+        "duplicate_with_sku": "PZTR-MOT-0002"
+      }
+    }
+  ]
+}

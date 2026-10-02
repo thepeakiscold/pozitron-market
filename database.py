@@ -474,6 +474,8 @@ def init_db():
         ('subagent_6_trend', 'Küresel Trend Avcısı ve Tedarik Ajanı', 1, 'Dünyadaki yeni çıkan trend FPV donanımlarını keşfetme'),
         ('subagent_7_qa', 'QA Sentinel ve Otonom Sistem Sağlığı', 1, 'Sistem arızalarını, bozuk linkleri ve anomalileri denetleme'),
         ('subagent_8_procurement', 'Sipariş ve Tedarik Optimizasyonu Ajanı', 1, 'En çok kâr ettirecek ve hızlı satılacak ürünleri adetleriyle planlama'),
+        ('subagent_9_security', 'Siber Güvenlik ve Savunma Sentineli', 1, 'WAF, brute-force, SQLi/XSS filtreleri, PayTR imza doğrulaması ve SSL takibi'),
+        ('subagent_10_media', 'Ürün Medya ve İçerik Kalite Denetleyicisi', 1, 'Ürün fotoğraflarının, başlıklarının ve teknik açıklamalarının Vision AI ile kalite denetimi ve onarımı'),
         ('lead_supervisor', 'Baş Orkestratör ve Stratejik Evrim Motoru', 1, 'Tüm alt ajanları koordine eden ana strateji motoru')
     ]
     for sa_id, sa_name, sa_enabled, sa_desc in default_subagents:
@@ -501,6 +503,37 @@ def init_db():
             items_json TEXT NOT NULL,
             strategy_summary TEXT NOT NULL,
             created_at TEXT NOT NULL
+        )
+    ''')
+
+    # Cyber Security Audit Logs Table (Subagent 9)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS security_audit_logs (
+            id TEXT PRIMARY KEY,
+            audit_type TEXT NOT NULL,
+            status TEXT DEFAULT 'SECURE',
+            score INTEGER DEFAULT 100,
+            summary TEXT,
+            details_json TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
+    # Product Media Quality & Vision Audits Table (Subagent 10)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS product_media_audits (
+            product_id TEXT PRIMARY KEY,
+            sku TEXT NOT NULL,
+            name_tr TEXT NOT NULL,
+            category_id TEXT NOT NULL,
+            image_url TEXT NOT NULL,
+            status TEXT DEFAULT 'VERIFIED', -- 'VERIFIED', 'MISMATCH', 'SUSPICIOUS', 'CORRUPT', 'DUPLICATE'
+            issue_type TEXT,
+            confidence_score REAL DEFAULT 1.0,
+            resolution_status TEXT DEFAULT 'PENDING', -- 'PENDING', 'AUTO_FIXED', 'MANUAL_REQUIRED'
+            suggested_image_url TEXT,
+            details_json TEXT,
+            updated_at TEXT NOT NULL
         )
     ''')
 
