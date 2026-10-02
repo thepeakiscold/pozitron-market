@@ -203,7 +203,7 @@ class RedditDroneAgent:
         keywords_str = self.config.get("keywords", "")
         keywords = [k.strip() for k in keywords_str.split(",") if k.strip()]
 
-        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]")
+        custom_sig = self.config.get("custom_signature", "")
         min_conf = int(self.config.get("auto_post_min_confidence", 70))
         max_daily = int(self.config.get("max_replies_per_day", 10))
         dry_run = bool(self.config.get("dry_run_mode", 0))
@@ -381,7 +381,7 @@ class RedditDroneAgent:
         if not item:
             return {"success": False, "error": "Kayıt bulunamadı."}
 
-        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]")
+        custom_sig = self.config.get("custom_signature", "")
         ai_res = self.ai_engine.evaluate_and_generate_reply(
             title=item.get("title", ""),
             body=item.get("body", ""),
@@ -434,7 +434,7 @@ class RedditDroneAgent:
         ]
 
         count = 0
-        custom_sig = self.config.get("custom_signature", "İyi uçuşlar ve kırımsız günler! [POZİTRON MARKET]")
+        custom_sig = self.config.get("custom_signature", "")
         for s in samples:
             if get_interaction_by_reddit_id(s["reddit_id"]):
                 continue

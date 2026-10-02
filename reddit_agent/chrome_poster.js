@@ -7,6 +7,8 @@
 
 const puppeteer = require('puppeteer-core');
 const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -99,11 +101,32 @@ async function run() {
     launchArgs.push('--window-position=-2400,-2400');
   }
 
+  // Dedicated ephemeral user data dir with guaranteed auto-cleanup
+  const projectTempDir = path.join(__dirname, '..', 'data', 'temp');
+  if (!fs.existsSync(projectTempDir)) {
+    try { fs.mkdirSync(projectTempDir, { recursive: true }); } catch (e) {}
+  }
+  const baseDir = fs.existsSync(projectTempDir) ? projectTempDir : os.tmpdir();
+  const runProfileDir = path.join(baseDir, `chrome_profile_${process.pid}_${Date.now()}`);
+
+  function removeRunProfile() {
+    if (fs.existsSync(runProfileDir)) {
+      try {
+        fs.rmSync(runProfileDir, { recursive: true, force: true, maxRetries: 3 });
+      } catch (e) {}
+    }
+  }
+
+  process.on('exit', removeRunProfile);
+  process.on('SIGINT', () => { removeRunProfile(); process.exit(130); });
+  process.on('SIGTERM', () => { removeRunProfile(); process.exit(143); });
+
   let browser;
   try {
     browser = await puppeteer.launch({
       executablePath: chromePath,
       headless: isHeadless,
+      userDataDir: runProfileDir,
       args: launchArgs
     });
 
@@ -146,7 +169,10 @@ async function run() {
         archived: true,
         error: `Bu Reddit gonderisi ${postStatus.reason}, yeni yorum eklenemez.`
       }));
-      await browser.close();
+      if (browser) {
+        try { await browser.close(); } catch (e) {}
+      }
+      removeRunProfile();
       process.exit(0);
     }
 
@@ -317,17 +343,23 @@ async function run() {
 
     if (browser) {
       try {
-        browser.process().kill('SIGKILL');
-      } catch (e) {}
+        await browser.close();
+      } catch (e) {
+        try { browser.process().kill('SIGKILL'); } catch (ke) {}
+      }
     }
+    removeRunProfile();
     process.exit(0);
 
   } catch (err) {
     if (browser) {
       try {
-        browser.process().kill('SIGKILL');
-      } catch (e) {}
+        await browser.close();
+      } catch (e) {
+        try { browser.process().kill('SIGKILL'); } catch (ke) {}
+      }
     }
+    removeRunProfile();
     console.log(JSON.stringify({
       success: false,
       error: err.message || String(err)

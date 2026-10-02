@@ -41,7 +41,7 @@ def generate_feeds():
     c_desc.text = "Türkiye'nin Lider FPV Drone, Motor, ESC, Uçuş Kontrol Kartı ve Yedek Parça Mağazası"
 
     tsv_rows = []
-    tsv_headers = ['id', 'title', 'description', 'link', 'image_link', 'availability', 'price', 'brand', 'condition', 'google_product_category', 'mpn']
+    tsv_headers = ['id', 'title', 'description', 'link', 'image_link', 'availability', 'price', 'brand', 'condition', 'google_product_category', 'identifier_exists', 'shipping']
 
     for p in products:
         p_id, slug, sku, name_tr, name_en, cat_id, brand, price_try, orig_price_try, stock, img_url, desc_tr, desc_en = p
@@ -61,6 +61,8 @@ def generate_feeds():
         description = (desc_tr or desc_en or f"{brand} {title} yüksek performanslı FPV drone bileşeni.").strip()
         availability = 'in_stock' if int(stock) > 0 else 'out_of_stock'
         formatted_price = f"{float(price_try):.2f} TRY"
+
+        shipping_cost = "0.00 TRY" if float(price_try) >= 1500.0 else "99.00 TRY"
 
         # XML Item
         item = ET.SubElement(channel, 'item')
@@ -95,11 +97,18 @@ def generate_feeds():
         g_cat = ET.SubElement(item, 'g:google_product_category')
         g_cat.text = '5433'  # Google Taxonomy: Cameras & Optics > Photography > Digital Cameras / Drones & Accessories
         
-        g_mpn = ET.SubElement(item, 'g:mpn')
-        g_mpn.text = sku or p_id
-
+        # Google Merchant Center: For custom/unbarcoded parts without official GTIN/MPN, set identifier_exists to no
         g_id_exists = ET.SubElement(item, 'g:identifier_exists')
-        g_id_exists.text = 'yes'
+        g_id_exists.text = 'no'
+
+        # Shipping Details (1500 TL+ Free Shipping, under 1500 TL 99 TL)
+        g_shipping = ET.SubElement(item, 'g:shipping')
+        g_ship_country = ET.SubElement(g_shipping, 'g:country')
+        g_ship_country.text = 'TR'
+        g_ship_service = ET.SubElement(g_shipping, 'g:service')
+        g_ship_service.text = 'Standart Kargo (Yurtiçi Kargo)'
+        g_ship_price = ET.SubElement(g_shipping, 'g:price')
+        g_ship_price.text = shipping_cost
 
         # TSV Row
         tsv_rows.append({
@@ -113,7 +122,8 @@ def generate_feeds():
             'brand': brand or 'Pozitron',
             'condition': 'new',
             'google_product_category': '5433',
-            'mpn': sku or p_id
+            'identifier_exists': 'no',
+            'shipping': f"TR:::Standart Kargo:{shipping_cost}"
         })
 
     # Save XML feed to root and data/

@@ -4165,7 +4165,11 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Tarama tamamlandı: ${data.total_scanned} ürün tarandı. ${data.too_cheap_alerts} adet aşırı ucuzluk uyarısı tespit edildi. ${data.total_stale_prices_ignored} adet stoksuz eski fiyat elendi.`, "success");
+          if (data.auto_updated_count && data.auto_updated_count > 0) {
+            showToast(`⚡ Tarama tamamlandı: ${data.total_scanned} ürün tarandı. ${data.auto_updated_count} adet aşırı ucuz ürünün fiyatı piyasanın %5 altına otomatik güncellendi! ${data.total_stale_prices_ignored} adet stoksuz bayat fiyat elendi.`, "success");
+          } else {
+            showToast(`Tarama tamamlandı: ${data.total_scanned} ürün tarandı. Fiyatlar piyasa ile rekabetçi seviyede. ${data.total_stale_prices_ignored} adet stoksuz eski fiyat elendi.`, "success");
+          }
           loadTrendPriceComparisonData();
           loadOrchestratorData();
         } else {

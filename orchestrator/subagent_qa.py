@@ -248,6 +248,12 @@ class QASentinelAgent:
             if session_res.get("success"):
                 result["session_valid"] = True
                 result["session_username"] = session_res.get("username", "")
+            else:
+                result["session_valid"] = False
+                err_msg = session_res.get("error", "Bilinmeyen oturum hatasi")
+                result["issues"].append(f"Reddit Chrome oturumu gecersiz veya alinamadi: {err_msg}")
+                if result["status"] == "HEALTHY":
+                    result["status"] = "DEGRADED"
 
             # 2. Database statistics
             all_items = get_interactions(limit=1000)
@@ -1113,6 +1119,54 @@ KURALLAR:
             except Exception:
                 pass
 
+        # Remedy 3.5: Orphaned Puppeteer / Chrome Temp Profile Garbage Collection
+        try:
+            import glob, shutil
+            cleaned_profiles_count = 0
+            temp_roots = [
+                "/tmp",
+                os.path.join(PROJECT_ROOT, "data", "temp")
+            ]
+            now_ts = time.time()
+            for troot in temp_roots:
+                if not os.path.exists(troot):
+                    continue
+                patterns = [
+                    os.path.join(troot, "puppeteer_dev_chrome_profile-*"),
+                    os.path.join(troot, "com.google.Chrome.*"),
+                    os.path.join(troot, "chrome_profile_*"),
+                    os.path.join(troot, "pozitron_chrome_reddit_*.db")
+                ]
+                for pat in patterns:
+                    for p in glob.glob(pat):
+                        try:
+                            # Clean if older than 15 minutes
+                            if (now_ts - os.path.getmtime(p)) > 900:
+                                if os.path.isdir(p):
+                                    shutil.rmtree(p, ignore_errors=True)
+                                else:
+                                    os.remove(p)
+                                cleaned_profiles_count += 1
+                        except Exception:
+                            pass
+            if cleaned_profiles_count > 0:
+                act = {
+                    "channel": "system_storage",
+                    "action": f"{cleaned_profiles_count} adet yetim Chrome/Puppeteer gecici profili ve veritabani dosyasi otonom temizlendi.",
+                    "status": "SUCCESS"
+                }
+                healed_actions.append(act)
+                self.log_incident(
+                    incident_type="ORPHANED_TEMP_PROFILES_PURGE",
+                    channel="system_storage",
+                    severity="INFO",
+                    description=f"{cleaned_profiles_count} adet yetim gecici dosya temizlenerek /tmp disk kotasi korundu.",
+                    auto_healed=True,
+                    heal_action=act["action"]
+                )
+        except Exception:
+            pass
+
         # Remedy 4: Reddit Inactivity Breakthrough & Self-Healing
         red = probe_results.get('probes', {}).get('reddit', {})
         needs_reddit_heal = bool(
@@ -1156,6 +1210,7 @@ KURALLAR:
                           OR error_message LIKE '%arsivlenmis%'
                           OR error_message LIKE '%kilitlenmis%'
                           OR error_message LIKE '%archived%'
+                          OR error_message LIKE '%Disk quota%'
                           OR created_at < datetime('now', '-7 days')
                       )
                 """)
@@ -1165,47 +1220,76 @@ KURALLAR:
                 from reddit_agent.agent import RedditDroneAgent
                 from reddit_agent.db import get_interactions
                 bot = RedditDroneAgent()
-                bot.sync_chrome_session()
+                sync_res = bot.sync_chrome_session()
+                session_ok = bool(sync_res.get("success"))
 
                 # 5. Execute targeted scan & process
                 scan_res = bot.scan_and_process(autonomous=True)
-
-                # 6. If no questions or 0 published, ensure fresh questions exist and attempt publication
                 published_count = scan_res.get('auto_published_count', 0)
-                if published_count == 0:
-                    drafts = [i for i in get_interactions(limit=10) if i.get('status') == 'draft' and i.get('confidence_score', 0) >= 70 and i.get('gemini_reply')]
-                    if not drafts:
-                        bot.seed_sample_questions()
-                        drafts = [i for i in get_interactions(limit=10) if i.get('status') == 'draft' and i.get('confidence_score', 0) >= 70 and i.get('gemini_reply')]
 
-                    for candidate in drafts:
+                # 6. If no questions auto-published, check real pending drafts
+                if published_count == 0 and session_ok:
+                    real_drafts = [
+                        i for i in get_interactions(limit=10)
+                        if i.get('status') == 'draft'
+                        and not (i.get('reddit_id', '').startswith('t3_sample_'))
+                        and i.get('confidence_score', 0) >= 70
+                        and i.get('gemini_reply')
+                    ]
+                    for candidate in real_drafts:
                         pub_r = bot.publish_reply(candidate['id'])
                         if pub_r.get('success'):
                             published_count += 1
                             break
 
-                action_desc = f"Reddit otonom iyilestirme tamamlandi: Gemini anahtari esitlendi, canli mod aktiflestirildi, {scan_res.get('new_questions_found', 0)} soru tarandi"
                 if published_count > 0:
-                    action_desc += f", sifir yorum darbogazi kirildi ({published_count} yeni yorum yayinlandi)."
+                    action_desc = f"Reddit otonom iyilestirme basarili: {scan_res.get('new_questions_found', 0)} soru tarandi, sifir yorum darbogazi kirildi ({published_count} yeni yorum yayinlandi)."
+                    act = {
+                        "channel": "reddit",
+                        "action": action_desc,
+                        "status": "SUCCESS"
+                    }
+                    healed_actions.append(act)
+                    self.log_incident(
+                        incident_type="REDDIT_INACTIVITY_BREAKTHROUGH",
+                        channel="reddit",
+                        severity="INFO",
+                        description=f"Reddit inaktivitesi otonom olarak cozuldu ({published_count} yeni yorum gonderildi).",
+                        auto_healed=True,
+                        heal_action=act["action"]
+                    )
                 else:
-                    action_desc += ", soru taslaklari hazirlandi."
-
+                    session_status_text = "Chrome oturumu gecerli" if session_ok else f"Chrome oturum hatasi ({sync_res.get('error', 'bilinmiyor')})"
+                    action_desc = f"Reddit taramasi yapildi ({scan_res.get('new_questions_found', 0)} yeni soru bulundu), ancak yeni yorum yayinlanamadi. Durum: {session_status_text}."
+                    act = {
+                        "channel": "reddit",
+                        "action": action_desc,
+                        "status": "WARNING"
+                    }
+                    healed_actions.append(act)
+                    self.log_incident(
+                        incident_type="REDDIT_INACTIVITY_RETRY",
+                        channel="reddit",
+                        severity="WARNING" if session_ok else "CRITICAL",
+                        description=f"Reddit inaktivitesi devam ediyor ({red.get('hours_since_last_publish', 0)} saat). {session_status_text}.",
+                        auto_healed=False,
+                        heal_action=act["action"]
+                    )
+            except Exception as rx:
                 act = {
                     "channel": "reddit",
-                    "action": action_desc,
-                    "status": "SUCCESS"
+                    "action": f"Reddit iyilestirme sirasinda istisna olustu: {str(rx)[:120]}",
+                    "status": "ERROR"
                 }
                 healed_actions.append(act)
                 self.log_incident(
-                    incident_type="REDDIT_INACTIVITY_BREAKTHROUGH",
+                    incident_type="REDDIT_HEAL_EXCEPTION",
                     channel="reddit",
-                    severity="CRITICAL" if red.get('status') == 'CRITICAL' else "WARNING",
-                    description=f"Reddit inaktivitesi ({red.get('hours_since_last_publish', 0)} saat sifir yorum) tespit edildi ve otonom giderildi.",
-                    auto_healed=True,
+                    severity="CRITICAL",
+                    description=f"Reddit auto-heal istisna hatasi aldi: {str(rx)[:120]}",
+                    auto_healed=False,
                     heal_action=act["action"]
                 )
-            except Exception as rx:
-                pass
 
         # Remedy 5: Database and JSON Cache Parity Sync
         db = probe_results.get('probes', {}).get('database_and_cache', {})

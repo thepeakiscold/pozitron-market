@@ -2698,7 +2698,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 limit = data.get("limit")
                 if limit is not None:
                     limit = int(limit)
-                res = lead_supervisor_agent.trend_agent.scan_store_price_comparison(limit=limit)
+                auto_update = bool(data.get("auto_update", True))
+                res = lead_supervisor_agent.trend_agent.scan_store_price_comparison(limit=limit, auto_update_too_cheap=auto_update)
                 self.send_json(200, res)
             except Exception as e:
                 self.send_json(500, {"error": str(e)})

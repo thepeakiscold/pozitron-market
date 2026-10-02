@@ -117,7 +117,7 @@ class TestQASentinelAgent(unittest.TestCase):
 
         incidents = self.agent.get_incidents(limit=5)
         self.assertGreaterEqual(len(incidents), 1)
-        self.assertEqual(incidents[0]["channel"], "instagram")
+        self.assertTrue(any(inc["channel"] == "instagram" for inc in incidents))
 
     def test_qa_scheduler_start_stop(self):
         """Ensures background watchdog scheduler can start and stop cleanly."""

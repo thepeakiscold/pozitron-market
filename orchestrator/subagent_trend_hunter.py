@@ -534,15 +534,42 @@ class GlobalTrendHunterAgent:
 
         return offers
 
-    def scan_store_price_comparison(self, limit: Optional[int] = None) -> Dict:
+    def scan_store_price_comparison(self, limit: Optional[int] = None, auto_update_too_cheap: bool = True, force_resimulate: bool = False) -> Dict:
         """
         Pozitron Market'teki tüm ürünleri Türkiye'deki yerel satıcılarla karşılaştırır.
         - Stokta olmayan satıcıların fiyatlarını KESİNLİKLE dikkate almaz.
         - Yalnızca stokta olan satıcılar üzerinden 'Türkiye En Ucuz Fiyatı'nı hesaplar.
-        - Çok ucuza koyduğumuz (fark >= %25) ürünleri TOO_CHEAP_ALERT olarak uyarır.
+        - Fiyatı aşırı ucuz olan ürünleri tespit eder ve kullanıcının kuralı gereğince:
+          Her çok ucuz fiyat bulduğunda fiyatı otomatik olarak piyasanın %5 altına günceller.
+        - Önerilen fiyatı daima piyasanın %5 altı (turkey_min_price * 0.95) olarak belirler.
         """
         conn = get_db()
         cursor = conn.cursor()
+
+        # Döviz kurunu al
+        usd_rate = 50.0
+        try:
+            cursor.execute("SELECT value FROM settings WHERE key = 'usd_rate'")
+            r = cursor.fetchone()
+            if r and r[0]:
+                usd_rate = float(r[0])
+        except Exception:
+            pass
+
+        # Daha önce hesaplanmış piyasa fiyatlarını al (fiyat güncellendiğinde piyasa fiyatının suni yükselmesini önlemek için)
+        existing_comps = {}
+        if not force_resimulate:
+            try:
+                cursor.execute("""
+                    SELECT sku, turkey_min_price_try, turkey_avg_price_try, cheapest_vendor,
+                           in_stock_vendors_count, out_of_stock_vendors_count, stale_prices_ignored_json
+                    FROM trend_price_comparisons
+                """)
+                for row in cursor.fetchall():
+                    if row['turkey_min_price_try'] is not None:
+                        existing_comps[row['sku']] = row
+            except Exception:
+                existing_comps = {}
 
         query = "SELECT id, sku, name_tr, category_id, brand, price_try, stock, image_url FROM products ORDER BY id ASC"
         if limit:
@@ -557,8 +584,10 @@ class GlobalTrendHunterAgent:
         competitive_count = 0
         out_of_stock_market_count = 0
         total_stale_ignored = 0
+        auto_updated_count = 0
 
         upsert_rows = []
+        products_to_update = []
 
         for p in products:
             prod_id = p['id']
@@ -568,20 +597,42 @@ class GlobalTrendHunterAgent:
             image_url = p['image_url']
             pozitron_price = float(p['price_try'])
 
-            # Piyasa tekliflerini al
-            offers = self._simulate_market_offers(sku, pozitron_price)
+            # Piyasa verisini mevcut kıyaslamadan veya simülasyondan al
+            if sku in existing_comps and existing_comps[sku]['turkey_min_price_try'] is not None:
+                comp = existing_comps[sku]
+                turkey_min_price = float(comp['turkey_min_price_try'])
+                turkey_avg_price = float(comp['turkey_avg_price_try']) if comp['turkey_avg_price_try'] else turkey_min_price
+                cheapest_vendor = comp['cheapest_vendor']
+                in_stock_count = int(comp['in_stock_vendors_count'])
+                out_of_stock_count = int(comp['out_of_stock_vendors_count'])
+                stale_prices_json = comp['stale_prices_ignored_json']
+                total_stale_ignored += out_of_stock_count
+                active_in_stock_exists = in_stock_count > 0
+            else:
+                # Piyasa tekliflerini ilk kez simüle et
+                offers = self._simulate_market_offers(sku, pozitron_price)
+                active_in_stock = [o for o in offers if o["in_stock"]]
+                stale_out_of_stock = [o for o in offers if not o["in_stock"]]
+                in_stock_count = len(active_in_stock)
+                out_of_stock_count = len(stale_out_of_stock)
+                total_stale_ignored += out_of_stock_count
 
-            # KRİTİK FİLTRE: Stokta olmayan satıcıları ELE
-            active_in_stock = [o for o in offers if o["in_stock"]]
-            stale_out_of_stock = [o for o in offers if not o["in_stock"]]
-            total_stale_ignored += len(stale_out_of_stock)
+                stale_prices_json = json.dumps([
+                    {"vendor": o["vendor"], "stale_price": o["price_try"], "reason": o["stock_note"]}
+                    for o in stale_out_of_stock
+                ], ensure_ascii=False)
 
-            stale_prices_json = json.dumps([
-                {"vendor": o["vendor"], "stale_price": o["price_try"], "reason": o["stock_note"]}
-                for o in stale_out_of_stock
-            ], ensure_ascii=False)
+                active_in_stock_exists = len(active_in_stock) > 0
+                if active_in_stock_exists:
+                    turkey_min_price = min(o["price_try"] for o in active_in_stock)
+                    cheapest_vendor = min(active_in_stock, key=lambda x: x["price_try"])["vendor"]
+                    turkey_avg_price = round(sum(o["price_try"] for o in active_in_stock) / len(active_in_stock), 2)
+                else:
+                    turkey_min_price = None
+                    turkey_avg_price = None
+                    cheapest_vendor = "Stok Yok"
 
-            if not active_in_stock:
+            if not active_in_stock_exists or turkey_min_price is None:
                 # Tüm piyasada stok yoksa eski fiyatları kullanma!
                 status = "OUT_OF_STOCK_MARKET"
                 warning_level = "INFO"
@@ -594,32 +645,53 @@ class GlobalTrendHunterAgent:
                 recommended_price = pozitron_price
                 out_of_stock_market_count += 1
             else:
-                # Yalnızca stokta olan satıcılar arasından minimum ve ortalama fiyatı bul
-                turkey_min_price = min(o["price_try"] for o in active_in_stock)
-                cheapest_vendor = min(active_in_stock, key=lambda x: x["price_try"])["vendor"]
-                turkey_avg_price = round(sum(o["price_try"] for o in active_in_stock) / len(active_in_stock), 2)
-
                 price_diff_try = round(turkey_min_price - pozitron_price, 2)
                 price_diff_pct = round((price_diff_try / turkey_min_price) * 100, 1)
 
+                # Kullanıcı Kuralı: Önerilen fiyat daima piyasa en ucuzunun %5 altıdır
+                target_five_pct_below = round(turkey_min_price * 0.95, 2)
+
                 # Aşırı Ucuz Uyarı Eşiği: Pozitron fiyatı Türkiye en ucuzundan %25 veya daha ucuzsa
                 if price_diff_pct >= 25.0:
-                    status = "TOO_CHEAP_ALERT"
                     too_cheap_alerts += 1
-                    if price_diff_pct >= 35.0:
-                        warning_level = "CRITICAL"
-                        critical_alerts += 1
-                    else:
-                        warning_level = "WARNING"
+                    recommended_price = target_five_pct_below
 
-                    warning_message = (
-                        f"⚠️ AŞIRI UCUZ UYARISI: Ürün, Türkiye'deki en ucuz stoklu satıcıdan "
-                        f"({cheapest_vendor}: {turkey_min_price:,.2f} TL) %{price_diff_pct:.1f} daha ucuza "
-                        f"({pozitron_price:,.2f} TL) satılıyor! Olası marj kaybı veya hatalı fiyat riski."
-                    )
-                    # Önerilen fiyat: Piyasanın %10 altına çekerek hem en ucuz kalıp hem marjı korumak
-                    recommended_price = round((turkey_min_price * 0.90) / 10.0) * 10.0
-                elif price_diff_pct >= 8.0:
+                    if auto_update_too_cheap:
+                        # Fiyatı piyasanın %5 altına otomatik güncelle
+                        new_price_try = target_five_pct_below
+                        new_price_usd = round(new_price_try / usd_rate, 2)
+                        products_to_update.append((new_price_try, new_price_usd, sku))
+                        auto_updated_count += 1
+
+                        # Yeni fiyat farkı ve durum (Artık piyasanın %5 altında rekabetçi seviyede)
+                        updated_diff_try = round(turkey_min_price - new_price_try, 2)
+                        updated_diff_pct = round((updated_diff_try / turkey_min_price) * 100, 1)
+
+                        status = "COMPETITIVE"
+                        warning_level = "NONE"
+                        warning_message = (
+                            f"⚡ Otomatik Fiyat Güncellendi: Ürün piyasadan (%{price_diff_pct:.1f}) çok ucuza satılıyordu. "
+                            f"Fiyat otomatik olarak en ucuz satıcının ({cheapest_vendor}: {turkey_min_price:,.2f} TL) "
+                            f"%5 altına ({new_price_try:,.2f} TL) çekildi ve kârlılık korundu."
+                        )
+                        pozitron_price = new_price_try
+                        price_diff_try = updated_diff_try
+                        price_diff_pct = updated_diff_pct
+                        competitive_count += 1
+                    else:
+                        status = "TOO_CHEAP_ALERT"
+                        if price_diff_pct >= 35.0:
+                            warning_level = "CRITICAL"
+                            critical_alerts += 1
+                        else:
+                            warning_level = "WARNING"
+
+                        warning_message = (
+                            f"⚠️ AŞIRI UCUZ UYARISI: Ürün, Türkiye'deki en ucuz stoklu satıcıdan "
+                            f"({cheapest_vendor}: {turkey_min_price:,.2f} TL) %{price_diff_pct:.1f} daha ucuza "
+                            f"({pozitron_price:,.2f} TL) satılıyor! Olası marj kaybı veya hatalı fiyat riski."
+                        )
+                elif price_diff_pct >= 4.0:
                     status = "COMPETITIVE"
                     warning_level = "NONE"
                     warning_message = f"Fiyat Avantajlı: En ucuz stoklu satıcıdan ({cheapest_vendor}) %{price_diff_pct:.1f} daha uygun."
@@ -634,16 +706,25 @@ class GlobalTrendHunterAgent:
                     status = "EXPENSIVE"
                     warning_level = "INFO"
                     warning_message = f"Piyasa Üstünde: En ucuz stoklu satıcıdan ({cheapest_vendor}) %{abs(price_diff_pct):.1f} daha yüksek fiyat."
-                    recommended_price = round((turkey_min_price * 0.95) / 10.0) * 10.0
+                    recommended_price = target_five_pct_below
 
             upsert_rows.append((
                 prod_id, sku, name_tr, category_id, image_url,
                 pozitron_price, turkey_min_price, turkey_avg_price,
-                cheapest_vendor, len(active_in_stock), len(stale_out_of_stock),
+                cheapest_vendor, in_stock_count, out_of_stock_count,
                 stale_prices_json, price_diff_try, price_diff_pct,
                 status, warning_level, warning_message, recommended_price,
                 now_iso, now_iso
             ))
+
+        # Eğer otomatik güncellenen ürünler varsa products tablosunu güncelle
+        if products_to_update:
+            cursor.executemany("""
+                UPDATE products
+                SET price_try = ?, price_usd = ?
+                WHERE sku = ?
+            """, products_to_update)
+            conn.commit()
 
         # Toplu upsert yap
         cursor.executemany('''
@@ -678,6 +759,14 @@ class GlobalTrendHunterAgent:
         conn.commit()
         conn.close()
 
+        # Ürün fiyatları güncellendiyse statik JSON ve feed dosyalarını anında senkronize et
+        if auto_updated_count > 0:
+            try:
+                from export_data import export_static_data
+                export_static_data()
+            except Exception as ex:
+                print(f"[Trend Hunter] export_static_data notice: {ex}")
+
         return {
             "success": True,
             "total_scanned": total_scanned,
@@ -686,6 +775,7 @@ class GlobalTrendHunterAgent:
             "competitive_count": competitive_count,
             "out_of_stock_market_count": out_of_stock_market_count,
             "total_stale_prices_ignored": total_stale_ignored,
+            "auto_updated_count": auto_updated_count,
             "scanned_at": now_iso
         }
 
@@ -796,6 +886,9 @@ class GlobalTrendHunterAgent:
         cursor.execute("SELECT sum(out_of_stock_vendors_count) FROM trend_price_comparisons")
         sum_stale = cursor.fetchone()[0] or 0
 
+        cursor.execute("SELECT count(*) FROM trend_price_comparisons WHERE warning_message LIKE '%Otomatik Fiyat Güncellendi%' OR warning_message LIKE '%Otomatik Güncellendi%'")
+        auto_updated_count = cursor.fetchone()[0] or 0
+
         cursor.execute("SELECT max(updated_at) FROM trend_price_comparisons")
         last_updated = cursor.fetchone()[0]
 
@@ -808,6 +901,7 @@ class GlobalTrendHunterAgent:
             "competitive_count": competitive_count,
             "out_of_stock_market_count": out_of_stock_market_count,
             "total_stale_prices_ignored": sum_stale,
+            "auto_updated_count": auto_updated_count,
             "last_scanned_at": last_updated
         }
 
@@ -860,12 +954,14 @@ class GlobalTrendHunterAgent:
             price_diff_try = round(turkey_min_price - new_price_try, 2)
             price_diff_pct = round((price_diff_try / turkey_min_price) * 100, 1)
 
+            target_five_pct_below = round(turkey_min_price * 0.95, 2)
+
             if price_diff_pct >= 25.0:
                 status = "TOO_CHEAP_ALERT"
                 warning_level = "CRITICAL" if price_diff_pct >= 35.0 else "WARNING"
                 warning_message = f"⚠️ Aşırı Ucuz Uyarısı: Ürün, Türkiye'deki en ucuz stoklu satıcıdan ({cheapest_vendor}: {turkey_min_price:,.2f} TL) %{price_diff_pct:.1f} daha ucuza satılıyor!"
-                recommended_price = round((turkey_min_price * 0.90) / 10.0) * 10.0
-            elif price_diff_pct >= 8.0:
+                recommended_price = target_five_pct_below
+            elif price_diff_pct >= 4.0:
                 status = "COMPETITIVE"
                 warning_level = "NONE"
                 warning_message = f"Fiyat Avantajlı: En ucuz satıcıdan ({cheapest_vendor}) %{price_diff_pct:.1f} daha uygun (İdeal Rekabetçi)."
@@ -879,7 +975,7 @@ class GlobalTrendHunterAgent:
                 status = "EXPENSIVE"
                 warning_level = "INFO"
                 warning_message = f"Piyasa Üstünde: En ucuz satıcıdan ({cheapest_vendor}) %{abs(price_diff_pct):.1f} daha yüksek."
-                recommended_price = round((turkey_min_price * 0.95) / 10.0) * 10.0
+                recommended_price = target_five_pct_below
 
             cursor.execute('''
                 UPDATE trend_price_comparisons
@@ -903,6 +999,12 @@ class GlobalTrendHunterAgent:
             price_diff_pct = 0.0
 
         conn.close()
+
+        try:
+            from export_data import export_static_data
+            export_static_data()
+        except Exception as ex:
+            print(f"[Trend Hunter] export_static_data notice: {ex}")
 
         return {
             "success": True,

@@ -98,6 +98,7 @@ class LeadSupervisorAgent:
         trend_summary = {}
         try:
             self.trend_agent.scan_global_trends(limit=2)
+            self.trend_agent.scan_store_price_comparison(auto_update_too_cheap=True)
             trend_summary = self.trend_agent.get_price_warning_summary()
         except Exception as e:
             print(f"[Lead Supervisor] Trend hunt notice: {e}")

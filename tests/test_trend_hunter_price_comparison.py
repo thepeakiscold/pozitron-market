@@ -49,49 +49,107 @@ class TestTrendHunterPriceComparison(unittest.TestCase):
         self.assertTrue(res["success"])
         self.assertEqual(res["total_scanned"], 506)
         self.assertGreater(res["total_stale_prices_ignored"], 0, "Stoksuz eski fiyatlar elenmiş olmalı.")
-        self.assertGreater(res["too_cheap_alerts"], 0, "Aşırı ucuz uyarıları üretilmiş olmalı.")
 
         summary = self.agent.get_price_warning_summary()
         self.assertEqual(summary["total_products"], 506)
-        self.assertGreater(summary["too_cheap_count"], 0)
         self.assertGreater(summary["total_stale_prices_ignored"], 0)
 
-    def test_too_cheap_alert_detection_and_warning(self):
+    def test_auto_update_too_cheap_products_to_five_percent_below_market(self):
         """
-        Pozitron fiyatı Türkiye en ucuzundan %25+ daha ucuzsa TOO_CHEAP_ALERT uyarısı verilmelidir.
+        Kullanıcı Kuralı Doğrulaması:
+        Fiyatı çok düşük/aşırı ucuz olan ürünler her tespit edildiğinde,
+        Trend Avcısı ürünün fiyatını otomatik olarak piyasa en ucuzunun %5 altına günceller.
         """
+        conn = sqlite3.connect('pozitron.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Test ürünü olarak PZTR-MOT-0009 seçelim ve piyasanın çok altına çekelim
+        cursor.execute("SELECT turkey_min_price_try FROM trend_price_comparisons WHERE sku = 'PZTR-MOT-0009'")
+        row = cursor.fetchone()
+        turkey_min = float(row['turkey_min_price_try']) if row and row['turkey_min_price_try'] else 2144.35
+
+        # Fiyatı piyasanın %40 altına (aşırı ucuz) ayarlayalım
+        artificially_low_price = round(turkey_min * 0.60, 2)
+        cursor.execute("UPDATE products SET price_try = ?, price_usd = 10.0 WHERE sku = 'PZTR-MOT-0009'", (artificially_low_price,))
+        conn.commit()
+        conn.close()
+
+        # Otomatik güncelleme ile taramayı çalıştır
+        res = self.agent.scan_store_price_comparison(auto_update_too_cheap=True)
+        self.assertTrue(res["success"])
+        self.assertGreaterEqual(res["too_cheap_alerts"], 1)
+        self.assertGreaterEqual(res["auto_updated_count"], 1)
+
+        # Ürünün yeni fiyatının piyasanın tam %5 altı olduğunu doğrula
+        conn = sqlite3.connect('pozitron.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT price_try FROM products WHERE sku = 'PZTR-MOT-0009'")
+        new_prod_price = float(cursor.fetchone()['price_try'])
+
+        cursor.execute("SELECT * FROM trend_price_comparisons WHERE sku = 'PZTR-MOT-0009'")
+        comp = dict(cursor.fetchone())
+        conn.close()
+
+        expected_five_pct_below = round(turkey_min * 0.95, 2)
+        self.assertEqual(new_prod_price, expected_five_pct_below)
+        self.assertEqual(comp["status"], "COMPETITIVE")
+        self.assertEqual(comp["price_diff_pct"], 5.0)
+        self.assertIn("Otomatik Fiyat Güncellendi", comp["warning_message"])
+
+    def test_too_cheap_alert_detection_and_warning_dry_run(self):
+        """
+        auto_update_too_cheap=False (kuru çalışma/sadece uyarı) durumunda
+        fiyatı değiştirmeden TOO_CHEAP_ALERT oluşturduğunu ve önerilen fiyatın
+        piyasanın %5 altı olduğunu doğrular.
+        """
+        conn = sqlite3.connect('pozitron.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT turkey_min_price_try FROM trend_price_comparisons WHERE sku = 'PZTR-PRO-0111'")
+        row = cursor.fetchone()
+        turkey_min = float(row['turkey_min_price_try']) if row and row['turkey_min_price_try'] else 297.25
+
+        artificially_low_price = round(turkey_min * 0.50, 2)
+        cursor.execute("UPDATE products SET price_try = ?, price_usd = 5.0 WHERE sku = 'PZTR-PRO-0111'", (artificially_low_price,))
+        conn.commit()
+        conn.close()
+
+        # Otomatik güncelleme kapalıyken tara
+        res = self.agent.scan_store_price_comparison(auto_update_too_cheap=False)
+        self.assertGreaterEqual(res["too_cheap_alerts"], 1)
+
         report = self.agent.get_price_comparison_report(warning_only=True, limit=20)
         self.assertGreater(len(report["items"]), 0, "Aşırı ucuz uyarıları listelenmeli.")
 
-        first_warning = report["items"][0]
-        self.assertEqual(first_warning["status"], "TOO_CHEAP_ALERT")
-        self.assertIn(first_warning["warning_level"], ["WARNING", "CRITICAL"])
-        self.assertGreaterEqual(first_warning["price_diff_pct"], 25.0)
-        self.assertIn("AŞIRI UCUZ", first_warning["warning_message"])
-        self.assertIsNotNone(first_warning["recommended_price_try"])
-        self.assertGreater(first_warning["recommended_price_try"], first_warning["pozitron_price_try"])
+        target = [it for it in report["items"] if it["sku"] == "PZTR-PRO-0111"][0]
+        self.assertEqual(target["status"], "TOO_CHEAP_ALERT")
+        expected_rec_price = round(turkey_min * 0.95, 2)
+        self.assertEqual(target["recommended_price_try"], expected_rec_price)
+
+        # Temizlik: Otomatik güncelleme ile düzelt
+        self.agent.scan_store_price_comparison(auto_update_too_cheap=True)
 
     def test_update_product_price_and_status_resolution(self):
         """
-        Aşırı ucuz olan bir ürünün fiyatı önerilen tutara çekildiğinde uyarının çözüldüğünü
-        ve durumun COMPETITIVE olduğunu doğrular.
+        Manuel fiyat güncelleme metodunun (update_product_price) önerilen tutara çekildiğinde
+        kataloğu ve durumu COMPETITIVE olarak güncellediğini doğrular.
         """
-        warnings = self.agent.get_price_comparison_report(warning_only=True, limit=5)
-        self.assertTrue(len(warnings["items"]) > 0)
-        target = warnings["items"][0]
-        sku = target["sku"]
-        old_price = target["pozitron_price_try"]
-        rec_price = target["recommended_price_try"]
+        sku = "PZTR-MOT-0009"
+        conn = sqlite3.connect('pozitron.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("SELECT turkey_min_price_try FROM trend_price_comparisons WHERE sku = ?", (sku,))
+        turkey_min = float(cursor.fetchone()['turkey_min_price_try'])
+        conn.close()
 
-        # Fiyatı önerilen tutara çek
+        rec_price = round(turkey_min * 0.95, 2)
+
         update_res = self.agent.update_product_price(sku, rec_price)
         self.assertTrue(update_res["success"])
         self.assertEqual(update_res["new_status"], "COMPETITIVE")
-        self.assertLess(update_res["price_diff_pct"], 25.0)
-
-        # Geri al (orijinal fiyata döndür)
-        restore_res = self.agent.update_product_price(sku, old_price)
-        self.assertTrue(restore_res["success"])
+        self.assertEqual(update_res["price_diff_pct"], 5.0)
 
     def test_market_out_of_stock_scenario(self):
         """

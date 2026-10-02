@@ -40,6 +40,60 @@ class TestRedditAutonomousBot(unittest.TestCase):
         for p in drone_posts:
             self.assertTrue(self.client.is_question_matching_keywords(p, self.keywords), f"Should match: {p['title']}")
 
+    def test_english_drone_posts_rejected(self):
+        """Ensure English/foreign drone posts are strictly rejected even in drone subreddits."""
+        english_posts = [
+            {"title": "Best indoor rates for Meteor75 Pro II?", "body": "Looking for smooth indoor rates", "subreddit": "fpv", "author": "user1"},
+            {"title": "How to bind ELRS receiver to RadioMaster Boxer?", "body": "Please help with receiver setup", "subreddit": "fpvturkey", "author": "user2"},
+            {"title": "DJI Mini 3 Pro or Mini 4 Pro for beginner?", "body": "Which one should I buy? Thanks!", "subreddit": "drones", "author": "user3"},
+            {"title": "ESC burned after crash, what should I do?", "body": "Need recommendation for replacement", "subreddit": "multicopter", "author": "user4"},
+        ]
+        for p in english_posts:
+            self.assertFalse(self.client.is_question_matching_keywords(p, self.keywords), f"English post should be rejected: {p['title']}")
+
+    def test_human_technician_reply_format(self):
+        """
+        Ensure generated replies follow the strict user requirements:
+        1. English keyboard ASCII characters only (no ç, ğ, ı, ö, ş, ü).
+        2. 100% lowercase.
+        3. Zero punctuation marks.
+        4. No bot/AI signature.
+        """
+        import re
+        from reddit_agent.ai_engine import GeminiRedditEngine, format_human_reddit_reply
+        engine = GeminiRedditEngine(api_key="")  # uses rule-based fallback
+
+        sample_posts = [
+            {"title": "5 inç freestyle FPV drone için 4S mi yoksa 6S batarya mı tercih etmeliyim?", "body": "Hangi voltaj daha mantıklı?", "subreddit": "fpvturkey", "author": "pilot1"},
+            {"title": "Betaflight alıcıyı görmüyor", "body": "ELRS UART bağlantısı nasıl yapılır?", "subreddit": "teknoloji", "author": "pilot2"},
+            {"title": "LiPo bataryaları kışın nasıl saklamalıyım?", "body": "Hücre voltajı kaç olmalı?", "subreddit": "Turkey", "author": "pilot3"},
+            {"title": "500 gram altı drone uçurmak için SHGM kaydı gerekiyor mu?", "body": "İzin kuralları nasıl?", "subreddit": "AskTurkey", "author": "pilot4"},
+        ]
+
+        turkish_specific_chars = set("çğıöşüÇĞİÖŞÜ")
+
+        for p in sample_posts:
+            res = engine.evaluate_and_generate_reply(p["title"], p["body"], p["subreddit"], p["author"])
+            self.assertTrue(res["is_drone_question"], f"Should be drone question: {p['title']}")
+            reply = res["reply_text"]
+            self.assertTrue(len(reply) > 0, "Reply text should not be empty")
+
+            # 1. 100% lowercase
+            self.assertEqual(reply, reply.lower(), "Reply must be 100% lowercase")
+
+            # 2. English keyboard ASCII characters only
+            for ch in reply:
+                self.assertNotIn(ch, turkish_specific_chars, f"Special Turkish char found: '{ch}' in reply: {reply}")
+
+            # 3. Zero punctuation marks
+            invalid_chars = re.findall(r'[^a-z0-9\s]', reply)
+            self.assertEqual(invalid_chars, [], f"Punctuation/invalid characters found: {invalid_chars} in reply: {reply}")
+
+            # 4. No robot signature
+            self.assertNotIn("pozitron market*", reply)
+            self.assertNotIn("[pozitron market]", reply)
+            self.assertNotIn("kırımsız günler", reply)
+
     def tearDown(self):
         from database import get_db
         conn = get_db()

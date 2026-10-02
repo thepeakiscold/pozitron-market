@@ -16,18 +16,36 @@ def publish_via_chrome(post_url: str, reply_text: str, username: str = "") -> di
     if not session_res.get("success") or not session_res.get("cookies"):
         return {"success": False, "error": session_res.get("error", "Chrome oturum çerezleri okunamadı.")}
 
-    active_username = username or session_res.get("username", "") or "Aggravating_End_1105"
+    active_username = username or session_res.get("username", "") or "Distinct-Jacket4690"
 
     # Format cookies for Puppeteer
     puppeteer_cookies = []
-    for name, val in session_res["cookies"].items():
-        if val:
-            puppeteer_cookies.append({
-                "name": name,
-                "value": val,
-                "domain": ".reddit.com",
-                "path": "/"
-            })
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    cookies_json_path = os.path.join(project_root, "data", "reddit_cookies.json")
+    if os.path.exists(cookies_json_path):
+        try:
+            with open(cookies_json_path, "r", encoding="utf-8") as f:
+                saved_cookies = json.load(f)
+                if isinstance(saved_cookies, list):
+                    puppeteer_cookies = saved_cookies
+        except Exception:
+            pass
+
+    if not puppeteer_cookies:
+        for name, val in session_res["cookies"].items():
+            if val:
+                puppeteer_cookies.append({
+                    "name": name,
+                    "value": val,
+                    "domain": (
+                        "www.reddit.com"
+                        if name in ("ads_cookie", "GCCA", "reddit_chat_view", "reddit_supported_media_codecs", "g_state")
+                        else ".reddit.com"
+                    ),
+                    "path": "/",
+                    "secure": True,
+                    "httpOnly": (name in ("reddit_session", "token_v2"))
+                })
 
     cookie_file = tempfile.NamedTemporaryFile(mode="w+", suffix=".json", delete=False)
     text_file = tempfile.NamedTemporaryFile(mode="w+", suffix=".txt", delete=False, encoding="utf-8")

@@ -1256,6 +1256,17 @@
     /**
      * Pozitron Admin Dashboard Engine (Protected by Auth Guard)
      */
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+    window.escapeHtml = escapeHtml;
+
     // Dynamic API Base URL Support for Cloud & Local Backend
     function getApiBaseUrl() {
       if (window.PozitronAPI) {
@@ -3275,33 +3286,38 @@
       const tbody = document.getElementById('orders-table-body');
       if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">Siparişler yükleniyor...</td></tr>';
 
-      _cachedOrders = await getAdminOrdersList();
+      try {
+        _cachedOrders = await getAdminOrdersList();
 
-      // Compute Stats
-      const totalCount = _cachedOrders.length;
-      let totalRevenue = 0;
-      let confirmedCount = 0;
-      let shippingCount = 0;
+        // Compute Stats
+        const totalCount = _cachedOrders.length;
+        let totalRevenue = 0;
+        let confirmedCount = 0;
+        let shippingCount = 0;
 
-      _cachedOrders.forEach(o => {
-        const val = parseFloat(o.total_try || o.total_amount_try || (parseFloat(o.total_usd || 0) * (currentUsdRate || 50.0)) || 0);
-        totalRevenue += val;
-        const st = (o.status || 'CONFIRMED').toUpperCase();
-        if (st === 'CONFIRMED' || st === 'ONAYLANDI') confirmedCount++;
-        else if (st === 'SHIPPED' || st === 'KARGODA' || st === 'HAZIRLANIYOR') shippingCount++;
-      });
+        _cachedOrders.forEach(o => {
+          const val = parseFloat(o.total_try || o.total_amount_try || (parseFloat(o.total_usd || 0) * (currentUsdRate || 50.0)) || 0);
+          totalRevenue += (isNaN(val) ? 0 : val);
+          const st = String(o.status || 'CONFIRMED').toUpperCase();
+          if (st === 'CONFIRMED' || st === 'ONAYLANDI') confirmedCount++;
+          else if (st === 'SHIPPED' || st === 'KARGODA' || st === 'HAZIRLANIYOR') shippingCount++;
+        });
 
-      const totalEl = document.getElementById('orders-stat-total');
-      const revEl = document.getElementById('orders-stat-revenue');
-      const confEl = document.getElementById('orders-stat-confirmed');
-      const shipEl = document.getElementById('orders-stat-shipping');
+        const totalEl = document.getElementById('orders-stat-total');
+        const revEl = document.getElementById('orders-stat-revenue');
+        const confEl = document.getElementById('orders-stat-confirmed');
+        const shipEl = document.getElementById('orders-stat-shipping');
 
-      if (totalEl) totalEl.textContent = totalCount;
-      if (revEl) revEl.textContent = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(totalRevenue);
-      if (confEl) confEl.textContent = confirmedCount;
-      if (shipEl) shipEl.textContent = shippingCount;
+        if (totalEl) totalEl.textContent = totalCount;
+        if (revEl) revEl.textContent = new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(totalRevenue);
+        if (confEl) confEl.textContent = confirmedCount;
+        if (shipEl) shipEl.textContent = shippingCount;
 
-      renderAdminOrdersTable(_cachedOrders);
+        renderAdminOrdersTable(_cachedOrders);
+      } catch (err) {
+        console.error('loadAdminOrders error:', err);
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">Siparişler yüklenirken hata oluştu: ${escapeHtml(err.message)}</td></tr>`;
+      }
     }
 
     function renderAdminOrdersTable(orders) {
@@ -3313,85 +3329,115 @@
         return;
       }
 
-      tbody.innerHTML = orders.map(od => {
-        const dateStr = od.created_at ? (od.created_at.includes('T') ? od.created_at.replace('T', ' ').slice(0, 16) : od.created_at) : '-';
-        const priceFormatted = od.total_try ? `${parseFloat(od.total_try).toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺` : `${od.total_usd || '0'} $`;
-        const method = (od.payment_method || 'iyzico').toLowerCase();
-        
-        let methodBadge = '<span style="background:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700;">İyzico</span>';
-        if (method === 'paytr') methodBadge = '<span style="background:#cffafe; color:#155e75; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700;">PayTR</span>';
-        else if (method === 'havale' || method === 'bank') methodBadge = '<span style="background:#d1fae5; color:#065f46; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700;">FAST / Havale</span>';
+      try {
+        tbody.innerHTML = orders.map(od => {
+          try {
+            let dateStr = '-';
+            if (od.created_at) {
+              const s = String(od.created_at);
+              dateStr = s.includes('T') ? s.replace('T', ' ').slice(0, 16) : s;
+            }
 
-        const status = (od.status || 'CONFIRMED').toUpperCase();
-        let statusBadge = '<span class="badge-stock badge-stock-in">● Onaylandı</span>';
-        if (status === 'SHIPPED' || status === 'KARGODA') statusBadge = '<span style="background:#ffedd5; color:#c2410c; padding:3px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">🚚 Kargoya Verildi</span>';
-        else if (status === 'DELIVERED' || status === 'TESLİM EDİLDİ') statusBadge = '<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">✅ Teslim Edildi</span>';
-        else if (status === 'CANCELLED' || status === 'İPTAL') statusBadge = '<span class="badge-stock badge-stock-out">✕ İptal Edildi</span>';
+            const tryVal = parseFloat(od.total_try || od.total_amount_try || 0);
+            const priceFormatted = (!isNaN(tryVal) && tryVal > 0)
+              ? `${tryVal.toLocaleString('tr-TR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ₺`
+              : `${od.total_usd || '0'} $`;
+            const method = String(od.payment_method || 'iyzico').toLowerCase();
+            
+            let methodBadge = '<span style="background:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700;">İyzico</span>';
+            if (method === 'paytr') methodBadge = '<span style="background:#cffafe; color:#155e75; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700;">PayTR</span>';
+            else if (method === 'havale' || method === 'bank') methodBadge = '<span style="background:#d1fae5; color:#065f46; padding:2px 6px; border-radius:4px; font-size:0.75rem; font-weight:700;">FAST / Havale</span>';
 
-        const itemsSummary = Array.isArray(od.items) && od.items.length > 0 
-          ? od.items.map(i => `${i.name_en || i.name_tr || 'Ürün'} (x${i.quantity || 1})`).join(', ') 
-          : 'Standart Sipariş Paketi';
+            const status = String(od.status || 'CONFIRMED').toUpperCase();
+            let statusBadge = '<span class="badge-stock badge-stock-in">● Onaylandı</span>';
+            if (status === 'SHIPPED' || status === 'KARGODA') statusBadge = '<span style="background:#ffedd5; color:#c2410c; padding:3px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">🚚 Kargoya Verildi</span>';
+            else if (status === 'DELIVERED' || status === 'TESLİM EDİLDİ') statusBadge = '<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">✅ Teslim Edildi</span>';
+            else if (status === 'CANCELLED' || status === 'İPTAL') statusBadge = '<span class="badge-stock badge-stock-out">✕ İptal Edildi</span>';
 
-        const invoiceType = (od.invoice_type || 'individual').toLowerCase();
-        let invoiceBadge = '';
-        if (invoiceType === 'corporate') {
-          invoiceBadge = `
-            <div style="margin-top:6px; background:#fef3c7; border:1px solid #fde68a; border-radius:4px; padding:4px 6px; font-size:0.75rem; color:#92400e;">
-              <strong>🏢 Kurumsal Fatura</strong><br>
-              ${od.company_name ? `<span>${escapeHtml(od.company_name)}</span><br>` : ''}
-              <span>VKN: <code>${od.tax_id || '-'}</code> (${escapeHtml(od.tax_office || '-')})</span>
-            </div>
-          `;
-        } else if (od.tax_id && od.tax_id !== '11111111111') {
-          invoiceBadge = `
-            <div style="margin-top:6px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:4px 6px; font-size:0.75rem; color:#475569;">
-              <strong>👤 Bireysel Fatura</strong> &bull; TCKN: <code>${od.tax_id}</code>
-            </div>
-          `;
-        }
+            let itemsList = od.items;
+            if (typeof itemsList === 'string') {
+              try { itemsList = JSON.parse(itemsList); } catch(e) { itemsList = []; }
+            }
+            const itemsSummary = Array.isArray(itemsList) && itemsList.length > 0 
+              ? itemsList.map(i => `${escapeHtml(i.name_en || i.name_tr || i.title || i.name || 'Ürün')} (x${i.quantity || 1})`).join(', ') 
+              : 'Standart Sipariş Paketi';
 
-        const notesHtml = od.order_notes ? `
-          <div style="margin-top:4px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:4px; padding:3px 6px; font-size:0.75rem; color:#166534;">
-            📝 <strong>Not:</strong> ${escapeHtml(od.order_notes)}
-          </div>
-        ` : '';
+            const invoiceType = String(od.invoice_type || 'individual').toLowerCase();
+            let invoiceBadge = '';
+            if (invoiceType === 'corporate') {
+              invoiceBadge = `
+                <div style="margin-top:6px; background:#fef3c7; border:1px solid #fde68a; border-radius:4px; padding:4px 6px; font-size:0.75rem; color:#92400e;">
+                  <strong>🏢 Kurumsal Fatura</strong><br>
+                  ${od.company_name ? `<span>${escapeHtml(od.company_name)}</span><br>` : ''}
+                  <span>VKN: <code>${escapeHtml(od.tax_id || '-')}</code> (${escapeHtml(od.tax_office || '-')})</span>
+                </div>
+              `;
+            } else if (od.tax_id && od.tax_id !== '11111111111') {
+              invoiceBadge = `
+                <div style="margin-top:6px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:4px; padding:4px 6px; font-size:0.75rem; color:#475569;">
+                  <strong>👤 Bireysel Fatura</strong> &bull; TCKN: <code>${escapeHtml(od.tax_id)}</code>
+                </div>
+              `;
+            }
 
-        return `
-          <tr>
-            <td style="white-space:nowrap; font-size:0.82rem; color:#475569;">${dateStr}</td>
-            <td>
-              <strong style="color:var(--brand-primary); font-size:0.88rem;">${od.order_number || od.id}</strong>
-              <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
-                Takip: <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px;">${od.tracking_number || '-'}</code>
+            const notesHtml = od.order_notes ? `
+              <div style="margin-top:4px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:4px; padding:3px 6px; font-size:0.75rem; color:#166534;">
+                📝 <strong>Not:</strong> ${escapeHtml(od.order_notes)}
               </div>
-            </td>
-            <td>
-              <div style="font-weight:700; color:var(--text-primary); font-size:0.88rem;">${od.customer_name || od.full_name || 'Pilot Müşteri'}</div>
-              <div style="font-size:0.78rem; color:#64748b;">${od.customer_email || od.email || '-'}</div>
-              <div style="font-size:0.78rem; color:#64748b;">${od.customer_phone || od.phone || '-'}</div>
-              ${invoiceBadge}
-            </td>
-            <td>
-              <div style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">${priceFormatted}</div>
-              <div style="margin-top:2px;">${methodBadge}</div>
-            </td>
-            <td>${statusBadge}</td>
-            <td style="max-width:260px;">
-              <div style="font-size:0.82rem; color:#334155; line-height:1.4; white-space:normal;">${od.shipping_address || od.address || '-'}</div>
-              ${notesHtml}
-              <div style="font-size:0.75rem; color:#64748b; margin-top:4px; font-style:italic;">📦 ${itemsSummary}</div>
-            </td>
-            <td style="white-space:nowrap;">
-              <select class="admin-select" style="padding:4px 8px; font-size:0.78rem;" onchange="updateAdminOrderStatus('${od.id || od.order_number}', this.value)">
-                <option value="CONFIRMED" ${status === 'CONFIRMED' ? 'selected' : ''}>Onaylandı</option>
-                <option value="SHIPPED" ${status === 'SHIPPED' || status === 'KARGODA' ? 'selected' : ''}>Kargoya Verildi</option>
-                <option value="DELIVERED" ${status === 'DELIVERED' ? 'selected' : ''}>Teslim Edildi</option>
-                <option value="CANCELLED" ${status === 'CANCELLED' ? 'selected' : ''}>İptal Et</option>
-              </select>
-            </td>
-          </tr>
-        `;
-      }).join('');
+            ` : '';
+
+            const orderIdSafe = escapeHtml(od.id || od.order_number || '');
+            const orderNumSafe = escapeHtml(od.order_number || od.id || '');
+            const trackingSafe = escapeHtml(od.tracking_number || '-');
+            const customerNameSafe = escapeHtml(od.customer_name || od.full_name || 'Pilot Müşteri');
+            const customerEmailSafe = escapeHtml(od.customer_email || od.email || '-');
+            const customerPhoneSafe = escapeHtml(od.customer_phone || od.phone || '-');
+            const addressSafe = escapeHtml(od.shipping_address || od.address || '-');
+
+            return `
+              <tr>
+                <td style="white-space:nowrap; font-size:0.82rem; color:#475569;">${dateStr}</td>
+                <td>
+                  <strong style="color:var(--brand-primary); font-size:0.88rem;">${orderNumSafe}</strong>
+                  <div style="font-size:0.75rem; color:#64748b; margin-top:2px;">
+                    Takip: <code style="background:#f1f5f9; padding:2px 4px; border-radius:4px;">${trackingSafe}</code>
+                  </div>
+                </td>
+                <td>
+                  <div style="font-weight:700; color:var(--text-primary); font-size:0.88rem;">${customerNameSafe}</div>
+                  <div style="font-size:0.78rem; color:#64748b;">${customerEmailSafe}</div>
+                  <div style="font-size:0.78rem; color:#64748b;">${customerPhoneSafe}</div>
+                  ${invoiceBadge}
+                </td>
+                <td>
+                  <div style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">${priceFormatted}</div>
+                  <div style="margin-top:2px;">${methodBadge}</div>
+                </td>
+                <td>${statusBadge}</td>
+                <td style="max-width:260px;">
+                  <div style="font-size:0.82rem; color:#334155; line-height:1.4; white-space:normal;">${addressSafe}</div>
+                  ${notesHtml}
+                  <div style="font-size:0.75rem; color:#64748b; margin-top:4px; font-style:italic;">📦 ${itemsSummary}</div>
+                </td>
+                <td style="white-space:nowrap;">
+                  <select class="admin-select" style="padding:4px 8px; font-size:0.78rem;" onchange="updateAdminOrderStatus('${orderIdSafe}', this.value)">
+                    <option value="CONFIRMED" ${status === 'CONFIRMED' ? 'selected' : ''}>Onaylandı</option>
+                    <option value="SHIPPED" ${status === 'SHIPPED' || status === 'KARGODA' ? 'selected' : ''}>Kargoya Verildi</option>
+                    <option value="DELIVERED" ${status === 'DELIVERED' ? 'selected' : ''}>Teslim Edildi</option>
+                    <option value="CANCELLED" ${status === 'CANCELLED' ? 'selected' : ''}>İptal Et</option>
+                  </select>
+                </td>
+              </tr>
+            `;
+          } catch(itemErr) {
+            console.error('Error rendering order item:', itemErr, od);
+            return `<tr><td colspan="7" style="color:#ef4444; font-size:0.8rem; padding:8px;">Sipariş satırı ayrıştırılamadı (${escapeHtml(od?.order_number || od?.id || 'Bilinmiyor')})</td></tr>`;
+          }
+        }).join('');
+      } catch(err) {
+        console.error('renderAdminOrdersTable error:', err);
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#ef4444;">Tablo oluşturulurken hata: ${escapeHtml(err.message)}</td></tr>`;
+      }
     }
 
     function filterAdminOrders() {
@@ -3400,16 +3446,16 @@
       const paymentFilter = document.getElementById('orders-payment-filter')?.value || 'all';
 
       let filtered = _cachedOrders.filter(od => {
-        const orderNum = (od.order_number || od.id || '').toLowerCase();
-        const trkNum = (od.tracking_number || '').toLowerCase();
-        const name = (od.customer_name || od.full_name || '').toLowerCase();
-        const email = (od.customer_email || od.email || '').toLowerCase();
-        const phone = (od.customer_phone || od.phone || '').toLowerCase();
-        const addr = (od.shipping_address || od.address || '').toLowerCase();
+        const orderNum = String(od.order_number || od.id || '').toLowerCase();
+        const trkNum = String(od.tracking_number || '').toLowerCase();
+        const name = String(od.customer_name || od.full_name || '').toLowerCase();
+        const email = String(od.customer_email || od.email || '').toLowerCase();
+        const phone = String(od.customer_phone || od.phone || '').toLowerCase();
+        const addr = String(od.shipping_address || od.address || '').toLowerCase();
 
         const matchQ = !q || orderNum.includes(q) || trkNum.includes(q) || name.includes(q) || email.includes(q) || phone.includes(q) || addr.includes(q);
 
-        const st = (od.status || 'CONFIRMED').toUpperCase();
+        const st = String(od.status || 'CONFIRMED').toUpperCase();
         let matchStatus = true;
         if (statusFilter !== 'all') {
           if (statusFilter === 'CONFIRMED') matchStatus = (st === 'CONFIRMED' || st === 'ONAYLANDI');
@@ -3418,7 +3464,7 @@
           else if (statusFilter === 'CANCELLED') matchStatus = (st === 'CANCELLED' || st === 'İPTAL');
         }
 
-        const method = (od.payment_method || 'iyzico').toLowerCase();
+        const method = String(od.payment_method || 'iyzico').toLowerCase();
         let matchPayment = true;
         if (paymentFilter !== 'all') {
           matchPayment = method === paymentFilter;
@@ -3466,22 +3512,22 @@
 
       const headers = ['Sipariş No', 'Takip No', 'Tarih', 'Müşteri Adı', 'E-Posta', 'Telefon', 'Tutar (TRY)', 'Ödeme Yöntemi', 'Durum', 'Teslimat Adresi', 'Fatura Türü', 'TCKN / VKN', 'Vergi Dairesi', 'Firma Ünvanı', 'Fatura Adresi', 'Sipariş Notu'];
       const rows = _cachedOrders.map(o => [
-        `"${o.order_number || o.id || ''}"`,
-        `"${o.tracking_number || ''}"`,
-        `"${o.created_at || ''}"`,
-        `"${(o.customer_name || o.full_name || '').replace(/"/g, '""')}"`,
-        `"${o.customer_email || o.email || ''}"`,
-        `"${o.customer_phone || o.phone || ''}"`,
-        `"${o.total_try || o.total_amount_try || ''}"`,
-        `"${o.payment_method || ''}"`,
-        `"${o.status || ''}"`,
-        `"${(o.shipping_address || o.address || '').replace(/"/g, '""')}"`,
-        `"${o.invoice_type || 'individual'}"`,
-        `"${o.tax_id || ''}"`,
-        `"${(o.tax_office || '').replace(/"/g, '""')}"`,
-        `"${(o.company_name || '').replace(/"/g, '""')}"`,
-        `"${(o.billing_address || '').replace(/"/g, '""')}"`,
-        `"${(o.order_notes || '').replace(/"/g, '""')}"`
+        `"${String(o.order_number || o.id || '').replace(/"/g, '""')}"`,
+        `"${String(o.tracking_number || '').replace(/"/g, '""')}"`,
+        `"${String(o.created_at || '').replace(/"/g, '""')}"`,
+        `"${String(o.customer_name || o.full_name || '').replace(/"/g, '""')}"`,
+        `"${String(o.customer_email || o.email || '').replace(/"/g, '""')}"`,
+        `"${String(o.customer_phone || o.phone || '').replace(/"/g, '""')}"`,
+        `"${String(o.total_try || o.total_amount_try || '').replace(/"/g, '""')}"`,
+        `"${String(o.payment_method || '').replace(/"/g, '""')}"`,
+        `"${String(o.status || '').replace(/"/g, '""')}"`,
+        `"${String(o.shipping_address || o.address || '').replace(/"/g, '""')}"`,
+        `"${String(o.invoice_type || 'individual').replace(/"/g, '""')}"`,
+        `"${String(o.tax_id || '').replace(/"/g, '""')}"`,
+        `"${String(o.tax_office || '').replace(/"/g, '""')}"`,
+        `"${String(o.company_name || '').replace(/"/g, '""')}"`,
+        `"${String(o.billing_address || '').replace(/"/g, '""')}"`,
+        `"${String(o.order_notes || '').replace(/"/g, '""')}"`
       ]);
 
       const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');

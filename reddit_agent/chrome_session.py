@@ -3,6 +3,7 @@ import hashlib
 import sqlite3
 import shutil
 import os
+import time
 from ctypes import c_char_p, c_void_p, c_int, Structure, POINTER
 from Crypto.Cipher import AES
 import requests
@@ -39,9 +40,10 @@ def extract_chrome_reddit_session(cookie_db_path: str = None) -> dict:
     """
     import json
 
-    # 1. Check environment variable for online execution (GitHub Actions, Docker, Cloud)
+    # 1. Check environment variable or data/reddit_cookies.json
     env_cookies_json = os.environ.get('REDDIT_COOKIES_JSON', '').strip()
     env_cookies_file = os.environ.get('REDDIT_COOKIES_FILE', '').strip()
+    project_cookies_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'reddit_cookies.json')
 
     raw_cookies_data = None
     if env_cookies_json:
@@ -52,6 +54,12 @@ def extract_chrome_reddit_session(cookie_db_path: str = None) -> dict:
     elif env_cookies_file and os.path.exists(env_cookies_file):
         try:
             with open(env_cookies_file, 'r', encoding='utf-8') as f:
+                raw_cookies_data = json.load(f)
+        except Exception:
+            pass
+    elif os.path.exists(project_cookies_file):
+        try:
+            with open(project_cookies_file, 'r', encoding='utf-8') as f:
                 raw_cookies_data = json.load(f)
         except Exception:
             pass
@@ -69,16 +77,18 @@ def extract_chrome_reddit_session(cookie_db_path: str = None) -> dict:
         csrf_token = cookies_dict.get('csrf_token', '')
 
         # Verify session with Reddit
-        username = os.environ.get('REDDIT_USERNAME', 'Aggravating_End_1105')
+        username = os.environ.get('REDDIT_USERNAME', 'Distinct-Jacket4690')
         if token_v2:
             try:
                 headers = {
-                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
                     'Authorization': f'Bearer {token_v2}'
                 }
                 r = requests.get('https://oauth.reddit.com/api/v1/me', headers=headers, timeout=8)
                 if r.status_code == 200:
-                    username = r.json().get('name', username)
+                    api_name = r.json().get('name')
+                    if api_name:
+                        username = api_name
             except Exception:
                 pass
 
@@ -102,7 +112,13 @@ def extract_chrome_reddit_session(cookie_db_path: str = None) -> dict:
     if not key:
         return {'success': False, 'error': 'libsecret üzerinden Chrome anahtarı okunamadı.'}
 
-    tmp_path = f"/tmp/pozitron_chrome_reddit_{os.getpid()}.db"
+    local_temp_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "temp")
+    try:
+        os.makedirs(local_temp_dir, exist_ok=True)
+        tmp_path = os.path.join(local_temp_dir, f"pozitron_chrome_reddit_{os.getpid()}_{int(time.time()*1000)}.db")
+    except Exception:
+        tmp_path = f"/tmp/pozitron_chrome_reddit_{os.getpid()}_{int(time.time()*1000)}.db"
+
     try:
         shutil.copy2(cookie_db_path, tmp_path)
         conn = sqlite3.connect(tmp_path)

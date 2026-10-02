@@ -394,6 +394,9 @@ def generate_product_page(product, category, related_products, all_products, by_
         """
 
     # JSON-LD Schema
+    is_in_stock = int(product.get("stock", 50)) > 0
+    shipping_val = "0.00" if float(price_try) >= 1500.0 else "99.00"
+
     schema_json = {
         "@context": "https://schema.org/",
         "@type": "Product",
@@ -401,7 +404,6 @@ def generate_product_page(product, category, related_products, all_products, by_
         "image": [abs_img],
         "description": clean_desc_tr[:300],
         "sku": sku,
-        "mpn": sku,
         "brand": {
             "@type": "Brand",
             "name": brand
@@ -413,11 +415,47 @@ def generate_product_page(product, category, related_products, all_products, by_
             "price": f"{float(price_try):.2f}",
             "priceValidUntil": "2027-12-31",
             "itemCondition": "https://schema.org/NewCondition",
-            "availability": "https://schema.org/InStock",
+            "availability": "https://schema.org/InStock" if is_in_stock else "https://schema.org/OutOfStock",
             "seller": {
                 "@type": "Organization",
                 "name": "Pozitron Market",
                 "url": BASE_URL
+            },
+            "hasMerchantReturnPolicy": {
+                "@type": "MerchantReturnPolicy",
+                "applicableCountry": "TR",
+                "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+                "merchantReturnDays": 14,
+                "returnMethod": "https://schema.org/ReturnByMail",
+                "returnFees": "https://schema.org/FreeReturn",
+                "url": f"{BASE_URL}/iade-politikasi"
+            },
+            "shippingDetails": {
+                "@type": "OfferShippingDetails",
+                "shippingRate": {
+                    "@type": "MonetaryAmount",
+                    "value": shipping_val,
+                    "currency": "TRY"
+                },
+                "shippingDestination": {
+                    "@type": "DefinedRegion",
+                    "addressCountry": "TR"
+                },
+                "deliveryTime": {
+                    "@type": "ShippingDeliveryTime",
+                    "handlingTime": {
+                        "@type": "QuantitativeValue",
+                        "minValue": 0,
+                        "maxValue": 1,
+                        "unitCode": "DAY"
+                    },
+                    "transitTime": {
+                        "@type": "QuantitativeValue",
+                        "minValue": 1,
+                        "maxValue": 3,
+                        "unitCode": "DAY"
+                    }
+                }
             }
         }
     }
@@ -882,15 +920,15 @@ def generate_product_page(product, category, related_products, all_products, by_
         </ul>
       </div>
 
-      <!-- Col 3: Engineering Tools & Policies -->
+      <!-- Col 3: Customer Service & Legal Policies -->
       <div class="footer-col">
-        <div class="footer-col-title">Mühendislik &amp; Destek</div>
+        <div class="footer-col-title">Müşteri &amp; Politikalar</div>
         <ul class="footer-links">
-          <li><a href="../drone-toplama-sihirbazi">Drone Toplama Sihirbazı</a></li>
-          <li><a href="../3d-baski-studio">3D Baskı Studio (TPU/PETG)</a></li>
-          <li><a href="../iade-politikasi">İade ve İptal Şartları</a></li>
-          <li><a href="../return-policy">Return &amp; Refund Policy</a></li>
-          <li><a href="../#builder">Özel İHA Konfigüratörü</a></li>
+          <li><a href="../iade-politikasi">İade ve Geri Ödeme (14 Gün)</a></li>
+          <li><a href="../kargo-ve-teslimat">Kargo ve Teslimat Politikası</a></li>
+          <li><a href="../mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</a></li>
+          <li><a href="../gizlilik-politikasi">KVKK &amp; Gizlilik Politikası</a></li>
+          <li><a href="../iletisim">İletişim &amp; Şirket Bilgileri</a></li>
         </ul>
       </div>
 
@@ -1433,6 +1471,30 @@ def main():
         f'    <lastmod>{today_str}</lastmod>',
         '    <changefreq>monthly</changefreq>',
         '    <priority>0.7</priority>',
+        '  </url>',
+        '  <url>',
+        f'    <loc>{BASE_URL}/kargo-ve-teslimat</loc>',
+        f'    <lastmod>{today_str}</lastmod>',
+        '    <changefreq>monthly</changefreq>',
+        '    <priority>0.7</priority>',
+        '  </url>',
+        '  <url>',
+        f'    <loc>{BASE_URL}/mesafeli-satis-sozlesmesi</loc>',
+        f'    <lastmod>{today_str}</lastmod>',
+        '    <changefreq>monthly</changefreq>',
+        '    <priority>0.7</priority>',
+        '  </url>',
+        '  <url>',
+        f'    <loc>{BASE_URL}/gizlilik-politikasi</loc>',
+        f'    <lastmod>{today_str}</lastmod>',
+        '    <changefreq>monthly</changefreq>',
+        '    <priority>0.7</priority>',
+        '  </url>',
+        '  <url>',
+        f'    <loc>{BASE_URL}/iletisim</loc>',
+        f'    <lastmod>{today_str}</lastmod>',
+        '    <changefreq>monthly</changefreq>',
+        '    <priority>0.8</priority>',
         '  </url>',
         '  <url>',
         f'    <loc>{BASE_URL}/return-policy</loc>',

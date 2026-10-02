@@ -4,6 +4,7 @@ import os
 import re
 from datetime import datetime
 from .chrome_session import extract_chrome_reddit_session
+from .ai_engine import is_turkish_text
 
 class RedditClient:
     """
@@ -266,11 +267,17 @@ class RedditClient:
         "fpvturkey", "droneturkey", "multicopter", "fpv", "drones", "fpvracing"
     ]
 
+    def is_turkish_text(self, text: str) -> bool:
+        """
+        Strictly determines whether the text is written in Turkish.
+        Rejects English or other foreign language posts.
+        """
+        return is_turkish_text(text)
+
     def is_question_matching_keywords(self, post: dict, keywords: list) -> bool:
         """
         Determines whether a post is a drone question matching the target keywords.
-        In general Turkish subreddits (r/Turkey, r/teknoloji, etc.), strictly enforces
-        at least one CORE_DRONE_KEYWORDS using word boundaries to avoid false positives.
+        Strictly enforces that the post is in Turkish and about drones.
         """
         # Don't answer our own bot
         if self.username and post.get("author", "").lower() == self.username.lower():
@@ -285,7 +292,11 @@ class RedditClient:
         clean_body = re.sub(r'https?://\S+', '', body)
         clean_full_text = f"{clean_title} {clean_body}".strip()
 
-        # 0. Exclude non-drone audio/camera equipment (e.g. DJI Mic, Osmo Pocket)
+        # 0. STRICT TURKISH LANGUAGE ENFORCEMENT: Only Turkish drone posts!
+        if not self.is_turkish_text(clean_full_text):
+            return False
+
+        # 1. Exclude non-drone audio/camera equipment (e.g. DJI Mic, Osmo Pocket)
         audio_video_gear_excludes = [
             "dji mic", "mic mini", "kablosuz mikrofon", "yaka mikrofonu", "osmo pocket",
             "osmo action", "action cam", "gopro hero", "insta360 go", "ronin sc", "ronin rs"
@@ -294,7 +305,7 @@ class RedditClient:
             if not any(t in clean_full_text for t in ["uçuş", "ucus", "lehim", "betaflight", "elrs", "esc", "lipo", "quad"]):
                 return False
 
-        # 1. Subreddit specific keyword check
+        # 2. Subreddit specific keyword check
         is_dedicated_drone_sub = any(ds in subreddit for ds in self.DEDICATED_DRONE_SUBS)
 
         if is_dedicated_drone_sub:
@@ -342,13 +353,15 @@ class RedditClient:
             if not has_core_keyword:
                 return False
 
-        # 2. Question / Help intent check
+        # 3. Question / Help intent check
         question_indicators = [
-            "?", "nasıl", "öneri", "tavsiye", "yardım", "çalışmıyor", "sorun", "neden",
-            "bağlantı", "hangisi", "uyumlu mu", "başlangıç", "ne yapmalıyım", "hata",
-            "arızalandı", "kurulum", "ayarı", "yardim", "destek", "anlamadım", "yardımcı",
-            "önerseniz", "bilgisi olan", "tavsiyesi olan", "fikri olan", "alınır mı",
-            "how to", "why", "issue", "help", "problem", "which", "recommend"
+            "?", "nasıl", "nasil", "öneri", "oneri", "tavsiye", "yardım", "yardim",
+            "çalışmıyor", "calismiyor", "sorun", "neden", "niye", "bağlantı", "baglanti",
+            "hangisi", "uyumlu mu", "başlangıç", "baslangic", "ne yapmalıyım", "ne yapmaliyim",
+            "hata", "arızalandı", "arizalandi", "kurulum", "ayarı", "ayari", "destek",
+            "anlamadım", "anlamadim", "yardımcı", "yardimci", "önerseniz", "onerseniz",
+            "bilgisi olan", "tavsiyesi olan", "fikri olan", "alınır mı", "alinir mi",
+            "mantıklı mı", "mantikli mi"
         ]
 
         if "?" in clean_full_text:

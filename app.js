@@ -823,14 +823,13 @@ class PozitronApp {
         "image": [absImg],
         "description": desc,
         "sku": p.sku || `PZTR-${p.id}`,
-        "mpn": p.sku || p.id,
         "brand": {
           "@type": "Brand",
           "name": p.brand || "Pozitron"
         },
         "offers": {
           "@type": "Offer",
-          "url": `https://pozitronmarket.com/#product-${p.slug || p.id}`,
+          "url": p.slug ? `https://pozitronmarket.com/products/${p.slug}` : `https://pozitronmarket.com/#product-${p.id}`,
           "priceCurrency": this.currency || "TRY",
           "price": price,
           "priceValidUntil": "2027-12-31",
@@ -838,15 +837,30 @@ class PozitronApp {
           "availability": (parseInt(p.stock) > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
           "seller": {
             "@type": "Organization",
-            "name": "Pozitron Market"
+            "name": "Pozitron Market",
+            "url": "https://pozitronmarket.com"
+          },
+          "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "applicableCountry": "TR",
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 14,
+            "returnMethod": "https://schema.org/ReturnByMail",
+            "returnFees": "https://schema.org/FreeReturn",
+            "url": "https://pozitronmarket.com/iade-politikasi"
+          },
+          "shippingDetails": {
+            "@type": "OfferShippingDetails",
+            "shippingRate": {
+              "@type": "MonetaryAmount",
+              "value": (parseFloat(price) >= 1500) ? "0.00" : "99.00",
+              "currency": "TRY"
+            },
+            "shippingDestination": {
+              "@type": "DefinedRegion",
+              "addressCountry": "TR"
+            }
           }
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.9",
-          "reviewCount": "24",
-          "bestRating": "5",
-          "worstRating": "1"
         }
       };
 

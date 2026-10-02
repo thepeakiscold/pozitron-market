@@ -15,11 +15,14 @@ data/*users*
 *.csv
 *orders.json
 *secret*
+*cookie*
+*cookies*
 .env
 
 # Test & Temporary Files
 /test_*.py
 assets/instagram/**/test_*
+data/temp/
 *.stl
 *.step
 *.stp
