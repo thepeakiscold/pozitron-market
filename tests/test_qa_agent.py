@@ -39,12 +39,13 @@ class TestQASentinelAgent(unittest.TestCase):
 
     def test_probe_reddit_inactivity_alert(self):
         """Ensures 0 published comments triggers inactivity alert."""
-        with patch("reddit_agent.db.get_interactions", return_value=[]):
-            with patch("reddit_agent.db.get_daily_replies_count", return_value=0):
-                res = self.agent.probe_reddit()
-                self.assertEqual(res["channel"], "reddit")
-                self.assertTrue(res["inactivity_alert"])
-                self.assertIn("Sifir Yorum Uyarisi", " ".join(res["issues"]))
+        with patch("orchestrator.subagent_qa.is_subagent_enabled", return_value=True):
+            with patch("reddit_agent.db.get_interactions", return_value=[]):
+                with patch("reddit_agent.db.get_daily_replies_count", return_value=0):
+                    res = self.agent.probe_reddit()
+                    self.assertEqual(res["channel"], "reddit")
+                    self.assertTrue(res["inactivity_alert"])
+                    self.assertIn("Sifir Yorum Uyarisi", " ".join(res["issues"]))
 
     def test_probe_schedulers_and_threads(self):
         """Ensures scheduler thread liveness check runs without crashing."""

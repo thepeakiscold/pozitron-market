@@ -454,6 +454,99 @@
       margin-top: 6px;
     }
 
+    /* Subagent Toggle Switch & Matrix */
+    .switch-toggle {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .switch-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .switch-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #334155;
+      transition: .2s;
+      border-radius: 22px;
+      border: 1px solid #475569;
+    }
+    .switch-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .switch-slider {
+      background-color: #10b981;
+      border-color: #059669;
+    }
+    input:checked + .switch-slider:before {
+      transform: translateX(20px);
+    }
+    .subagent-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .subagent-card {
+      background: #090f1e;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+    .subagent-card:hover {
+      border-color: #38bdf8;
+      background: #0d1527;
+    }
+    .subagent-card.disabled {
+      opacity: 0.6;
+      border-color: #27272a;
+      background: #060913;
+    }
+    .urgency-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-block;
+    }
+    .urgency-kritik {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+    .urgency-yuksek {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .urgency-orta {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
     /* ========================================================================= */
     /* Tables                                                                    */
     /* ========================================================================= */
@@ -910,6 +1003,11 @@
         <span>Trend Avcısı</span>
       </button>
 
+      <button type="button" class="bots-nav-tab" id="tab-btn-procurement" onclick="switchBotsTab('procurement')">
+        <span class="tab-dot"></span>
+        <span>Sipariş &amp; Tedarik</span>
+      </button>
+
       <button type="button" class="bots-nav-tab" id="tab-btn-pipeline" onclick="switchBotsTab('pipeline')">
         <span class="tab-dot"></span>
         <span>İş Akışı Şeması</span>
@@ -1115,6 +1213,30 @@
         </div>
         <div id="directive-json-container" style="display:none; margin-top:12px; background:#020617; padding:12px; border-radius:8px; border:1px solid #1e293b; overflow-x:auto;">
           <pre id="directive-json-content" style="margin:0; font-family:var(--font-mono); font-size:0.78rem; color:#38bdf8; line-height:1.5;">Yükleniyor...</pre>
+        </div>
+      </div>
+
+      <!-- Subagent Matrix Card (Ajan Kontrol Paneli) -->
+      <div class="bots-card" style="background:#0a0f1d; border-color:#0284c7;">
+        <div class="bots-card-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="status-pill status-pill-info">Ajan Kontrol Masası</span>
+              <span class="status-pill status-pill-active" id="subagents-active-count-badge">8 / 9 Aktif</span>
+            </div>
+            <h3 class="card-title">Otonom Subagent Yönetim Matrisi</h3>
+            <p class="card-desc">İstediğiniz robotu veya alt ajanı anlık olarak kapatıp açabilir; görev döngülerini ve otonom paylaşımlarını durdurabilirsiniz.</p>
+          </div>
+          <button type="button" class="btn-action btn-secondary" onclick="loadSubagentsStatus()" style="padding:6px 12px; font-size:0.78rem;">
+            <span>Durumları Yenile</span>
+          </button>
+        </div>
+
+        <div id="subagents-matrix-grid" class="subagent-grid">
+          <!-- Dynamically populated by loadSubagentsStatus() -->
+          <div style="grid-column: 1/-1; text-align:center; padding:20px; color:#94a3b8; font-size:0.85rem;">
+            Ajan durumları yükleniyor...
+          </div>
         </div>
       </div>
 
@@ -1485,6 +1607,24 @@
     <!-- ===================================================================== -->
     <section id="pane-reddit" style="display:none;">
       
+      <!-- Reddit Disabled Alert Banner (Visible when disabled) -->
+      <div id="reddit-disabled-alert" class="bots-card" style="display:none; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.4); margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="font-size:1.8rem;">🛑</div>
+            <div>
+              <div style="font-size:0.95rem; font-weight:700; color:#f87171;">Reddit Botu Kullanıcı İsteğiyle Kapatılmıştır (Devre Dışı)</div>
+              <div style="font-size:0.78rem; color:#cbd5e1; margin-top:2px;">
+                Reddit botu geçici olarak devre dışı bırakılmıştır. Otomatik arka plan zamanlayıcısı durdurulmuştur ve hiçbir soruya yorum atılmaz.
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-action" style="background:#10b981; border-color:#059669; color:#fff;" onclick="toggleRedditAgent(true)">
+            <span>✅ Botu Tekrar Aktif Et</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Top Banner -->
       <div class="bots-card" style="background:#120c06; border-color:#ea580c;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
@@ -1511,6 +1651,9 @@
           </div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button type="button" class="btn-action btn-danger-outline" id="btn-toggle-reddit-main" onclick="toggleRedditAgent()">
+              <span id="btn-toggle-reddit-txt">Botu Kapat</span>
+            </button>
             <button type="button" class="btn-action btn-reddit" id="btn-reddit-scan-now" onclick="triggerRedditScanNow()">
               <span id="btn-reddit-scan-now-txt">Subredditleri Tara</span>
             </button>
@@ -1777,6 +1920,143 @@
           <div style="text-align:center; padding:20px; color:#64748b;">
             Henüz onaylanmış ürün bulunmuyor.
           </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- SECTION 4B: SUBAGENT 8 PROCUREMENT & SUPPLY OPTIMIZATION DESK         -->
+    <!-- ===================================================================== -->
+    <section id="pane-procurement" style="display:none;">
+
+      <!-- Top Action & Info Banner -->
+      <div class="bots-card" style="background:#09152b; border-color:#0284c7;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <span class="status-pill status-pill-active" style="background:rgba(16,185,129,0.15); color:#10b981; border-color:rgba(16,185,129,0.3);">Subagent 8</span>
+              <span id="procurement-status-pill" class="status-pill status-pill-active">Stok &amp; Kâr Optimize Edildi</span>
+              <span class="status-pill status-pill-purple">Trend Avcısı Entegreli</span>
+            </div>
+            <h2 style="font-size:1.25rem; font-weight:800; margin:0 0 6px 0; color:#ffffff; font-family:var(--font-heading);">
+              Otonom Sipariş &amp; Tedarik Optimizasyonu Masası
+            </h2>
+            <p class="card-desc" style="max-width:850px;">
+              Pozitron kataloğundaki 0-stoklu ürünleri, tükenmek üzere olan sarf malzemelerini (pervane, LiPo, anten) ve Subagent 6 Trend Avcısı'nın küresel donanımlarını analiz ederek <strong>en çok kâr ettirecek ve hızlı satılacak</strong> toptan sipariş listesini oluşturur.
+            </p>
+            <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.78rem; color:var(--text-muted); margin-top:10px;">
+              <span>Plan ID: <strong id="procurement-plan-id" class="code-chip">plan_loading...</strong></span>
+              <span>Son Analiz: <strong id="procurement-last-created" style="color:#f8fafc;">-</strong></span>
+              <span>Strateji: <strong style="color:#38bdf8;">Toptan Maliyet &amp; Yüksek Hızlı Sarf Malzeme</strong></span>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <button type="button" class="btn-action btn-success" id="btn-procurement-generate-now" onclick="generateProcurementPlanNow()">
+              <span id="btn-procurement-generate-txt">⚡ Yeni Sipariş Planı Oluştur</span>
+            </button>
+            <a href="/api/procurement/export" target="_blank" class="btn-action btn-secondary" style="font-size:0.78rem; text-decoration:none;">
+              <span>📥 Tedarik Listesini İndir (CSV)</span>
+            </a>
+            <button type="button" class="btn-action btn-secondary" onclick="loadProcurementData()" style="font-size:0.78rem;">
+              <span>Yenile</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="border-left:3px solid #0284c7;">
+          <div class="kpi-header">
+            <span class="kpi-label">Tahmini Toplam Yatırım</span>
+            <span class="status-pill status-pill-info" style="font-size:0.68rem;">Toptan</span>
+          </div>
+          <div class="kpi-value" id="proc-kpi-investment" style="color:#38bdf8;">0 TL</div>
+          <div class="kpi-subtext">Fabrika / distribütör maliyeti</div>
+        </div>
+
+        <div class="kpi-card" style="border-left:3px solid #10b981;">
+          <div class="kpi-header">
+            <span class="kpi-label">Beklenen Net Kâr</span>
+            <span class="status-pill status-pill-active" style="font-size:0.68rem;">Projeksiyon</span>
+          </div>
+          <div class="kpi-value" id="proc-kpi-profit" style="color:#10b981;">0 TL</div>
+          <div class="kpi-subtext">Satış sonrası net kazanç</div>
+        </div>
+
+        <div class="kpi-card" style="border-left:3px solid #8b5cf6;">
+          <div class="kpi-header">
+            <span class="kpi-label">Kâr Marjı &amp; ROI</span>
+            <span class="status-pill status-pill-purple" style="font-size:0.68rem;">Getiri</span>
+          </div>
+          <div class="kpi-value" id="proc-kpi-margin" style="color:#c084fc;">0%</div>
+          <div class="kpi-subtext">ROI: <strong id="proc-kpi-roi" style="color:#f8fafc;">0%</strong> &bull; Ortalama Marj</div>
+        </div>
+
+        <div class="kpi-card" style="border-left:3px solid #f59e0b;">
+          <div class="kpi-header">
+            <span class="kpi-label">Sipariş Kalem &amp; Adet</span>
+            <span class="status-pill status-pill-warn" style="font-size:0.68rem;">Hacim</span>
+          </div>
+          <div class="kpi-value" id="proc-kpi-units" style="color:#f59e0b;">0 Adet</div>
+          <div class="kpi-subtext">Toplam: <strong id="proc-kpi-skus" style="color:#f8fafc;">0</strong> farklı ürün SKU</div>
+        </div>
+      </div>
+
+      <!-- Strategy & Executive Summary Card -->
+      <div class="bots-card" style="background:#070b14; border-color:#1e293b;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="status-pill status-pill-info">Stratejik Karar Gerekçesi</span>
+            <h3 style="font-size:0.95rem; font-weight:700; margin:0; color:#fff;">Tedarikçi Sipariş Optimizasyon Raporu</h3>
+          </div>
+          <span class="code-chip" id="proc-badge-status">OTONOM ONAYLANDI</span>
+        </div>
+        <div id="proc-strategy-summary" style="font-size:0.82rem; color:#cbd5e1; line-height:1.6; background:#020617; padding:12px 14px; border-radius:8px; border:1px solid #1e293b;">
+          Sipariş stratejisi yükleniyor...
+        </div>
+      </div>
+
+      <!-- Prioritized Order Items Table -->
+      <div class="bots-card">
+        <div class="bots-card-header">
+          <div>
+            <h3 class="card-title">Öncelikli Sipariş ve Stok Yenileme Listesi</h3>
+            <p class="card-desc">0-stok ürünler, hızlı dönen sarf malzemeleri ve piyasa arbitrajı bazında önceliklendirilmiş toptan sipariş adetleri</p>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-radius:4px;" onclick="filterProcurementTable('ALL')">Tümü</button>
+            <button type="button" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-radius:4px; color:#ef4444;" onclick="filterProcurementTable('KRİTİK')">Kritik Acil</button>
+            <button type="button" class="btn-secondary" style="padding:4px 8px; font-size:0.75rem; border-radius:4px; color:#f59e0b;" onclick="filterProcurementTable('YÜKSEK')">Yüksek Öncelik</button>
+          </div>
+        </div>
+
+        <div class="table-container" style="max-height:520px; overflow-y:auto;">
+          <table class="clean-table">
+            <thead style="position:sticky; top:0; z-index:10;">
+              <tr>
+                <th>Öncelik</th>
+                <th>Ürün Bilgisi</th>
+                <th>Kategori</th>
+                <th>Mevcut Stok</th>
+                <th>Önerilen Sipariş</th>
+                <th>Birim Maliyet</th>
+                <th>Satış Fiyatı</th>
+                <th>Tahmini Kâr</th>
+                <th>Kâr Marjı</th>
+                <th>Satış Hızı &amp; Gerekçe</th>
+              </tr>
+            </thead>
+            <tbody id="procurement-table-tbody">
+              <tr>
+                <td colspan="10" style="text-align:center; padding:30px; color:#64748b;">
+                  Sipariş planı yükleniyor...
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -2252,6 +2532,7 @@
       const panePipeline = document.getElementById('pane-pipeline');
       const paneOrch = document.getElementById('pane-orchestrator');
       const paneTrend = document.getElementById('pane-trendhunter');
+      const paneProc = document.getElementById('pane-procurement');
       const paneIg = document.getElementById('pane-instagram');
       const paneReddit = document.getElementById('pane-reddit');
       const paneQa = document.getElementById('pane-qa');
@@ -2260,18 +2541,20 @@
       const btnPipeline = document.getElementById('tab-btn-pipeline');
       const btnOrch = document.getElementById('tab-btn-orchestrator');
       const btnTrend = document.getElementById('tab-btn-trendhunter');
+      const btnProc = document.getElementById('tab-btn-procurement');
       const btnIg = document.getElementById('tab-btn-instagram');
       const btnReddit = document.getElementById('tab-btn-reddit');
       const btnQa = document.getElementById('tab-btn-qa');
       const btnDaemon = document.getElementById('tab-btn-daemon');
 
-      [btnPipeline, btnOrch, btnTrend, btnIg, btnReddit, btnQa, btnDaemon].forEach(b => {
+      [btnPipeline, btnOrch, btnTrend, btnProc, btnIg, btnReddit, btnQa, btnDaemon].forEach(b => {
         if (b) b.classList.remove('active');
       });
 
       if (panePipeline) panePipeline.style.display = tabName === 'pipeline' ? 'block' : 'none';
       if (paneOrch) paneOrch.style.display = tabName === 'orchestrator' ? 'block' : 'none';
       if (paneTrend) paneTrend.style.display = tabName === 'trendhunter' ? 'block' : 'none';
+      if (paneProc) paneProc.style.display = tabName === 'procurement' ? 'block' : 'none';
       if (paneIg) paneIg.style.display = tabName === 'instagram' ? 'block' : 'none';
       if (paneReddit) paneReddit.style.display = tabName === 'reddit' ? 'block' : 'none';
       if (paneQa) paneQa.style.display = tabName === 'qa' ? 'block' : 'none';
@@ -2283,9 +2566,13 @@
       } else if (tabName === 'orchestrator') {
         if (btnOrch) btnOrch.classList.add('active');
         loadOrchestratorData();
+        loadSubagentsStatus();
       } else if (tabName === 'trendhunter') {
         if (btnTrend) btnTrend.classList.add('active');
         loadTrendHunterData();
+      } else if (tabName === 'procurement') {
+        if (btnProc) btnProc.classList.add('active');
+        loadProcurementData();
       } else if (tabName === 'instagram') {
         if (btnIg) btnIg.classList.add('active');
         loadInstagramData();
@@ -3297,9 +3584,166 @@
     }
 
     // =========================================================================
+    // SUBAGENT MANAGEMENT & TOGGLE CONTROLLER
+    // =========================================================================
+    let _subagentsConfig = [];
+
+    async function loadSubagentsStatus() {
+      try {
+        const res = await fetch('/api/subagents/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        _subagentsConfig = data.subagents || [];
+
+        // Count active
+        const activeCount = _subagentsConfig.filter(s => s.is_enabled === 1).length;
+        const badge = document.getElementById('subagents-active-count-badge');
+        if (badge) {
+          badge.textContent = `${activeCount} / ${_subagentsConfig.length} Aktif`;
+          badge.className = activeCount === _subagentsConfig.length ? 'status-pill status-pill-active' : 'status-pill status-pill-warn';
+        }
+
+        renderSubagentsMatrix();
+        syncRedditUIWithConfig();
+      } catch(e) {
+        console.warn("Subagents status load error:", e);
+      }
+    }
+
+    function syncRedditUIWithConfig() {
+      const redditSub = _subagentsConfig.find(s => s.subagent_id === 'subagent_2_reddit');
+      const isEnabled = redditSub ? (redditSub.is_enabled === 1) : false;
+
+      const alertBox = document.getElementById('reddit-disabled-alert');
+      if (alertBox) alertBox.style.display = isEnabled ? 'none' : 'block';
+
+      const pill = document.getElementById('reddit-status-pill');
+      if (pill) {
+        if (!isEnabled) {
+          pill.textContent = 'DEVREDIŞI (Kapalı)';
+          pill.className = 'status-pill status-pill-danger';
+          pill.style.background = 'rgba(239,68,68,0.2)';
+          pill.style.color = '#ef4444';
+          pill.style.borderColor = 'rgba(239,68,68,0.4)';
+        } else {
+          pill.textContent = 'Tam Otonom';
+          pill.className = 'status-pill status-pill-active';
+          pill.style.background = '';
+          pill.style.color = '';
+          pill.style.borderColor = '';
+        }
+      }
+
+      const btnToggle = document.getElementById('btn-toggle-reddit-main');
+      if (btnToggle) {
+        if (!isEnabled) {
+          btnToggle.className = 'btn-action btn-success';
+          btnToggle.innerHTML = '<span>✅ Botu Aç</span>';
+        } else {
+          btnToggle.className = 'btn-action btn-danger-outline';
+          btnToggle.innerHTML = '<span>Botu Kapat</span>';
+        }
+      }
+
+      const btnScan = document.getElementById('btn-reddit-scan-now');
+      if (btnScan) {
+        btnScan.disabled = !isEnabled;
+        btnScan.style.opacity = isEnabled ? '1' : '0.5';
+        btnScan.title = isEnabled ? '' : 'Bot kapalı olduğu için tarama yapılamaz.';
+      }
+    }
+
+    function renderSubagentsMatrix() {
+      const container = document.getElementById('subagents-matrix-grid');
+      if (!container) return;
+
+      const subagentIcons = {
+        'lead_supervisor': '👑',
+        'subagent_1_instagram': '📸',
+        'subagent_2_reddit': '🤖',
+        'subagent_3_telemetry': '📡',
+        'subagent_4_seo': '📝',
+        'subagent_5_price': '🏷️',
+        'subagent_6_trend': '🔍',
+        'subagent_7_qa': '🛡️',
+        'subagent_8_procurement': '📦'
+      };
+
+      const html = _subagentsConfig.map(s => {
+        const isEnabled = s.is_enabled === 1;
+        const icon = subagentIcons[s.subagent_id] || '⚡';
+        const cardClass = isEnabled ? 'subagent-card' : 'subagent-card disabled';
+        const statusBadge = isEnabled
+          ? `<span class="status-pill status-pill-active" style="font-size:0.7rem;">Aktif</span>`
+          : `<span class="status-pill" style="font-size:0.7rem; background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.4);">Kapalı</span>`;
+
+        return `
+          <div class="${cardClass}">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.3rem;">${icon}</span>
+                <div>
+                  <div style="font-size:0.85rem; font-weight:700; color:#fff;">${s.name_tr}</div>
+                  <div style="font-size:0.7rem; color:var(--text-dim); font-family:var(--font-mono);">${s.subagent_id}</div>
+                </div>
+              </div>
+              <label class="switch-toggle" title="${isEnabled ? 'Kapat' : 'Aç'}">
+                <input type="checkbox" ${isEnabled ? 'checked' : ''} onchange="toggleSubagent('${s.subagent_id}', this.checked)">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+            <p style="font-size:0.76rem; color:#94a3b8; line-height:1.4; margin:0 0 10px 0; min-height:36px;">
+              ${s.description_tr || 'Otonom alt ajan görevini yürütür.'}
+            </p>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">
+              ${statusBadge}
+              <span style="font-size:0.68rem; color:var(--text-dim);">${s.updated_at ? s.updated_at.split('T')[0] : 'Aktif'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = html;
+    }
+
+    async function toggleSubagent(subagentId, newStatus) {
+      try {
+        const res = await fetch('/api/subagents/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subagent_id: subagentId, is_enabled: newStatus ? 1 : 0 })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`${subagentId} ${newStatus ? 'aktif edildi' : 'kapatıldı'}.`, newStatus ? 'success' : 'warning');
+          await loadSubagentsStatus();
+          if (subagentId === 'subagent_2_reddit') {
+            loadRedditData();
+          }
+        } else {
+          showToast("Hata: " + (data.error || "İşlem başarısız"), "error");
+          loadSubagentsStatus();
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+        loadSubagentsStatus();
+      }
+    }
+
+    async function toggleRedditAgent(forceEnable = null) {
+      const redditSub = _subagentsConfig.find(s => s.subagent_id === 'subagent_2_reddit');
+      const currentlyEnabled = redditSub ? (redditSub.is_enabled === 1) : false;
+      const newStatus = (forceEnable !== null) ? forceEnable : !currentlyEnabled;
+      return toggleSubagent('subagent_2_reddit', newStatus);
+    }
+
+    // =========================================================================
     // REDDIT TURKISH DRONE ASSISTANT CONTROLLER
     // =========================================================================
     async function loadRedditData() {
+      // Sync toggle state from subagents config
+      await loadSubagentsStatus();
+
       try {
         const sRes = await fetch('/api/reddit/status');
         if (sRes.ok) {
@@ -3309,16 +3753,7 @@
           document.getElementById('reddit-kpi-published').textContent = status.published_count || 0;
           document.getElementById('reddit-kpi-today-limit').textContent = `${status.today_published_count || 0} / ${status.max_replies_per_day || 10}`;
           
-          const pill = document.getElementById('reddit-status-pill');
-          if (pill) {
-            if (status.is_autonomous_enabled) {
-              pill.textContent = 'Tam Otonom';
-              pill.className = 'status-pill status-pill-active';
-            } else {
-              pill.textContent = 'Durduruldu';
-              pill.className = 'status-pill status-pill-warn';
-            }
-          }
+          syncRedditUIWithConfig();
         }
       } catch(e) {
         console.warn("Reddit status fetch error:", e);
@@ -4468,6 +4903,167 @@
     }
 
     // =========================================================================
+    // SUBAGENT 8: PROCUREMENT & SUPPLY OPTIMIZATION DESK CONTROLLER
+    // =========================================================================
+    let _procurementPlan = null;
+    let _currentProcFilter = 'ALL';
+
+    async function loadProcurementData() {
+      try {
+        const res = await fetch('/api/procurement/latest');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success && data.plan) {
+          _procurementPlan = data.plan;
+          renderProcurementDashboard();
+        }
+      } catch(e) {
+        console.warn("Procurement data load error:", e);
+      }
+    }
+
+    function renderProcurementDashboard() {
+      if (!_procurementPlan) return;
+      const plan = _procurementPlan;
+
+      // Meta info
+      const planIdEl = document.getElementById('procurement-plan-id');
+      if (planIdEl) planIdEl.textContent = plan.id || '-';
+      const createdEl = document.getElementById('procurement-last-created');
+      if (createdEl && plan.created_at) {
+        const dt = new Date(plan.created_at);
+        createdEl.textContent = dt.toLocaleString('tr-TR');
+      }
+
+      // KPIs
+      const invest = plan.estimated_investment_try || plan.total_investment_try || 0;
+      const profit = plan.projected_profit_try || plan.total_profit_try || 0;
+      const margin = plan.average_margin_pct || (invest > 0 ? (profit / (invest + profit) * 100).toFixed(1) : 0);
+      const roi = plan.projected_roi_pct || plan.roi_pct || (invest > 0 ? (profit / invest * 100).toFixed(1) : 0);
+      const units = plan.total_units_count || plan.total_quantity || 0;
+      const skus = plan.total_items_count || plan.total_skus || (plan.items ? plan.items.length : 0);
+
+      const invEl = document.getElementById('proc-kpi-investment');
+      if (invEl) invEl.textContent = Number(invest).toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' TL';
+
+      const profEl = document.getElementById('proc-kpi-profit');
+      if (profEl) profEl.textContent = '+' + Number(profit).toLocaleString('tr-TR', { maximumFractionDigits: 0 }) + ' TL';
+
+      const margEl = document.getElementById('proc-kpi-margin');
+      if (margEl) margEl.textContent = `%${margin}`;
+
+      const roiEl = document.getElementById('proc-kpi-roi');
+      if (roiEl) roiEl.textContent = `%${roi}`;
+
+      const unitsEl = document.getElementById('proc-kpi-units');
+      if (unitsEl) unitsEl.textContent = `${units} Adet`;
+
+      const skusEl = document.getElementById('proc-kpi-skus');
+      if (skusEl) skusEl.textContent = skus;
+
+      // Strategy summary
+      const sumEl = document.getElementById('proc-strategy-summary');
+      if (sumEl && plan.strategy_summary) {
+        sumEl.textContent = plan.strategy_summary;
+      }
+
+      renderProcurementTable();
+    }
+
+    function filterProcurementTable(filter) {
+      _currentProcFilter = filter;
+      renderProcurementTable();
+    }
+
+    function renderProcurementTable() {
+      const tbody = document.getElementById('procurement-table-tbody');
+      if (!tbody || !_procurementPlan) return;
+
+      let items = _procurementPlan.items || [];
+      if (_currentProcFilter !== 'ALL') {
+        items = items.filter(it => it.urgency === _currentProcFilter);
+      }
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#64748b;">Bu filtreye uygun sipariş kalemi bulunamadı.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        let urgBadge = '<span class="urgency-badge urgency-orta">ORTA</span>';
+        if (item.urgency === 'KRİTİK') urgBadge = '<span class="urgency-badge urgency-kritik">KRİTİK ACİL</span>';
+        else if (item.urgency === 'YÜKSEK') urgBadge = '<span class="urgency-badge urgency-yuksek">YÜKSEK</span>';
+
+        const unitCost = Number(item.unit_cost_try || item.wholesale_unit_cost_try || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const salePrice = Number(item.unit_sale_price_try || item.retail_price_try || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const totProfit = Number(item.total_projected_profit_try || item.projected_profit_total_try || 0).toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        const stockCount = item.current_stock !== undefined ? item.current_stock : 0;
+        const stockHtml = stockCount === 0 
+          ? `<strong style="color:#ef4444;">0 (Tükendi)</strong>` 
+          : `<span style="color:#f59e0b;">${stockCount} adet</span>`;
+        const orderQty = item.recommended_qty || item.suggested_order_qty || 0;
+        const marginPct = item.margin_pct || item.profit_margin_pct || 0;
+
+        return `
+          <tr>
+            <td>${urgBadge}</td>
+            <td>
+              <div style="font-weight:700; color:#fff; font-size:0.84rem;">${item.name || item.product_name}</div>
+              <div style="display:flex; gap:6px; font-size:0.7rem; color:var(--text-dim); margin-top:2px;">
+                <span class="code-chip">${item.sku}</span>
+                ${item.brand ? `<span>${item.brand}</span>` : ''}
+              </div>
+            </td>
+            <td><span style="font-size:0.75rem; color:#94a3b8;">${item.category || '-'}</span></td>
+            <td>${stockHtml}</td>
+            <td><strong style="color:#38bdf8; font-size:0.92rem;">${orderQty} Adet</strong></td>
+            <td style="font-family:var(--font-mono);">${unitCost} TL</td>
+            <td style="font-family:var(--font-mono); font-weight:700; color:#fff;">${salePrice} TL</td>
+            <td><strong style="color:#10b981; font-family:var(--font-mono);">+${totProfit} TL</strong></td>
+            <td><span style="color:#c084fc; font-weight:700;">%${marginPct}</span></td>
+            <td>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="color:#f59e0b; font-weight:700; font-size:0.75rem;">⚡ Skor: ${item.velocity_score || '-'}/99</span>
+              </div>
+              <div style="font-size:0.72rem; color:#94a3b8; max-width:220px; line-height:1.3; margin-top:2px;">
+                ${item.reason || (item.reasons ? item.reasons.join(', ') : '-')}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function generateProcurementPlanNow() {
+      const btn = document.getElementById('btn-procurement-generate-now');
+      const txt = document.getElementById('btn-procurement-generate-txt');
+      if (btn) btn.disabled = true;
+      if (txt) txt.textContent = '⏳ Analiz Yapılıyor & Plan Üretiliyor...';
+      showToast('Katalog, 0-stok ürünler ve Trend Avcısı verileri analiz ediliyor...', 'info');
+
+      try {
+        const res = await fetch('/api/procurement/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        if (data.success && data.plan) {
+          _procurementPlan = data.plan;
+          renderProcurementDashboard();
+          showToast(`Yeni tedarik planı başarıyla oluşturuldu (${data.plan.total_items_count || data.plan.total_skus} SKU, ${data.plan.total_units_count || data.plan.total_quantity} adet)`, 'success');
+        } else {
+          showToast('Plan oluşturulamadı: ' + (data.error || 'Bilinmeyen hata'), 'error');
+        }
+      } catch(e) {
+        showToast('İstek hatası: ' + e.message, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+        if (txt) txt.textContent = '⚡ Yeni Sipariş Planı Oluştur';
+      }
+    }
+
+    // =========================================================================
     // SUBAGENT 7: QA SENTINEL, PROBES & AUTO-HEAL
     // =========================================================================
     async function loadQAData() {
@@ -4736,6 +5332,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       switchBotsTab('orchestrator');
       loadInstagramData();
+      loadSubagentsStatus();
     });
   </script>
   <!-- Modal: Trend Avcısı Ürün Fiyatını Güncelle -->

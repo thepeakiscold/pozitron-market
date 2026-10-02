@@ -149,6 +149,11 @@ class QASentinelAgent:
             "issues": []
         }
 
+        if not is_subagent_enabled("subagent_1_instagram"):
+            result["status"] = "DISABLED"
+            result["token_mode"] = "disabled"
+            return result
+
         try:
             cfg_dict = self._get_instagram_config()
             conn = get_db()
@@ -239,6 +244,11 @@ class QASentinelAgent:
             "inactivity_alert": False,
             "issues": []
         }
+
+        if not is_subagent_enabled("subagent_2_reddit"):
+            result["status"] = "DISABLED"
+            result["inactivity_alert"] = False
+            return result
 
         try:
             from reddit_agent.chrome_session import extract_chrome_reddit_session
@@ -379,6 +389,8 @@ class QASentinelAgent:
                 cursor.execute(f"SELECT count(*) FROM {tbl}")
                 counts[tbl] = cursor.fetchone()[0]
                 result["tables_checked"] += 1
+            cursor.execute("SELECT count(*) FROM instagram_posts WHERE status = 'published'")
+            published_ig_count = cursor.fetchone()[0]
             conn.close()
 
             # Parity checks with JSON files
@@ -387,9 +399,10 @@ class QASentinelAgent:
                 try:
                     with open(ig_json_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        if abs(len(data) - counts.get("instagram_posts", 0)) > 5:
+                        diff = min(abs(len(data) - counts.get("instagram_posts", 0)), abs(len(data) - published_ig_count))
+                        if diff > 10:
                             result["cache_files_in_sync"] = False
-                            msg = f"Instagram JSON onbellegi ({len(data)}) veritabani ({counts.get('instagram_posts')}) ile senkron degil."
+                            msg = f"Instagram JSON onbellegi ({len(data)}) veritabani ({published_ig_count} yayinlanan, {counts.get('instagram_posts')} toplam) ile senkron degil."
                             result["desync_details"].append(msg)
                             result["issues"].append(msg)
                 except Exception:
@@ -452,15 +465,26 @@ class QASentinelAgent:
             "lead_supervisor": ["LeadSupervisorSchedulerThread"]
         }
 
+        subagent_id_map = {
+            "instagram": "subagent_1_instagram",
+            "reddit": "subagent_2_reddit",
+            "lead_supervisor": "lead_supervisor"
+        }
+
         for key, possible_names in expected_schedulers.items():
+            sub_id = subagent_id_map.get(key)
+            is_enabled = is_subagent_enabled(sub_id) if sub_id else True
             matched_thread = next((t for t in all_threads if t in possible_names), None)
             is_alive = (matched_thread is not None) or server_service_active
             result["schedulers_status"][key] = {
                 "thread_name": matched_thread or possible_names[0],
                 "is_alive": is_alive,
+                "is_enabled": is_enabled,
                 "running_in_service": server_service_active
             }
-            if not is_alive:
+            if not is_enabled:
+                result["schedulers_status"][key]["status"] = "DISABLED"
+            elif not is_alive:
                 result["dead_schedulers"].append(key)
                 result["issues"].append(f"{key.capitalize()} arka plan zamanlayici is parcacigi ({possible_names[0]}) calismiyor.")
 
@@ -685,7 +709,8 @@ class QASentinelAgent:
                 "technical_seo": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
                 "lead_supervisor": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
                 "lead_evolution": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
-                "trend_hunter": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []}
+                "trend_hunter": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []},
+                "procurement": {"status": "HEALTHY", "fresh": True, "count": 0, "last_run_at": None, "details": {}, "issues": []}
             },
             "issues": []
         }
@@ -696,141 +721,191 @@ class QASentinelAgent:
             now = datetime.now()
 
             # 1. Subagent 1: Telemetry Sentinel
-            cursor.execute("SELECT * FROM telemetry_history ORDER BY id DESC LIMIT 1")
-            tel = cursor.fetchone()
-            if tel:
-                t_dict = dict(tel)
-                created_dt = datetime.fromisoformat(t_dict['created_at'])
-                is_fresh = (now - created_dt).total_seconds() < 21600  # < 6 hours
-                result["subagents"]["telemetry"]["count"] = cursor.execute("SELECT count(*) FROM telemetry_history").fetchone()[0]
-                result["subagents"]["telemetry"]["last_run_at"] = t_dict['created_at']
-                result["subagents"]["telemetry"]["fresh"] = is_fresh
-                result["subagents"]["telemetry"]["details"] = {
-                    "ig_reach": t_dict.get('ig_estimated_reach', 0),
-                    "reddit_comments": t_dict.get('reddit_comments_count', 0),
-                    "indexed_keywords_count": len(json.loads(t_dict.get('indexed_keywords_json') or '[]')) if t_dict.get('indexed_keywords_json') else 0
-                }
-                if not is_fresh:
-                    result["subagents"]["telemetry"]["status"] = "DEGRADED"
-                    msg = "Subagent 1 Telemetri verisi 6 saatten uzun suredir guncellenmedi."
-                    result["subagents"]["telemetry"]["issues"].append(msg)
-                    result["issues"].append(msg)
+            if not is_subagent_enabled("subagent_3_telemetry"):
+                result["subagents"]["telemetry"]["status"] = "DISABLED"
             else:
-                result["subagents"]["telemetry"]["status"] = "DEGRADED"
-                result["subagents"]["telemetry"]["fresh"] = False
-                result["issues"].append("Subagent 1 Telemetri kaydi henuz bulunmuyor.")
+                cursor.execute("SELECT * FROM telemetry_history ORDER BY id DESC LIMIT 1")
+                tel = cursor.fetchone()
+                if tel:
+                    t_dict = dict(tel)
+                    created_dt = datetime.fromisoformat(t_dict['created_at'])
+                    is_fresh = (now - created_dt).total_seconds() < 21600  # < 6 hours
+                    result["subagents"]["telemetry"]["count"] = cursor.execute("SELECT count(*) FROM telemetry_history").fetchone()[0]
+                    result["subagents"]["telemetry"]["last_run_at"] = t_dict['created_at']
+                    result["subagents"]["telemetry"]["fresh"] = is_fresh
+                    result["subagents"]["telemetry"]["details"] = {
+                        "ig_reach": t_dict.get('ig_estimated_reach', 0),
+                        "reddit_comments": t_dict.get('reddit_comments_count', 0),
+                        "indexed_keywords_count": len(json.loads(t_dict.get('indexed_keywords_json') or '[]')) if t_dict.get('indexed_keywords_json') else 0
+                    }
+                    if not is_fresh:
+                        result["subagents"]["telemetry"]["status"] = "DEGRADED"
+                        msg = "Subagent 1 Telemetri verisi 6 saatten uzun suredir guncellenmedi."
+                        result["subagents"]["telemetry"]["issues"].append(msg)
+                        result["issues"].append(msg)
+                else:
+                    result["subagents"]["telemetry"]["status"] = "DEGRADED"
+                    result["subagents"]["telemetry"]["fresh"] = False
+                    result["issues"].append("Subagent 1 Telemetri kaydi henuz bulunmuyor.")
 
             # 2. Subagent 2: Price Intelligence
-            cursor.execute("SELECT * FROM price_intelligence_logs ORDER BY id DESC LIMIT 1")
-            pi = cursor.fetchone()
-            if pi:
-                p_dict = dict(pi)
-                created_dt = datetime.fromisoformat(p_dict['created_at'])
-                is_fresh = (now - created_dt).total_seconds() < 21600
-                total_scans = cursor.execute("SELECT count(*) FROM price_intelligence_logs").fetchone()[0]
-                zero_prices = cursor.execute("SELECT count(*) FROM price_intelligence_logs WHERE pozitron_price_try <= 0").fetchone()[0]
-                result["subagents"]["price_intelligence"]["count"] = total_scans
-                result["subagents"]["price_intelligence"]["last_run_at"] = p_dict['created_at']
-                result["subagents"]["price_intelligence"]["fresh"] = is_fresh
-                result["subagents"]["price_intelligence"]["details"] = {
-                    "latest_sku": p_dict.get('sku'),
-                    "zero_price_anomalies": zero_prices
-                }
-                if not is_fresh:
-                    result["subagents"]["price_intelligence"]["status"] = "DEGRADED"
-                    msg = "Subagent 2 Fiyat Istihbarati taramasi 6 saatten uzun suredir yapilmadi."
-                    result["subagents"]["price_intelligence"]["issues"].append(msg)
-                    result["issues"].append(msg)
-                if zero_prices > 0:
-                    msg = f"Fiyat istihbaratinda {zero_prices} adet 0 TL anomalisi tespit edildi."
-                    result["subagents"]["price_intelligence"]["issues"].append(msg)
-                    result["issues"].append(msg)
+            if not is_subagent_enabled("subagent_5_price"):
+                result["subagents"]["price_intelligence"]["status"] = "DISABLED"
             else:
-                result["subagents"]["price_intelligence"]["status"] = "DEGRADED"
-                result["subagents"]["price_intelligence"]["fresh"] = False
-                result["issues"].append("Subagent 2 Fiyat Istihbarati verisi bulunmuyor.")
+                cursor.execute("SELECT * FROM price_intelligence_logs ORDER BY id DESC LIMIT 1")
+                pi = cursor.fetchone()
+                if pi:
+                    p_dict = dict(pi)
+                    created_dt = datetime.fromisoformat(p_dict['created_at'])
+                    is_fresh = (now - created_dt).total_seconds() < 21600
+                    total_scans = cursor.execute("SELECT count(*) FROM price_intelligence_logs").fetchone()[0]
+                    zero_prices = cursor.execute("SELECT count(*) FROM price_intelligence_logs WHERE pozitron_price_try <= 0").fetchone()[0]
+                    result["subagents"]["price_intelligence"]["count"] = total_scans
+                    result["subagents"]["price_intelligence"]["last_run_at"] = p_dict['created_at']
+                    result["subagents"]["price_intelligence"]["fresh"] = is_fresh
+                    result["subagents"]["price_intelligence"]["details"] = {
+                        "latest_sku": p_dict.get('sku'),
+                        "zero_price_anomalies": zero_prices
+                    }
+                    if not is_fresh:
+                        result["subagents"]["price_intelligence"]["status"] = "DEGRADED"
+                        msg = "Subagent 2 Fiyat Istihbarati taramasi 6 saatten uzun suredir yapilmadi."
+                        result["subagents"]["price_intelligence"]["issues"].append(msg)
+                        result["issues"].append(msg)
+                    if zero_prices > 0:
+                        msg = f"Fiyat istihbaratinda {zero_prices} adet 0 TL anomalisi tespit edildi."
+                        result["subagents"]["price_intelligence"]["issues"].append(msg)
+                        result["issues"].append(msg)
+                else:
+                    result["subagents"]["price_intelligence"]["status"] = "DEGRADED"
+                    result["subagents"]["price_intelligence"]["fresh"] = False
+                    result["issues"].append("Subagent 2 Fiyat Istihbarati verisi bulunmuyor.")
 
             # 3. Subagent 3: Technical SEO Publisher
-            cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC LIMIT 1")
-            seo = cursor.fetchone()
-            if seo:
-                s_dict = dict(seo)
-                total_articles = cursor.execute("SELECT count(*) FROM seo_articles").fetchone()[0]
-                body_len = len(s_dict.get('content_markdown') or '')
-                has_links = bool(s_dict.get('internal_links_json'))
-                result["subagents"]["technical_seo"]["count"] = total_articles
-                result["subagents"]["technical_seo"]["last_run_at"] = s_dict.get('created_at')
-                result["subagents"]["technical_seo"]["details"] = {
-                    "latest_title": s_dict.get('title'),
-                    "body_length_chars": body_len,
-                    "has_internal_links": has_links
-                }
-                if body_len < 300:
-                    result["subagents"]["technical_seo"]["status"] = "DEGRADED"
-                    msg = "Subagent 3 tarafindan uretilen son SEO makalesi cok kisa (<300 karakter) veya eksik."
-                    result["subagents"]["technical_seo"]["issues"].append(msg)
-                    result["issues"].append(msg)
+            if not is_subagent_enabled("subagent_4_seo"):
+                result["subagents"]["technical_seo"]["status"] = "DISABLED"
             else:
-                result["subagents"]["technical_seo"]["status"] = "DEGRADED"
-                result["issues"].append("Subagent 3 Teknik SEO makalesi bulunmuyor.")
+                cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC LIMIT 1")
+                seo = cursor.fetchone()
+                if seo:
+                    s_dict = dict(seo)
+                    total_articles = cursor.execute("SELECT count(*) FROM seo_articles").fetchone()[0]
+                    body_len = len(s_dict.get('content_markdown') or '')
+                    has_links = bool(s_dict.get('internal_links_json'))
+                    result["subagents"]["technical_seo"]["count"] = total_articles
+                    result["subagents"]["technical_seo"]["last_run_at"] = s_dict.get('created_at')
+                    result["subagents"]["technical_seo"]["details"] = {
+                        "latest_title": s_dict.get('title'),
+                        "body_length_chars": body_len,
+                        "has_internal_links": has_links
+                    }
+                    if body_len < 300:
+                        result["subagents"]["technical_seo"]["status"] = "DEGRADED"
+                        msg = "Subagent 3 tarafindan uretilen son SEO makalesi cok kisa (<300 karakter) veya eksik."
+                        result["subagents"]["technical_seo"]["issues"].append(msg)
+                        result["issues"].append(msg)
+                else:
+                    result["subagents"]["technical_seo"]["status"] = "DEGRADED"
+                    result["issues"].append("Subagent 3 Teknik SEO makalesi bulunmuyor.")
 
             # 4. Subagent 4/5: Lead Supervisor Directives & Evolution
-            cursor.execute("SELECT * FROM lead_supervisor_directives ORDER BY id DESC LIMIT 1")
-            sup = cursor.fetchone()
-            if sup:
-                sp_dict = dict(sup)
-                created_dt = datetime.fromisoformat(sp_dict['created_at'])
-                is_fresh = (now - created_dt).total_seconds() < 21600
-                total_directives = cursor.execute("SELECT count(*) FROM lead_supervisor_directives").fetchone()[0]
-                result["subagents"]["lead_supervisor"]["count"] = total_directives
-                result["subagents"]["lead_supervisor"]["last_run_at"] = sp_dict.get('created_at')
-                result["subagents"]["lead_supervisor"]["fresh"] = is_fresh
-                if not is_fresh:
-                    result["subagents"]["lead_supervisor"]["status"] = "DEGRADED"
-                    msg = "Lead Supervisor direktif dongusu 6 saatten uzun suredir calismadi."
-                    result["subagents"]["lead_supervisor"]["issues"].append(msg)
-                    result["issues"].append(msg)
+            if not is_subagent_enabled("lead_supervisor"):
+                result["subagents"]["lead_supervisor"]["status"] = "DISABLED"
+                result["subagents"]["lead_evolution"]["status"] = "DISABLED"
+            else:
+                cursor.execute("SELECT * FROM lead_supervisor_directives ORDER BY id DESC LIMIT 1")
+                sup = cursor.fetchone()
+                if sup:
+                    sp_dict = dict(sup)
+                    created_dt = datetime.fromisoformat(sp_dict['created_at'])
+                    is_fresh = (now - created_dt).total_seconds() < 21600
+                    total_directives = cursor.execute("SELECT count(*) FROM lead_supervisor_directives").fetchone()[0]
+                    result["subagents"]["lead_supervisor"]["count"] = total_directives
+                    result["subagents"]["lead_supervisor"]["last_run_at"] = sp_dict.get('created_at')
+                    result["subagents"]["lead_supervisor"]["fresh"] = is_fresh
+                    if not is_fresh:
+                        result["subagents"]["lead_supervisor"]["status"] = "DEGRADED"
+                        msg = "Lead Supervisor direktif dongusu 6 saatten uzun suredir calismadi."
+                        result["subagents"]["lead_supervisor"]["issues"].append(msg)
+                        result["issues"].append(msg)
 
-            cursor.execute("SELECT * FROM lead_evolution_logs ORDER BY id DESC LIMIT 1")
-            evo = cursor.fetchone()
-            if evo:
-                ev_dict = dict(evo)
-                created_dt = datetime.fromisoformat(ev_dict['created_at'])
-                is_fresh = (now - created_dt).total_seconds() < 86400  # < 24 hours
-                total_evos = cursor.execute("SELECT count(*) FROM lead_evolution_logs").fetchone()[0]
-                result["subagents"]["lead_evolution"]["count"] = total_evos
-                result["subagents"]["lead_evolution"]["last_run_at"] = ev_dict.get('created_at')
-                result["subagents"]["lead_evolution"]["fresh"] = is_fresh
+                cursor.execute("SELECT * FROM lead_evolution_logs ORDER BY id DESC LIMIT 1")
+                evo = cursor.fetchone()
+                if evo:
+                    ev_dict = dict(evo)
+                    created_dt = datetime.fromisoformat(ev_dict['created_at'])
+                    is_fresh = (now - created_dt).total_seconds() < 86400  # < 24 hours
+                    total_evos = cursor.execute("SELECT count(*) FROM lead_evolution_logs").fetchone()[0]
+                    result["subagents"]["lead_evolution"]["count"] = total_evos
+                    result["subagents"]["lead_evolution"]["last_run_at"] = ev_dict.get('created_at')
+                    result["subagents"]["lead_evolution"]["fresh"] = is_fresh
 
             # 5. Subagent 6: Global Trend Hunter
-            cursor.execute("SELECT * FROM global_trend_proposals ORDER BY id DESC LIMIT 1")
-            trnd = cursor.fetchone()
-            if trnd:
-                tr_dict = dict(trnd)
-                total_trends = cursor.execute("SELECT count(*) FROM global_trend_proposals").fetchone()[0]
-                result["subagents"]["trend_hunter"]["count"] = total_trends
-                result["subagents"]["trend_hunter"]["last_run_at"] = tr_dict.get('created_at')
-                cursor.execute("SELECT count(*) FROM trend_price_comparisons WHERE status = 'TOO_CHEAP_ALERT'")
-                too_cheap_c = cursor.fetchone()[0]
-                result["subagents"]["trend_hunter"]["details"] = {
-                    "latest_trend_name": tr_dict.get('name_tr'),
-                    "trend_score": tr_dict.get('trend_score', 0),
-                    "too_cheap_warnings": too_cheap_c
-                }
-                if too_cheap_c > 0:
-                    result["subagents"]["trend_hunter"]["issues"].append(f"{too_cheap_c} üründe aşırı ucuz fiyat uyarısı tespit edildi.")
+            if not is_subagent_enabled("subagent_6_trend"):
+                result["subagents"]["trend_hunter"]["status"] = "DISABLED"
             else:
-                result["subagents"]["trend_hunter"]["status"] = "DEGRADED"
-                result["issues"].append("Subagent 6 Trend Avcisi henuz bir donanim onerisi uretmemis.")
+                cursor.execute("SELECT * FROM global_trend_proposals ORDER BY id DESC LIMIT 1")
+                trnd = cursor.fetchone()
+                if trnd:
+                    tr_dict = dict(trnd)
+                    total_trends = cursor.execute("SELECT count(*) FROM global_trend_proposals").fetchone()[0]
+                    result["subagents"]["trend_hunter"]["count"] = total_trends
+                    result["subagents"]["trend_hunter"]["last_run_at"] = tr_dict.get('created_at')
+                    cursor.execute("SELECT count(*) FROM trend_price_comparisons WHERE status = 'TOO_CHEAP_ALERT'")
+                    too_cheap_c = cursor.fetchone()[0]
+                    result["subagents"]["trend_hunter"]["details"] = {
+                        "latest_trend_name": tr_dict.get('name_tr'),
+                        "trend_score": tr_dict.get('trend_score', 0),
+                        "too_cheap_warnings": too_cheap_c
+                    }
+                    if too_cheap_c > 0:
+                        result["subagents"]["trend_hunter"]["issues"].append(f"{too_cheap_c} üründe aşırı ucuz fiyat uyarısı tespit edildi.")
+                else:
+                    result["subagents"]["trend_hunter"]["status"] = "DEGRADED"
+                    result["issues"].append("Subagent 6 Trend Avcisi henuz bir donanim onerisi uretmemis.")
+
+            # 6. Subagent 8: Procurement Order Agent
+            if not is_subagent_enabled("subagent_8_procurement"):
+                result["subagents"]["procurement"]["status"] = "DISABLED"
+            else:
+                cursor.execute("SELECT * FROM procurement_order_plans ORDER BY id DESC LIMIT 1")
+                proc_row = cursor.fetchone()
+                if proc_row:
+                    p_dict = dict(proc_row)
+                    created_dt = datetime.fromisoformat(p_dict['created_at'])
+                    is_fresh = (now - created_dt).total_seconds() < 86400  # < 24 hours
+                    total_plans = cursor.execute("SELECT count(*) FROM procurement_order_plans").fetchone()[0]
+                    result["subagents"]["procurement"]["count"] = total_plans
+                    result["subagents"]["procurement"]["last_run_at"] = p_dict.get('created_at')
+                    result["subagents"]["procurement"]["fresh"] = is_fresh
+                    result["subagents"]["procurement"]["details"] = {
+                        "plan_id": p_dict.get('id'),
+                        "items_count": p_dict.get('total_items_count'),
+                        "units_count": p_dict.get('total_units_count'),
+                        "investment_try": p_dict.get('estimated_investment_try'),
+                        "profit_try": p_dict.get('projected_profit_try'),
+                        "roi_pct": p_dict.get('projected_roi_pct')
+                    }
+                    if not is_fresh:
+                        result["subagents"]["procurement"]["status"] = "DEGRADED"
+                        msg = "Subagent 8 Siparis & Tedarik plani 24 saatten uzun suredir guncellenmedi."
+                        result["subagents"]["procurement"]["issues"].append(msg)
+                        result["issues"].append(msg)
+                else:
+                    result["subagents"]["procurement"]["status"] = "DEGRADED"
+                    result["subagents"]["procurement"]["fresh"] = False
+                    result["issues"].append("Subagent 8 Siparis & Tedarik plani henuz olusturulmamis.")
 
             conn.close()
 
-            # Overall status evaluation
-            sub_statuses = [sub["status"] for sub in result["subagents"].values()]
+            # Overall status evaluation (exclude DISABLED)
+            sub_statuses = [sub["status"] for sub in result["subagents"].values() if sub["status"] != "DISABLED"]
             if "CRITICAL" in sub_statuses:
                 result["status"] = "CRITICAL"
             elif "DEGRADED" in sub_statuses:
                 result["status"] = "DEGRADED"
+            else:
+                result["status"] = "HEALTHY"
 
         except Exception as e:
             result["status"] = "DEGRADED"
@@ -950,11 +1025,11 @@ KURALLAR:
         # Deterministic Rule-Based RCA Fallback
         root_causes = []
         actions = []
-        if not probe_results['probes']['instagram']['token_valid']:
+        if not probe_results['probes']['instagram']['token_valid'] and probe_results['probes']['instagram'].get('status') != 'DISABLED':
             root_causes.append("Meta Graph API OAuth erisim belirteci suresi dolmus veya yapilandirilmamis (Hata 190).")
             actions.append("Instagram yayinlayicisini otonom simulasyon/yedek moduna gecirerek is akisinin kesilmesini onle.")
 
-        if probe_results['probes']['reddit']['inactivity_alert']:
+        if probe_results['probes']['reddit'].get('inactivity_alert') and probe_results['probes']['reddit'].get('status') != 'DISABLED':
             hours_inact = probe_results['probes']['reddit'].get('hours_since_last_publish', 0)
             root_causes.append(f"Reddit botu {hours_inact} saattir hic yorum yayinlamadi. Gemini anahtari, arama motoru veya kuyruk bloke olmus olabilir.")
             actions.append("Reddit Gemini API anahtarini esitle, canli modu aktiflestir, arama motorunu calistir ve taslak/yeni yorum gonder.")
@@ -1171,6 +1246,7 @@ KURALLAR:
         # Remedy 4: Reddit Inactivity Breakthrough & Self-Healing
         red = probe_results.get('probes', {}).get('reddit', {})
         needs_reddit_heal = bool(
+            is_subagent_enabled("subagent_2_reddit") and
             red and (
                 red.get('inactivity_alert') or
                 red.get('status') in ('DEGRADED', 'CRITICAL') or

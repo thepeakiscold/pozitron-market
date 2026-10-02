@@ -1580,7 +1580,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         # Subagents Matrix Status (Toggle and Active Statuses)
         if path == '/api/subagents/status':
             subagents = get_all_subagents_config()
-            self.send_json(200, {"subagents": subagents, "count": len(subagents)})
+            self.send_json(200, {"success": True, "subagents": subagents, "count": len(subagents)})
             return
 
         # Subagent 8: Latest Procurement & Replenishment Order Plan
@@ -2807,7 +2807,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/subagents/toggle':
             try:
                 subagent_id = data.get("subagent_id")
-                enabled = bool(data.get("enabled", True))
+                val = data.get("enabled") if "enabled" in data else data.get("is_enabled", True)
+                enabled = bool(val)
                 if not subagent_id:
                     self.send_json(400, {"error": "subagent_id is required"})
                     return
@@ -2884,7 +2885,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             try:
                 budget = float(data.get("budget_try", 250000.0))
                 plan = lead_supervisor_agent.procurement_agent.analyze_and_generate_order_plan(target_budget_try=budget)
-                self.send_json(200, plan)
+                self.send_json(200, {"success": True, "plan": plan})
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return

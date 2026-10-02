@@ -22,7 +22,9 @@ class ProcurementOrderAgent:
     """
 
     def __init__(self):
+        self.model_code = "gemini-3.8-flash"
         self.usd_rate = CURRENT_USD_RATE
+        self.usd_try_rate = CURRENT_USD_RATE
 
     def analyze_and_generate_order_plan(self, target_budget_try: float = 250000.0) -> Dict:
         """
@@ -278,15 +280,24 @@ class ProcurementOrderAgent:
         # Save to static JSON in data/
         plan_dict = {
             "id": plan_id,
+            "plan_id": plan_id,
+            "title": plan_title,
             "plan_title": plan_title,
             "total_skus": len(selected_items),
+            "total_items_count": len(selected_items),
             "total_quantity": total_items_count,
+            "total_units_count": total_items_count,
             "total_investment_try": total_investment,
+            "estimated_investment_try": total_investment,
+            "projected_revenue_try": projected_revenue,
             "total_profit_try": total_profit,
+            "projected_profit_try": total_profit,
             "average_margin_pct": avg_margin,
             "roi_pct": roi_pct,
+            "projected_roi_pct": roi_pct,
             "created_at": now_iso,
-            "items": selected_items
+            "items": selected_items,
+            "strategy_summary": md_summary
         }
 
         os.makedirs("data", exist_ok=True)
@@ -302,15 +313,25 @@ class ProcurementOrderAgent:
 
         return {
             "success": True,
+            "id": plan_id,
             "plan_id": plan_id,
+            "title": plan_title,
             "plan_title": plan_title,
             "total_skus": len(selected_items),
+            "total_items_count": len(selected_items),
             "total_quantity": total_items_count,
+            "total_units_count": total_items_count,
             "total_investment_try": total_investment,
+            "estimated_investment_try": total_investment,
+            "projected_revenue_try": projected_revenue,
             "total_profit_try": total_profit,
+            "projected_profit_try": total_profit,
             "average_margin_pct": avg_margin,
             "roi_pct": roi_pct,
+            "projected_roi_pct": roi_pct,
+            "created_at": now_iso,
             "items": selected_items,
+            "strategy_summary": md_summary,
             "recommendations_markdown": md_summary,
             "csv_file": csv_path
         }
