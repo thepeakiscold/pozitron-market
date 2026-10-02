@@ -111,8 +111,23 @@ class InstagramEngagementEngine:
                 except Exception:
                     pass
 
+        # Strict ASCII sanitization: strip any non-printable or >127 chars that crash requests latin-1 encoding
+        if self.session_cookies:
+            clean_cookies = {}
+            for k, v in self.session_cookies.items():
+                if isinstance(v, str):
+                    clean_v = ''.join(c for c in v if 32 <= ord(c) < 127).strip()
+                    if clean_v:
+                        clean_cookies[k] = clean_v
+                else:
+                    clean_cookies[k] = str(v)
+            self.session_cookies = clean_cookies
+        if self.csrf_token:
+            self.csrf_token = ''.join(c for c in str(self.csrf_token) if 32 <= ord(c) < 127).strip()
+
     def _get_headers(self, referer: str = 'https://www.instagram.com/') -> dict:
-        csrf = self.csrf_token or self.session_cookies.get('csrftoken', '')
+        raw_csrf = self.csrf_token or (self.session_cookies.get('csrftoken', '') if self.session_cookies else '')
+        csrf = ''.join(c for c in str(raw_csrf) if 32 <= ord(c) < 127).strip()
         return {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
             'X-CSRFToken': csrf,

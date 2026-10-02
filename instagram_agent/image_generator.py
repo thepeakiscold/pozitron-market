@@ -162,6 +162,9 @@ class ImageGenerator:
         # Right-side Category Tag
         type_labels = {
             'product_spotlight': 'PRO FPV DONANIM',
+            'hardware_battle': 'DONANIM DUELLOSU',
+            'mistake_breakdown': 'KIRIM VE HATA ONLEME',
+            'community_quiz': 'PILOT TOPLULUK ANKETI',
             'drone_build_showcase': 'POZITRON BUILD REHBERI',
             'flight_weather_radar': 'GUNLUK UCUS RADARI',
             'spot_guide': 'FPV SAHA VE SPOT REHBERI',

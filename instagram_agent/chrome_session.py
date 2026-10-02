@@ -82,8 +82,11 @@ def extract_chrome_instagram_cookies(cookie_db_path: str = None) -> dict:
                 if isinstance(pad, int) and pad <= 16:
                     dec = dec[:-pad]
                 # In v11, first 32 bytes are the integrity header
-                cookie_val = dec[32:].decode('utf-8', errors='ignore')
-                decrypted[name] = cookie_val
+                raw_text = dec[32:].decode('utf-8', errors='ignore')
+                # HTTP headers require strictly printable ASCII (ord 32-126)
+                clean_val = ''.join(c for c in raw_text if 32 <= ord(c) < 127).strip()
+                if clean_val:
+                    decrypted[name] = clean_val
             except Exception:
                 pass
 

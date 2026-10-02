@@ -9023,6 +9023,24 @@
       </g:shipping>
     </item>
     <item>
+      <g:id>PZT-MOTO-4307</g:id>
+      <g:title>T-Motor Velox V3 V2207 1950KV Freestyle Motor</g:title>
+      <g:description>T-Motor Velox V3 V2207 1950KV Freestyle Motor (T-Motor). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.</g:description>
+      <g:link>https://pozitronmarket.com/products/t-motor-velox-v3-v2207-1950kv-freestyle-motor</g:link>
+      <g:image_link>https://pozitronmarket.com/assets/products/trend_tmotor_velox_v3.jpg</g:image_link>
+      <g:availability>out_of_stock</g:availability>
+      <g:price>860.00 TRY</g:price>
+      <g:brand>T-Motor</g:brand>
+      <g:condition>new</g:condition>
+      <g:google_product_category>5433</g:google_product_category>
+      <g:identifier_exists>no</g:identifier_exists>
+      <g:shipping>
+        <g:country>TR</g:country>
+        <g:service>Standart Kargo (Yurtiçi Kargo)</g:service>
+        <g:price>99.00 TRY</g:price>
+      </g:shipping>
+    </item>
+    <item>
       <g:id>PZT-CAME-8359</g:id>
       <g:title>Caddx Walksnail Avatar HD Pro Kit Çift Antenli Dijital VTX</g:title>
       <g:description>Caddx Walksnail Avatar HD Pro Kit Çift Antenli Dijital VTX (Caddx). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.</g:description>
@@ -9067,6 +9085,24 @@
       <g:availability>in_stock</g:availability>
       <g:price>3509.50 TRY</g:price>
       <g:brand>RadioMaster</g:brand>
+      <g:condition>new</g:condition>
+      <g:google_product_category>5433</g:google_product_category>
+      <g:identifier_exists>no</g:identifier_exists>
+      <g:shipping>
+        <g:country>TR</g:country>
+        <g:service>Standart Kargo (Yurtiçi Kargo)</g:service>
+        <g:price>0.00 TRY</g:price>
+      </g:shipping>
+    </item>
+    <item>
+      <g:id>PZT-BATT-1901</g:id>
+      <g:title>ToolkitRC M6D 500W 15A Çift Kanal Akıllı DC Şarj Cihazı</g:title>
+      <g:description>ToolkitRC M6D 500W 15A Çift Kanal Akıllı DC Şarj Cihazı (ToolkitRC). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.</g:description>
+      <g:link>https://pozitronmarket.com/products/toolkitrc-m6d-500w-15a-dual-channel-smart-dc-charger</g:link>
+      <g:image_link>https://pozitronmarket.com/assets/products/trend_toolkitrc_m6d.jpg</g:image_link>
+      <g:availability>out_of_stock</g:availability>
+      <g:price>2840.00 TRY</g:price>
+      <g:brand>ToolkitRC</g:brand>
       <g:condition>new</g:condition>
       <g:google_product_category>5433</g:google_product_category>
       <g:identifier_exists>no</g:identifier_exists>

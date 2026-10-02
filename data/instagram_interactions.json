@@ -1,7 +1,7 @@
 {
   "today_date": "2026-10-02",
-  "today_follows_count": 0,
-  "today_comments_count": 0,
+  "today_follows_count": 2,
+  "today_comments_count": 2,
   "max_daily_limit": 10,
   "followed_user_ids": [
     "73181351103",
@@ -154,7 +154,9 @@
     "62610541565",
     "48904862019",
     "46534860962",
-    "36008896229"
+    "36008896229",
+    "44043475831",
+    "1668563160"
   ],
   "commented_media_ids": [
     "3983912198478190450_73181351103",
@@ -307,7 +309,9 @@
     "3994839108638300370_12063110039",
     "3992587931393110540_33787329317",
     "3988374496191231741_62610541565",
-    "3797578917557885364_1451616674"
+    "3797578917557885364_1451616674",
+    "2058226878682201313_14256933607",
+    "2058229738394384671_14256933607"
   ],
   "history": [
     {
@@ -2875,6 +2879,40 @@
       "username": "kamera.kafasi",
       "user_id": "36008896229",
       "timestamp": "2026-09-27T00:46:08.283394",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "m_droneland",
+      "user_id": "14256933607",
+      "media_id": "2058226878682201313_14256933607",
+      "media_code": "ByQSnDzA3zh",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-02T19:42:16.245313",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "m_droneland",
+      "user_id": "14256933607",
+      "media_id": "2058229738394384671_14256933607",
+      "media_code": "ByQTQrHJHkf",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı keyifli uçuşlar dileriz!",
+      "timestamp": "2026-10-02T19:42:48.402074",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "turk.drone",
+      "user_id": "44043475831",
+      "timestamp": "2026-10-02T19:43:14.021014",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "memo.sky",
+      "user_id": "1668563160",
+      "timestamp": "2026-10-02T19:43:42.194134",
       "status": "success"
     }
   ]

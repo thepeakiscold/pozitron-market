@@ -454,6 +454,56 @@ def init_db():
                 except Exception as ex:
                     print(f"[Migration Warning] {col_name}: {ex}")
 
+    # Subagents Enable/Disable Configuration Table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS subagents_config (
+            subagent_id TEXT PRIMARY KEY,
+            name_tr TEXT NOT NULL,
+            is_enabled INTEGER DEFAULT 1,
+            description_tr TEXT,
+            updated_at TEXT NOT NULL
+        )
+    ''')
+
+    default_subagents = [
+        ('subagent_1_instagram', 'Instagram PR ve İçerik Botu', 1, 'Otonom Instagram gönderi, hikaye ve reels üretimi'),
+        ('subagent_2_reddit', 'Reddit FPV ve Topluluk Asistanı', 0, 'Türk FPV ve teknoloji subredditlerinde otonom soru yanıtlama (Kullanıcı tarafından kapatıldı)'),
+        ('subagent_3_telemetry', 'Telemetri ve Metrik Takip Ajanı', 1, 'Satış, stok ve sistem sağlık telemetrilerini derleme'),
+        ('subagent_4_seo', 'Teknik Dokümantasyon ve SEO Ajanı', 1, 'Teknik rehberler ve iç linklemeli SEO makaleleri üretme'),
+        ('subagent_5_price', 'Türkiye Fiyat ve Rekabet İstihbaratı', 1, 'Türkiye FPV pazarındaki rakip fiyat ve arbitraj analizi'),
+        ('subagent_6_trend', 'Küresel Trend Avcısı ve Tedarik Ajanı', 1, 'Dünyadaki yeni çıkan trend FPV donanımlarını keşfetme'),
+        ('subagent_7_qa', 'QA Sentinel ve Otonom Sistem Sağlığı', 1, 'Sistem arızalarını, bozuk linkleri ve anomalileri denetleme'),
+        ('subagent_8_procurement', 'Sipariş ve Tedarik Optimizasyonu Ajanı', 1, 'En çok kâr ettirecek ve hızlı satılacak ürünleri adetleriyle planlama'),
+        ('lead_supervisor', 'Baş Orkestratör ve Stratejik Evrim Motoru', 1, 'Tüm alt ajanları koordine eden ana strateji motoru')
+    ]
+    for sa_id, sa_name, sa_enabled, sa_desc in default_subagents:
+        cursor.execute('''
+            INSERT OR IGNORE INTO subagents_config (subagent_id, name_tr, is_enabled, description_tr, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (sa_id, sa_name, sa_enabled, sa_desc, datetime.now().isoformat()))
+
+    # Ensure Reddit agent is disabled per user request
+    cursor.execute("UPDATE subagents_config SET is_enabled = 0 WHERE subagent_id = 'subagent_2_reddit'")
+    cursor.execute("UPDATE reddit_agent_config SET is_autonomous_enabled = 0 WHERE id = 1")
+
+    # Procurement & Replenishment Order Plans Table (Subagent 8)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS procurement_order_plans (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            status TEXT DEFAULT 'PROPOSED', -- 'PROPOSED', 'APPROVED', 'ORDERED'
+            total_items_count INTEGER NOT NULL,
+            total_units_count INTEGER NOT NULL,
+            estimated_investment_try REAL NOT NULL,
+            projected_revenue_try REAL NOT NULL,
+            projected_profit_try REAL NOT NULL,
+            projected_roi_pct REAL NOT NULL,
+            items_json TEXT NOT NULL,
+            strategy_summary TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
     conn.commit()
     conn.close()
     print("Database initialized successfully.")

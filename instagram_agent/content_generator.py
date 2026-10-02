@@ -266,6 +266,191 @@ FPV_PILOT_TIPS = [
     }
 ]
 
+HARDWARE_BATTLES = [
+    {
+        'title': '[DUELLO] ELRS vs TBS Crossfire: Hangisini Seçmelisin?',
+        'summary': 'Açık kaynak ExpressLRS (ELRS), 500Hz-1000Hz paket hızı, ultra düşük 2ms gecikme ve uygun fiyatıyla yarış ve freestyle pilotlarının 1 numaralı tercihi oldu. TBS Crossfire ise 868/915MHz düşük frekansta dağlık ve engelli arazilerde stabil long-range penetrasyon sunuyor. Pozitron rehberinde ikisinin artıları ve eksilerini inceliyoruz.',
+        'headline': 'ELRS VS TBS CROSSFIRE',
+        'subhead': 'Ultra Düşük Gecikme mi, Long-Range Penetrasyon mu?',
+        'points': [
+            "[HIZ] ELRS 2.4GHz: 1000Hz Paket Hızı & 2ms Gecikme",
+            "[MENZIL] Crossfire: 915MHz ile Engelli Arazide Güçlü Nüfuz",
+            "[MALIYET] ELRS Uygun Fiyat & Geniş Donanım Desteği"
+        ],
+        'tags': '#elrs #crossfire #radiomaster #fpvkumanda #pozitronmarket'
+    },
+    {
+        'title': '[DUELLO] 4S vs 6S LiPo: Freestyle İçin Hangisi?',
+        'summary': '4S bataryalar ekonomik ve yeni başlayanlar için idealken, 6S bataryalar 22.2V yüksek gerilim sayesinde aynı güçte %33 daha az akım çeker. Bu da ani gazlamalarda voltaj çökmesini (voltage sag) önler, motor ve ESC sıcaklıklarını düşürür.',
+        'headline': '4S VS 6S LIPO DUELLOSU',
+        'subhead': 'Voltaj Sag Farkı ve Pil Ömrü Kıyaslaması',
+        'points': [
+            "[VOLTAJ] 6S: Ani Gazlamalarda Sıfır Voltaj Çökmesi",
+            "[ISINMA] 6S İle Düşük Amper, Serin Kalan ESC ve Motorlar",
+            "[MOTOR] 4S İçin 2400-2750KV, 6S İçin 1750-1950KV"
+        ],
+        'tags': '#lipobattery #6sfpv #4sfpv #fpvpilot #pozitronmarket'
+    },
+    {
+        'title': '[DUELLO] Dijital HD (DJI O3 / Walksnail) vs Analog 5.8GHz',
+        'summary': 'DJI O3 ve Walksnail Avatar 1080p kristal netlik ve dahili 4K kayıt sunarak görsel deneyimi zirveye taşır. Klasik analog sistemler ise 15ms sabit ultra düşük gecikme ve düşük parça maliyetiyle yarış pistlerinde hala vazgeçilmezdir.',
+        'headline': 'DIJITAL HD VS ANALOG VTX',
+        'subhead': 'Kristal Görüntü mü, 15ms Yarış Gecikmesi mi?',
+        'points': [
+            "[DIJITAL] 1080p Netlik, Dahili Kayıt & Geniş Dinamik Aralık",
+            "[ANALOG] 15ms Sabit Gecikme & Kırımda Düşük Maliyet",
+            "[TERCIH] Sinematik İçin Dijital, Yarış İçin Analog/HDZero"
+        ],
+        'tags': '#djio3 #walksnail #analogfpv #vtx #pozitronmarket'
+    },
+    {
+        'title': '[DUELLO] 20x20 Mini Stack vs 30x30 Standart Stack',
+        'summary': '20x20 stackler 3.5 inç ve hafif 5 inç buildlerde ağırlıktan 20-30 gram tasarruf sağlar. 30x30 stackler ise geniş PCB yüzeyiyle 60A+ yüksek akımlarda ısıyı çok daha iyi dağıtır ve zorlu freestyle manevralarında daha dayanıklıdır.',
+        'headline': '20X20 VS 30X30 STACK',
+        'subhead': 'Hafiflik Tasarrufu mu, Isı Dağıtımı ve Güç mü?',
+        'points': [
+            "[20X20] Kompakt Gövde & Hafif Buildler İçin Maksimum Tasarruf",
+            "[30X30] Geniş PCB ile Mükemmel Isı Dağılımı & 60A+ Güç",
+            "[MONTAJ] Şasi Montaj Deliklerine Göre Doğru Tercih"
+        ],
+        'tags': '#fpvstack #flightcontroller #esc #pozitronmarket #dronetopla'
+    },
+    {
+        'title': '[DUELLO] Tri-Blade (3 Pal) vs Bi-Blade (2 Pal) Pervane',
+        'summary': '3 palli pervaneler yüksek itki, virajlarda agresif tutunma ve mükemmel frenleme gücü sunar (freestyle ve yarış standardı). 2 palli pervaneler ise daha az hava direnciyle yüksek uçuş süresi ve long-range verimliliği sağlar.',
+        'headline': '3 PALLI VS 2 PALLI PERVANE',
+        'subhead': 'Agresif Yol Tutuşu mu, Uzun Uçuş Süresi mi?',
+        'points': [
+            "[3 PAL] Virajlarda Yüksek Tutunma & Anında Gaz Tepkisi",
+            "[2 PAL] Düşük Hava Direnci ile Maksimum Uçuş Süresi",
+            "[SECIM] Freestyle İçin 5143/5146 Tri-Blade En Popüleri"
+        ],
+        'tags': '#pervane #gemfan #hqprop #fpvfreestyle #pozitronmarket'
+    }
+]
+
+MISTAKE_BREAKDOWNS = [
+    {
+        'title': '[HATA ANALIZI] Anten Takmadan VTX Kartına Güç Vermek',
+        'summary': 'VTX (video verici) modülleri RF enerjisini anten üzerinden yaymak üzere tasarlanmıştır. Anten takılmadan batarya bağlandığında yayılamayan RF enerjisi ısıya dönüşerek VTX güç amplifikatörü çipini saniyeler içinde yakar.',
+        'headline': 'ANTENSIZ VTX CALISTIRMA!',
+        'subhead': 'Saniyeler İçinde VTX Çipini Yakan En Yaygın Hata',
+        'points': [
+            "[TEHLIKE] Yayılamayan RF Enerjisi Çipi Anında Kavurur",
+            "[KURAL] Masada veya Sahada Asla Antensiz Pil Bağlama",
+            "[TEST] Masa Testlerinde VTX Gücünü PitMode (25mW) Yap"
+        ],
+        'tags': '#vtx #fpvhata #droneonarim #pozitronmarket #fpvturkey'
+    },
+    {
+        'title': '[HATA ANALIZI] Masada Pervaneler Takılıyken Test Yapmak',
+        'summary': 'Betaflight Configurator veya ESC ayarları yapılırken motorlar aniden tam gaz alabilir veya arm olabilir. Karbon/polikarbon pervaneler ciddi yaralanmalara ve kablo kesiklerine yol açar. Masada kural 1: Pervaneleri sök!',
+        'headline': 'MASADA PERVANELERI SOK!',
+        'subhead': 'Kişisel Güvenlik ve Donanım Koruma Kuralı',
+        'points': [
+            "[GUVENLIK] USB Bağlarken Pervaneleri Mutlaka Çıkar",
+            "[RISK] Yanlış Motor Testinde Kontrolsüz Fırlama Tehlikesi",
+            "[ALTIN KURAL] Pervaneler Yalnızca Uçuş Alanında Takılır"
+        ],
+        'tags': '#dronesafety #betaflight #fpvguvenlik #pozitronmarket #dronebuild'
+    },
+    {
+        'title': '[HATA ANALIZI] ESC Güç Girişine Low ESR Kapasitör Takmamak',
+        'summary': 'Fırçasız motorların aktif frenleme (damping light) anında ürettiği voltaj dalgalanmaları (voltage spikes) 40-50V seviyesine çıkabilir. 35V 1000uF Low ESR kapasitör takılmazsa jiroskop yanar ve video görüntüsü çizgilenir.',
+        'headline': 'KAPASITORSUZ UCUS YAPMA!',
+        'subhead': 'Jiroskop ve HD Kamerayı Yakan Voltaj Spike Tehlikesi',
+        'points': [
+            "[KORUMA] 35V 1000uF Low ESR Kapasitör Voltajı Filtreler",
+            "[GORUNTU] Video Sinyalindeki Parazit Çizgilerini Yok Eder",
+            "[MONTAJ] XT60 / ESC Pedlerine En Kısa Bacakla Lehimle"
+        ],
+        'tags': '#lowesr #kapasitor #fpvbuild #pozitronmarket #dronetamir'
+    },
+    {
+        'title': '[HATA ANALIZI] Yanlış Motor Dönüş Yönü ve Ters Pervane',
+        'summary': 'Drone havalanır havalanmaz aniden ters dönüp (flip of death) disarm oluyorsa, motor dönüş yönleri veya pervaneler ters takılmıştır. Betaflight motor sekmesinden yönleri ve Props In/Out ayarını kontrol edin.',
+        'headline': 'FLIP OF DEATH KABUSU!',
+        'subhead': 'Kalkışta Drone Takla Atıyorsa Bu 2 Ayara Bak',
+        'points': [
+            "[KONTROL 1] Betaflight Motor Yönleri ile Fiziki Yön Aynı mı?",
+            "[KONTROL 2] Pervaneler Props-In mi Props-Out mu Takılı?",
+            "[COZUM] ESC Configurator ile Motor Yönünü Tek Tıkla Düzelt"
+        ],
+        'tags': '#betaflight #flipofdeath #motorrotation #pozitronmarket #fpv'
+    },
+    {
+        'title': '[HATA ANALIZI] LiPo Pili 3.5V Hücre Altına Düşürmek ve Depolamamak',
+        'summary': 'LiPo bataryalar hücre başına 3.5V altına düştüğünde kalıcı kimyasal hasar görür ve şişer. Uçuş bittiğinde piller dolu veya boş bırakılmamalı, şarj aletinde 3.80V-3.85V Storage moduna getirilmelidir.',
+        'headline': 'LIPO PILINI SISIRME!',
+        'subhead': 'Pil Ömrünü 3 Katına Çıkaran Doğru Depolama Kuralları',
+        'points': [
+            "[HUCAR VOLTAJI] Uçuşu Hücre Başı 3.5V Seviyesinde Bitir",
+            "[STORAGE] Uçuş Sonrası Pilleri 3.85V Saklama Moduna Al",
+            "[GUVENLIK] Şişmiş ve Hasarlı Pilleri LiPo Çantasında Sakla"
+        ],
+        'tags': '#lipopil #dronepil #fpvbatarya #pozitronmarket #teknofest'
+    }
+]
+
+COMMUNITY_QUIZZES = [
+    {
+        'title': '[FPV QUIZ] ELRS Alıcısının TX Pini Uçuş Kartında Nereye Bağlanır?',
+        'summary': 'Haftalık FPV bilgi testimiz yayında! Uart haberleşmesinde çapraz bağlantı kuralı geçerlidir. Alıcının TX pini uçuş kartının (FC) hangi pinine lehimlenmelidir? Doğru cevabını yorumlarda belirt, FPV bilgini test et!',
+        'headline': 'FPV TEST: UART BAGLANTISI',
+        'subhead': 'Alıcı TX Pini Uçuş Kartında Nereye Bağlanır?',
+        'points': [
+            "A) Uçuş Kartı TX Pinine",
+            "B) Uçuş Kartı RX Pinine (Çapraz Bağlantı)",
+            "C) 5V Besleme Pinine",
+            "D) GND Toprak Pinine"
+        ],
+        'correct_answer': 'B) Uçuş Kartı RX Pinine (UART TX -> RX çapraz bağlanır)',
+        'tags': '#fpvquiz #fpvtest #sorucevap #pozitronmarket #dronebilgi'
+    },
+    {
+        'title': '[FPV QUIZ] 6S Freestyle Drone İçin En Optimum Motor KV Değeri Hangisidir?',
+        'summary': '6S 22.2V batarya sisteminde yüksek voltaj nedeniyle düşük KV motorlar tercih edilir. 5 inç freestyle için ideal KV aralığı nedir? Yorumlarda cevabını pilot topluluğuyla paylaş!',
+        'headline': 'FPV TEST: 6S MOTOR KV SECIMI',
+        'subhead': '5 İnç Freestyle İçin İdeal KV Aralığı Hangisi?',
+        'points': [
+            "A) 2450 - 2750 KV",
+            "B) 1750 - 1950 KV",
+            "C) 3100 - 3600 KV",
+            "D) 1200 - 1400 KV"
+        ],
+        'correct_answer': 'B) 1750 - 1950 KV (6S için ideal devir ve tork)',
+        'tags': '#fpvquiz #motorkv #6sfreestyle #pozitronmarket #fpvpilot'
+    },
+    {
+        'title': '[FPV QUIZ] Betaflight RPM Filter Açabilmek İçin Hangi Protokol Şarttır?',
+        'summary': 'Betaflight RPM filtresi motor devrini anlık okuyarak gyro titreşimlerini donanımsal olarak filtreler. Bu özelliğin çalışabilmesi için ESC üzerinde hangi protokol aktif edilmelidir?',
+        'headline': 'FPV TEST: BETAFLIGHT RPM FILTRE',
+        'subhead': 'Hangi ESC Protokolü ile RPM Filtre Çalışır?',
+        'points': [
+            "A) PWM 400Hz",
+            "B) OneShot125",
+            "C) Bi-directional DShot (DShot300/600)",
+            "D) Multishot"
+        ],
+        'correct_answer': 'C) Bi-directional DShot (ESC telemetrisi ile çift yönlü DShot)',
+        'tags': '#rpmfilter #betaflight #dshot #fpvquiz #pozitronmarket'
+    },
+    {
+        'title': '[FPV QUIZ] Antensiz Çalıştırılan VTX Vericisinde İlk Ne Zarar Görür?',
+        'summary': 'FPV dünyasının en kritik kuralı! Antensiz batarya takılan bir analog veya dijital VTX kartında ne gerçekleşir?',
+        'headline': 'FPV TEST: VTX VE ANTEN',
+        'subhead': 'Antensiz Güç Verilen VTX Kartında Ne Olur?',
+        'points': [
+            "A) Pil anında biter",
+            "B) VTX Güç Amplifikatör Çipi Aşırı Isınarak Yanar",
+            "C) Kamera merceği çatlar",
+            "D) Motorlar ters döner"
+        ],
+        'correct_answer': 'B) VTX Güç Amplifikatörü (PA) aşırı ısıdan saniyeler içinde yanar',
+        'tags': '#vtx #fpvquiz #droneguvenlik #pozitronmarket #fpvturkey'
+    }
+]
+
 class ContentGenerator:
     def __init__(self, gemini_api_key: str = ""):
         self.gemini_api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY", "")
@@ -292,7 +477,8 @@ class ContentGenerator:
         valid_types = [
             'product_spotlight', 'drone_build_showcase', 'carousel_guide',
             'flight_weather_radar', 'pilot_tip', 'tool_showcase',
-            'spot_guide', 'deal_drop', 'seo_article', 'review_highlight'
+            'spot_guide', 'deal_drop', 'seo_article', 'review_highlight',
+            'hardware_battle', 'mistake_breakdown', 'community_quiz'
         ]
         
         recent_types = get_recent_posted_content_types(limit=5)
@@ -301,22 +487,27 @@ class ContentGenerator:
 
         explicit_type = content_type if (content_type and content_type in valid_types) else None
 
-        # 1. Smart Pillar Selection (diverse PR feed: builds, weather, guides, products, tips)
+        # 1. Smart Pillar Selection (diverse PR feed: builds, weather, guides, products, tips, battles, quizzes)
         if not content_type or content_type not in valid_types:
             candidate_types = [t for t in valid_types if not (recent_types and t == recent_types[0])]
             if not candidate_types:
                 candidate_types = valid_types
 
-            # Balanced PR & e-commerce diversity weights
+            # Balanced PR & e-commerce diversity weights (10+ distinct formats)
             type_weights = {
-                'product_spotlight': 0.30,
-                'drone_build_showcase': 0.22,
-                'carousel_guide': 0.18,
-                'flight_weather_radar': 0.12,
+                'product_spotlight': 0.16,
+                'drone_build_showcase': 0.12,
+                'carousel_guide': 0.12,
+                'hardware_battle': 0.10,
+                'mistake_breakdown': 0.10,
+                'community_quiz': 0.10,
+                'flight_weather_radar': 0.08,
                 'pilot_tip': 0.08,
                 'tool_showcase': 0.05,
-                'spot_guide': 0.03,
-                'deal_drop': 0.02
+                'spot_guide': 0.05,
+                'seo_article': 0.05,
+                'review_highlight': 0.05,
+                'deal_drop': 0.04
             }
             weights = [type_weights.get(t, 0.05) for t in candidate_types]
             content_type = random.choices(candidate_types, weights=weights, k=1)[0]
@@ -345,6 +536,12 @@ class ContentGenerator:
                 content = self._generate_seo_article()
             elif cur_type == 'review_highlight':
                 content = self._generate_review_highlight()
+            elif cur_type == 'hardware_battle':
+                content = self._generate_hardware_battle()
+            elif cur_type == 'mistake_breakdown':
+                content = self._generate_mistake_breakdown()
+            elif cur_type == 'community_quiz':
+                content = self._generate_community_quiz()
             else:
                 content = self._generate_product_spotlight(product_id)
 
@@ -1003,6 +1200,151 @@ Detaylar ve sipariş için profildeki linke tıkla: {link}"""
             'hashtags': hashtags,
             'visual_summary': visual_summary,
             'product_data': r if r.get('product_id') else None,
+            'tool_info': None
+        }
+
+    def _generate_hardware_battle(self) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+        eligible = [b for b in HARDWARE_BATTLES if b['title'] not in recent_titles]
+        if not eligible:
+            eligible = HARDWARE_BATTLES
+        battle = random.choice(eligible)
+        title = battle['title']
+        caption = f"""{battle['title']}
+
+{battle['summary']}
+
+[KIYASLAMA]
+• {battle['points'][0]}
+• {battle['points'][1]}
+• {battle['points'][2]}
+
+Sen hangi taraftasın? Tercihini ve tecrübeni yorumlarda FPV topluluğuyla paylaş!
+
+> FPV donanım ve uyumluluk sihirbazı: pozitronmarket.com"""
+        hashtags = f"{battle['tags']} #fpvturkey #dronetopla #pozitronmarket #teknofest"
+        visual_summary = {
+            'badge': 'DONANIM DUELLOSU',
+            'headline': battle['headline'],
+            'subhead': battle['subhead'],
+            'key_points': battle['points'],
+            'cta': '> SEN HANGİSİNİ TERCİH EDİYORSUN? YORUMA YAZ'
+        }
+        if self.gemini_api_key:
+            ai_data = self._call_gemini_post_and_summary('hardware_battle', {
+                'title': title, 'summary': battle['summary']
+            })
+            if ai_data:
+                caption = ai_data.get('caption', caption)
+                hashtags = ai_data.get('hashtags', hashtags)
+                title = ai_data.get('title', title)
+                if ai_data.get('visual_summary'):
+                    visual_summary = ai_data['visual_summary']
+        return {
+            'content_type': 'hardware_battle',
+            'product_id': None,
+            'title': title,
+            'caption': caption.strip(),
+            'hashtags': hashtags,
+            'visual_summary': visual_summary,
+            'product_data': None,
+            'tool_info': None
+        }
+
+    def _generate_mistake_breakdown(self) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+        eligible = [m for m in MISTAKE_BREAKDOWNS if m['title'] not in recent_titles]
+        if not eligible:
+            eligible = MISTAKE_BREAKDOWNS
+        mistake = random.choice(eligible)
+        title = mistake['title']
+        caption = f"""{mistake['title']}
+
+{mistake['summary']}
+
+[KIRIM ONLEME REHBERI]
+• {mistake['points'][0]}
+• {mistake['points'][1]}
+• {mistake['points'][2]}
+
+Daha önce bu hatayı yaşadın mı? Deneyimini yorumlarda paylaş, yeni pilotlara rehber olalım!
+
+> Kırılmaz FPV parçaları ve korumalar: pozitronmarket.com"""
+        hashtags = f"{mistake['tags']} #fpvkaza #dronebakim #dronetamir #pozitronmarket"
+        visual_summary = {
+            'badge': 'KIRIM VE HATA ONLEME',
+            'headline': mistake['headline'],
+            'subhead': mistake['subhead'],
+            'key_points': mistake['points'],
+            'cta': '> SEN DE DENEYİMİNİ YORUMDA PAYLAŞ'
+        }
+        if self.gemini_api_key:
+            ai_data = self._call_gemini_post_and_summary('mistake_breakdown', {
+                'title': title, 'summary': mistake['summary']
+            })
+            if ai_data:
+                caption = ai_data.get('caption', caption)
+                hashtags = ai_data.get('hashtags', hashtags)
+                title = ai_data.get('title', title)
+                if ai_data.get('visual_summary'):
+                    visual_summary = ai_data['visual_summary']
+        return {
+            'content_type': 'mistake_breakdown',
+            'product_id': None,
+            'title': title,
+            'caption': caption.strip(),
+            'hashtags': hashtags,
+            'visual_summary': visual_summary,
+            'product_data': None,
+            'tool_info': None
+        }
+
+    def _generate_community_quiz(self) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+        eligible = [q for q in COMMUNITY_QUIZZES if q['title'] not in recent_titles]
+        if not eligible:
+            eligible = COMMUNITY_QUIZZES
+        quiz = random.choice(eligible)
+        title = quiz['title']
+        caption = f"""{quiz['title']}
+
+{quiz['summary']}
+
+[SECENEKLER]
+{quiz['points'][0]}
+{quiz['points'][1]}
+{quiz['points'][2]}
+{quiz['points'][3]}
+
+Doğru cevabını yorumlara yaz! Doğru yanıt günün sonunda hikayemizde ve yorumlarda sabitlenecektir.
+
+> FPV Akademi ve Donanım: pozitronmarket.com"""
+        hashtags = f"{quiz['tags']} #fpvsoru #dronebilgi #fpvpilot #pozitronmarket"
+        visual_summary = {
+            'badge': 'PILOT TOPLULUK ANKETI',
+            'headline': quiz['headline'],
+            'subhead': quiz['subhead'],
+            'key_points': quiz['points'],
+            'cta': '> CEVABINI YORUMA BIRAK!'
+        }
+        if self.gemini_api_key:
+            ai_data = self._call_gemini_post_and_summary('community_quiz', {
+                'title': title, 'summary': quiz['summary'], 'options': quiz['points']
+            })
+            if ai_data:
+                caption = ai_data.get('caption', caption)
+                hashtags = ai_data.get('hashtags', hashtags)
+                title = ai_data.get('title', title)
+                if ai_data.get('visual_summary'):
+                    visual_summary = ai_data['visual_summary']
+        return {
+            'content_type': 'community_quiz',
+            'product_id': None,
+            'title': title,
+            'caption': caption.strip(),
+            'hashtags': hashtags,
+            'visual_summary': visual_summary,
+            'product_data': None,
             'tool_info': None
         }
 

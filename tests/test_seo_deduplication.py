@@ -78,6 +78,12 @@ class TestSeoDeduplicationAndTurkishTargeting(unittest.TestCase):
         self.assertEqual(len(titles), len(set(titles)), f"Duplicate titles found in database: {titles}")
         self.assertEqual(len(focuses), len(set(focuses)), f"Duplicate focuses found in database: {focuses}")
 
+    def test_no_duplicate_content_markdown_in_database(self):
+        """Verifies that every article in the database has unique content_markdown."""
+        articles = self.agent.get_articles(limit=100)
+        contents = [a["content_markdown"].strip() for a in articles]
+        self.assertEqual(len(contents), len(set(contents)), "Duplicate content_markdown found in database!")
+
     def test_static_json_and_db_parity(self):
         """Verifies that data/seo_articles.json has all the articles present in database."""
         with open("data/seo_articles.json", "r", encoding="utf-8") as f:

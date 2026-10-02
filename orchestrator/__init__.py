@@ -10,6 +10,7 @@ from .subagent_seo import TechnicalSeoAgent
 from .subagent_trend_hunter import GlobalTrendHunterAgent
 from .subagent_qa import QASentinelAgent
 from .qa_scheduler import QAScheduler
+from .subagent_procurement import ProcurementOrderAgent
 
 __all__ = [
     "LeadSupervisorAgent",
@@ -19,6 +20,7 @@ __all__ = [
     "TechnicalSeoAgent",
     "GlobalTrendHunterAgent",
     "QASentinelAgent",
-    "QAScheduler"
+    "QAScheduler",
+    "ProcurementOrderAgent"
 ]
 

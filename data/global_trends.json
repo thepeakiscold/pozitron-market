@@ -73,11 +73,11 @@
     "trend_score": 92,
     "trend_reason": "Havacılık sınıfı alüminyum çan, kavisli N52H mıknatıslar ve 6S pille sağladığı benzersiz gaz hakimiyeti ile 5 inç freestyle pilotlarının 2026 favorisi.",
     "global_source": "T-Motor Official & Global Freestyle Pilots Survey",
-    "status": "PENDING_APPROVAL",
-    "supervisor_evaluation": null,
-    "added_product_id": null,
+    "status": "APPROVED",
+    "supervisor_evaluation": "[OTOMATİK EKLENDİ] Küresel Trend Tedarik Sistemi tarafından sıfır stokla kataloğa eklendi (LEAD_SUPERVISOR_AUTONOMOUS).",
+    "added_product_id": "pzt_5b66454b",
     "created_at": "2026-09-12T19:39:52.905545",
-    "approved_at": null
+    "approved_at": "2026-10-02T19:53:58.004222"
   },
   {
     "id": "prop_656cffd8",
@@ -153,10 +153,10 @@
     "trend_score": 93,
     "trend_reason": "Aynı anda iki bağımsız 6S bataryayı 15A hızında şarj edebilme ve cebinize sığacak kadar kompakt olması nedeniyle küresel saha şarj cihazı standardı.",
     "global_source": "ToolkitRC & FPV Field Pilots Review",
-    "status": "PENDING_APPROVAL",
-    "supervisor_evaluation": null,
-    "added_product_id": null,
+    "status": "APPROVED",
+    "supervisor_evaluation": "[OTOMATİK EKLENDİ] Küresel Trend Tedarik Sistemi tarafından sıfır stokla kataloğa eklendi (LEAD_SUPERVISOR_AUTONOMOUS).",
+    "added_product_id": "pzt_b012233f",
     "created_at": "2026-09-12T19:41:04.574133",
-    "approved_at": null
+    "approved_at": "2026-10-02T19:53:58.346739"
   }
 ]

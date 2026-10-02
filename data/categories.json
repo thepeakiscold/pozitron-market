@@ -7,7 +7,7 @@
     "icon": "⚡",
     "description_en": "High-efficiency brushless motors for freestyle, racing, cinewhoop, and long-range drones.",
     "description_tr": "Freestyle, yarış, cinewhoop ve uzun menzil dronlar için yüksek verimli fırçasız motorlar.",
-    "item_count": 55
+    "item_count": 56
   },
   {
     "id": "propellers",
@@ -37,7 +37,7 @@
     "icon": "⚡",
     "description_en": "High-discharge 4S/6S LiPo & Li-ion battery packs and multi-channel smart chargers.",
     "description_tr": "Yüksek deşarjlı 4S/6S LiPo & Li-ion bataryalar ve çok kanallı akıllı şarj cihazları.",
-    "item_count": 45
+    "item_count": 46
   },
   {
     "id": "flight_controllers",

@@ -14,6 +14,12 @@
   <script>
     const path = window.location.pathname;
 
+    // 0. Auto-redirect any legacy .html request to clean URL
+    if (path.endsWith('.html')) {
+      const clean = path.replace(/\/index\.html$/, '/').replace(/\.html$/, '') || '/';
+      window.location.replace(clean + window.location.search + window.location.hash);
+    }
+
     // 1. GitHub Pages SPA Fallback for /rehber/<slug>
     if (path.startsWith("/rehber/")) {
       const parts = path.split("/").filter(Boolean);
@@ -46,7 +52,7 @@
             match = prods.find(p => (p.sku && p.sku.toLowerCase() === cleanSlug) || p.id === cleanSlug);
           }
           if (match && match.slug) {
-            window.location.replace("/products/" + match.slug + ".html");
+            window.location.replace("/products/" + match.slug);
             return true;
           }
           return false;

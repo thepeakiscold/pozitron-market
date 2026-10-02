@@ -323,6 +323,17 @@ class GlobalTrendHunterAgent:
 
         conn.commit()
         conn.close()
+
+        # Auto-ingest trend proposals immediately into site catalog with strictly zero stock
+        for prop in proposals_added:
+            try:
+                ingest_res = self.approve_and_add_product(prop["id"], evaluator="AUTONOMOUS_ZERO_STOCK_INGESTION")
+                prop["added_product_id"] = ingest_res.get("product_id")
+                prop["status"] = "APPROVED"
+                prop["stock"] = 0
+            except Exception as e:
+                print(f"[Trend Hunter] Auto ingestion notice for {prop['id']}: {e}")
+
         return proposals_added
 
     def get_proposals(self, status: Optional[str] = None, limit: int = 20) -> List[Dict]:
@@ -401,7 +412,7 @@ class GlobalTrendHunterAgent:
         desc_en = f"{name_en} by {brand}. Top trending global FPV hardware sourced for Pozitron Market."
         desc_tr = f"{name_tr} ({brand}). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te."
 
-        # Insert product into products table
+        # Insert product into products table with strictly zero stock (pre-order / coming soon)
         cursor.execute('''
             INSERT INTO products (
                 id, slug, sku, name_en, name_tr, category_id, brand,
@@ -410,7 +421,7 @@ class GlobalTrendHunterAgent:
                 specs_json, tags_json, image_url, gallery_json,
                 description_en, description_tr, compatibility_json,
                 featured, is_bestseller, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 4.9, 5, 50, 'TREND', ?, ?, ?, ?, ?, ?, '{}', 1, 1, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 4.9, 5, 0, 'YAKINDA', ?, ?, ?, ?, ?, ?, '{}', 1, 0, ?)
         ''', (
             prod_id, slug, sku, name_en, name_tr, category_id, brand,
             price_usd, price_try, specs_json, tags_json, image_url,
@@ -429,7 +440,7 @@ class GlobalTrendHunterAgent:
                 approved_at = ?
             WHERE id = ?
         ''', (
-            f"[ONAYLANDI] Lead Supervisor tarafından onaylandı ({evaluator}). Fiyat avantajı ve küresel talep doğrulandı.",
+            f"[OTOMATİK EKLENDİ] Küresel Trend Tedarik Sistemi tarafından sıfır stokla kataloğa eklendi ({evaluator}).",
             prod_id,
             now_iso,
             proposal_id
@@ -437,6 +448,12 @@ class GlobalTrendHunterAgent:
 
         conn.commit()
         conn.close()
+
+        try:
+            from export_data import export_static_data
+            export_static_data()
+        except Exception as ee:
+            print(f"[Trend Hunter] Error syncing static export after product ingestion: {ee}")
 
         return {
             "success": True,

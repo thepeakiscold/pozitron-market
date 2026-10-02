@@ -30197,6 +30197,58 @@
     "compatibility": {}
   },
   {
+    "id": "pzt_5b66454b",
+    "slug": "t-motor-velox-v3-v2207-1950kv-freestyle-motor",
+    "sku": "PZT-MOTO-4307",
+    "name_en": "T-Motor Velox V3 V2207 1950KV Freestyle Motor",
+    "name_tr": "T-Motor Velox V3 V2207 1950KV Freestyle Motor",
+    "category_id": "motors",
+    "brand": "T-Motor",
+    "price_usd": 19.33,
+    "price_try": 860.0,
+    "original_price_usd": null,
+    "original_price_try": null,
+    "discount_pct": 0,
+    "rating": 4.9,
+    "review_count": 5,
+    "stock": 0,
+    "badge": "YAKINDA",
+    "specs_json": "{\"KV Değeri\": \"1950KV\", \"Statör Ebadı\": \"2207\", \"Giriş Voltajı\": \"6S LiPo\", \"Şaft Çapı\": \"M5 Titanyum Alaşım\", \"Maksimum İtki\": \"1850 g+\", \"Ağırlık\": \"34.5 g (kablolu)\"}",
+    "tags_json": "[\"tmotor\", \"velox\", \"2207\", \"1950kv\", \"freestyle\", \"motor\", \"6s\"]",
+    "image_url": "./assets/products/trend_tmotor_velox_v3.jpg",
+    "gallery_json": "[\"./assets/products/trend_tmotor_velox_v3.jpg\"]",
+    "description_en": "T-Motor Velox V3 V2207 1950KV Freestyle Motor by T-Motor. Top trending global FPV hardware sourced for Pozitron Market.",
+    "description_tr": "T-Motor Velox V3 V2207 1950KV Freestyle Motor (T-Motor). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
+    "compatibility_json": "{}",
+    "featured": 1,
+    "is_bestseller": 0,
+    "created_at": "2026-10-02T19:53:58.004222",
+    "category_name_en": "Brushless Motors",
+    "category_name_tr": "Fırçasız Motorlar",
+    "category_icon": "⚡",
+    "specs": {
+      "KV Değeri": "1950KV",
+      "Statör Ebadı": "2207",
+      "Giriş Voltajı": "6S LiPo",
+      "Şaft Çapı": "M5 Titanyum Alaşım",
+      "Maksimum İtki": "1850 g+",
+      "Ağırlık": "34.5 g (kablolu)"
+    },
+    "tags": [
+      "tmotor",
+      "velox",
+      "2207",
+      "1950kv",
+      "freestyle",
+      "motor",
+      "6s"
+    ],
+    "gallery": [
+      "./assets/products/trend_tmotor_velox_v3.jpg"
+    ],
+    "compatibility": {}
+  },
+  {
     "id": "pzt_791f8157",
     "slug": "caddx-walksnail-avatar-hd-pro-kit-dual-antennas-941",
     "sku": "PZT-CAME-8359",
@@ -30347,6 +30399,57 @@
     ],
     "gallery": [
       "./assets/products/trend_radiomaster_pocket.jpg"
+    ],
+    "compatibility": {}
+  },
+  {
+    "id": "pzt_b012233f",
+    "slug": "toolkitrc-m6d-500w-15a-dual-channel-smart-dc-charger",
+    "sku": "PZT-BATT-1901",
+    "name_en": "ToolkitRC M6D 500W 15A Dual Channel Smart DC Charger",
+    "name_tr": "ToolkitRC M6D 500W 15A Çift Kanal Akıllı DC Şarj Cihazı",
+    "category_id": "batteries_chargers",
+    "brand": "ToolkitRC",
+    "price_usd": 64.79,
+    "price_try": 2840.0,
+    "original_price_usd": null,
+    "original_price_try": null,
+    "discount_pct": 0,
+    "rating": 4.9,
+    "review_count": 5,
+    "stock": 0,
+    "badge": "YAKINDA",
+    "specs_json": "{\"Giriş Voltajı\": \"DC 7-28V (Maks 30A)\", \"Şarj Gücü\": \"2x 250W veya Senkron Modda 500W (Maks 15A)\", \"Pil Desteği\": \"1-6S LiPo, LiHV, LiFe, Lion, NiMh, Pb\", \"Ekran\": \"2.4 inç Renkli IPS LCD 320x240\", \"Boyut\": \"98 x 68 x 35 mm\", \"Ağırlık\": \"220 g\"}",
+    "tags_json": "[\"toolkitrc\", \"m6d\", \"charger\", \"lipo\", \"500w\", \"sarj\"]",
+    "image_url": "./assets/products/trend_toolkitrc_m6d.jpg",
+    "gallery_json": "[\"./assets/products/trend_toolkitrc_m6d.jpg\"]",
+    "description_en": "ToolkitRC M6D 500W 15A Dual Channel Smart DC Charger by ToolkitRC. Top trending global FPV hardware sourced for Pozitron Market.",
+    "description_tr": "ToolkitRC M6D 500W 15A Çift Kanal Akıllı DC Şarj Cihazı (ToolkitRC). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
+    "compatibility_json": "{}",
+    "featured": 1,
+    "is_bestseller": 0,
+    "created_at": "2026-10-02T19:53:58.346739",
+    "category_name_en": "LiPo Batteries & Smart Chargers",
+    "category_name_tr": "LiPo Bataryalar ve Akıllı Şarj Cihazları",
+    "category_icon": "⚡",
+    "specs": {
+      "Giriş Voltajı": "DC 7-28V (Maks 30A)",
+      "Şarj Gücü": "2x 250W veya Senkron Modda 500W (Maks 15A)",
+      "Pil Desteği": "1-6S LiPo, LiHV, LiFe, Lion, NiMh, Pb",
+      "Ekran": "2.4 inç Renkli IPS LCD 320x240",
+      "Boyut": "98 x 68 x 35 mm",
+      "Ağırlık": "220 g"
+    },
+    "tags": [
+      "toolkitrc",
+      "m6d",
+      "charger",
+      "lipo",
+      "500w",
+      "sarj"
+    ],
+    "gallery": [
+      "./assets/products/trend_toolkitrc_m6d.jpg"
     ],
     "compatibility": {}
   },

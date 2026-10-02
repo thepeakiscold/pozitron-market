@@ -1,6 +1,7 @@
 import os
 import time
 import uuid
+import random
 import urllib.request
 from datetime import datetime, timedelta
 from .db import (
@@ -400,10 +401,15 @@ class InstagramPRAgent:
         post_id = f"ig_story_{uuid.uuid4().hex[:12]}"
 
         if not post_data:
-            content = self.content_gen.generate_content(content_type='deal_drop')
+            story_candidate_types = [
+                'deal_drop', 'pilot_tip', 'hardware_battle', 'mistake_breakdown',
+                'community_quiz', 'product_spotlight', 'flight_weather_radar'
+            ]
+            st_type = random.choice(story_candidate_types)
+            content = self.content_gen.generate_content(content_type=st_type)
             post_data = {
                 'id': post_id,
-                'content_type': 'deal_drop',
+                'content_type': content.get('content_type', st_type),
                 'title': content['title'],
                 'caption': content['caption'],
                 'hashtags': content['hashtags'],

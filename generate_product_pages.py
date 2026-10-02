@@ -1425,13 +1425,13 @@ def main():
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0; url=./{new_s}.html">
+  <meta http-equiv="refresh" content="0; url=/products/{new_s}">
   <link rel="canonical" href="{BASE_URL}/products/{new_s}">
   <title>{target_name} | Pozitron Market</title>
-  <script>window.location.replace("./{new_s}.html");</script>
+  <script>window.location.replace("/products/{new_s}");</script>
 </head>
 <body style="font-family:sans-serif; text-align:center; padding:40px;">
-  <p>Ürün sayfasına yönlendiriliyorsunuz... <a href="./{new_s}.html">Buraya tıklayın</a></p>
+  <p>Ürün sayfasına yönlendiriliyorsunuz... <a href="/products/{new_s}">Buraya tıklayın</a></p>
 </body>
 </html>"""
                     with open(alias_path, "w", encoding="utf-8") as f:
