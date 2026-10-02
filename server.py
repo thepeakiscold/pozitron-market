@@ -2085,60 +2085,47 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         }
                     }
                 ],
-                "connections": [
-                    # Client & Trigger to Infrastructure
+                                "connections": [
+                    # 1. Giriş & Dış Trafik (Column 1 -> Column 2 & 3)
                     {"from": "client_customer", "to": "srv_github_platform", "label": "Web Sitesi Ziyareti & CDN", "type": "network"},
-                    {"from": "client_customer", "to": "srv_hetzner_cloud", "label": "Dinamik API İstekleri (Stok/Yorum)", "type": "network"},
+                    {"from": "client_customer", "to": "srv_hetzner_cloud", "label": "Dinamik API İstekleri (Stok/Sepet)", "type": "network"},
                     {"from": "client_customer", "to": "svc_paytr", "label": "3D Secure Ödeme Talebi", "type": "payment"},
-                    {"from": "trigger_cron_2h", "to": "subagent_5_price", "label": "Periyodik Fiyat Taraması", "type": "trigger"},
-                    {"from": "trigger_cron_2h", "to": "subagent_3_telemetry", "label": "Telemetri Veri Çekimi", "type": "trigger"},
-                    {"from": "trigger_cron_2h", "to": "subagent_6_trend", "label": "Küresel Trend Taraması", "type": "trigger"},
-                    {"from": "trigger_github_dispatch", "to": "srv_github_platform", "label": "cloud_market_sync.py Tetikleme", "type": "trigger"},
+                    {"from": "trigger_cron_2h", "to": "srv_hetzner_cloud", "label": "2 Saatlik Otonom Döngü Tetikleyici", "type": "trigger"},
+                    {"from": "trigger_github_dispatch", "to": "srv_github_platform", "label": "cloud_market_sync.py CI/CD", "type": "trigger"},
 
-                    # Payment & Servers Interaction
-                    {"from": "svc_paytr", "to": "srv_hetzner_cloud", "label": "Ödeme Onay Webhook (/api/paytr/callback)", "type": "payment"},
+                    # 2. Sunucu & Altyapı İletişimi (Column 2 -> Column 3 & 6)
                     {"from": "srv_hetzner_cloud", "to": "svc_smtp_mail", "label": "Sipariş Onay & Fatura Postası", "type": "data"},
-                    {"from": "svc_smtp_mail", "to": "client_customer", "label": "Müşteriye Sipariş Dekontu İletimi", "type": "data"},
-                    {"from": "srv_hetzner_cloud", "to": "trigger_github_dispatch", "label": "repository_dispatch Stok Düşümü", "type": "trigger"},
                     {"from": "srv_github_platform", "to": "output_pozitron_web", "label": "GitHub Pages CDN Canlı Yayını", "type": "publish"},
 
-                    # Intelligence to Supervisor & Gemini AI
+                    # 3. Harici Servisler, POS & Güvenlik (Column 3 -> Column 1, 2, 4)
+                    {"from": "svc_paytr", "to": "srv_hetzner_cloud", "label": "Ödeme Onay Webhook (/api/paytr/callback)", "type": "payment"},
+                    {"from": "svc_smtp_mail", "to": "client_customer", "label": "Müşteriye Sipariş Dekontu İletimi", "type": "data"},
+                    {"from": "subagent_9_security", "to": "srv_hetzner_cloud", "label": "WAF & SQLi Savunma Probu", "type": "probe"},
+                    {"from": "subagent_9_security", "to": "lead_supervisor", "label": "Siber Güvenlik Denetim Raporu", "type": "probe"},
+                    {"from": "svc_gemini_ai", "to": "lead_supervisor", "label": "Gemini 3.8 Flash Karar Yanıtı", "type": "data"},
+
+                    # 4. İstihbarat & Karar Motoru (Column 4 Dahili & Supervisor Direktifleri -> Column 5)
                     {"from": "subagent_5_price", "to": "lead_supervisor", "label": "Fiyat Arbitraj Raporu", "type": "data"},
                     {"from": "subagent_3_telemetry", "to": "lead_supervisor", "label": "Performans Metrikleri", "type": "data"},
                     {"from": "subagent_6_trend", "to": "lead_supervisor", "label": "Yeni Trend Ürün Önerileri", "type": "data"},
-                    {"from": "lead_supervisor", "to": "svc_gemini_ai", "label": "Analiz & Direktif İsteği", "type": "data"},
-                    {"from": "svc_gemini_ai", "to": "lead_supervisor", "label": "Gemini 3.8 Flash Karar Yanıtı", "type": "data"},
-
-                    # Supervisor to Workers & Procurement
+                    {"from": "lead_supervisor", "to": "svc_gemini_ai", "label": "Bilişsel Analiz & Direktif İsteği", "type": "data"},
                     {"from": "lead_supervisor", "to": "subagent_8_procurement", "label": "procurement_directive", "type": "directive"},
-                    {"from": "subagent_6_trend", "to": "subagent_8_procurement", "label": "Trend Donanım Beslemesi", "type": "data"},
-                    {"from": "subagent_5_price", "to": "subagent_8_procurement", "label": "Rakip Stok Açığı & Maliyet", "type": "data"},
-                    {"from": "subagent_8_procurement", "to": "srv_hetzner_cloud", "label": "Tedarik Planı Kaydı (JSON/CSV)", "type": "data"},
-
                     {"from": "lead_supervisor", "to": "subagent_1_instagram", "label": "instagram_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_2_reddit", "label": "reddit_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_4_seo", "label": "seo_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_7_qa", "label": "qa_directive", "type": "directive"},
-                    {"from": "lead_supervisor", "to": "srv_hetzner_cloud", "label": "Trend Kataloğa Ekleme (Stock=0)", "type": "data"},
+                    {"from": "lead_supervisor", "to": "subagent_10_media", "label": "media_quality_directive", "type": "directive"},
 
-                    # Workers to External Destinations & Gemini
-                    {"from": "subagent_1_instagram", "to": "svc_gemini_ai", "label": "Çok Modlu Görsel Denetimi", "type": "data"},
+                    # 5. Uzman Ajanlar -> Kayıt & Dağıtım (Column 5 -> Column 2 & 6)
+                    {"from": "subagent_8_procurement", "to": "srv_hetzner_cloud", "label": "Tedarik Planı Kaydı (JSON/CSV)", "type": "data"},
+                    {"from": "subagent_7_qa", "to": "srv_hetzner_cloud", "label": "API, Port & DB Sağlık Probu", "type": "probe"},
                     {"from": "subagent_1_instagram", "to": "svc_meta_graph", "label": "Afiş & Hikaye Yayını", "type": "publish"},
                     {"from": "subagent_2_reddit", "to": "svc_reddit_platform", "label": "Otonom Yanıt Yayını", "type": "publish"},
                     {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "İç Linkli Teknik Rehber", "type": "publish"},
-                    {"from": "output_pozitron_web", "to": "svc_google_merchant", "label": "XML/TSV Feed & Sitemap", "type": "publish"},
-
-                    # Security & Media Subagents
-                    {"from": "subagent_9_security", "to": "lead_supervisor", "label": "Siber Güvenlik Raporu", "type": "probe"},
-                    {"from": "lead_supervisor", "to": "subagent_10_media", "label": "media_quality_directive", "type": "directive"},
                     {"from": "subagent_10_media", "to": "output_pozitron_web", "label": "Doğrulanmış Ürün Görselleri", "type": "publish"},
-                    {"from": "subagent_9_security", "to": "srv_hetzner_cloud", "label": "WAF & SQLi Savunma Probu", "type": "probe"},
-                    {"from": "subagent_9_security", "to": "svc_paytr", "label": "HMAC-SHA256 Doğrulama Probu", "type": "probe"},
 
-                    # QA Sentinel Probes
-                    {"from": "subagent_7_qa", "to": "srv_hetzner_cloud", "label": "API, Port & DB Sağlık Probu", "type": "probe"},
-                    {"from": "subagent_7_qa", "to": "srv_github_platform", "label": "Statik Dosya Senkron Probu", "type": "probe"},
-                    {"from": "subagent_7_qa", "to": "svc_meta_graph", "label": "Meta API Token Probu", "type": "probe"}
+                    # 6. Dağıtım & Arama Motorları (Column 6 Dahili)
+                    {"from": "output_pozitron_web", "to": "svc_google_merchant", "label": "XML/TSV Feed & Sitemap", "type": "publish"}
                 ],
                 "ecosystem_services": [
                     {
