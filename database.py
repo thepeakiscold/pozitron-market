@@ -561,6 +561,57 @@ def get_all_settings() -> dict:
     except Exception:
         return {}
 
+def is_subagent_enabled(subagent_id: str) -> bool:
+    """Checks whether a given subagent is enabled in the database."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT is_enabled FROM subagents_config WHERE subagent_id = ?", (subagent_id,))
+        row = cursor.fetchone()
+        conn.close()
+        if row is not None:
+            return bool(row[0] if isinstance(row, tuple) else row['is_enabled'])
+        return True
+    except Exception as e:
+        print(f"Error checking subagent enabled {subagent_id}: {e}")
+        return True
+
+def set_subagent_enabled(subagent_id: str, is_enabled: bool) -> bool:
+    """Toggles a subagent on or off in the database."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        val = 1 if is_enabled else 0
+        now_str = datetime.now().isoformat()
+        cursor.execute("""
+            UPDATE subagents_config
+            SET is_enabled = ?, updated_at = ?
+            WHERE subagent_id = ?
+        """, (val, now_str, subagent_id))
+
+        if subagent_id in ('subagent_2_reddit', 'reddit'):
+            cursor.execute("UPDATE reddit_agent_config SET is_autonomous_enabled = ? WHERE id = 1", (val,))
+
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error updating subagent {subagent_id}: {e}")
+        return False
+
+def get_all_subagents_config() -> List[Dict]:
+    """Retrieves all subagents configuration and active statuses."""
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM subagents_config ORDER BY subagent_id ASC")
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        print(f"Error getting subagents config: {e}")
+        return []
+
 def hash_password(password: str) -> str:
     salt = "pozitron_fpv_salt_2026"
     return hashlib.sha256((password + salt).encode('utf-8')).hexdigest()

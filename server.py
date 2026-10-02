@@ -20,7 +20,10 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
-from database import get_db, init_db, hash_password, get_setting, set_setting, get_all_settings
+from database import (
+    get_db, init_db, hash_password, get_setting, set_setting, get_all_settings,
+    is_subagent_enabled, set_subagent_enabled, get_all_subagents_config
+)
 from seed_data import seed_database
 from export_data import export_static_data
 
@@ -351,26 +354,35 @@ def start_thread_watchdog():
         time.sleep(15)
         while True:
             try:
-                # 1. Resuscitate terminated scheduler threads
-                if instagram_pr_agent.get_status().get('is_autonomous_enabled'):
+                # 1. Resuscitate terminated scheduler threads (strictly respecting subagents_config)
+                if instagram_pr_agent.get_status().get('is_autonomous_enabled') and is_subagent_enabled('subagent_1_instagram'):
                     if not instagram_pr_scheduler.is_running():
                         print("[Watchdog] Reviving InstagramPRScheduler thread...")
                         instagram_pr_scheduler.start()
+                elif not is_subagent_enabled('subagent_1_instagram') and instagram_pr_scheduler.is_running():
+                    instagram_pr_scheduler.stop()
 
-                if reddit_drone_agent.get_status().get('is_autonomous_enabled'):
+                if reddit_drone_agent.get_status().get('is_autonomous_enabled') and is_subagent_enabled('subagent_2_reddit'):
                     if not reddit_drone_scheduler.is_running():
                         print("[Watchdog] Reviving RedditDroneScheduler thread...")
                         reddit_drone_scheduler.start()
+                elif not is_subagent_enabled('subagent_2_reddit') and reddit_drone_scheduler.is_running():
+                    print("[Watchdog] Reddit bot is disabled by user, stopping scheduler...")
+                    reddit_drone_scheduler.stop()
 
-                if lead_supervisor_agent.get_status().get('is_autonomous_enabled'):
+                if lead_supervisor_agent.get_status().get('is_autonomous_enabled') and is_subagent_enabled('lead_supervisor'):
                     if not supervisor_scheduler.is_running():
                         print("[Watchdog] Reviving LeadSupervisorScheduler thread...")
                         supervisor_scheduler.start()
+                elif not is_subagent_enabled('lead_supervisor') and supervisor_scheduler.is_running():
+                    supervisor_scheduler.stop()
 
-                if qa_agent.get_status().get('is_autonomous_enabled'):
+                if qa_agent.get_status().get('is_autonomous_enabled') and is_subagent_enabled('subagent_7_qa'):
                     if not qa_scheduler.is_running():
                         print("[Watchdog] Reviving QAScheduler thread...")
                         qa_scheduler.start()
+                elif not is_subagent_enabled('subagent_7_qa') and qa_scheduler.is_running():
+                    qa_scheduler.stop()
 
                 # 2. Periodic cloud market inventory sync (git pull --rebase)
                 try:
@@ -406,13 +418,13 @@ def start_thread_watchdog():
     t.start()
 
 def start_all_schedulers():
-    if instagram_pr_agent.config.get('is_autonomous_enabled'):
+    if instagram_pr_agent.config.get('is_autonomous_enabled') and is_subagent_enabled('subagent_1_instagram'):
         instagram_pr_scheduler.start()
-    if reddit_drone_agent.config.get('is_autonomous_enabled'):
+    if reddit_drone_agent.config.get('is_autonomous_enabled') and is_subagent_enabled('subagent_2_reddit'):
         reddit_drone_scheduler.start()
-    if lead_supervisor_agent.get_status().get('is_autonomous_enabled'):
+    if lead_supervisor_agent.get_status().get('is_autonomous_enabled') and is_subagent_enabled('lead_supervisor'):
         supervisor_scheduler.start()
-    if qa_agent.get_status().get('is_autonomous_enabled'):
+    if qa_agent.get_status().get('is_autonomous_enabled') and is_subagent_enabled('subagent_7_qa'):
         qa_scheduler.start()
     start_thread_watchdog()
 
@@ -1564,6 +1576,39 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 self.send_json(404, {"error": "Article not found"})
             return
+
+        # Subagents Matrix Status (Toggle and Active Statuses)
+        if path == '/api/subagents/status':
+            subagents = get_all_subagents_config()
+            self.send_json(200, {"subagents": subagents, "count": len(subagents)})
+            return
+
+        # Subagent 8: Latest Procurement & Replenishment Order Plan
+        if path == '/api/procurement/latest':
+            plan = lead_supervisor_agent.procurement_agent.get_latest_plan()
+            if not plan:
+                plan = lead_supervisor_agent.procurement_agent.analyze_and_generate_order_plan()
+            self.send_json(200, {"success": True, "plan": plan})
+            return
+
+        # Subagent 8: Export Procurement Order as CSV
+        if path == '/api/procurement/export':
+            csv_path = os.path.join(BASE_DIR, "data", "latest_procurement_order.csv")
+            if not os.path.exists(csv_path):
+                lead_supervisor_agent.procurement_agent.analyze_and_generate_order_plan()
+            if os.path.exists(csv_path):
+                with open(csv_path, 'rb') as f:
+                    csv_data = f.read()
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/csv; charset=utf-8')
+                self.send_header('Content-Disposition', 'attachment; filename="pozitron_tedarik_siparis_listesi.csv"')
+                self.send_header('Content-Length', str(len(csv_data)))
+                self.end_headers()
+                self.wfile.write(csv_data)
+                return
+            else:
+                self.send_json(404, {"error": "CSV file not found"})
+                return
 
         # Pipeline Topology & Workflow Graph (n8n style architecture)
         if path == '/api/pipeline/graph':
@@ -2754,6 +2799,92 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 else:
                     supervisor_scheduler.stop()
                 self.send_json(200, {"success": True, "is_autonomous_enabled": enabled})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagents Matrix: Toggle Any Subagent On / Off
+        if path == '/api/subagents/toggle':
+            try:
+                subagent_id = data.get("subagent_id")
+                enabled = bool(data.get("enabled", True))
+                if not subagent_id:
+                    self.send_json(400, {"error": "subagent_id is required"})
+                    return
+
+                ok = set_subagent_enabled(subagent_id, enabled)
+                if not ok:
+                    self.send_json(500, {"error": "Failed to update subagent status"})
+                    return
+
+                # If toggling Reddit subagent
+                if subagent_id in ('subagent_2_reddit', 'reddit'):
+                    if not enabled:
+                        try:
+                            reddit_drone_scheduler.stop()
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            reddit_drone_scheduler.start()
+                        except Exception:
+                            pass
+
+                # If toggling Instagram subagent
+                if subagent_id in ('subagent_1_instagram', 'instagram'):
+                    if not enabled:
+                        try:
+                            instagram_pr_scheduler.stop()
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            instagram_pr_scheduler.start()
+                        except Exception:
+                            pass
+
+                # If toggling Lead Supervisor
+                if subagent_id == 'lead_supervisor':
+                    if not enabled:
+                        try:
+                            supervisor_scheduler.stop()
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            supervisor_scheduler.start()
+                        except Exception:
+                            pass
+
+                # If toggling QA Sentinel
+                if subagent_id in ('subagent_7_qa', 'qa'):
+                    if not enabled:
+                        try:
+                            qa_scheduler.stop()
+                        except Exception:
+                            pass
+                    else:
+                        try:
+                            qa_scheduler.start()
+                        except Exception:
+                            pass
+
+                self.send_json(200, {
+                    "success": True,
+                    "subagent_id": subagent_id,
+                    "is_enabled": 1 if enabled else 0,
+                    "message": f"{subagent_id} {'başarıyla aktif edildi' if enabled else 'başarıyla kapatıldı (devredışı)'}."
+                })
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        # Subagent 8: Generate Procurement & Replenishment Order Plan
+        if path == '/api/procurement/generate':
+            try:
+                budget = float(data.get("budget_try", 250000.0))
+                plan = lead_supervisor_agent.procurement_agent.analyze_and_generate_order_plan(target_budget_try=budget)
+                self.send_json(200, plan)
             except Exception as e:
                 self.send_json(500, {"error": str(e)})
             return

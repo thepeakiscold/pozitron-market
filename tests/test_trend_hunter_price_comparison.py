@@ -45,13 +45,19 @@ class TestTrendHunterPriceComparison(unittest.TestCase):
         """
         Tüm kataloğu tarayıp trend_price_comparisons tablosuna yazıldığını doğrular.
         """
+        conn = sqlite3.connect('pozitron.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM products")
+        total_products = cursor.fetchone()[0]
+        conn.close()
+
         res = self.agent.scan_store_price_comparison()
         self.assertTrue(res["success"])
-        self.assertEqual(res["total_scanned"], 506)
+        self.assertEqual(res["total_scanned"], total_products)
         self.assertGreater(res["total_stale_prices_ignored"], 0, "Stoksuz eski fiyatlar elenmiş olmalı.")
 
         summary = self.agent.get_price_warning_summary()
-        self.assertEqual(summary["total_products"], 506)
+        self.assertEqual(summary["total_products"], total_products)
         self.assertGreater(summary["total_stale_prices_ignored"], 0)
 
     def test_auto_update_too_cheap_products_to_five_percent_below_market(self):

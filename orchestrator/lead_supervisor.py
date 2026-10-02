@@ -15,6 +15,8 @@ from .subagent_telemetry import TelemetryAgent
 from .subagent_seo import TechnicalSeoAgent
 from .subagent_trend_hunter import GlobalTrendHunterAgent
 from .subagent_qa import QASentinelAgent
+from .subagent_procurement import ProcurementOrderAgent
+from database import is_subagent_enabled
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pozitron.db')
 
@@ -32,6 +34,7 @@ class LeadSupervisorAgent:
       analiz eder, darbogazlari tespit eder, agresif pazar buyumesi icin parametreleri gunceller).
     - Subagent 6 (Global Trend Hunter) onerilerini degerlendirir ve onaylayip magazaya ekler.
     - Subagent 7 (QA Sentinel) denetim sonuclarini takip eder ve sistem sagligini guvenceye alir.
+    - Subagent 8 (Procurement Order Agent) stok ve marj analizine gore siparis listesi olusturur.
     """
     def __init__(self):
         self.model_code = "gemini-3.8-flash"
@@ -41,6 +44,7 @@ class LeadSupervisorAgent:
         self.seo_agent = TechnicalSeoAgent()
         self.trend_agent = GlobalTrendHunterAgent()
         self.qa_agent = QASentinelAgent()
+        self.procurement_agent = ProcurementOrderAgent()
         self.current_directive: Optional[Dict] = None
         self._load_latest_directive()
 
@@ -92,20 +96,32 @@ class LeadSupervisorAgent:
         now_iso = datetime.now().isoformat()
 
         # Step 1: Subagent 5 Price Intelligence Scan
-        price_report = self.price_agent.scan_market(lead_cycle_id=cycle_id)
+        price_report = []
+        if is_subagent_enabled("subagent_5_price"):
+            try:
+                price_report = self.price_agent.scan_market(lead_cycle_id=cycle_id)
+            except Exception as e:
+                print(f"[Lead Supervisor] Price scan notice: {e}")
 
         # Step 2: Subagent 6 Global Trend Scan & Store Price Warnings
         trend_summary = {}
-        try:
-            self.trend_agent.scan_global_trends(limit=2)
-            self.trend_agent.scan_store_price_comparison(auto_update_too_cheap=True)
-            trend_summary = self.trend_agent.get_price_warning_summary()
-        except Exception as e:
-            print(f"[Lead Supervisor] Trend hunt notice: {e}")
+        if is_subagent_enabled("subagent_6_trend"):
+            try:
+                self.trend_agent.scan_global_trends(limit=2)
+                self.trend_agent.scan_store_price_comparison(auto_update_too_cheap=True)
+                trend_summary = self.trend_agent.get_price_warning_summary()
+            except Exception as e:
+                print(f"[Lead Supervisor] Trend hunt notice: {e}")
 
         # Step 3: Subagent 3 Telemetry compilation & delivery
-        telemetry_res = self.telemetry_agent.deliver_telemetry()
-        telemetry_data = telemetry_res.get("payload", {})
+        telemetry_res = {}
+        telemetry_data = {}
+        if is_subagent_enabled("subagent_3_telemetry"):
+            try:
+                telemetry_res = self.telemetry_agent.deliver_telemetry()
+                telemetry_data = telemetry_res.get("payload", {})
+            except Exception as e:
+                print(f"[Lead Supervisor] Telemetry notice: {e}")
 
         # Step 4: Identify Price and Stock Advantages
         cheaper_items = [p for p in price_report if p.get("status") == "CHEAPER"]
