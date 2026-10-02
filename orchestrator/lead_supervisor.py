@@ -190,22 +190,50 @@ class LeadSupervisorAgent:
             })
         conn.close()
 
+        # Step 7: Build Reddit Directive (Subagent 2)
+        is_reddit_enabled = is_subagent_enabled("subagent_2_reddit")
         reddit_directive = {
-            "priority_subreddits": ["r/fpv", "r/drones", "r/diydrones", "r/Turkey", "r/teknoloji"],
-            "target_keywords": ["f722", "elrs", "motor", "esc", "lipo", "ucus karti", "lehim"],
-            "preferred_hardware_links": preferred_hardware_links
+            "is_enabled": is_reddit_enabled,
+            "priority_subreddits": ["r/fpv", "r/drones", "r/diydrones", "r/Turkey", "r/teknoloji"] if is_reddit_enabled else [],
+            "target_keywords": ["f722", "elrs", "motor", "esc", "lipo", "ucus karti", "lehim"] if is_reddit_enabled else [],
+            "preferred_hardware_links": preferred_hardware_links if is_reddit_enabled else []
         }
 
         # Step 8: Build SEO Content Directive (Subagent 4 - Otonom Konu Secimi & Tekrari Onleme)
-        next_unwritten_topic = self.seo_agent.get_next_unwritten_topic()
-        seo_content_directive = {
-            "target_keywords": next_unwritten_topic.get("target_keywords", [
-                "FPV drone toplama rehberi 2026",
-                "Betaflight 4.5 UART port ayarları",
-                "Pozitron Market FPV donanım uyumluluğu"
-            ]),
-            "component_focus": next_unwritten_topic.get("component_focus", "Uçuş Kontrol Kartları, ESC Kalibrasyonu ve Motor Seçimi")
-        }
+        is_seo_enabled = is_subagent_enabled("subagent_4_seo")
+        if is_seo_enabled:
+            next_unwritten_topic = self.seo_agent.get_next_unwritten_topic()
+            seo_content_directive = {
+                "is_enabled": True,
+                "target_keywords": next_unwritten_topic.get("target_keywords", [
+                    "FPV drone toplama rehberi 2026",
+                    "Betaflight 4.5 UART port ayarları",
+                    "Pozitron Market FPV donanım uyumluluğu"
+                ]),
+                "component_focus": next_unwritten_topic.get("component_focus", "Uçuş Kontrol Kartları, ESC Kalibrasyonu ve Motor Seçimi")
+            }
+        else:
+            seo_content_directive = {
+                "is_enabled": False,
+                "target_keywords": [],
+                "component_focus": "Devre Dışı"
+            }
+
+        # Step 9: Trigger Subagent 8 Procurement Order Generation
+        procurement_summary = {}
+        if is_subagent_enabled("subagent_8_procurement"):
+            try:
+                proc_plan = self.procurement_agent.analyze_and_generate_order_plan()
+                procurement_summary = {
+                    "plan_id": proc_plan.get("id"),
+                    "total_items": proc_plan.get("total_items_count", 0),
+                    "total_units": proc_plan.get("total_units_count", 0),
+                    "investment_try": proc_plan.get("estimated_investment_try", 0),
+                    "projected_profit_try": proc_plan.get("projected_profit_try", 0),
+                    "roi_pct": proc_plan.get("projected_roi_pct", 0)
+                }
+            except Exception as e:
+                print(f"[Lead Supervisor] Procurement order notice: {e}")
 
         directive_payload = {
             "lead_cycle_id": cycle_id,
@@ -214,6 +242,7 @@ class LeadSupervisorAgent:
             "instagram_directive": instagram_directive,
             "reddit_directive": reddit_directive,
             "seo_content_directive": seo_content_directive,
+            "procurement_summary": procurement_summary,
             "price_action_flags": price_action_flags,
             "trend_price_warnings": {
                 "too_cheap_count": trend_summary.get("too_cheap_count", 0),
@@ -237,14 +266,15 @@ class LeadSupervisorAgent:
         self._save_directive_to_db(cycle_id, directive_payload)
         self.current_directive = directive_payload
 
-        # Trigger Subagent 4 for SEO generation
-        try:
-            self.seo_agent.generate_article(
-                component_focus=seo_content_directive["component_focus"],
-                target_keywords=seo_content_directive["target_keywords"]
-            )
-        except Exception as e:
-            print(f"[Lead Supervisor] SEO generation notice: {e}")
+        # Trigger Subagent 4 for SEO generation if enabled
+        if is_seo_enabled:
+            try:
+                self.seo_agent.generate_article(
+                    component_focus=seo_content_directive["component_focus"],
+                    target_keywords=seo_content_directive["target_keywords"]
+                )
+            except Exception as e:
+                print(f"[Lead Supervisor] SEO generation notice: {e}")
 
         # Keep data/products.json, pozitron_data.js, seo_articles.json, and feeds in parity
         try:
