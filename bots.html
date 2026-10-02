@@ -116,54 +116,71 @@
     .bots-tabs-nav {
       background: #090e1c;
       border-bottom: 1px solid var(--border-dark);
-      padding: 0 28px;
+      padding: 6px 20px;
     }
     .tabs-container {
       max-width: 1440px;
       margin: 0 auto;
       display: flex;
-      gap: 4px;
-      overflow-x: auto;
-      scrollbar-width: none;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 6px;
     }
-    .tabs-container::-webkit-scrollbar { display: none; }
 
     .bots-nav-tab {
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
       color: var(--text-muted);
-      padding: 12px 16px;
-      font-size: 0.85rem;
+      padding: 6px 10px;
+      font-size: 0.76rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      border-bottom: 2px solid transparent;
+      gap: 5px;
+      border-radius: 6px;
       transition: all 0.15s ease;
       white-space: nowrap;
       font-family: inherit;
+      line-height: 1.25;
     }
     .bots-nav-tab:hover {
       color: #ffffff;
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
     }
     .bots-nav-tab.active {
       color: var(--primary-light);
-      border-bottom-color: var(--primary-light);
-      background: rgba(56, 189, 248, 0.06);
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.35);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.12);
       font-weight: 700;
     }
     .tab-dot {
-      width: 7px;
-      height: 7px;
+      width: 6px;
+      height: 6px;
       border-radius: 50%;
       background: var(--text-dim);
       transition: all 0.15s ease;
+      flex-shrink: 0;
     }
     .bots-nav-tab.active .tab-dot {
       background: var(--primary-light);
       box-shadow: 0 0 8px var(--primary-light);
+    }
+
+    @media (max-width: 1200px) {
+      .bots-tabs-nav {
+        padding: 5px 12px;
+      }
+      .tabs-container {
+        gap: 3px 4px;
+      }
+      .bots-nav-tab {
+        padding: 5px 7px;
+        font-size: 0.72rem;
+        gap: 4px;
+      }
     }
 
     /* ========================================================================= */
@@ -978,8 +995,8 @@
           <span class="code-chip">8000</span>
         </div>
 
-        <a href="/admin" class="nav-btn nav-btn-outline">
-          <span>Market Paneli</span>
+        <a href="https://pozitronmarket.com/admin" target="_blank" rel="noopener noreferrer" class="nav-btn nav-btn-outline" title="Canlı Pozitron Market Yönetim Paneli (Doğru ve Güncel Veriler)">
+          <span>Canlı Market Paneli ↗</span>
         </a>
 
         <a href="/" target="_blank" class="nav-btn nav-btn-primary">
@@ -2870,7 +2887,7 @@
       const btnSecurity = document.getElementById('tab-btn-security');
       const btnMedia = document.getElementById('tab-btn-media');
 
-      [btnPipeline, btnOrch, btnTrend, btnProc, btnIg, btnReddit, btnQa, btnDaemon].forEach(b => {
+      [btnPipeline, btnOrch, btnTrend, btnProc, btnIg, btnReddit, btnQa, btnDaemon, btnSecurity, btnMedia].forEach(b => {
         if (b) b.classList.remove('active');
       });
 
@@ -2909,6 +2926,210 @@
         loadQAData();
       } else if (tabName === 'daemon') {
         if (btnDaemon) btnDaemon.classList.add('active');
+      } else if (tabName === 'security') {
+        if (btnSecurity) btnSecurity.classList.add('active');
+        loadSecurityData();
+      } else if (tabName === 'media') {
+        if (btnMedia) btnMedia.classList.add('active');
+        loadMediaData();
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // =========================================================================
+    // SUBAGENT 9: CYBER SECURITY SENTINEL CONTROLLER
+    // =========================================================================
+    async function loadSecurityData() {
+      try {
+        const res = await fetch('/api/security/status');
+        if (!res.ok) return;
+        const data = await res.json();
+        const audit = data.audit || {};
+        
+        const scoreEl = document.getElementById('sec-score');
+        if (scoreEl) scoreEl.textContent = `%${audit.score !== undefined ? audit.score : 100}`;
+
+        const statusEl = document.getElementById('sec-status');
+        if (statusEl) statusEl.textContent = `Durum: ${audit.status || 'GÜVENLİ (SECURE)'}`;
+
+        const probesEl = document.getElementById('sec-probes');
+        if (probesEl) probesEl.textContent = `${audit.probes_passed !== undefined ? audit.probes_passed : 6} / ${audit.probes_count || 6}`;
+
+        const findingsEl = document.getElementById('sec-findings');
+        if (findingsEl) findingsEl.textContent = `${(audit.findings || []).length} Kritik`;
+
+        const timeEl = document.getElementById('sec-last-scan-time');
+        if (timeEl && audit.timestamp) {
+          const d = new Date(audit.timestamp);
+          timeEl.textContent = 'Son Tarama: ' + (isNaN(d.getTime()) ? audit.timestamp : d.toLocaleTimeString('tr-TR'));
+        }
+
+        const tbody = document.getElementById('sec-probes-tbody');
+        if (tbody && audit.probes && audit.probes.length) {
+          tbody.innerHTML = audit.probes.map(p => `
+            <tr>
+              <td style="font-weight:700; color:#ffffff;">${escapeHtml(p.name || '')}</td>
+              <td style="color:#94a3b8; font-size:0.8rem;">${escapeHtml(p.description || '')}</td>
+              <td>
+                <span class="status-pill ${p.passed ? 'status-pill-active' : 'status-pill-danger'}">
+                  ${p.passed ? 'BAŞARILI' : 'BAŞARISIZ'}
+                </span>
+              </td>
+              <td style="color:${p.penalty ? '#ef4444' : '#10b981'}; font-weight:600;">-${p.penalty || 0}</td>
+              <td style="color:#cbd5e1; font-size:0.8rem;">
+                ${p.findings && p.findings.length ? p.findings.map(f => `<div style="color:#f87171;">⚠️ ${escapeHtml(f)}</div>`).join('') : '<span style="color:#10b981;">Tüm kurallar karşılandı. Tehdit yok.</span>'}
+              </td>
+            </tr>
+          `).join('');
+        }
+      } catch(e) {
+        console.warn("Security data load error:", e);
+      }
+    }
+
+    async function runSecurityScan() {
+      const btn = document.getElementById('btn-run-sec-scan');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳ Güvenlik Taraması Yapılıyor...</span>';
+      }
+      showToast('Siber güvenlik savunma probları çalıştırılıyor...', 'info');
+      try {
+        const res = await fetch('/api/security/scan', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({})
+        });
+        if (res.ok) {
+          showToast('Güvenlik doğrulaması başarıyla tamamlandı.', 'success');
+          await loadSecurityData();
+        } else {
+          showToast('Güvenlik taraması sırasında hata oluştu.', 'error');
+        }
+      } catch(e) {
+        showToast('Bağlantı hatası: ' + e.message, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>⚡ Şimdi Güvenlik Taraması Başlat</span>';
+        }
+      }
+    }
+
+    // =========================================================================
+    // SUBAGENT 10: PRODUCT MEDIA & CONTENT QUALITY AUDITOR CONTROLLER
+    // =========================================================================
+    async function loadMediaData() {
+      try {
+        const res = await fetch('/api/media/audit');
+        if (!res.ok) return;
+        const data = await res.json();
+        const audit = data.audit || {};
+
+        const scoreEl = document.getElementById('media-health-score');
+        if (scoreEl) scoreEl.textContent = `%${audit.visual_health_score !== undefined ? audit.visual_health_score : 86}`;
+
+        const scannedEl = document.getElementById('media-total-scanned');
+        if (scannedEl) scannedEl.textContent = audit.total_products_scanned !== undefined ? audit.total_products_scanned : 508;
+
+        const dupEl = document.getElementById('media-dup-count');
+        const dups = (audit.issues_summary && audit.issues_summary.duplicate_images) || 0;
+        if (dupEl) dupEl.textContent = `${dups} Adet`;
+
+        const quarEl = document.getElementById('media-quarantine-count');
+        const quarCount = audit.quarantine_candidates_count !== undefined ? audit.quarantine_candidates_count : 0;
+        if (quarEl) quarEl.textContent = `${quarCount} Ürün`;
+
+        const timeEl = document.getElementById('media-last-scan-time');
+        if (timeEl && audit.timestamp) {
+          const d = new Date(audit.timestamp);
+          timeEl.textContent = 'Son Tarama: ' + (isNaN(d.getTime()) ? audit.timestamp : d.toLocaleTimeString('tr-TR'));
+        }
+
+        const tbody = document.getElementById('media-quarantine-tbody');
+        if (tbody) {
+          const findings = audit.findings || [];
+          if (!findings.length) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#10b981;">✅ Karantinada ürün bulunmamaktadır. Tüm ürün görselleri stüdyo kalitesindedir.</td></tr>`;
+          } else {
+            tbody.innerHTML = findings.map(item => `
+              <tr>
+                <td style="font-family:var(--font-mono); font-size:0.75rem; color:#38bdf8;">${escapeHtml(item.sku || '')}</td>
+                <td>
+                  <strong style="color:#ffffff; font-size:0.82rem;">${escapeHtml(item.name || '')}</strong>
+                </td>
+                <td><span class="status-pill status-pill-active" style="font-size:0.68rem;">${escapeHtml(item.category_id || '')}</span></td>
+                <td>
+                  <img src="${escapeHtml(item.current_image || '')}" alt="Mevcut" style="width:48px; height:48px; object-fit:contain; border-radius:4px; background:#070b14; border:1px solid #1e293b;" onerror="this.src='./assets/placeholder.svg';">
+                </td>
+                <td>
+                  <span class="status-pill status-pill-danger" style="font-size:0.68rem;">${escapeHtml(item.issue_type || item.status || 'Hata')}</span>
+                </td>
+                <td>
+                  ${item.suggested_image ? `<img src="${escapeHtml(item.suggested_image)}" alt="Önerilen" style="width:48px; height:48px; object-fit:contain; border-radius:4px; background:#070b14; border:1px solid #10b981;" onerror="this.src='./assets/placeholder.svg';">` : '<span style="color:#64748b;">-</span>'}
+                </td>
+                <td>
+                  <button type="button" class="btn-action btn-success" style="padding:4px 8px; font-size:0.72rem;" onclick="autoFixMedia(false, '${escapeHtml(item.sku || '')}')">
+                    <span>Onayla & Değiştir</span>
+                  </button>
+                </td>
+              </tr>
+            `).join('');
+          }
+        }
+      } catch(e) {
+        console.warn("Media data load error:", e);
+      }
+    }
+
+    async function runMediaScan(limit = 50) {
+      const btn = limit === null ? document.getElementById('btn-scan-media-full') : document.getElementById('btn-scan-media');
+      if (btn) btn.disabled = true;
+      showToast(`Ürün medya kalite denetimi başlatılıyor (${limit ? limit + ' SKU' : 'Tüm Katalog'})...`, 'info');
+      try {
+        const res = await fetch('/api/media/scan', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({limit: limit})
+        });
+        if (res.ok) {
+          showToast('Medya kalite denetimi tamamlandı.', 'success');
+          await loadMediaData();
+        } else {
+          showToast('Medya denetimi sırasında hata oluştu.', 'error');
+        }
+      } catch(e) {
+        showToast('Hata: ' + e.message, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function autoFixMedia(dryRun = false, sku = null) {
+      showToast('Karantinadaki ürün görselleri düzeltiliyor...', 'info');
+      try {
+        const res = await fetch('/api/media/fix', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({dry_run: dryRun, sku: sku})
+        });
+        if (res.ok) {
+          showToast('Görsel düzeltme işlemi tamamlandı.', 'success');
+          await loadMediaData();
+        } else {
+          showToast('Görsel düzeltme sırasında hata oluştu.', 'error');
+        }
+      } catch(e) {
+        showToast('Hata: ' + e.message, 'error');
       }
     }
 

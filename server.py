@@ -48,7 +48,7 @@ BLOCKED_SENSITIVE_FILES = {
     'pozitron.db', 'server.py', 'database.py', 'seed_data.py', 'export_data.py',
     'render.yaml', 'dockerfile', 'procfile', 'requirements.txt', 'orders_log.json',
     'package.json', 'package-lock.json', '.clinerules', 'rule.clinerules',
-    'instagram_config.json', 'reddit_history.json'
+    'instagram_config.json', 'reddit_history.json', 'admin.html'
 }
 
 ALLOWED_UPLOAD_EXTENSIONS = {'.step', '.stp', '.stl', '.obj', '.3mf', '.png', '.jpg', '.jpeg', '.webp'}
@@ -822,6 +822,16 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(content)
                 return
 
+        # Local /admin has been removed. Forward all requests to the online admin panel.
+        if path in ('/admin', '/admin.html'):
+            self.send_response(302)
+            self.send_header('Location', 'https://pozitronmarket.com/admin')
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.end_headers()
+            self.wfile.write(b'<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=https://pozitronmarket.com/admin"><title>Redirecting to Pozitron Online Admin</title></head><body><p>Yonetim paneli online sunucudadir: <a href="https://pozitronmarket.com/admin">https://pozitronmarket.com/admin</a></p></body></html>')
+            return
+
         # Security: Enforce static file whitelist and block sensitive files (.db, .py, etc.)
         if not self.is_static_path_allowed(self.path):
             self.send_json(404, {"error": "File not found"})
@@ -989,6 +999,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/health':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            return
+
+        if path in ('/admin', '/admin.html'):
+            self.send_response(302)
+            self.send_header('Location', 'https://pozitronmarket.com/admin')
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
             self.end_headers()
             return
 
