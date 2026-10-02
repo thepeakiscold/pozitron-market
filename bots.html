@@ -705,9 +705,9 @@
       z-index: 2;
       display: flex;
       justify-content: space-between;
-      gap: 60px;
-      padding: 26px 28px 48px 28px;
-      min-width: 1340px;
+      gap: 32px;
+      padding: 24px 24px 48px 24px;
+      min-width: 1560px;
       min-height: 560px;
       box-sizing: border-box;
       pointer-events: none;
@@ -716,8 +716,8 @@
       flex: 1;
       display: flex;
       flex-direction: column;
-      min-width: 210px;
-      max-width: 250px;
+      min-width: 215px;
+      max-width: 260px;
       pointer-events: auto;
     }
     .n8n-column-cards {
@@ -859,13 +859,13 @@
       min-height: 500px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-nodes-wrapper {
-      gap: 40px;
-      padding: 18px 20px 36px 20px;
-      min-width: 1160px;
+      gap: 24px;
+      padding: 16px 16px 36px 16px;
+      min-width: 1320px;
       min-height: 460px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-column {
-      min-width: 180px;
+      min-width: 175px;
       max-width: 215px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-column-cards {
@@ -893,9 +893,9 @@
       min-height: 720px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-nodes-wrapper {
-      gap: 82px;
+      gap: 52px;
       padding: 32px 34px 60px 34px;
-      min-width: 1560px;
+      min-width: 1850px;
       min-height: 660px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-column {
@@ -2072,12 +2072,13 @@
           <div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
               <span class="status-pill status-pill-info">İş Akışı Şeması</span>
-              <h2 style="font-size:1.2rem; font-weight:800; margin:0; color:#ffffff; font-family:var(--font-heading);">
-                Otonom Boru Hattı ve Tetikleyici Mimarisi
+              <span class="status-pill" style="background:#06b6d422; color:#06b6d4; border:1px solid #06b6d455;">v3.0 Tam Mimari</span>
+              <h2 style="font-size:1.25rem; font-weight:800; margin:0; color:#ffffff; font-family:var(--font-heading);">
+                Otonom Boru Hattı, Sunucu &amp; Ekosistem Mimarisi
               </h2>
             </div>
-            <p class="card-desc">
-              Düğümlere tıklayarak gelen girdileri, üretilen direktifleri ve veri akışlarını inceleyebilirsiniz.
+            <p class="card-desc" style="max-width:850px;">
+              GitHub Server, Hetzner Server, PayTR, SMTP, Gemini AI ve 9 alt ajanın tek sayfada bütünleşik ilişki ve veri akışı haritası.
             </p>
           </div>
 
@@ -2098,11 +2099,19 @@
         </div>
 
         <!-- Visual Legend Bar -->
-        <div class="n8n-legend-bar">
-          <span style="font-weight:700; color:#94a3b8; margin-right:4px;">Bağlantı Türleri:</span>
+        <div class="n8n-legend-bar" style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-size:0.72rem;">
+          <span style="font-weight:700; color:#94a3b8;">Bağlantı Türleri:</span>
           <div class="n8n-legend-item">
             <span class="n8n-legend-line" style="background:#10b981;"></span>
-            <span>Tetikleyici (Cron)</span>
+            <span>Tetikleyici (Cron / Webhook)</span>
+          </div>
+          <div class="n8n-legend-item">
+            <span class="n8n-legend-line" style="background:#06b6d4;"></span>
+            <span>Ağ / Sunucu Altyapısı</span>
+          </div>
+          <div class="n8n-legend-item">
+            <span class="n8n-legend-line" style="background:#f59e0b;"></span>
+            <span>Ödeme &amp; E-Posta</span>
           </div>
           <div class="n8n-legend-item">
             <span class="n8n-legend-line" style="background:#818cf8;"></span>
@@ -2117,7 +2126,7 @@
             <span>İçerik Yayın</span>
           </div>
           <div class="n8n-legend-item">
-            <span class="n8n-legend-line dashed"></span>
+            <span class="n8n-legend-line dashed" style="background:#14b8a6;"></span>
             <span>QA &amp; Sağlık Probu</span>
           </div>
           <span style="margin-left:auto; color:#64748b; font-size:0.68rem;">💡 Düğümlere veya hatlara tıklayarak filtreleyin</span>
@@ -2130,6 +2139,12 @@
           <defs>
             <marker id="n8n-arrow-trigger" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
               <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#10b981" />
+            </marker>
+            <marker id="n8n-arrow-network" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#06b6d4" />
+            </marker>
+            <marker id="n8n-arrow-payment" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#f59e0b" />
             </marker>
             <marker id="n8n-arrow-data" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
               <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#818cf8" />
@@ -2156,36 +2171,43 @@
         <div class="n8n-nodes-wrapper" id="n8n-nodes-container">
           <div class="n8n-column" id="n8n-col-1">
             <div class="n8n-column-header">
-              <span>1. Tetikleyiciler</span>
-              <span>CRON</span>
+              <span>1. Müşteri &amp; Tetikleyici</span>
+              <span>GİRİŞ</span>
             </div>
             <div class="n8n-column-cards"></div>
           </div>
           <div class="n8n-column" id="n8n-col-2">
             <div class="n8n-column-header">
-              <span>2. Girdiler</span>
-              <span>İstihbarat</span>
+              <span>2. Bulut &amp; Sunucu</span>
+              <span>SUNUCULAR</span>
             </div>
             <div class="n8n-column-cards"></div>
           </div>
           <div class="n8n-column" id="n8n-col-3">
             <div class="n8n-column-header">
-              <span>3. Karar Motoru</span>
-              <span>Supervisor</span>
+              <span>3. Harici Servisler</span>
+              <span>ÖDEME/AI/MAIL</span>
             </div>
             <div class="n8n-column-cards"></div>
           </div>
           <div class="n8n-column" id="n8n-col-4">
             <div class="n8n-column-header">
-              <span>4. Uzman Ajanlar</span>
-              <span>İçerik &amp; PR</span>
+              <span>4. İstihbarat &amp; Karar</span>
+              <span>SUPERVISOR</span>
             </div>
             <div class="n8n-column-cards"></div>
           </div>
           <div class="n8n-column" id="n8n-col-5">
             <div class="n8n-column-header">
-              <span>5. Kanallar</span>
-              <span>Hedef</span>
+              <span>5. Uzman Ajanlar</span>
+              <span>TEDARİK/PR/QA</span>
+            </div>
+            <div class="n8n-column-cards"></div>
+          </div>
+          <div class="n8n-column" id="n8n-col-6">
+            <div class="n8n-column-header">
+              <span>6. Dağıtım Kanalları</span>
+              <span>YAYIN &amp; HEDEF</span>
             </div>
             <div class="n8n-column-cards"></div>
           </div>
@@ -2193,7 +2215,7 @@
       </div>
 
       <!-- Node Inspector Panel -->
-      <div class="n8n-inspector" id="n8n-inspector" style="display:none;">
+      <div class="n8n-inspector" id="n8n-inspector" style="display:none; margin-top:16px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; border-bottom:1px solid #1e293b; padding-bottom:10px;">
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -2211,14 +2233,14 @@
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
           <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px;">
             <div style="font-size:0.75rem; font-weight:700; color:#38bdf8; margin-bottom:6px;">
-              Girdiler (Tetikleyenler)
+              Girdiler (Tetikleyenler &amp; Veri Sağlayıcılar)
             </div>
             <div id="insp-inputs-list" style="display:flex; flex-direction:column; gap:4px; font-size:0.78rem; color:#cbd5e1; margin-bottom:12px;">
               <span>Kök Düğüm</span>
             </div>
 
             <div style="font-size:0.75rem; font-weight:700; color:#10b981; margin-bottom:6px;">
-              Çıktılar (Tetiklenenler)
+              Çıktılar (Tetiklenenler &amp; Veri Hedefleri)
             </div>
             <div id="insp-triggers-list" style="display:flex; flex-direction:column; gap:4px; font-size:0.78rem; color:#cbd5e1;">
               <span>Son Kanal</span>
@@ -2227,11 +2249,94 @@
 
           <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span style="font-size:0.75rem; font-weight:700; color:#cbd5e1;">Veri Paketi (JSON)</span>
-              <span class="code-chip">CANLI</span>
+              <span style="font-size:0.75rem; font-weight:700; color:#cbd5e1;">Canlı Konfigürasyon &amp; Telemetri (JSON)</span>
+              <span class="code-chip">CANLI VERİ</span>
             </div>
             <pre id="insp-payload-pre" style="margin:0; max-height:160px; overflow-y:auto; font-family:var(--font-mono); font-size:0.75rem; color:#38bdf8; background:#020617; padding:8px; border-radius:6px; border:1px solid #1e293b; line-height:1.4;">{}</pre>
           </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 5B: ECOSYSTEM SERVICES DIRECTORY (TÜM HİZMETLER ENVANTERİ)     -->
+      <!-- ===================================================================== -->
+      <div class="bots-card" style="margin-top:24px; background:#0b1326; border-color:#0284c7;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="status-pill status-pill-active">Altyapı Kataloğu</span>
+              <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#ffffff; font-family:var(--font-heading);">
+                Pozitron Market Tüm Hizmetler &amp; Entegrasyon Envanteri
+              </h3>
+            </div>
+            <p class="card-desc" style="max-width:850px;">
+              Web sitesinin canlı ortamında kullanılan sunucu, ödeme, e-posta, veritabanı, yapay zeka ve harici API altyapısının eksiksiz listesi.
+            </p>
+          </div>
+
+          <!-- Category filter buttons -->
+          <div style="display:flex; flex-wrap:wrap; gap:6px;">
+            <button type="button" class="btn-action btn-secondary btn-eco-filter" onclick="filterEcosystemServices('all', this)" style="background:#1e293b; color:#38bdf8; font-size:0.72rem; padding:4px 9px;">Tümü</button>
+            <button type="button" class="btn-action btn-secondary btn-eco-filter" onclick="filterEcosystemServices('Sunucu', this)" style="font-size:0.72rem; padding:4px 9px;">Sunucu &amp; Altyapı</button>
+            <button type="button" class="btn-action btn-secondary btn-eco-filter" onclick="filterEcosystemServices('Ödeme', this)" style="font-size:0.72rem; padding:4px 9px;">Ödeme Altyapısı</button>
+            <button type="button" class="btn-action btn-secondary btn-eco-filter" onclick="filterEcosystemServices('E-Posta', this)" style="font-size:0.72rem; padding:4px 9px;">İşlemsel E-Posta</button>
+            <button type="button" class="btn-action btn-secondary btn-eco-filter" onclick="filterEcosystemServices('Yapay Zeka', this)" style="font-size:0.72rem; padding:4px 9px;">Yapay Zeka (AI)</button>
+            <button type="button" class="btn-action btn-secondary btn-eco-filter" onclick="filterEcosystemServices('Sosyal', this)" style="font-size:0.72rem; padding:4px 9px;">Sosyal &amp; SEO</button>
+          </div>
+        </div>
+
+        <div id="ecosystem-services-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin-top:16px;">
+          <!-- Dynamically populated by renderEcosystemServices() -->
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- SECTION 5C: ALL RELATIONSHIPS & PROTOCOL MATRIX                        -->
+      <!-- ===================================================================== -->
+      <div class="bots-card" style="margin-top:20px; background:#0b1326; border-color:#0284c7;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:14px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="status-pill status-pill-info">Veri Akış Matrisi</span>
+              <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#ffffff; font-family:var(--font-heading);">
+                Bütünleşik İlişki ve Protokol Akış Tablosu
+              </h3>
+              <span id="relations-count-badge" class="code-chip" style="font-size:0.72rem;">34 İlişki</span>
+            </div>
+            <p class="card-desc">
+              Tüm bileşenler arasındaki haberleşme portları, iletişim protokolleri ve veri transfer amaçları.
+            </p>
+          </div>
+
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="relations-search-input" oninput="onRelationsSearch(this.value)" placeholder="İlişkilerde ara (örn: paytr, hetzner, github, smtp, gemini)..." style="background:#070b14; border:1px solid #1e293b; border-radius:6px; padding:6px 12px; color:#fff; font-size:0.75rem; width:260px;" />
+            <div style="display:flex; gap:4px;">
+              <button type="button" class="btn-action btn-secondary btn-rel-filter" onclick="filterRelationsCategory('all', this)" style="background:#1e293b; color:#38bdf8; font-size:0.7rem; padding:4px 8px;">Tümü</button>
+              <button type="button" class="btn-action btn-secondary btn-rel-filter" onclick="filterRelationsCategory('network', this)" style="font-size:0.7rem; padding:4px 8px;">Ağ &amp; Sunucu</button>
+              <button type="button" class="btn-action btn-secondary btn-rel-filter" onclick="filterRelationsCategory('payment', this)" style="font-size:0.7rem; padding:4px 8px;">Ödeme &amp; Posta</button>
+              <button type="button" class="btn-action btn-secondary btn-rel-filter" onclick="filterRelationsCategory('directive', this)" style="font-size:0.7rem; padding:4px 8px;">İstihbarat / Karar</button>
+              <button type="button" class="btn-action btn-secondary btn-rel-filter" onclick="filterRelationsCategory('publish', this)" style="font-size:0.7rem; padding:4px 8px;">Yayın &amp; Dağıtım</button>
+              <button type="button" class="btn-action btn-secondary btn-rel-filter" onclick="filterRelationsCategory('probe', this)" style="font-size:0.7rem; padding:4px 8px;">Sağlık Probu</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.78rem;">
+            <thead>
+              <tr style="border-bottom:2px solid #1e293b; background:#070b14;">
+                <th style="padding:10px 14px; color:#94a3b8; font-size:0.7rem; text-transform:uppercase;">Kaynak Bileşen</th>
+                <th style="padding:10px 14px; width:40px; text-align:center; color:#64748b;">Yön</th>
+                <th style="padding:10px 14px; color:#94a3b8; font-size:0.7rem; text-transform:uppercase;">Hedef Bileşen</th>
+                <th style="padding:10px 14px; color:#94a3b8; font-size:0.7rem; text-transform:uppercase;">Veri Akışı / İşlev</th>
+                <th style="padding:10px 14px; color:#94a3b8; font-size:0.7rem; text-transform:uppercase;">İlişki Türü</th>
+                <th style="padding:10px 14px; text-align:right; color:#94a3b8; font-size:0.7rem; text-transform:uppercase;">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="relations-matrix-tbody">
+              <!-- Dynamically populated by renderRelationsMatrix() -->
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -2588,9 +2693,12 @@
     }
 
     // =========================================================================
-    // n8n PIPELINE WORKFLOW GRAPH RENDERER & INTERACTION
+    // n8n PIPELINE WORKFLOW GRAPH & ECOSYSTEM SERVICES CONTROLLER
     // =========================================================================
     let _hoveredNodeId = null;
+    let _ecosystemFilter = 'all';
+    let _relationsSearch = '';
+    let _relationsCategory = 'all';
 
     async function loadPipelineGraph() {
       try {
@@ -2598,6 +2706,8 @@
         if (res.ok) {
           _pipelineGraphData = await res.json();
           renderN8nNodes(_pipelineGraphData);
+          renderEcosystemServices(_pipelineGraphData.ecosystem_services);
+          renderRelationsMatrix(_pipelineGraphData.connections, _pipelineGraphData.nodes, _relationsSearch, _relationsCategory);
           setTimeout(() => {
             drawN8nConnections(_pipelineGraphData);
           }, 80);
@@ -2610,7 +2720,8 @@
     function renderN8nNodes(data) {
       if (!data || !data.nodes) return;
 
-      for (let i = 1; i <= 5; i++) {
+      const numCols = (data.columns && data.columns.length) || 6;
+      for (let i = 1; i <= numCols; i++) {
         const col = document.getElementById(`n8n-col-${i}`);
         if (col) {
           let cardsContainer = col.querySelector('.n8n-column-cards');
@@ -2620,6 +2731,14 @@
             col.appendChild(cardsContainer);
           } else {
             cardsContainer.innerHTML = '';
+          }
+          if (data.columns && data.columns[i - 1]) {
+            const colDef = data.columns[i - 1];
+            const headerSpans = col.querySelectorAll('.n8n-column-header span');
+            if (headerSpans.length >= 2) {
+              headerSpans[0].textContent = colDef.name;
+              headerSpans[1].textContent = colDef.desc || '';
+            }
           }
         }
       }
@@ -2632,10 +2751,19 @@
 
         let topColor = '#38bdf8';
         if (node.type === 'trigger') topColor = '#10b981';
+        else if (node.type === 'client') topColor = '#38bdf8';
+        else if (node.type === 'server') {
+          topColor = (node.id && node.id.includes('hetzner')) ? '#0284c7' : '#6366f1';
+        }
+        else if (node.type === 'service' || node.type === 'payment') {
+          topColor = (node.id && node.id.includes('paytr')) ? '#f59e0b' : '#a855f7';
+        }
+        else if (node.type === 'ai') topColor = '#10b981';
+        else if (node.id && node.id.includes('procurement')) topColor = '#10b981';
         else if (node.id && node.id.includes('trend')) topColor = '#a855f7';
         else if (node.type === 'sentinel' || (node.id && node.id.includes('qa'))) topColor = '#14b8a6';
         else if (node.type === 'agent') topColor = '#6366f1';
-        else if (node.type === 'supervisor') topColor = '#0284c7';
+        else if (node.type === 'supervisor') topColor = '#0ea5e9';
         else if (node.type === 'worker') {
           if (node.id.includes('instagram')) topColor = '#f43f5e';
           else if (node.id.includes('reddit')) topColor = '#ea580c';
@@ -2644,6 +2772,7 @@
         } else if (node.type === 'destination') topColor = '#64748b';
 
         const isSelected = _selectedNodeId === node.id;
+        const isDisabled = node.status === 'disabled';
 
         const card = document.createElement('div');
         card.className = `n8n-node-card ${isSelected ? 'selected' : ''}`;
@@ -2659,7 +2788,7 @@
             <span class="n8n-badge" style="background:${topColor}22; color:${topColor}; border:1px solid ${topColor}44;">
               ${(node.tag || 'NODE').replace(/[\[\]]/g, '')}
             </span>
-            <span class="status-dot online ${node.status === 'running' || node.status === 'active' ? 'active-pulse' : ''}"></span>
+            <span class="status-dot ${isDisabled ? 'offline' : 'online'} ${node.status === 'running' || node.status === 'active' ? 'active-pulse' : ''}"></span>
           </div>
 
           <div class="n8n-card-title">
@@ -2672,7 +2801,7 @@
 
           <div class="n8n-card-footer">
             <span style="color:#64748b;">DURUM:</span>
-            <span class="code-chip" style="font-size:0.65rem; padding:1px 5px; color:${topColor};">${(node.status_text || node.status || '').replace(/[\[\]]/g, '')}</span>
+            <span class="code-chip" style="font-size:0.65rem; padding:1px 5px; color:${isDisabled ? '#94a3b8' : topColor};">${(node.status_text || node.status || '').replace(/[\[\]]/g, '')}</span>
           </div>
         `;
 
@@ -2693,6 +2822,8 @@
 
       let col = '#38bdf8';
       if (type === 'trigger') col = '#10b981';
+      else if (type === 'network') col = '#06b6d4';
+      else if (type === 'payment') col = '#f59e0b';
       else if (type === 'data') col = '#818cf8';
       else if (type === 'directive') col = '#38bdf8';
       else if (type === 'publish') col = '#f43f5e';
@@ -2732,7 +2863,6 @@
       const svg = document.getElementById('n8n-svg');
       if (!svgGroup || !canvas || !data || !data.connections) return;
 
-      // Ensure SVG dimensions cover the full scrollable area
       const scrollW = Math.max(canvas.scrollWidth, canvas.clientWidth);
       const scrollH = Math.max(canvas.scrollHeight, canvas.clientHeight);
       svg.setAttribute('width', scrollW);
@@ -2741,14 +2871,12 @@
       svg.style.height = scrollH + 'px';
 
       svgGroup.innerHTML = '';
-      // Remove any previously rendered dynamic port dots
       document.querySelectorAll('.n8n-dynamic-port').forEach(p => p.remove());
 
       const canvasRect = canvas.getBoundingClientRect();
       const scrollLeft = canvas.scrollLeft || 0;
       const scrollTop = canvas.scrollTop || 0;
 
-      // Group connections by source and target
       const outConnsByNode = {};
       const inConnsByNode = {};
 
@@ -2760,7 +2888,6 @@
         inConnsByNode[conn.to].push(conn);
       });
 
-      // Sort outgoing connections by target element's vertical position
       Object.keys(outConnsByNode).forEach(fromId => {
         outConnsByNode[fromId].sort((a, b) => {
           const elA = document.getElementById(`node-${a.to}`);
@@ -2771,7 +2898,6 @@
         });
       });
 
-      // Sort incoming connections by source element's vertical position
       Object.keys(inConnsByNode).forEach(toId => {
         inConnsByNode[toId].sort((a, b) => {
           const elA = document.getElementById(`node-${a.from}`);
@@ -2795,7 +2921,6 @@
         const r1 = fromEl.getBoundingClientRect();
         const r2 = toEl.getBoundingClientRect();
 
-        // Calculate distributed Y on source card
         const outList = outConnsByNode[conn.from] || [conn];
         const outIdx = outList.indexOf(conn);
         const outCount = outList.length;
@@ -2804,7 +2929,6 @@
           outFrac = 0.22 + (0.56 * outIdx) / (outCount - 1);
         }
 
-        // Calculate distributed Y on target card
         const inList = inConnsByNode[conn.to] || [conn];
         const inIdx = inList.indexOf(conn);
         const inCount = inList.length;
@@ -2822,16 +2946,13 @@
         const isProbe = conn.type === 'probe' || (conn.from === 'subagent_7_qa' && conn.to !== 'lead_supervisor') || (conn.label && conn.label.toLowerCase().includes('probu'));
         const effectiveType = isProbe ? 'probe' : conn.type;
 
-        // Render dynamic port indicators on cards
         renderPortDot(fromEl, 'out', outFrac, effectiveType);
         renderPortDot(toEl, 'in', inFrac, effectiveType);
 
-        // Path generation
         let d = '';
         const colFrom = (fromNodeData && fromNodeData.column) || 1;
         const colTo = (toNodeData && toNodeData.column) || 1;
 
-        // Check if connection skips a column (e.g. Column 3 to Column 5 bypassing Column 4)
         if (colTo - colFrom > 1) {
           let maxBottom = Math.max(r1.bottom, r2.bottom);
           for (let c = colFrom + 1; c < colTo; c++) {
@@ -2848,8 +2969,10 @@
               `C ${x1 + 35} ${y1}, ${x1 + 35} ${bypassY}, ${x1 + 35 + rCurve} ${bypassY} ` +
               `L ${x2 - 35 - rCurve} ${bypassY} ` +
               `C ${x2 - 35} ${bypassY}, ${x2 - 35} ${y2}, ${x2} ${y2}`;
+        } else if (colTo < colFrom || x2 <= x1) {
+          const loopY = Math.max(r1.bottom, r2.bottom) - canvasRect.top + scrollTop + 26;
+          d = `M ${x1} ${y1} C ${x1 + 25} ${y1}, ${x1 + 25} ${loopY}, ${x1} ${loopY} L ${x2} ${loopY} C ${x2 - 25} ${loopY}, ${x2 - 25} ${y2}, ${x2} ${y2}`;
         } else {
-          // Smooth, non-reversing Bezier curve
           const dist = Math.max(20, x2 - x1);
           const dx = Math.min(dist * 0.45, Math.max(16, dist * 0.4));
           d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
@@ -2864,6 +2987,12 @@
         if (effectiveType === 'trigger') {
           strokeColor = '#10b981';
           markerId = 'n8n-arrow-trigger';
+        } else if (effectiveType === 'network') {
+          strokeColor = '#06b6d4';
+          markerId = 'n8n-arrow-network';
+        } else if (effectiveType === 'payment') {
+          strokeColor = '#f59e0b';
+          markerId = 'n8n-arrow-payment';
         } else if (effectiveType === 'data') {
           strokeColor = '#818cf8';
           markerId = 'n8n-arrow-data';
@@ -2890,7 +3019,6 @@
         path.style.stroke = strokeColor;
         path.setAttribute('marker-end', isHighlighted ? 'url(#n8n-arrow-active)' : (isDimmed ? 'url(#n8n-arrow-dim)' : `url(#${markerId})`));
 
-        // Interactive tooltip title on hover
         const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
         titleEl.textContent = `${conn.label || conn.type}: ${conn.from} → ${conn.to}`;
         path.appendChild(titleEl);
@@ -2927,13 +3055,18 @@
       const statusBadge = document.getElementById('insp-status-badge');
       if (statusBadge) {
         statusBadge.textContent = (node.status || 'AKTIF').toUpperCase();
-        statusBadge.className = node.status === 'running' || node.status === 'active' ? 'status-pill status-pill-active' : 'status-pill status-pill-neutral';
+        statusBadge.className = node.status === 'running' || node.status === 'active' ? 'status-pill status-pill-active' : (node.status === 'disabled' ? 'status-pill' : 'status-pill status-pill-neutral');
+        if (node.status === 'disabled') {
+          statusBadge.style.background = '#47556944';
+          statusBadge.style.color = '#94a3b8';
+          statusBadge.style.border = '1px solid #475569';
+        }
       }
 
       const inputsList = document.getElementById('insp-inputs-list');
       if (inputsList) {
         if (!node.inputs || node.inputs.length === 0) {
-          inputsList.innerHTML = '<span style="color:#64748b;">Kök tetikleyici (Girdi beklemez)</span>';
+          inputsList.innerHTML = '<span style="color:#64748b;">Kök tetikleyici veya başlangıç girdisi</span>';
         } else {
           inputsList.innerHTML = node.inputs.map(inId => {
             const upNode = _pipelineGraphData.nodes.find(n => n.id === inId);
@@ -2948,7 +3081,7 @@
       const triggersList = document.getElementById('insp-triggers-list');
       if (triggersList) {
         if (!node.triggers || node.triggers.length === 0) {
-          triggersList.innerHTML = '<span style="color:#64748b;">Son hedef (Başka düğümleri tetiklemez)</span>';
+          triggersList.innerHTML = '<span style="color:#64748b;">Son kanal (İletim tamamlandı)</span>';
         } else {
           triggersList.innerHTML = node.triggers.map(outId => {
             const downNode = _pipelineGraphData.nodes.find(n => n.id === outId);
@@ -2973,6 +3106,177 @@
       _hoveredNodeId = null;
       document.querySelectorAll('.n8n-node-card').forEach(el => el.classList.remove('selected'));
       if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
+    }
+
+    // =========================================================================
+    // ECOSYSTEM SERVICES DIRECTORY & CROSS-SERVICE RELATIONS MATRIX
+    // =========================================================================
+    function renderEcosystemServices(services) {
+      const container = document.getElementById('ecosystem-services-grid');
+      if (!container || !services) return;
+
+      const filtered = _ecosystemFilter === 'all' 
+        ? services 
+        : services.filter(s => {
+            const cat = (s.category || '').toLowerCase();
+            const q = _ecosystemFilter.toLowerCase();
+            return cat.includes(q);
+          });
+
+      container.innerHTML = filtered.map(s => {
+        let badgeColor = '#38bdf8';
+        if (s.id.includes('github')) badgeColor = '#6366f1';
+        else if (s.id.includes('hetzner')) badgeColor = '#0284c7';
+        else if (s.id.includes('gemini')) badgeColor = '#10b981';
+        else if (s.id.includes('paytr')) badgeColor = '#f59e0b';
+        else if (s.id.includes('smtp')) badgeColor = '#a855f7';
+        else if (s.id.includes('meta')) badgeColor = '#f43f5e';
+        else if (s.id.includes('reddit')) badgeColor = '#ea580c';
+        else if (s.id.includes('google')) badgeColor = '#10b981';
+        else if (s.id.includes('sqlite')) badgeColor = '#14b8a6';
+
+        return `
+          <div class="bots-card" style="background:#090e1a; border-color:${badgeColor}44; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:0; left:0; width:100%; height:3px; background:${badgeColor};"></div>
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px;">
+                <span class="n8n-badge" style="background:${badgeColor}22; color:${badgeColor}; border:1px solid ${badgeColor}55;">
+                  ${s.badge || 'HİZMET'}
+                </span>
+                <span class="status-pill status-pill-active" style="font-size:0.65rem;">${s.status}</span>
+              </div>
+              <h4 style="font-size:0.95rem; font-weight:800; color:#fff; margin:0 0 4px 0; font-family:var(--font-heading);">
+                ${s.name}
+              </h4>
+              <div style="font-size:0.75rem; color:#38bdf8; font-weight:600; margin-bottom:8px;">
+                Sağlayıcı: <span style="color:#94a3b8;">${s.provider}</span>
+              </div>
+              <p style="font-size:0.75rem; color:#cbd5e1; line-height:1.45; margin-bottom:12px;">
+                ${s.details || s.role}
+              </p>
+            </div>
+            <div>
+              <div style="background:#040711; border:1px solid #1e293b; border-radius:6px; padding:8px 10px; margin-bottom:8px;">
+                <div style="font-size:0.68rem; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:4px;">Uç Noktalar &amp; Adresler:</div>
+                <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                  ${(s.endpoints || []).map(ep => `<span class="code-chip" style="font-size:0.68rem; color:#e2e8f0;">${ep}</span>`).join('')}
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.7rem; color:#64748b;">
+                <span>Protokol:</span>
+                <span style="color:#38bdf8; font-weight:600;">${(s.protocols || []).join(' • ')}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterEcosystemServices(cat, btn) {
+      _ecosystemFilter = cat;
+      document.querySelectorAll('.btn-eco-filter').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#94a3b8';
+      });
+      if (btn) {
+        btn.style.background = '#1e293b';
+        btn.style.color = '#38bdf8';
+      }
+      if (_pipelineGraphData && _pipelineGraphData.ecosystem_services) {
+        renderEcosystemServices(_pipelineGraphData.ecosystem_services);
+      }
+    }
+
+    function renderRelationsMatrix(connections, nodes, filterQuery = '', filterCategory = 'all') {
+      const tbody = document.getElementById('relations-matrix-tbody');
+      const countEl = document.getElementById('relations-count-badge');
+      if (!tbody || !connections) return;
+
+      const nodeMap = {};
+      (nodes || []).forEach(n => { nodeMap[n.id] = n; });
+
+      const filtered = connections.filter(conn => {
+        const fromNode = nodeMap[conn.from] || { label: conn.from };
+        const toNode = nodeMap[conn.to] || { label: conn.to };
+        const text = `${conn.from} ${fromNode.label} ${conn.to} ${toNode.label} ${conn.label} ${conn.type}`.toLowerCase();
+
+        if (filterQuery && !text.includes(filterQuery.toLowerCase())) return false;
+        if (filterCategory === 'all') return true;
+        if (filterCategory === 'network' && (conn.type === 'network' || conn.from.includes('srv') || conn.to.includes('srv'))) return true;
+        if (filterCategory === 'payment' && (conn.type === 'payment' || conn.from.includes('paytr') || conn.to.includes('paytr') || conn.to.includes('smtp') || conn.from.includes('smtp'))) return true;
+        if (filterCategory === 'directive' && (conn.type === 'directive' || conn.type === 'data')) return true;
+        if (filterCategory === 'publish' && (conn.type === 'publish' || conn.to.includes('output') || conn.to.includes('meta') || conn.to.includes('reddit'))) return true;
+        if (filterCategory === 'probe' && conn.type === 'probe') return true;
+        return false;
+      });
+
+      if (countEl) countEl.textContent = `${filtered.length} / ${connections.length} İlişki`;
+
+      tbody.innerHTML = filtered.map((c, idx) => {
+        const fromNode = nodeMap[c.from] || { label: c.from, tag: '[NODE]' };
+        const toNode = nodeMap[c.to] || { label: c.to, tag: '[NODE]' };
+
+        let typePill = '<span class="status-pill status-pill-info">DİREKTİF</span>';
+        if (c.type === 'network') typePill = '<span class="status-pill" style="background:#06b6d422; color:#06b6d4; border:1px solid #06b6d455;">AĞ / CDN</span>';
+        else if (c.type === 'payment') typePill = '<span class="status-pill" style="background:#f59e0b22; color:#f59e0b; border:1px solid #f59e0b55;">ÖDEME</span>';
+        else if (c.type === 'trigger') typePill = '<span class="status-pill status-pill-active">TETİKLEYİCİ</span>';
+        else if (c.type === 'data') typePill = '<span class="status-pill" style="background:#818cf822; color:#818cf8; border:1px solid #818cf855;">VERİ AKIŞI</span>';
+        else if (c.type === 'publish') typePill = '<span class="status-pill" style="background:#f43f5e22; color:#f43f5e; border:1px solid #f43f5e55;">YAYIN</span>';
+        else if (c.type === 'probe') typePill = '<span class="status-pill" style="background:#14b8a622; color:#14b8a6; border:1px solid #14b8a655;">SAĞLIK PROBU</span>';
+
+        return `
+          <tr style="border-bottom:1px solid #1e293b; transition:background 0.15s ease;" onmouseenter="this.style.background='#0d172a'" onmouseleave="this.style.background='transparent'">
+            <td style="padding:10px 14px; font-weight:700; color:#fff; font-size:0.8rem;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="code-chip" style="font-size:0.65rem;">${(fromNode.tag || 'NODE').replace(/[\[\]]/g, '')}</span>
+                <span>${fromNode.label}</span>
+              </div>
+            </td>
+            <td style="padding:10px 14px; font-size:0.82rem; color:#38bdf8; text-align:center;">
+              &rarr;
+            </td>
+            <td style="padding:10px 14px; font-weight:700; color:#fff; font-size:0.8rem;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="code-chip" style="font-size:0.65rem;">${(toNode.tag || 'NODE').replace(/[\[\]]/g, '')}</span>
+                <span>${toNode.label}</span>
+              </div>
+            </td>
+            <td style="padding:10px 14px; font-size:0.75rem; color:#cbd5e1;">
+              ${c.label || c.type}
+            </td>
+            <td style="padding:10px 14px;">
+              ${typePill}
+            </td>
+            <td style="padding:10px 14px; text-align:right;">
+              <button type="button" class="btn-action btn-secondary" style="padding:3px 8px; font-size:0.68rem;" onclick="selectN8nNode('${c.from}')">
+                İncele
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function onRelationsSearch(query) {
+      _relationsSearch = query;
+      if (_pipelineGraphData) {
+        renderRelationsMatrix(_pipelineGraphData.connections, _pipelineGraphData.nodes, _relationsSearch, _relationsCategory);
+      }
+    }
+
+    function filterRelationsCategory(cat, btn) {
+      _relationsCategory = cat;
+      document.querySelectorAll('.btn-rel-filter').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#94a3b8';
+      });
+      if (btn) {
+        btn.style.background = '#1e293b';
+        btn.style.color = '#38bdf8';
+      }
+      if (_pipelineGraphData) {
+        renderRelationsMatrix(_pipelineGraphData.connections, _pipelineGraphData.nodes, _relationsSearch, _relationsCategory);
+      }
     }
 
     window.addEventListener('resize', () => {

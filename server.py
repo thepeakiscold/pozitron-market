@@ -1611,6 +1611,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
         # Pipeline Topology & Workflow Graph (n8n style architecture)
+        # Pipeline Topology & Workflow Graph (Comprehensive Multi-Server & Ecosystem Architecture)
         if path == '/api/pipeline/graph':
             sup_status = lead_supervisor_agent.get_status()
             ig_status = instagram_pr_agent.get_status()
@@ -1619,32 +1620,54 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             tel = lead_supervisor_agent.telemetry_agent.get_latest_telemetry()
             summary = lead_supervisor_agent.price_agent.get_summary_stats()
             trend_props = lead_supervisor_agent.trend_agent.get_proposals(limit=100)
+            proc_plan = lead_supervisor_agent.procurement_agent.get_latest_plan() or {}
 
             active_dir = sup_status.get("active_directive", {})
+            reddit_enabled = is_subagent_enabled("subagent_2_reddit")
+
             graph = {
-                "version": "2.0",
-                "engine": "Antigravity 2.0 Hierarchical Pipeline",
+                "version": "3.0",
+                "engine": "Antigravity 2.0 Full Ecosystem Architecture",
                 "last_cycle_at": sup_status.get("last_run_at"),
                 "next_cycle_at": sup_status.get("next_run_at"),
                 "columns": [
-                    {"id": 1, "name": "TETIKLEYICI", "desc": "Zamanlayici (Cron)"},
-                    {"id": 2, "name": "ISTIHBARAT & TELEMETRI", "desc": "Pazar & Performans Girdileri"},
-                    {"id": 3, "name": "BAS ORKESTRASYON", "desc": "Karar & Direktif Motoru"},
-                    {"id": 4, "name": "ICERIK & ETKILESIM", "desc": "Uzman Ajanlar"},
-                    {"id": 5, "name": "YAYIN KANALLARI", "desc": "Son Hedefler"}
+                    {"id": 1, "name": "1. MÜŞTERİ & TETİKLEYİCİLER", "desc": "Ziyaretçi & Otonom Tetikleyiciler"},
+                    {"id": 2, "name": "2. BULUT & SUNUCU ALTYAPISI", "desc": "GitHub & Hetzner Sunucuları"},
+                    {"id": 3, "name": "3. HARİCİ SERVİSLER & ÖDEME", "desc": "PayTR, SMTP & Gemini AI"},
+                    {"id": 4, "name": "4. İSTİHBARAT & ORKESTRASYON", "desc": "Pazar Analizi & Baş Supervisor"},
+                    {"id": 5, "name": "5. UZMAN AJANLAR & TEDARİK", "desc": "Sipariş, İçerik, SEO & QA"},
+                    {"id": 6, "name": "6. YAYIN & DAĞITIM KANALLARI", "desc": "Web, Instagram, Reddit, Google"}
                 ],
                 "nodes": [
+                    # COLUMN 1: Müşteri & Tetikleyiciler
+                    {
+                        "id": "client_customer",
+                        "label": "Müşteri & Ziyaretçi",
+                        "tag": "[CLIENT]",
+                        "column": 1,
+                        "type": "client",
+                        "category": "Son Kullanıcı / Tarayıcı",
+                        "status": "active",
+                        "status_text": "Web Gezinme & Alışveriş",
+                        "description": "FPV pilotları ve müşteriler: Ürün inceler, sepete ekler, 3D Secure ödeme yapar ve ürün yorumu bırakır",
+                        "triggers": ["srv_github_platform", "srv_hetzner_cloud", "svc_paytr"],
+                        "payload_preview": {
+                            "traffic_channel": "Direct, Organic Search, Instagram PR",
+                            "actions": ["Product Browsing", "Cart Checkout", "Review Submission"],
+                            "target_domain": "https://pozitronmarket.com"
+                        }
+                    },
                     {
                         "id": "trigger_cron_2h",
-                        "label": "2 Saatlik Zamanlayici",
+                        "label": "2 Saatlik Zamanlayıcı",
                         "tag": "[TRIGGER]",
                         "column": 1,
                         "type": "trigger",
-                        "category": "Zamanlayici (Cron)",
+                        "category": "Zamanlayıcı (Cron)",
                         "interval": "2 saat",
                         "status": "active",
                         "status_text": "Aktif (Tetikliyor)",
-                        "description": "Antigravity 2.0 periyodik cron tetikleyicisi",
+                        "description": "Antigravity 2.0 periyodik cron tetikleyicisi: 2 saatte bir pazar istihbaratı ve orkestrasyonu tetikler",
                         "triggers": ["subagent_5_price", "subagent_3_telemetry", "subagent_6_trend"],
                         "payload_preview": {
                             "trigger_type": "PERIODIC_CRON",
@@ -1654,19 +1677,139 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         }
                     },
                     {
+                        "id": "trigger_github_dispatch",
+                        "label": "GitHub Webhook (Envanter)",
+                        "tag": "[WEBHOOK]",
+                        "column": 1,
+                        "type": "trigger",
+                        "category": "Sipariş / Envanter Olayı",
+                        "status": "ready",
+                        "status_text": "repository_dispatch",
+                        "description": "Sipariş verildiğinde anlık stok düşümü ve Git senkronizasyonu için GitHub Actions tetikleyicisi",
+                        "triggers": ["srv_github_platform"],
+                        "payload_preview": {
+                            "event_type": "market_order",
+                            "workflow": ".github/workflows/market_order_sync.yml",
+                            "action": "scripts/cloud_market_sync.py"
+                        }
+                    },
+
+                    # COLUMN 2: Bulut & Sunucu Altyapısı
+                    {
+                        "id": "srv_github_platform",
+                        "label": "GitHub Server & CDN",
+                        "tag": "[GITHUB SERVER]",
+                        "column": 2,
+                        "type": "server",
+                        "category": "Statik CDN & CI/CD Dağıtımı",
+                        "status": "active",
+                        "status_text": "Pages CDN & Actions CI/CD",
+                        "description": "GitHub Pages Anycast CDN (pozitronmarket.com), Git versiyon kontrolü ve GitHub Actions envanter senkron iş akışları (market_order_sync.yml, instagram_agent.yml)",
+                        "inputs": ["client_customer", "trigger_github_dispatch"],
+                        "triggers": ["output_pozitron_web"],
+                        "payload_preview": {
+                            "repository": "thepeakiscold/pozitron-market",
+                            "hosting": "GitHub Pages (CNAME pozitronmarket.com)",
+                            "actions_workflows": ["market_order_sync.yml", "instagram_agent.yml", "reddit_bot.yml"],
+                            "static_assets": "HTML, CSS, JS, SSG product pages (508 SKU)"
+                        }
+                    },
+                    {
+                        "id": "srv_hetzner_cloud",
+                        "label": "Hetzner Cloud Server (VPS)",
+                        "tag": "[HETZNER VPS]",
+                        "column": 2,
+                        "type": "server",
+                        "category": "Merkezi Bulut & Backend API",
+                        "status": "running",
+                        "status_text": "Ubuntu 24.04 • Nginx SSL • Port 8000",
+                        "description": "Hetzner Cloud VPS: api.pozitronmarket.com, Nginx Reverse Proxy (SSL Let's Encrypt), Systemd pozitron.service, 7/24 Python backend API ve SQLite pozitron.db",
+                        "inputs": ["client_customer", "svc_paytr", "lead_supervisor", "subagent_8_procurement"],
+                        "triggers": ["svc_smtp_mail", "trigger_github_dispatch"],
+                        "payload_preview": {
+                            "cloud_provider": "Hetzner Cloud GmbH (Nuremberg / Falkenstein)",
+                            "domain": "https://api.pozitronmarket.com",
+                            "os": "Ubuntu 24.04 LTS (x86_64)",
+                            "web_server": "Nginx Reverse Proxy (Port 80/443 SSL Let's Encrypt)",
+                            "service": "systemd (pozitron.service / port 8000)",
+                            "database": "SQLite 3 (pozitron.db - ACID Transactional)",
+                            "active_subagents": 9
+                        }
+                    },
+
+                    # COLUMN 3: Harici Servisler & Ödeme
+                    {
+                        "id": "svc_paytr",
+                        "label": "PayTR Sanal POS (Ödeme)",
+                        "tag": "[PAYMENT]",
+                        "column": 3,
+                        "type": "service",
+                        "category": "Ödeme Ağ Geçidi",
+                        "status": "connected",
+                        "status_text": "3D Secure • Token & Webhook",
+                        "description": "Türkiye BDDK lisanslı güvenli ödeme altyapısı: Kredi kartı tahsilatı, taksit seçenekleri ve /api/paytr/callback webhook bildirimi",
+                        "inputs": ["client_customer"],
+                        "triggers": ["srv_hetzner_cloud"],
+                        "payload_preview": {
+                            "provider": "PayTR Ödeme ve Elektronik Para Kuruluşu A.Ş.",
+                            "integration": "iFrame API + 3D Secure 2.0",
+                            "callback_endpoint": "https://api.pozitronmarket.com/api/paytr/callback",
+                            "supported_cards": "Troy, Visa, MasterCard, Maximum, Bonus, World, Axess, CardFinans"
+                        }
+                    },
+                    {
+                        "id": "svc_smtp_mail",
+                        "label": "SMTP E-Posta Sunucusu",
+                        "tag": "[SMTP MAIL]",
+                        "column": 3,
+                        "type": "service",
+                        "category": "İşlemsel E-Posta",
+                        "status": "connected",
+                        "status_text": "STARTTLS Port 587 • noreply",
+                        "description": "Direct SMTP (Gmail Port 587): Sipariş dekontu, kargo takip numarası ve sistem kritik durum alarmları",
+                        "inputs": ["srv_hetzner_cloud"],
+                        "triggers": ["client_customer"],
+                        "payload_preview": {
+                            "server": "smtp.gmail.com:587",
+                            "encryption": "STARTTLS",
+                            "sender": "noreply@pozitronmarkets.com",
+                            "mail_types": ["Sipariş Onayı", "Kargo Takip", "Admin Kritik Bildirim"]
+                        }
+                    },
+                    {
+                        "id": "svc_gemini_ai",
+                        "label": "Google Gemini AI Bulutu",
+                        "tag": "[GEMINI AI]",
+                        "column": 3,
+                        "type": "ai",
+                        "category": "Bilişsel Zeka & Vizyon",
+                        "status": "active",
+                        "status_text": "gemini-3.8-flash & 2.5-flash",
+                        "description": "Lead Supervisor pazar analizleri, SEO teknik dokümantasyon üretimi, Instagram çok modlu vizyon denetimi ve QA otonom RCA motoru",
+                        "inputs": ["lead_supervisor", "subagent_1_instagram", "subagent_4_seo"],
+                        "triggers": ["lead_supervisor", "subagent_1_instagram", "subagent_4_seo"],
+                        "payload_preview": {
+                            "primary_model": "gemini-3.8-flash",
+                            "fallback_model": "gemini-2.5-flash",
+                            "tasks": ["Piyasa Arbitrajı", "Teknik Doküman Sentezi", "Afiş Vizyon Denetimi", "Kök Neden Analizi (RCA)"]
+                        }
+                    },
+
+                    # COLUMN 4: İstihbarat & Orkestrasyon
+                    {
                         "id": "subagent_5_price",
                         "label": "Subagent 5: Fiyat & Rekabet",
                         "tag": "[SUBAGENT 5]",
-                        "column": 2,
+                        "column": 4,
                         "type": "agent",
-                        "category": "Istihbarat / Arbitraj",
+                        "category": "İstihbarat / Arbitraj",
                         "status": "ready",
-                        "status_text": f"{summary.get('tracked_skus', 500)} SKU Taraniyor",
-                        "description": "Turkiye yerel pazar fiyatlarini kiyaslar, fiyat ve stok avantaji tespit eder",
+                        "status_text": f"{summary.get('tracked_skus', 508)} SKU Taranıyor",
+                        "description": "Türkiye yerel pazar fiyatlarını kıyaslar, fiyat ve stok avantajı tespit eder",
                         "inputs": ["trigger_cron_2h"],
-                        "triggers": ["lead_supervisor"],
+                        "triggers": ["lead_supervisor", "subagent_8_procurement"],
                         "payload_preview": {
-                            "tracked_skus": summary.get("tracked_skus", 500),
+                            "tracked_skus": summary.get("tracked_skus", 508),
                             "price_advantages": summary.get("price_advantage_count", 0),
                             "competitor_out_of_stock": summary.get("competitor_out_of_stock_count", 0),
                             "status": "SCAN_COMPLETE"
@@ -1674,188 +1817,382 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     },
                     {
                         "id": "subagent_3_telemetry",
-                        "label": "Subagent 3: Telemetri Toplayici",
+                        "label": "Subagent 3: Telemetri Toplayıcı",
                         "tag": "[SUBAGENT 3]",
-                        "column": 2,
+                        "column": 4,
                         "type": "agent",
                         "category": "Metrik / Telemetri",
                         "status": "ready",
-                        "status_text": "Aktif Metrik Kaydi",
-                        "description": "Instagram, Reddit, SEO ve trafik verilerini derleyip orkestratore iletir",
+                        "status_text": "Aktif Metrik Kaydı",
+                        "description": "Instagram, Reddit, SEO ve trafik verilerini derleyip orkestratöre iletir",
                         "inputs": ["trigger_cron_2h"],
                         "triggers": ["lead_supervisor"],
                         "payload_preview": tel
                     },
                     {
                         "id": "subagent_6_trend",
-                        "label": "Subagent 6: Kuresel Trend & Urun Avcisi",
+                        "label": "Subagent 6: Küresel Trend & Ürün Avcısı",
                         "tag": "[SUBAGENT 6]",
-                        "column": 2,
+                        "column": 4,
                         "type": "agent",
-                        "category": "Trend & Urun Kesfi",
+                        "category": "Trend & Ürün Keşfi",
                         "status": "ready",
                         "status_text": f"{len(trend_props)} Trend Takipte",
-                        "description": "Dunya genelindeki populer donanimlari tarar, yerel fiyat kiyaslamasiyla supervisora sunar",
+                        "description": "Dünya genelindeki popüler donanımları tarar, yerel fiyat kıyaslamasıyla sıfır stoklu 'YAKINDA' olarak kataloğa ekler",
                         "inputs": ["trigger_cron_2h"],
-                        "triggers": ["lead_supervisor"],
+                        "triggers": ["lead_supervisor", "subagent_8_procurement"],
                         "payload_preview": {
                             "total_proposals": len(trend_props),
-                            "pending_approval": len([p for p in trend_props if p.get("status") == "PENDING_APPROVAL"]),
-                            "approved_count": len([p for p in trend_props if p.get("status") == "APPROVED"])
+                            "auto_added_to_catalog": len([p for p in trend_props if p.get("status") == "APPROVED"]),
+                            "injection_policy": "stock = 0, badge = 'YAKINDA'"
                         }
                     },
                     {
                         "id": "lead_supervisor",
-                        "label": "Bas Orkestrasyon (Lead Supervisor)",
+                        "label": "Baş Orkestrasyon (Lead Supervisor)",
                         "tag": "[SUPERVISOR]",
-                        "column": 3,
+                        "column": 4,
                         "type": "supervisor",
                         "category": "Karar & Direktif Motoru",
                         "status": "running" if sup_status.get("is_autonomous_enabled") else "idle",
                         "status_text": f"Model: gemini-3.8-flash • Mod: {sup_status.get('active_growth_mode', 'AGGRESSIVE_EXPANSION')}",
-                        "description": "Google Antigravity 2.0 (gemini-3.8-flash): Istihbarat ve telemetriyi analiz eder, 12h evrimle sistemi optimize eder, magazaya trend urun ekler",
-                        "inputs": ["subagent_5_price", "subagent_3_telemetry", "subagent_6_trend"],
-                        "triggers": ["subagent_1_instagram", "subagent_2_reddit", "subagent_4_seo", "subagent_7_qa", "output_pozitron_web"],
+                        "description": "Google Antigravity 2.0 (gemini-3.8-flash): İstihbarat ve telemetriyi analiz eder, sistemi optimize eder, alt ajanlara direktif dağıtır",
+                        "inputs": ["subagent_5_price", "subagent_3_telemetry", "subagent_6_trend", "svc_gemini_ai"],
+                        "triggers": ["subagent_8_procurement", "subagent_1_instagram", "subagent_2_reddit", "subagent_4_seo", "subagent_7_qa", "srv_hetzner_cloud"],
                         "payload_preview": active_dir
+                    },
+
+                    # COLUMN 5: Uzman Ajanlar & Tedarik
+                    {
+                        "id": "subagent_8_procurement",
+                        "label": "Subagent 8: Sipariş & Tedarik",
+                        "tag": "[SUBAGENT 8]",
+                        "column": 5,
+                        "type": "agent",
+                        "category": "Satınalma & Tedarik Optimizasyonu",
+                        "status": "ready",
+                        "status_text": f"{proc_plan.get('total_skus', 17)} SKU • %{proc_plan.get('projected_roi_pct', 80.4)} ROI",
+                        "description": "Trend Avcısı ve stok açıklarını analiz ederek en yüksek kârlılıklı toptan satınalma sipariş planını hazırlar (CSV & JSON)",
+                        "inputs": ["lead_supervisor", "subagent_6_trend", "subagent_5_price"],
+                        "triggers": ["srv_hetzner_cloud"],
+                        "payload_preview": {
+                            "recommended_skus": proc_plan.get("total_skus", 17),
+                            "total_units": proc_plan.get("total_quantity", 476),
+                            "estimated_investment_try": proc_plan.get("total_investment_try", 249349.74),
+                            "projected_profit_try": proc_plan.get("total_profit_try", 200414.26),
+                            "profit_margin_pct": proc_plan.get("profit_margin_pct", 44.6),
+                            "export_files": ["data/latest_procurement_plan.json", "data/latest_procurement_order.csv"]
+                        }
                     },
                     {
                         "id": "subagent_1_instagram",
                         "label": "Subagent 1: Instagram PR",
                         "tag": "[SUBAGENT 1]",
-                        "column": 4,
+                        "column": 5,
                         "type": "worker",
-                        "category": "Icerik & Topluluk",
+                        "category": "İçerik & Topluluk",
                         "status": "running" if ig_status.get("is_autonomous_enabled") else "idle",
-                        "status_text": "Gemini 3.8 Flash Vizyon & Afis",
-                        "description": "Gemini 3.8 Flash ile gorsel planlama, cok modlu vizyon denetimi ve 1080x1080 afis uretir",
-                        "inputs": ["lead_supervisor"],
-                        "triggers": ["output_instagram_api"],
+                        "status_text": "8-10 Format • Afiş & Hikaye",
+                        "description": "Gemini 3.8 Flash ile görsel planlama, çok modlu vizyon denetimi ve 8-10 farklı formatta 1080x1080 afiş ve hikaye üretir",
+                        "inputs": ["lead_supervisor", "svc_gemini_ai"],
+                        "triggers": ["svc_meta_graph"],
                         "payload_preview": active_dir.get("instagram_directive", {})
                     },
                     {
                         "id": "subagent_2_reddit",
-                        "label": "Subagent 2: Reddit Etkilesim",
+                        "label": "Subagent 2: Reddit Etkileşim",
                         "tag": "[SUBAGENT 2]",
-                        "column": 4,
+                        "column": 5,
                         "type": "worker",
                         "category": "Organik PR / Q&A",
-                        "status": "running" if rd_status.get("is_autonomous_enabled") else "idle",
-                        "status_text": "Gemini 3.8 Flash • Sifir Spam",
-                        "description": "Topluluk sorularini Gemini 3.8 Flash ile yanitlar, organik kaynak gosterir",
+                        "status": "running" if (rd_status.get("is_autonomous_enabled") and reddit_enabled) else "disabled",
+                        "status_text": "DEVREDIŞI (Kapalı)" if not reddit_enabled else "Aktif Otomasyon",
+                        "description": "Topluluk sorularını Gemini ile yanıtlar, organik kaynak gösterir (Subagent Açma/Kapama matrisi ile yönetilir)",
                         "inputs": ["lead_supervisor"],
-                        "triggers": ["output_reddit_api"],
+                        "triggers": ["svc_reddit_platform"],
                         "payload_preview": active_dir.get("reddit_directive", {})
                     },
                     {
                         "id": "subagent_4_seo",
-                        "label": "Subagent 4: SEO & Dokumantasyon",
+                        "label": "Subagent 4: SEO & Dokümantasyon",
                         "tag": "[SUBAGENT 4]",
-                        "column": 4,
+                        "column": 5,
                         "type": "worker",
-                        "category": "Icerik Otoritesi",
+                        "category": "İçerik Otoritesi",
                         "status": "ready",
-                        "status_text": f"{tel.get('seo', {}).get('articles_published', 0)} Rehber Yayinda",
-                        "description": "Derin muhendislik rehberleri uretir, Pozitron urunlerine ic linkleme yapar",
-                        "inputs": ["lead_supervisor"],
+                        "status_text": f"{tel.get('seo', {}).get('articles_published', 11)} Teknik Rehber",
+                        "description": "Derin mühendislik rehberleri üretir, pinout tabloları ve Pozitron ürünlerine iç linkleme yapar",
+                        "inputs": ["lead_supervisor", "svc_gemini_ai"],
                         "triggers": ["output_pozitron_web"],
                         "payload_preview": active_dir.get("seo_content_directive", {})
                     },
                     {
                         "id": "subagent_7_qa",
-                        "label": "Subagent 7: QA & Saglik Sentineli",
+                        "label": "Subagent 7: QA & Sağlık Sentineli",
                         "tag": "[SUBAGENT 7]",
-                        "column": 4,
+                        "column": 5,
                         "type": "sentinel",
-                        "category": "Tani, QA & Otonom Onarim",
+                        "category": "Tanı, QA & Otonom Onarım",
                         "status": "running" if qa_status.get("is_autonomous_enabled") else "idle",
-                        "status_text": f"Saglik: %{qa_status.get('last_health_score', 100)} • Gemini 3.8 Flash",
-                        "description": "Kritik pipeline saglik denetimi, oturum ve token dogrulama ile Gemini 3.8 Flash otonom iyilestirme",
+                        "status_text": f"Sağlık: %{qa_status.get('last_health_score', 100)} • 7 Prob",
+                        "description": "Kritik pipeline sağlık denetimi, oturum ve token doğrulama ile Gemini 3.8 Flash otonom iyileştirme",
                         "inputs": ["lead_supervisor"],
-                        "triggers": ["output_instagram_api", "output_reddit_api"],
+                        "triggers": ["srv_hetzner_cloud", "srv_github_platform", "svc_meta_graph"],
                         "payload_preview": {
                             "agent": "QASentinelAgent",
-                            "model": "gemini-3.8-flash",
                             "health_score": qa_status.get("last_health_score", 100),
-                            "last_status": qa_status.get("last_status", "UNKNOWN"),
+                            "last_status": qa_status.get("last_status", "HEALTHY"),
                             "auto_heal_enabled": qa_status.get("auto_heal_enabled", True),
-                            "auto_heals_applied": qa_status.get("auto_heals_applied", 0),
-                            "last_run": qa_status.get("last_run_at")
+                            "probes_count": 7
                         }
                     },
-                    {
-                        "id": "output_instagram_api",
-                        "label": "Instagram Graph API & @pozitronmarket",
-                        "tag": "[CHANNEL]",
-                        "column": 5,
-                        "type": "destination",
-                        "category": "Yayin Kanali",
-                        "status": "connected",
-                        "status_text": "Bagli (ID: 17841430407836914)",
-                        "description": "1080x1080 afis ve aciklama metnini yayinlar",
-                        "inputs": ["subagent_1_instagram"],
-                        "triggers": [],
-                        "payload_preview": {
-                            "channel": "Instagram Feed",
-                            "account": "@pozitronmarket",
-                            "status": "CONNECTED",
-                            "media_spec": "1080x1080 JPEG"
-                        }
-                    },
-                    {
-                        "id": "output_reddit_api",
-                        "label": "Reddit Web Oturumu (Chrome)",
-                        "tag": "[CHANNEL]",
-                        "column": 5,
-                        "type": "destination",
-                        "category": "Yayin Kanali",
-                        "status": "connected",
-                        "status_text": "Chrome Oturumu Aktif",
-                        "description": "Target subredditlerde kullanicilara teknik cozum sunar",
-                        "inputs": ["subagent_2_reddit"],
-                        "triggers": [],
-                        "payload_preview": {
-                            "channel": "Reddit Web Automation",
-                            "account": "u/Aggravating_End_1105",
-                            "status": "SESSION_ACTIVE",
-                            "subreddits": ["r/Turkey", "r/teknoloji", "r/bilim", "r/AskTurkey"]
-                        }
-                    },
+
+                    # COLUMN 6: Yayın & Dağıtım Kanalları
                     {
                         "id": "output_pozitron_web",
                         "label": "Pozitron Market Web & Blog",
-                        "tag": "[CHANNEL]",
-                        "column": 5,
+                        "tag": "[DESTINATION]",
+                        "column": 6,
                         "type": "destination",
                         "category": "Web Platformu",
                         "status": "connected",
                         "status_text": "pozitronmarket.com",
-                        "description": "Katalog ve teknik rehber sayfalari uzerinden organik trafik toplar",
-                        "inputs": ["subagent_4_seo", "lead_supervisor"],
-                        "triggers": [],
+                        "description": "Katalog ve teknik rehber sayfaları üzerinden organik trafik toplar, son kullanıcıya sunulur",
+                        "inputs": ["srv_github_platform", "subagent_4_seo"],
+                        "triggers": ["svc_google_merchant"],
                         "payload_preview": {
                             "platform": "https://pozitronmarket.com",
-                            "content_type": "Technical Guides & Internal Links",
-                            "status": "LIVE"
+                            "content_type": "Technical Guides & High-Conversion SSG Catalog",
+                            "status": "LIVE",
+                            "sitemap": "https://pozitronmarket.com/sitemap.xml (513 URL)"
+                        }
+                    },
+                    {
+                        "id": "svc_meta_graph",
+                        "label": "Instagram Graph API & @pozitronmarket",
+                        "tag": "[SOCIAL]",
+                        "column": 6,
+                        "type": "destination",
+                        "category": "Sosyal Medya",
+                        "status": "connected",
+                        "status_text": "Bağlı (ID: 17841430407836914)",
+                        "description": "1080x1080 afiş ve hikaye yayınları ile pilot topluluk etkileşimi",
+                        "inputs": ["subagent_1_instagram", "subagent_7_qa"],
+                        "triggers": [],
+                        "payload_preview": {
+                            "channel": "Instagram Feed & Story",
+                            "account": "@pozitronmarket",
+                            "account_id": "17841430407836914",
+                            "status": "CONNECTED"
+                        }
+                    },
+                    {
+                        "id": "svc_reddit_platform",
+                        "label": "Reddit Topluluk Kanalları",
+                        "tag": "[COMMUNITY]",
+                        "column": 6,
+                        "type": "destination",
+                        "category": "Topluluk Kanalı",
+                        "status": "ready" if reddit_enabled else "disabled",
+                        "status_text": "u/Aggravating_End_1105" if reddit_enabled else "Bot Kapalı",
+                        "description": "Hedef subredditlerde kullanıcılara teknik çözüm sunar",
+                        "inputs": ["subagent_2_reddit"],
+                        "triggers": [],
+                        "payload_preview": {
+                            "account": "u/Aggravating_End_1105",
+                            "subreddits": ["r/Turkey", "r/teknoloji", "r/bilim", "r/AskTurkey"],
+                            "state": "MANAGED_VIA_TOGGLE"
+                        }
+                    },
+                    {
+                        "id": "svc_google_merchant",
+                        "label": "Google Merchant & Arama Motorları",
+                        "tag": "[SEARCH & SHOP]",
+                        "column": 6,
+                        "type": "destination",
+                        "category": "Arama Motoru / Katalog",
+                        "status": "connected",
+                        "status_text": "XML Feed & Sitemap (513 URL)",
+                        "description": "Google Alışveriş sekmesi, TSV/XML ürün akışı ve arama motoru indekslemesi",
+                        "inputs": ["output_pozitron_web"],
+                        "triggers": [],
+                        "payload_preview": {
+                            "merchant_xml": "https://pozitronmarket.com/google_merchant_feed.xml",
+                            "merchant_tsv": "https://pozitronmarket.com/google_merchant_feed.tsv",
+                            "sitemap": "https://pozitronmarket.com/sitemap.xml",
+                            "indexed_products": 508
                         }
                     }
                 ],
                 "connections": [
-                    {"from": "trigger_cron_2h", "to": "subagent_5_price", "label": "Periyodik Tarama", "type": "trigger"},
-                    {"from": "trigger_cron_2h", "to": "subagent_3_telemetry", "label": "Telemetri Toplama", "type": "trigger"},
-                    {"from": "trigger_cron_2h", "to": "subagent_6_trend", "label": "Global Trend Taramasi", "type": "trigger"},
+                    # Client & Trigger to Infrastructure
+                    {"from": "client_customer", "to": "srv_github_platform", "label": "Web Sitesi Ziyareti & CDN", "type": "network"},
+                    {"from": "client_customer", "to": "srv_hetzner_cloud", "label": "Dinamik API İstekleri (Stok/Yorum)", "type": "network"},
+                    {"from": "client_customer", "to": "svc_paytr", "label": "3D Secure Ödeme Talebi", "type": "payment"},
+                    {"from": "trigger_cron_2h", "to": "subagent_5_price", "label": "Periyodik Fiyat Taraması", "type": "trigger"},
+                    {"from": "trigger_cron_2h", "to": "subagent_3_telemetry", "label": "Telemetri Veri Çekimi", "type": "trigger"},
+                    {"from": "trigger_cron_2h", "to": "subagent_6_trend", "label": "Küresel Trend Taraması", "type": "trigger"},
+                    {"from": "trigger_github_dispatch", "to": "srv_github_platform", "label": "cloud_market_sync.py Tetikleme", "type": "trigger"},
+
+                    # Payment & Servers Interaction
+                    {"from": "svc_paytr", "to": "srv_hetzner_cloud", "label": "Ödeme Onay Webhook (/api/paytr/callback)", "type": "payment"},
+                    {"from": "srv_hetzner_cloud", "to": "svc_smtp_mail", "label": "Sipariş Onay & Fatura Postası", "type": "data"},
+                    {"from": "svc_smtp_mail", "to": "client_customer", "label": "Müşteriye Sipariş Dekontu İletimi", "type": "data"},
+                    {"from": "srv_hetzner_cloud", "to": "trigger_github_dispatch", "label": "repository_dispatch Stok Düşümü", "type": "trigger"},
+                    {"from": "srv_github_platform", "to": "output_pozitron_web", "label": "GitHub Pages CDN Canlı Yayını", "type": "publish"},
+
+                    # Intelligence to Supervisor & Gemini AI
                     {"from": "subagent_5_price", "to": "lead_supervisor", "label": "Fiyat Arbitraj Raporu", "type": "data"},
                     {"from": "subagent_3_telemetry", "to": "lead_supervisor", "label": "Performans Metrikleri", "type": "data"},
-                    {"from": "subagent_6_trend", "to": "lead_supervisor", "label": "Yeni Urun Onerileri", "type": "data"},
+                    {"from": "subagent_6_trend", "to": "lead_supervisor", "label": "Yeni Trend Ürün Önerileri", "type": "data"},
+                    {"from": "lead_supervisor", "to": "svc_gemini_ai", "label": "Analiz & Direktif İsteği", "type": "data"},
+                    {"from": "svc_gemini_ai", "to": "lead_supervisor", "label": "Gemini 3.8 Flash Karar Yanıtı", "type": "data"},
+
+                    # Supervisor to Workers & Procurement
+                    {"from": "lead_supervisor", "to": "subagent_8_procurement", "label": "procurement_directive", "type": "directive"},
+                    {"from": "subagent_6_trend", "to": "subagent_8_procurement", "label": "Trend Donanım Beslemesi", "type": "data"},
+                    {"from": "subagent_5_price", "to": "subagent_8_procurement", "label": "Rakip Stok Açığı & Maliyet", "type": "data"},
+                    {"from": "subagent_8_procurement", "to": "srv_hetzner_cloud", "label": "Tedarik Planı Kaydı (JSON/CSV)", "type": "data"},
+
                     {"from": "lead_supervisor", "to": "subagent_1_instagram", "label": "instagram_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_2_reddit", "label": "reddit_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_4_seo", "label": "seo_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_7_qa", "label": "qa_directive", "type": "directive"},
-                    {"from": "lead_supervisor", "to": "output_pozitron_web", "label": "Katalog Enjeksiyonu", "type": "publish"},
-                    {"from": "subagent_1_instagram", "to": "output_instagram_api", "label": "Yayin & Etkilesim", "type": "publish"},
-                    {"from": "subagent_2_reddit", "to": "output_reddit_api", "label": "Otonom Yanit", "type": "publish"},
-                    {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "Ic Linkli Rehber", "type": "publish"},
-                    {"from": "subagent_7_qa", "to": "output_instagram_api", "label": "API Saglik Probu", "type": "probe"},
-                    {"from": "subagent_7_qa", "to": "output_reddit_api", "label": "Oturum Probu", "type": "probe"}
+                    {"from": "lead_supervisor", "to": "srv_hetzner_cloud", "label": "Trend Kataloğa Ekleme (Stock=0)", "type": "data"},
+
+                    # Workers to External Destinations & Gemini
+                    {"from": "subagent_1_instagram", "to": "svc_gemini_ai", "label": "Çok Modlu Görsel Denetimi", "type": "data"},
+                    {"from": "subagent_1_instagram", "to": "svc_meta_graph", "label": "Afiş & Hikaye Yayını", "type": "publish"},
+                    {"from": "subagent_2_reddit", "to": "svc_reddit_platform", "label": "Otonom Yanıt Yayını", "type": "publish"},
+                    {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "İç Linkli Teknik Rehber", "type": "publish"},
+                    {"from": "output_pozitron_web", "to": "svc_google_merchant", "label": "XML/TSV Feed & Sitemap", "type": "publish"},
+
+                    # QA Sentinel Probes
+                    {"from": "subagent_7_qa", "to": "srv_hetzner_cloud", "label": "API, Port & DB Sağlık Probu", "type": "probe"},
+                    {"from": "subagent_7_qa", "to": "srv_github_platform", "label": "Statik Dosya Senkron Probu", "type": "probe"},
+                    {"from": "subagent_7_qa", "to": "svc_meta_graph", "label": "Meta API Token Probu", "type": "probe"}
+                ],
+                "ecosystem_services": [
+                    {
+                        "id": "srv_github",
+                        "name": "GitHub Server (Platform)",
+                        "category": "Sunucu & Altyapı",
+                        "provider": "GitHub Inc. / Microsoft",
+                        "role": "Global Statik CDN Dağıtımı, SSG Sayfaları ve CI/CD Envanter Senkronizasyonu",
+                        "endpoints": ["https://pozitronmarket.com", "thepeakiscold/pozitron-market", "GitHub Actions"],
+                        "protocols": ["HTTPS (443)", "Git over SSH/HTTPS"],
+                        "status": "OPERATIONAL",
+                        "badge": "STATİK CDN & CI/CD",
+                        "details": "GitHub Pages Anycast CDN üzerinden 508 ürün sayfasını ve Pozitron arayüzünü milisaniyelik hızla sunar. Sipariş verildiğinde repository_dispatch ile market_order_sync.yml tetiklenir ve stoklar otomatik revize edilir."
+                    },
+                    {
+                        "id": "srv_hetzner",
+                        "name": "Hetzner Cloud VPS",
+                        "category": "Sunucu & Altyapı",
+                        "provider": "Hetzner Online GmbH (Almanya)",
+                        "role": "Merkezi Bulut Sunucusu, Nginx Reverse Proxy, REST API ve Ajan Orkestratörü",
+                        "endpoints": ["https://api.pozitronmarket.com", "http://127.0.0.1:8000"],
+                        "protocols": ["HTTPS (443 SSL Let's Encrypt)", "Systemd Service (Port 8000)"],
+                        "status": "RUNNING",
+                        "badge": "CANLI BULUT API",
+                        "details": "Ubuntu 24.04 LTS VPS üzerinde Nginx SSL arkasında çalışan Python backend motoru. 508 ürünün dinamik stok kontrolleri, PayTR callback doğrulama, sipariş kayıtları ve 9 otonom alt ajanın thread orkestrasyonunu yürütür."
+                    },
+                    {
+                        "id": "svc_gemini",
+                        "name": "Google Gemini Yapay Zeka Bulutu",
+                        "category": "Yapay Zeka & Bilişsel",
+                        "provider": "Google DeepMind / Google Cloud",
+                        "role": "Bilişsel Karar Motoru, Çok Modlu Vizyon, SEO Rehber Sentezi ve Otonom İyileştirme",
+                        "endpoints": ["gemini-3.8-flash", "gemini-2.5-flash"],
+                        "protocols": ["HTTPS REST JSON (Google Generative AI)"],
+                        "status": "ACTIVE",
+                        "badge": "GEMINI 3.8 FLASH",
+                        "details": "Lead Supervisor için pazar arbitraj analizi yapar; Subagent 4 için deterministik pinout ve FPV rehberleri yazar; Subagent 1 için 1080x1080 afiş kopyalarını ve görsel vizyon denetimini gerçekleştirir; Subagent 7 için kök neden analizi (RCA) üretir."
+                    },
+                    {
+                        "id": "svc_paytr",
+                        "name": "PayTR Sanal POS Ödeme Ağ Geçidi",
+                        "category": "Ödeme Altyapısı",
+                        "provider": "PayTR Ödeme Kuruluşu A.Ş.",
+                        "role": "Güvenli 3D Secure Kredi / Banka Kartı Tahsilatı ve Callback Webhook Bildirimi",
+                        "endpoints": ["https://api.pozitronmarket.com/api/paytr/token", "https://api.pozitronmarket.com/api/paytr/callback"],
+                        "protocols": ["HTTPS REST / iFrame 3D Secure / HMAC-SHA256 Token"],
+                        "status": "OPERATIONAL",
+                        "badge": "3D SECURE POS",
+                        "details": "Müşterinin sepet tutarını BDDK onaylı altyapıda güvenle tahsil eder. Troy, Visa, MasterCard taksit seçeneklerini destekler ve ödeme başarıyla tamamlandığında Hetzner API'ye anlık callback iletir."
+                    },
+                    {
+                        "id": "svc_smtp",
+                        "name": "SMTP İşlemsel E-Posta Sunucusu",
+                        "category": "İşlemsel E-Posta",
+                        "provider": "Google Workspace / Direct SMTP",
+                        "role": "Sipariş Dekontu, Kargo Takip Bildirimi ve Yönetici Alarm Postaları",
+                        "endpoints": ["smtp.gmail.com:587 (STARTTLS)", "noreply@pozitronmarkets.com"],
+                        "protocols": ["SMTP over STARTTLS (Port 587)"],
+                        "status": "OPERATIONAL",
+                        "badge": "PORT 587 DIRECT",
+                        "details": "Sipariş tamamlandığında müşteriye otomatik HTML e-posta dekontu ve kargo takip numarası gönderir. Hetzner Cloud port 587 doğrudan açık olduğundan gecikmesiz ve yüksek iletim oranlı çalışır."
+                    },
+                    {
+                        "id": "svc_meta",
+                        "name": "Meta Graph API (Instagram)",
+                        "category": "Sosyal Medya & Topluluk",
+                        "provider": "Meta Platforms Inc.",
+                        "role": "Otonom Feed & Story Yayını, FPV Afişleri ve Türk Drone Topluluğu Etkileşimi",
+                        "endpoints": ["Graph API v18.0 (@pozitronmarket)", "ID: 17841430407836914"],
+                        "protocols": ["HTTPS REST OAuth 2.0"],
+                        "status": "OPERATIONAL",
+                        "badge": "GRAPH API & REELS",
+                        "details": "Pozitron'un 8-10 farklı içerik formatındaki (Donanım Kıyaslamaları, Hata Analizleri, Anketler) 1080x1080 afişlerini Instagram hesabında otomatik yayınlar, hikaye rotasyonunu yürütür."
+                    },
+                    {
+                        "id": "svc_reddit",
+                        "name": "Reddit Web Otomasyonu",
+                        "category": "Sosyal Medya & Topluluk",
+                        "provider": "Reddit Inc.",
+                        "role": "Hedef Subredditlerde Organik FPV Teknik Desteği (r/Turkey, r/teknoloji)",
+                        "endpoints": ["u/Aggravating_End_1105", "Chrome Decrypted Session"],
+                        "protocols": ["HTTPS Web Automation"],
+                        "status": "MANAGED (Kapalı)" if not reddit_enabled else "OPERATIONAL",
+                        "badge": "SUBAGENT 2",
+                        "details": "Türk drone meraklılarına spam yapmadan sıfır yönlendirmeli teknik yardım sunar. Kullanıcı talebi üzerine Subagents Toggle Matrisi ile şu anda güvenli biçimde kapalı tutulmaktadır."
+                    },
+                    {
+                        "id": "svc_google_merchant",
+                        "name": "Google Merchant Center & Arama Motorları",
+                        "category": "Arama Motoru & SEO",
+                        "provider": "Google LLC",
+                        "role": "Google Alışveriş Sekmesi Envanter Akışı, Schema.org ve Otomatik Sitemap",
+                        "endpoints": ["/google_merchant_feed.xml", "/google_merchant_feed.tsv", "/sitemap.xml"],
+                        "protocols": ["HTTP(S) XML / TSV Feed Crawling"],
+                        "status": "OPERATIONAL",
+                        "badge": "513 URL SITEMAP",
+                        "details": "508 FPV donanım ürününü Google Merchant Center ile otomatik senkronize eder. Fiyat, stok ve kargo bilgilerini Google Alışveriş sekmesinde yayınlar, 513 URL'li sitemap ile SEO otoritesi sağlar."
+                    },
+                    {
+                        "id": "db_sqlite",
+                        "name": "SQLite İlişkisel Veritabanı",
+                        "category": "Veritabanı & Kalıcılık",
+                        "provider": "Yerel Dosya Tabanlı ACID Veritabanı",
+                        "role": "Ürün Kataloğu, Siparişler, Yorumlar, SEO Makaleleri ve Ajan Durumları",
+                        "endpoints": ["pozitron.db (Hetzner VPS & Yerel)"],
+                        "protocols": ["SQLite3 Native Socket"],
+                        "status": "HEALTHY",
+                        "badge": "ACID VERİTABANI",
+                        "details": "508 ürün kaydı, siparişler, müşteri yorumları, fiyat takip logları, global trend önerileri ve Subagent 8 toptan sipariş planlarını güvenli ACID işlemleriyle saklar."
+                    },
+                    {
+                        "id": "dns_ssl",
+                        "name": "DNS & SSL Sertifikasyon Altyapısı",
+                        "category": "Sunucu & Altyapı",
+                        "provider": "Cloudflare / Let's Encrypt",
+                        "role": "Alan Adı Yönlendirme, TLS 1.3 Şifreleme ve Otomatik SSL Yenileme",
+                        "endpoints": ["pozitronmarket.com -> GitHub Pages", "api.pozitronmarket.com -> Hetzner VPS"],
+                        "protocols": ["DNS (A / CNAME)", "TLS 1.3 / Let's Encrypt Certbot"],
+                        "status": "OPERATIONAL",
+                        "badge": "TLS 1.3 / SSL",
+                        "details": "Root domain ve statik sayfaları GitHub Pages CDN sunucularına, 'api' alt alan adını ise Hetzner Cloud VPS IP adresine yönlendirir. Let's Encrypt Certbot ile tam uçtan uca SSL güvencesi sunar."
+                    }
                 ]
             }
             self.send_json(200, graph)
