@@ -8,6 +8,7 @@ import urllib.error
 import threading
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
+from database import is_subagent_enabled
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'pozitron.db')
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
