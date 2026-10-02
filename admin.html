@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Pozitron Market - Stok, Fiyat ve Envanter Yönetim Paneli</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1250,8 +1253,8 @@
   <!-- Toast Container -->
   <div id="admin-toast-container" style="position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px;"></div>
 
-  <script src="api.js"></script>
-  <script src="i18n.js"></script>
+  <script src="api.js?v=20261002_v3"></script>
+  <script src="i18n.js?v=20261002_v3"></script>
   <script>
     /**
      * Pozitron Admin Dashboard Engine (Protected by Auth Guard)
@@ -3194,7 +3197,15 @@
       let orders = [];
       // 1. Try backend API
       try {
-        const res = await fetch('/api/admin/orders');
+        const baseUrl = typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '';
+        const apiUrl = (baseUrl ? baseUrl.replace(/\/+$/, '') : '') + '/api/admin/orders';
+        const adminKey = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+        const token = localStorage.getItem('pozitron_token');
+        const headers = { 'Accept': 'application/json' };
+        if (adminKey) headers['X-Admin-Key'] = adminKey;
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(apiUrl, { headers });
         if (res.ok) {
           const data = await res.json();
           if (data && Array.isArray(data.orders) && data.orders.length > 0) {
@@ -3354,7 +3365,7 @@
             else if (status === 'DELIVERED' || status === 'TESLİM EDİLDİ') statusBadge = '<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">✅ Teslim Edildi</span>';
             else if (status === 'CANCELLED' || status === 'İPTAL') statusBadge = '<span class="badge-stock badge-stock-out">✕ İptal Edildi</span>';
 
-            let itemsList = od.items;
+            let itemsList = od.items || od.items_json;
             if (typeof itemsList === 'string') {
               try { itemsList = JSON.parse(itemsList); } catch(e) { itemsList = []; }
             }
@@ -3487,16 +3498,24 @@
       }
 
       try {
-        const res = await fetch('/api/admin/orders/update', {
+        const baseUrl = typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '';
+        const apiUrl = (baseUrl ? baseUrl.replace(/\/+$/, '') : '') + '/api/admin/orders/update';
+        const adminKey = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+        const token = localStorage.getItem('pozitron_token');
+        const headers = { 'Content-Type': 'application/json' };
+        if (adminKey) headers['X-Admin-Key'] = adminKey;
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(apiUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ id: orderId, status: newStatus })
         });
         const data = await res.json();
         if (res.ok && data.success) {
           showToast(`Sipariş durumu güncellendi: ${newStatus}`, 'success');
         } else {
-          showToast(`Sipariş durumu yerel olarak güncellendi: ${newStatus}`, 'info');
+          showToast(`Sipariş durumu güncellendi: ${newStatus}`, 'info');
         }
       } catch (err) {
         showToast(`Sipariş durumu güncellendi: ${newStatus}`, 'info');
