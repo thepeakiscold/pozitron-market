@@ -930,104 +930,6 @@
       padding: 20px;
       margin-top: 16px;
     }
-  
-    /* ========================================================================= */
-    /* Vertical Subgroup Pipeline Styles                                         */
-    /* ========================================================================= */
-    .n8n-nodes-wrapper.vertical-layout {
-      display: flex;
-      flex-direction: column;
-      gap: 36px;
-      min-width: 900px;
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 24px 20px 60px 20px;
-      pointer-events: none;
-    }
-    .n8n-subgroup-layer {
-      background: rgba(11, 19, 38, 0.75);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 16px 20px;
-      position: relative;
-      pointer-events: auto;
-      transition: all 0.25s ease;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-    .n8n-subgroup-layer:hover {
-      border-color: rgba(56, 189, 248, 0.4);
-      background: rgba(13, 23, 46, 0.85);
-    }
-    .n8n-subgroup-layer.filtered-out {
-      opacity: 0.2;
-      filter: grayscale(80%);
-    }
-    .n8n-subgroup-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-    .n8n-subgroup-title {
-      font-size: 0.82rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .n8n-subgroup-nodes {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-      align-items: stretch;
-    }
-    .n8n-port-dot-top {
-      position: absolute;
-      top: -6px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid #060a12;
-      z-index: 10;
-      transform: translateX(-50%);
-    }
-    .n8n-port-dot-bottom {
-      position: absolute;
-      bottom: -6px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      border: 2px solid #060a12;
-      z-index: 10;
-      transform: translateX(-50%);
-    }
-    .btn-n8n-filter {
-      background: #0f172a;
-      border: 1px solid #1e293b;
-      color: #94a3b8;
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .btn-n8n-filter:hover {
-      background: #1e293b;
-      color: #38bdf8;
-      border-color: #38bdf8;
-    }
-    .btn-n8n-filter.active {
-      background: #0284c722;
-      color: #38bdf8;
-      border-color: #38bdf8;
-      font-weight: 700;
-    }
     .media-thumb-preview {
       width: 52px;
       height: 52px;
@@ -1036,7 +938,6 @@
       border: 1px solid #334155;
       background: #020617;
     }
-    
   </style>
   <script>
     if (window.location.pathname.endsWith('.html')) {
@@ -1140,6 +1041,7 @@
         <span class="tab-dot"></span>
         <span>🖼️ Medya &amp; Kalite</span>
       </button>
+
 
     </div>
   </nav>
@@ -2248,18 +2150,6 @@
           </div>
           <span style="margin-left:auto; color:#64748b; font-size:0.68rem;">💡 Düğümlere veya hatlara tıklayarak filtreleyin</span>
         </div>
-        <!-- Subgroup & Layer Filter Tabs -->
-        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
-          <span style="font-size:0.72rem; font-weight:700; color:#94a3b8;">Hızlı Katman Filtresi:</span>
-          <button type="button" class="btn-n8n-filter active" id="btn-flt-all" onclick="filterPipelineLayer('all')">Tüm Mimari (6 Katman &amp; 22 Düğüm)</button>
-          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_triggers" onclick="filterPipelineLayer('grp_triggers')">1. Tetikleyiciler</button>
-          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_infrastructure" onclick="filterPipelineLayer('grp_infrastructure')">2. Bulut &amp; Sunucular</button>
-          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_security_services" onclick="filterPipelineLayer('grp_security_services')">3. Güvenlik &amp; Ödeme</button>
-          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_orchestration_quality" onclick="filterPipelineLayer('grp_orchestration_quality')">4. Zeka &amp; Kalite</button>
-          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_commerce_supply" onclick="filterPipelineLayer('grp_commerce_supply')">5. Ticaret &amp; Tedarik</button>
-          <button type="button" class="btn-n8n-filter" id="btn-flt-grp_marketing_distribution" onclick="filterPipelineLayer('grp_marketing_distribution')">6. Dağıtım &amp; PR</button>
-          <span style="margin-left:auto; color:#64748b; font-size:0.68rem;">💡 Düğüm üzerine gelerek sinyal odaklama yapın</span>
-        </div>
       </div>
 
       <!-- n8n Interactive Canvas -->
@@ -2729,11 +2619,7 @@
       </div>
     </section>
 
-  
-    <!-- ===================================================================== -->
-    <!-- SECTION 8: CYBER SECURITY SENTINEL (SUBAGENT 9)                       -->
-    <!-- ===================================================================== -->
-    <section id="pane-security" style="display:none;">
+<section id="pane-security" style="display:none;">
       
       <div class="bots-card" style="background:#090f1e; border-color:#0284c7;">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
@@ -2924,6 +2810,7 @@
 
     </section>
 
+  
   </main>
 
   <!-- Toast Notification Popup -->
@@ -2966,6 +2853,8 @@
       const paneReddit = document.getElementById('pane-reddit');
       const paneQa = document.getElementById('pane-qa');
       const paneDaemon = document.getElementById('pane-daemon');
+      const paneSecurity = document.getElementById('pane-security');
+      const paneMedia = document.getElementById('pane-media');
 
       const btnPipeline = document.getElementById('tab-btn-pipeline');
       const btnOrch = document.getElementById('tab-btn-orchestrator');
@@ -2975,13 +2864,10 @@
       const btnReddit = document.getElementById('tab-btn-reddit');
       const btnQa = document.getElementById('tab-btn-qa');
       const btnDaemon = document.getElementById('tab-btn-daemon');
-
-      const paneSecurity = document.getElementById('pane-security');
-      const paneMedia = document.getElementById('pane-media');
       const btnSecurity = document.getElementById('tab-btn-security');
       const btnMedia = document.getElementById('tab-btn-media');
 
-      [btnPipeline, btnOrch, btnTrend, btnProc, btnIg, btnReddit, btnQa, btnDaemon, btnSecurity, btnMedia].forEach(b => {
+      [btnPipeline, btnOrch, btnTrend, btnProc, btnIg, btnReddit, btnQa, btnDaemon].forEach(b => {
         if (b) b.classList.remove('active');
       });
 
@@ -3020,12 +2906,6 @@
         loadQAData();
       } else if (tabName === 'daemon') {
         if (btnDaemon) btnDaemon.classList.add('active');
-      } else if (tabName === 'security') {
-        if (btnSecurity) btnSecurity.classList.add('active');
-        loadSecurityData();
-      } else if (tabName === 'media') {
-        if (btnMedia) btnMedia.classList.add('active');
-        loadMediaData();
       }
     }
 
@@ -3056,140 +2936,106 @@
 
     function renderN8nNodes(data) {
       if (!data || !data.nodes) return;
-      const container = document.getElementById('n8n-nodes-container');
-      if (!container) return;
 
-      container.className = 'n8n-nodes-wrapper vertical-layout';
-      container.innerHTML = '';
+      const numCols = (data.columns && data.columns.length) || 6;
+      for (let i = 1; i <= numCols; i++) {
+        const col = document.getElementById(`n8n-col-${i}`);
+        if (col) {
+          let cardsContainer = col.querySelector('.n8n-column-cards');
+          if (!cardsContainer) {
+            cardsContainer = document.createElement('div');
+            cardsContainer.className = 'n8n-column-cards';
+            col.appendChild(cardsContainer);
+          } else {
+            cardsContainer.innerHTML = '';
+          }
+          if (data.columns && data.columns[i - 1]) {
+            const colDef = data.columns[i - 1];
+            const headerSpans = col.querySelectorAll('.n8n-column-header span');
+            if (headerSpans.length >= 2) {
+              headerSpans[0].textContent = colDef.name;
+              headerSpans[1].textContent = colDef.desc || '';
+            }
+          }
+        }
+      }
 
-      const subgroups = data.subgroups || [
-        { id: 'grp_triggers', name: '1. GİRİŞ & DIŞ TETİKLEYİCİLER', badge: '3 Tetikleyici', desc: 'Müşteri Trafiği, Sistem Cron & GitHub Actions CI/CD Tetikleyicileri', accent: '#10b981' },
-        { id: 'grp_infrastructure', name: '2. BULUT & SUNUCU ALTYAPISI', badge: '4 Sunucu & Veri', desc: 'GitHub Pages CDN, Hetzner VPS (Ubuntu 24.04), Nginx SSL Proxy & SQLite Veritabanı', accent: '#0284c7' },
-        { id: 'grp_security_services', name: '3. SİBER GÜVENLİK & DIŞ SERVİSLER', badge: '4 Güvenlik & Servis', desc: 'Siber Güvenlik Sentineli, PayTR Sanal POS, Google Gemini AI & Gmail SMTP', accent: '#f59e0b' },
-        { id: 'grp_orchestration_quality', name: '4. MERKEZİ İSTİHBARAT & KALİTE GÜVENCESİ', badge: '4 Yönetim & Kalite', desc: 'Lead Supervisor, QA Sentinel, Ürün Medya & İçerik Denetleyicisi, Telemetri', accent: '#0ea5e9' },
-        { id: 'grp_commerce_supply', name: '5. TİCARET, TEDARİK & FİYATLANDIRMA', badge: '3 Ticari Ajan', desc: 'Sipariş & Tedarik Optimizasyonu, Dinamik Fiyatlandırma & Küresel Trend Avcısı', accent: '#8b5cf6' },
-        { id: 'grp_marketing_distribution', name: '6. PAZARLAMA & DAĞITIM KANALLARI', badge: '4 Yayın Kanalı', desc: 'Instagram PR & Reels, SEO Dokümantasyon, Reddit Asistanı & Google Merchant Center', accent: '#f43f5e' }
-      ];
+      data.nodes.forEach(node => {
+        const colId = node.column || 1;
+        const col = document.getElementById(`n8n-col-${colId}`);
+        if (!col) return;
+        const cardsContainer = col.querySelector('.n8n-column-cards') || col;
 
-      subgroups.forEach(sg => {
-        const layerEl = document.createElement('div');
-        layerEl.className = 'n8n-subgroup-layer';
-        layerEl.id = `subgroup-${sg.id}`;
-        layerEl.dataset.subgroupId = sg.id;
-        layerEl.style.borderTop = `3px solid ${sg.accent || '#38bdf8'}`;
+        let topColor = '#38bdf8';
+        if (node.type === 'trigger') topColor = '#10b981';
+        else if (node.type === 'client') topColor = '#38bdf8';
+        else if (node.type === 'server') {
+          topColor = (node.id && node.id.includes('hetzner')) ? '#0284c7' : '#6366f1';
+        }
+        else if (node.type === 'service' || node.type === 'payment') {
+          topColor = (node.id && node.id.includes('paytr')) ? '#f59e0b' : '#a855f7';
+        }
+        else if (node.type === 'ai') topColor = '#10b981';
+        else if (node.id && node.id.includes('procurement')) topColor = '#10b981';
+        else if (node.id && node.id.includes('trend')) topColor = '#a855f7';
+        else if (node.type === 'sentinel' || (node.id && node.id.includes('qa'))) topColor = '#14b8a6';
+        else if (node.type === 'agent') topColor = '#6366f1';
+        else if (node.type === 'supervisor') topColor = '#0ea5e9';
+        else if (node.type === 'worker') {
+          if (node.id.includes('instagram')) topColor = '#f43f5e';
+          else if (node.id.includes('reddit')) topColor = '#ea580c';
+          else if (node.id.includes('qa')) topColor = '#14b8a6';
+          else topColor = '#0ea5e9';
+        } else if (node.type === 'destination') topColor = '#64748b';
 
-        layerEl.innerHTML = `
-          <div class="n8n-subgroup-header">
-            <div class="n8n-subgroup-title" style="color:#ffffff;">
-              <span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${sg.accent || '#38bdf8'}; box-shadow:0 0 10px ${sg.accent};"></span>
-              <span>${sg.name}</span>
-              <span class="n8n-badge" style="background:${sg.accent}22; color:${sg.accent}; border:1px solid ${sg.accent}55; font-size:0.68rem; margin-left:6px;">${sg.badge || ''}</span>
-            </div>
-            <span style="font-size:0.72rem; color:#94a3b8;">${sg.desc || ''}</span>
+        const isSelected = _selectedNodeId === node.id;
+        const isDisabled = node.status === 'disabled';
+
+        const card = document.createElement('div');
+        card.className = `n8n-node-card ${isSelected ? 'selected' : ''}`;
+        card.id = `node-${node.id}`;
+        card.onclick = () => selectN8nNode(node.id);
+        card.onmouseenter = () => onNodeHover(node.id, true);
+        card.onmouseleave = () => onNodeHover(node.id, false);
+
+        card.innerHTML = `
+          <div class="n8n-node-topbar" style="background:${topColor};"></div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span class="n8n-badge" style="background:${topColor}22; color:${topColor}; border:1px solid ${topColor}44;">
+              ${(node.tag || 'NODE').replace(/[\[\]]/g, '')}
+            </span>
+            <span class="status-dot ${isDisabled ? 'offline' : 'online'} ${node.status === 'running' || node.status === 'active' ? 'active-pulse' : ''}"></span>
           </div>
-          <div class="n8n-subgroup-nodes" id="subgroup-nodes-${sg.id}"></div>
+
+          <div class="n8n-card-title">
+            ${node.label}
+          </div>
+
+          <div class="n8n-card-desc" title="${node.category || ''}">
+            ${node.category}
+          </div>
+
+          <div class="n8n-card-footer">
+            <span style="color:#64748b;">DURUM:</span>
+            <span class="code-chip" style="font-size:0.65rem; padding:1px 5px; color:${isDisabled ? '#94a3b8' : topColor};">${(node.status_text || node.status || '').replace(/[\[\]]/g, '')}</span>
+          </div>
         `;
 
-        container.appendChild(layerEl);
-
-        const nodesGrid = layerEl.querySelector('.n8n-subgroup-nodes');
-        const nodesInGroup = data.nodes.filter(n => n.subgroup === sg.id || (sg.node_ids && sg.node_ids.includes(n.id)));
-
-        nodesInGroup.forEach(node => {
-          let topColor = '#38bdf8';
-          if (node.type === 'trigger') topColor = '#10b981';
-          else if (node.type === 'client') topColor = '#38bdf8';
-          else if (node.type === 'server') {
-            topColor = (node.id && node.id.includes('hetzner')) ? '#0284c7' : '#6366f1';
-          }
-          else if (node.type === 'service' || node.type === 'payment') {
-            topColor = (node.id && node.id.includes('paytr')) ? '#f59e0b' : '#a855f7';
-          }
-          else if (node.type === 'ai') topColor = '#10b981';
-          else if (node.type === 'security') topColor = '#10b981';
-          else if (node.type === 'media') topColor = '#0ea5e9';
-          else if (node.id && node.id.includes('procurement')) topColor = '#10b981';
-          else if (node.id && node.id.includes('trend')) topColor = '#a855f7';
-          else if (node.type === 'sentinel' || (node.id && node.id.includes('qa'))) topColor = '#14b8a6';
-          else if (node.type === 'agent') topColor = '#6366f1';
-          else if (node.type === 'supervisor') topColor = '#0ea5e9';
-          else if (node.type === 'marketing' || node.type === 'worker') {
-            if (node.id.includes('instagram')) topColor = '#f43f5e';
-            else if (node.id.includes('reddit')) topColor = '#ea580c';
-            else if (node.id.includes('seo')) topColor = '#818cf8';
-            else topColor = '#0ea5e9';
-          } else if (node.type === 'destination') topColor = '#64748b';
-
-          const isSelected = _selectedNodeId === node.id;
-          const isDisabled = node.status === 'disabled';
-
-          const card = document.createElement('div');
-          card.className = `n8n-node-card ${isSelected ? 'selected' : ''}`;
-          card.id = `node-${node.id}`;
-          card.onclick = () => selectN8nNode(node.id);
-          card.onmouseenter = () => onNodeHover(node.id, true);
-          card.onmouseleave = () => onNodeHover(node.id, false);
-
-          card.innerHTML = `
-            <div class="n8n-node-topbar" style="background:${topColor};"></div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span class="n8n-badge" style="background:${topColor}22; color:${topColor}; border:1px solid ${topColor}44;">
-                ${(node.tag || 'NODE').replace(/[\[\]]/g, '')}
-              </span>
-              <span class="status-dot ${isDisabled ? 'offline' : 'online'} ${node.status === 'running' || node.status === 'active' ? 'active-pulse' : ''}"></span>
-            </div>
-
-            <div class="n8n-card-title">
-              ${node.label}
-            </div>
-
-            <div class="n8n-card-desc" title="${node.category || ''}">
-              ${node.category}
-            </div>
-
-            <div class="n8n-card-footer">
-              <span style="color:#64748b;">DURUM:</span>
-              <span class="code-chip" style="font-size:0.65rem; padding:1px 5px; color:${isDisabled ? '#94a3b8' : topColor};">${(node.status_text || node.status || '').replace(/[\[\]]/g, '')}</span>
-            </div>
-          `;
-
-          nodesGrid.appendChild(card);
-        });
+        cardsContainer.appendChild(card);
       });
     }
 
     function onNodeHover(nodeId, isEnter) {
-      if (_selectedNodeId) return;
+      if (_selectedNodeId) return; // don't override if a node is selected
       _hoveredNodeId = isEnter ? nodeId : null;
       if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
     }
 
-    function filterPipelineLayer(layerId) {
-      document.querySelectorAll('.btn-n8n-filter').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById(`btn-flt-${layerId}`);
-      if (activeBtn) activeBtn.classList.add('active');
-
-      const layers = document.querySelectorAll('.n8n-subgroup-layer');
-      layers.forEach(l => {
-        if (layerId === 'all' || l.dataset.subgroupId === layerId) {
-          l.classList.remove('filtered-out');
-          l.style.display = 'block';
-        } else {
-          l.classList.add('filtered-out');
-          l.style.display = 'none';
-        }
-      });
-
-      setTimeout(() => {
-        if (_pipelineGraphData) drawN8nConnections(_pipelineGraphData);
-      }, 50);
-    }
-
-    function renderPortDot(cardEl, edge, frac, type) {
+    function renderPortDot(cardEl, direction, fracY, type) {
       const dot = document.createElement('div');
-      dot.className = `n8n-port-dot n8n-port-dot-${edge} n8n-dynamic-port`;
-      dot.style.left = `${frac * 100}%`;
+      dot.className = `n8n-port-dot n8n-port-dot-${direction} n8n-dynamic-port`;
+      dot.style.top = `${fracY * 100}%`;
 
       let col = '#38bdf8';
       if (type === 'trigger') col = '#10b981';
@@ -3199,7 +3045,6 @@
       else if (type === 'directive') col = '#38bdf8';
       else if (type === 'publish') col = '#f43f5e';
       else if (type === 'probe') col = '#14b8a6';
-      else if (type === 'security') col = '#10b981';
 
       dot.style.background = col;
       dot.style.boxShadow = `0 0 6px ${col}`;
@@ -3260,6 +3105,26 @@
         inConnsByNode[conn.to].push(conn);
       });
 
+      Object.keys(outConnsByNode).forEach(fromId => {
+        outConnsByNode[fromId].sort((a, b) => {
+          const elA = document.getElementById(`node-${a.to}`);
+          const elB = document.getElementById(`node-${b.to}`);
+          const yA = elA ? elA.getBoundingClientRect().top : 0;
+          const yB = elB ? elB.getBoundingClientRect().top : 0;
+          return yA - yB;
+        });
+      });
+
+      Object.keys(inConnsByNode).forEach(toId => {
+        inConnsByNode[toId].sort((a, b) => {
+          const elA = document.getElementById(`node-${a.from}`);
+          const elB = document.getElementById(`node-${b.from}`);
+          const yA = elA ? elA.getBoundingClientRect().top : 0;
+          const yB = elB ? elB.getBoundingClientRect().top : 0;
+          return yA - yB;
+        });
+      });
+
       const activeFilterId = _selectedNodeId || _hoveredNodeId;
 
       data.connections.forEach(conn => {
@@ -3267,11 +3132,8 @@
         const toEl = document.getElementById(`node-${conn.to}`);
         if (!fromEl || !toEl) return;
 
-        // Skip if either layer is hidden
-        const fromLayer = fromEl.closest('.n8n-subgroup-layer');
-        const toLayer = toEl.closest('.n8n-subgroup-layer');
-        if (fromLayer && fromLayer.style.display === 'none') return;
-        if (toLayer && toLayer.style.display === 'none') return;
+        const fromNodeData = data.nodes.find(n => n.id === conn.from);
+        const toNodeData = data.nodes.find(n => n.id === conn.to);
 
         const r1 = fromEl.getBoundingClientRect();
         const r2 = toEl.getBoundingClientRect();
@@ -3281,7 +3143,7 @@
         const outCount = outList.length;
         let outFrac = 0.5;
         if (outCount > 1) {
-          outFrac = 0.2 + (0.6 * outIdx) / (outCount - 1);
+          outFrac = 0.22 + (0.56 * outIdx) / (outCount - 1);
         }
 
         const inList = inConnsByNode[conn.to] || [conn];
@@ -3289,33 +3151,48 @@
         const inCount = inList.length;
         let inFrac = 0.5;
         if (inCount > 1) {
-          inFrac = 0.2 + (0.6 * inIdx) / (inCount - 1);
+          inFrac = 0.22 + (0.56 * inIdx) / (inCount - 1);
         }
+
+        const x1 = r1.right - canvasRect.left + scrollLeft;
+        const y1 = r1.top + r1.height * outFrac - canvasRect.top + scrollTop;
+
+        const x2 = r2.left - canvasRect.left + scrollLeft;
+        const y2 = r2.top + r2.height * inFrac - canvasRect.top + scrollTop;
 
         const isProbe = conn.type === 'probe' || (conn.from === 'subagent_7_qa' && conn.to !== 'lead_supervisor') || (conn.label && conn.label.toLowerCase().includes('probu'));
         const effectiveType = isProbe ? 'probe' : conn.type;
 
-        // Out port at bottom of r1
-        const x1 = r1.left + r1.width * outFrac - canvasRect.left + scrollLeft;
-        const y1 = r1.bottom - canvasRect.top + scrollTop;
+        renderPortDot(fromEl, 'out', outFrac, effectiveType);
+        renderPortDot(toEl, 'in', inFrac, effectiveType);
 
-        // In port at top of r2
-        const x2 = r2.left + r2.width * inFrac - canvasRect.left + scrollLeft;
-        const y2 = r2.top - canvasRect.top + scrollTop;
-
-        renderPortDot(fromEl, 'bottom', outFrac, effectiveType);
-        renderPortDot(toEl, 'top', inFrac, effectiveType);
-
-        const dy = Math.max(28, Math.abs(y2 - y1) * 0.45);
         let d = '';
-        if (y2 >= y1 - 15) {
-          // Direct downward vertical curve
-          d = `M ${x1} ${y1} C ${x1} ${y1 + dy}, ${x2} ${y2 - dy}, ${x2} ${y2}`;
+        const colFrom = (fromNodeData && fromNodeData.column) || 1;
+        const colTo = (toNodeData && toNodeData.column) || 1;
+
+        if (colTo - colFrom > 1) {
+          let maxBottom = Math.max(r1.bottom, r2.bottom);
+          for (let c = colFrom + 1; c < colTo; c++) {
+            const colEl = document.getElementById(`n8n-col-${c}`);
+            if (colEl) {
+              const colRect = colEl.getBoundingClientRect();
+              maxBottom = Math.max(maxBottom, colRect.bottom);
+            }
+          }
+          const bypassY = maxBottom - canvasRect.top + scrollTop + 32;
+          const rCurve = 20;
+
+          d = `M ${x1} ${y1} ` +
+              `C ${x1 + 35} ${y1}, ${x1 + 35} ${bypassY}, ${x1 + 35 + rCurve} ${bypassY} ` +
+              `L ${x2 - 35 - rCurve} ${bypassY} ` +
+              `C ${x2 - 35} ${bypassY}, ${x2 - 35} ${y2}, ${x2} ${y2}`;
+        } else if (colTo < colFrom || x2 <= x1) {
+          const loopY = Math.max(r1.bottom, r2.bottom) - canvasRect.top + scrollTop + 26;
+          d = `M ${x1} ${y1} C ${x1 + 25} ${y1}, ${x1 + 25} ${loopY}, ${x1} ${loopY} L ${x2} ${loopY} C ${x2 - 25} ${loopY}, ${x2 - 25} ${y2}, ${x2} ${y2}`;
         } else {
-          // Side loopback curve
-          const isLeft = x1 < canvasRect.width / 2;
-          const loopX = isLeft ? Math.max(20, Math.min(x1, x2) - 40) : (canvasRect.width - 25);
-          d = `M ${x1} ${y1} C ${x1} ${y1 + 35}, ${loopX} ${y1 + 35}, ${loopX} ${(y1 + y2) / 2} C ${loopX} ${y2 - 35}, ${x2} ${y2 - 35}, ${x2} ${y2}`;
+          const dist = Math.max(20, x2 - x1);
+          const dx = Math.min(dist * 0.45, Math.max(16, dist * 0.4));
+          d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
         }
 
         const isHighlighted = activeFilterId && (activeFilterId === conn.from || activeFilterId === conn.to);
@@ -3345,9 +3222,6 @@
         } else if (effectiveType === 'probe') {
           strokeColor = '#14b8a6';
           markerId = 'n8n-arrow-probe';
-        } else if (effectiveType === 'security') {
-          strokeColor = '#10b981';
-          markerId = 'n8n-arrow-trigger';
         }
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -3360,14 +3234,6 @@
         path.setAttribute('class', wireClasses);
         path.setAttribute('id', `wire-${conn.from}-${conn.to}`);
         path.style.stroke = strokeColor;
-        if (isDimmed) {
-          path.style.opacity = '0.06';
-          path.style.strokeWidth = '1';
-        } else if (isHighlighted) {
-          path.style.opacity = '1';
-          path.style.strokeWidth = '3.5';
-          path.style.filter = `drop-shadow(0 0 8px ${strokeColor})`;
-        }
         path.setAttribute('marker-end', isHighlighted ? 'url(#n8n-arrow-active)' : (isDimmed ? 'url(#n8n-arrow-dim)' : `url(#${markerId})`));
 
         const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
@@ -4321,9 +4187,7 @@
         'subagent_5_price': '🏷️',
         'subagent_6_trend': '🔍',
         'subagent_7_qa': '🛡️',
-        'subagent_8_procurement': '📦',
-        'subagent_9_security': '🔒',
-        'subagent_10_media': '🖼️'
+        'subagent_8_procurement': '📦'
       };
 
       const html = _subagentsConfig.map(s => {
