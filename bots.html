@@ -722,8 +722,8 @@
       z-index: 2;
       display: flex;
       justify-content: space-between;
-      gap: 8px;
-      padding: 10px 12px;
+      gap: clamp(26px, 2.6vw, 42px);
+      padding: 12px 14px;
       width: 100%;
       min-width: 0 !important;
       max-width: 100%;
@@ -741,48 +741,57 @@
     .n8n-column-cards {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
       justify-content: flex-start;
       flex: 1;
-      padding: 3px 0;
+      padding: 2px 0;
     }
     .n8n-column-header {
-      font-size: 0.65rem;
+      font-size: 0.60rem;
       font-weight: 700;
       color: #94a3b8;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.02em;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 4px;
-      margin-bottom: 3px;
+      padding-bottom: 3px;
+      margin-bottom: 4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .n8n-column-header span:first-child {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-right: 4px;
     }
     .n8n-node-card {
       position: relative;
       background: rgba(11, 19, 36, 0.95);
       border: 1px solid #1e293b;
-      border-radius: 8px;
-      padding: 7px 10px;
+      border-radius: 6px;
+      padding: 4px 7px;
       cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+      transition: all 0.18s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
       backdrop-filter: blur(8px);
     }
     .n8n-node-card:hover {
       border-color: #38bdf8;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(56, 189, 248, 0.22);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
     }
     .n8n-node-card.selected {
       border-color: #38bdf8;
-      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.5), 0 6px 20px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.5), 0 4px 16px rgba(0, 0, 0, 0.6);
       background: #0f1c34;
     }
     .n8n-node-topbar {
-      height: 2.5px;
-      border-radius: 3px 3px 0 0;
+      height: 2px;
+      border-radius: 2px 2px 0 0;
       position: absolute;
       top: 0;
       left: 0;
@@ -790,58 +799,78 @@
     }
     .n8n-port-dot {
       position: absolute;
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      border: 2px solid #060a12;
+      border: 1.5px solid #060a12;
       transform: translateY(-50%);
       z-index: 4;
       pointer-events: auto;
       transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
     .n8n-port-dot:hover {
-      transform: translateY(-50%) scale(1.4);
+      transform: translateY(-50%) scale(1.35);
     }
     .n8n-port-dot-in {
-      left: -5px;
+      left: -4px;
     }
     .n8n-port-dot-out {
-      right: -5px;
+      right: -4px;
+    }
+    .n8n-port-dot-in-right {
+      right: -4px;
+    }
+    .n8n-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
     }
     .n8n-badge {
-      font-size: 0.58rem;
+      font-size: 0.52rem;
       font-weight: 700;
-      padding: 1px 5px;
+      padding: 0 4px;
+      line-height: 13px;
       border-radius: 3px;
       font-family: var(--font-mono);
       letter-spacing: 0.02em;
     }
     .n8n-card-title {
-      font-size: 0.74rem;
+      font-size: 0.65rem;
       font-weight: 700;
       color: #ffffff;
-      margin-bottom: 2px;
-      line-height: 1.25;
+      margin-bottom: 1px;
+      line-height: 1.2;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .n8n-card-desc {
-      font-size: 0.62rem;
+      font-size: 0.52rem;
       color: #94a3b8;
-      margin-bottom: 4px;
-      line-height: 1.25;
+      margin-bottom: 2px;
+      line-height: 1.15;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
     .n8n-card-footer {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
-      border-top: 1px solid #1e293b;
-      padding-top: 3px;
-      font-size: 0.60rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 2px;
+      font-size: 0.50rem;
+      line-height: 1.1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .n8n-status-text {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Legend Bar */
@@ -875,51 +904,59 @@
       height: 0;
     }
 
-    /* Scale Modifiers (Always 100% fluid, no scrollbars) */
+    /* Scale Modifiers (Always 100% fluid, generous signal gutters) */
     .n8n-canvas-container.n8n-scale-compact .n8n-nodes-wrapper {
-      gap: 6px;
+      gap: clamp(20px, 2vw, 32px);
       padding: 8px 10px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-column-cards {
-      gap: 5px;
+      gap: 3px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-node-card {
-      padding: 4px 6px;
+      padding: 3px 5px;
+    }
+    .n8n-canvas-container.n8n-scale-compact .n8n-badge {
+      font-size: 0.48rem;
+      line-height: 11px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-title {
-      font-size: 0.66rem;
-      margin-bottom: 2px;
+      font-size: 0.60rem;
+      margin-bottom: 1px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-desc {
-      font-size: 0.55rem;
-      margin-bottom: 3px;
+      font-size: 0.48rem;
+      margin-bottom: 1px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-footer {
-      padding-top: 2px;
-      font-size: 0.54rem;
+      padding-top: 1px;
+      font-size: 0.46rem;
     }
 
     .n8n-canvas-container.n8n-scale-large .n8n-nodes-wrapper {
-      gap: 12px;
+      gap: clamp(32px, 3.2vw, 48px);
       padding: 14px 16px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-column-cards {
-      gap: 8px;
+      gap: 5px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-node-card {
-      padding: 7px 9px;
+      padding: 6px 9px;
+    }
+    .n8n-canvas-container.n8n-scale-large .n8n-badge {
+      font-size: 0.55rem;
+      line-height: 14px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-title {
-      font-size: 0.74rem;
-      margin-bottom: 3px;
+      font-size: 0.70rem;
+      margin-bottom: 2px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-desc {
-      font-size: 0.62rem;
-      margin-bottom: 4px;
+      font-size: 0.56rem;
+      margin-bottom: 3px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-footer {
-      padding-top: 3px;
-      font-size: 0.58rem;
+      padding-top: 2px;
+      font-size: 0.54rem;
     }
 
     .n8n-inspector {
@@ -3131,6 +3168,9 @@
           setTimeout(() => {
             drawN8nConnections(_pipelineGraphData);
           }, 80);
+          setTimeout(() => {
+            drawN8nConnections(_pipelineGraphData);
+          }, 250);
         }
       } catch (e) {
         console.error("Pipeline graph fetch error:", e);
@@ -3201,27 +3241,28 @@
         card.onmouseenter = () => onNodeHover(node.id, true);
         card.onmouseleave = () => onNodeHover(node.id, false);
 
+        const statusText = (node.status_text || node.status || '').replace(/[\[\]]/g, '');
+
         card.innerHTML = `
           <div class="n8n-node-topbar" style="background:${topColor};"></div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span class="n8n-badge" style="background:${topColor}22; color:${topColor}; border:1px solid ${topColor}44;">
+          <div class="n8n-card-header">
+            <span class="n8n-badge" style="background:${topColor}18; color:${topColor}; border:1px solid ${topColor}33;">
               ${(node.tag || 'NODE').replace(/[\[\]]/g, '')}
             </span>
             <span class="status-dot ${isDisabled ? 'offline' : 'online'} ${node.status === 'running' || node.status === 'active' ? 'active-pulse' : ''}"></span>
           </div>
 
-          <div class="n8n-card-title">
+          <div class="n8n-card-title" title="${node.label}">
             ${node.label}
           </div>
 
           <div class="n8n-card-desc" title="${node.category || ''}">
-            ${node.category}
+            ${node.category || ''}
           </div>
 
-          <div class="n8n-card-footer">
-            <span style="color:#64748b;">DURUM:</span>
-            <span class="code-chip" style="font-size:0.65rem; padding:1px 5px; color:${isDisabled ? '#94a3b8' : topColor};">${(node.status_text || node.status || '').replace(/[\[\]]/g, '')}</span>
+          <div class="n8n-card-footer" title="${statusText}">
+            <span class="n8n-status-text" style="color:${isDisabled ? '#64748b' : topColor};">${statusText}</span>
           </div>
         `;
 
@@ -3365,30 +3406,61 @@
         const isProbe = conn.type === 'probe' || (conn.from === 'subagent_7_qa') || (conn.label && conn.label.toLowerCase().includes('prob'));
         const effectiveType = isProbe ? 'probe' : conn.type;
 
-        renderPortDot(fromEl, 'out', outFrac, effectiveType);
-        renderPortDot(toEl, 'in', inFrac, effectiveType);
-
-        const x1 = r1.right - canvasRect.left;
-        const y1 = r1.top + r1.height * outFrac - canvasRect.top;
-
-        const x2 = r2.left - canvasRect.left;
-        const y2 = r2.top + r2.height * inFrac - canvasRect.top;
-
         let d = '';
 
         if (colTo === colFrom) {
-          // Same column: subtle arch to the right
-          const archOffset = 14 + (outIdx * 5);
+          // Same column: Connect from right port to right port via right gutter loop
+          renderPortDot(fromEl, 'out', outFrac, effectiveType);
+          renderPortDot(toEl, 'in-right', inFrac, effectiveType);
+
+          const x1 = r1.right - canvasRect.left;
+          const y1 = r1.top + r1.height * outFrac - canvasRect.top;
+          const x2 = r2.right - canvasRect.left;
+          const y2 = r2.top + r2.height * inFrac - canvasRect.top;
+
+          const archOffset = 10 + (outIdx * 4);
           const archX = Math.max(x1, x2) + archOffset;
           d = `M ${x1} ${y1} C ${archX} ${y1}, ${archX} ${y2}, ${x2} ${y2}`;
-        } else if (x2 >= x1) {
-          // Direct forward connection: smooth horizontal cubic bezier
-          const dist = Math.max(18, (x2 - x1) * 0.45);
+        } else if (colTo > colFrom + 1) {
+          // Multi-hop jump (e.g. Col 2 -> Col 6): Route overhead above cards so it is never hidden behind intermediate cards
+          renderPortDot(fromEl, 'out', outFrac, effectiveType);
+          renderPortDot(toEl, 'in', inFrac, effectiveType);
+
+          const x1 = r1.right - canvasRect.left;
+          const y1 = r1.top + r1.height * outFrac - canvasRect.top;
+          const x2 = r2.left - canvasRect.left;
+          const y2 = r2.top + r2.height * inFrac - canvasRect.top;
+
+          const overheadY = 10 + (outIdx * 4);
+          const cpX1 = x1 + 16;
+          const cpX2 = x2 - 16;
+          d = `M ${x1} ${y1} C ${cpX1} ${y1}, ${cpX1} ${overheadY}, ${x1 + 22} ${overheadY} L ${x2 - 22} ${overheadY} C ${cpX2} ${overheadY}, ${cpX2} ${y2}, ${x2} ${y2}`;
+        } else if (r2.left >= r1.right || colTo > colFrom) {
+          // Forward connection to adjacent column: smooth cubic bezier strictly inside the gutter
+          renderPortDot(fromEl, 'out', outFrac, effectiveType);
+          renderPortDot(toEl, 'in', inFrac, effectiveType);
+
+          const x1 = r1.right - canvasRect.left;
+          const y1 = r1.top + r1.height * outFrac - canvasRect.top;
+          const x2 = r2.left - canvasRect.left;
+          const y2 = r2.top + r2.height * inFrac - canvasRect.top;
+
+          const gap = Math.max(16, x2 - x1);
+          const dist = Math.min(22, Math.max(10, gap * 0.45));
           d = `M ${x1} ${y1} C ${x1 + dist} ${y1}, ${x2 - dist} ${y2}, ${x2} ${y2}`;
         } else {
-          // Reverse connection (if any): compact arch without going to the bottom
-          const archX = (x1 + x2) / 2;
-          d = `M ${x1} ${y1} C ${x1 + 18} ${y1}, ${archX} ${Math.min(y1, y2) - 12}, ${x2} ${y2}`;
+          // Fallback reverse connection
+          renderPortDot(fromEl, 'out', outFrac, effectiveType);
+          renderPortDot(toEl, 'in', inFrac, effectiveType);
+
+          const x1 = r1.right - canvasRect.left;
+          const y1 = r1.top + r1.height * outFrac - canvasRect.top;
+          const x2 = r2.left - canvasRect.left;
+          const y2 = r2.top + r2.height * inFrac - canvasRect.top;
+
+          const archY = Math.min(y1, y2) - 14;
+          const midX = (x1 + x2) / 2;
+          d = `M ${x1} ${y1} C ${x1 + 14} ${y1}, ${midX} ${archY}, ${x2} ${y2}`;
         }
 
         const isHighlighted = activeFilterId && (activeFilterId === conn.from || activeFilterId === conn.to);
