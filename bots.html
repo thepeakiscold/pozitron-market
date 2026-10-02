@@ -664,14 +664,14 @@
       position: relative;
       background-color: #060a12;
       background-image: radial-gradient(rgba(56, 189, 248, 0.15) 1px, transparent 1px);
-      background-size: 24px 24px;
+      background-size: 20px 20px;
       border: 1px solid #1e293b;
-      border-radius: 14px;
-      overflow-x: auto;
-      overflow-y: hidden;
-      min-height: 600px;
-      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.7);
-      transition: min-height 0.25s ease;
+      border-radius: 12px;
+      overflow: hidden; /* Tamamen kaydırma çubuğu yok, ekrana tam oturur */
+      width: 100%;
+      min-height: auto;
+      box-sizing: border-box;
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.7);
     }
     .n8n-svg-layer {
       position: absolute;
@@ -717,42 +717,43 @@
     @keyframes n8nDash {
       to { stroke-dashoffset: -20; }
     }
-        .n8n-nodes-wrapper {
+    .n8n-nodes-wrapper {
       position: relative;
       z-index: 2;
       display: flex;
       justify-content: space-between;
-      gap: 52px;
-      padding: 16px 20px 75px 20px;
-      min-width: 1420px;
-      min-height: 480px;
+      gap: 8px;
+      padding: 10px 12px;
+      width: 100%;
+      min-width: 0 !important;
+      max-width: 100%;
       box-sizing: border-box;
       pointer-events: none;
     }
     .n8n-column {
-      flex: 1;
+      flex: 1 1 0;
+      min-width: 0 !important;
+      max-width: none !important;
       display: flex;
       flex-direction: column;
-      min-width: 175px;
-      max-width: 215px;
       pointer-events: auto;
     }
     .n8n-column-cards {
       display: flex;
       flex-direction: column;
-      gap: 9px;
-      justify-content: center;
+      gap: 6px;
+      justify-content: flex-start;
       flex: 1;
-      padding: 6px 0;
+      padding: 3px 0;
     }
     .n8n-column-header {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-weight: 700;
       color: #94a3b8;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.03em;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 5px;
+      padding-bottom: 4px;
       margin-bottom: 3px;
       display: flex;
       justify-content: space-between;
@@ -874,73 +875,51 @@
       height: 0;
     }
 
-    /* Scale Modifiers */
-    .n8n-canvas-container.n8n-scale-compact {
-      min-height: 500px;
-    }
+    /* Scale Modifiers (Always 100% fluid, no scrollbars) */
     .n8n-canvas-container.n8n-scale-compact .n8n-nodes-wrapper {
-      gap: 24px;
-      padding: 16px 16px 36px 16px;
-      min-width: 1320px;
-      min-height: 460px;
-    }
-    .n8n-canvas-container.n8n-scale-compact .n8n-column {
-      min-width: 175px;
-      max-width: 215px;
+      gap: 6px;
+      padding: 8px 10px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-column-cards {
-      gap: 12px;
-      padding: 6px 0;
+      gap: 5px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-node-card {
-      padding: 8px 10px;
-      border-radius: 8px;
+      padding: 4px 6px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-title {
-      font-size: 0.74rem;
+      font-size: 0.66rem;
       margin-bottom: 2px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-desc {
-      font-size: 0.63rem;
-      margin-bottom: 5px;
+      font-size: 0.55rem;
+      margin-bottom: 3px;
     }
     .n8n-canvas-container.n8n-scale-compact .n8n-card-footer {
-      padding-top: 4px;
-      font-size: 0.62rem;
+      padding-top: 2px;
+      font-size: 0.54rem;
     }
 
-    .n8n-canvas-container.n8n-scale-large {
-      min-height: 720px;
-    }
     .n8n-canvas-container.n8n-scale-large .n8n-nodes-wrapper {
-      gap: 52px;
-      padding: 32px 34px 60px 34px;
-      min-width: 1850px;
-      min-height: 660px;
-    }
-    .n8n-canvas-container.n8n-scale-large .n8n-column {
-      min-width: 240px;
-      max-width: 290px;
+      gap: 12px;
+      padding: 14px 16px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-column-cards {
-      gap: 24px;
-      padding: 16px 0;
+      gap: 8px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-node-card {
-      padding: 14px 18px;
-      border-radius: 12px;
+      padding: 7px 9px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-title {
-      font-size: 0.88rem;
-      margin-bottom: 4px;
+      font-size: 0.74rem;
+      margin-bottom: 3px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-desc {
-      font-size: 0.74rem;
-      margin-bottom: 8px;
+      font-size: 0.62rem;
+      margin-bottom: 4px;
     }
     .n8n-canvas-container.n8n-scale-large .n8n-card-footer {
-      padding-top: 8px;
-      font-size: 0.7rem;
+      padding-top: 3px;
+      font-size: 0.58rem;
     }
 
     .n8n-inspector {
@@ -3305,8 +3284,13 @@
       if (!svgGroup || !canvas || !data || !data.connections) return;
 
       const canvasRect = canvas.getBoundingClientRect();
-      const scrollLeft = canvas.scrollLeft || 0;
-      const scrollTop = canvas.scrollTop || 0;
+      const scrollW = canvas.clientWidth;
+      const scrollH = canvas.clientHeight || canvas.offsetHeight;
+
+      svg.setAttribute('width', scrollW);
+      svg.setAttribute('height', scrollH);
+      svg.style.width = scrollW + 'px';
+      svg.style.height = scrollH + 'px';
 
       svgGroup.innerHTML = '';
       document.querySelectorAll('.n8n-dynamic-port').forEach(p => p.remove());
@@ -3345,62 +3329,9 @@
         });
       });
 
-      // 2. Identify and index non-adjacent / backward / long wires for collision-free highway lanes
-      const highwayConnections = [];
-      const sameColumnConns = [];
-
-      data.connections.forEach(conn => {
-        const fromNodeData = data.nodes.find(n => n.id === conn.from);
-        const toNodeData = data.nodes.find(n => n.id === conn.to);
-        const colFrom = (fromNodeData && fromNodeData.column) || 1;
-        const colTo = (toNodeData && toNodeData.column) || 1;
-
-        if (colTo === colFrom) {
-          sameColumnConns.push(conn);
-        } else if (colTo < colFrom || (colTo - colFrom) > 1) {
-          highwayConnections.push(conn);
-        }
-      });
-
-      // Sort highway wires by column span and direction so lanes are perfectly orderly
-      highwayConnections.sort((a, b) => {
-        const aFrom = (data.nodes.find(n => n.id === a.from) || {}).column || 1;
-        const aTo = (data.nodes.find(n => n.id === a.to) || {}).column || 1;
-        const bFrom = (data.nodes.find(n => n.id === b.from) || {}).column || 1;
-        const bTo = (data.nodes.find(n => n.id === b.to) || {}).column || 1;
-
-        const aIsReverse = aTo < aFrom ? 1 : 0;
-        const bIsReverse = bTo < bFrom ? 1 : 0;
-        if (aIsReverse !== bIsReverse) return aIsReverse - bIsReverse;
-
-        const aSpan = Math.abs(aTo - aFrom);
-        const bSpan = Math.abs(bTo - bFrom);
-        return aSpan - bSpan;
-      });
-
-      // Find overall bottom of cards to anchor highway channels
-      let globalMaxCardBottom = 0;
-      data.nodes.forEach(n => {
-        const el = document.getElementById(`node-${n.id}`);
-        if (el) {
-          const r = el.getBoundingClientRect();
-          if (r.bottom > globalMaxCardBottom) globalMaxCardBottom = r.bottom;
-        }
-      });
-      const baseHighwayY = globalMaxCardBottom - canvasRect.top + scrollTop + 22;
-
-      // Adjust SVG canvas height to accommodate all dedicated highway lanes
-      const totalHighwayHeight = baseHighwayY + (highwayConnections.length * 15) + 40;
-      const scrollW = Math.max(canvas.scrollWidth, canvas.clientWidth);
-      const scrollH = Math.max(canvas.scrollHeight, canvas.clientHeight, totalHighwayHeight);
-      svg.setAttribute('width', scrollW);
-      svg.setAttribute('height', scrollH);
-      svg.style.width = scrollW + 'px';
-      svg.style.height = scrollH + 'px';
-
       const activeFilterId = _selectedNodeId || _hoveredNodeId;
 
-      // 3. Draw each connection cleanly
+      // 2. Draw each connection directly between card ports without bottom highway overflow
       data.connections.forEach(conn => {
         const fromEl = document.getElementById(`node-${conn.from}`);
         const toEl = document.getElementById(`node-${conn.to}`);
@@ -3431,64 +3362,33 @@
           inFrac = 0.20 + (0.60 * inIdx) / (inCount - 1);
         }
 
-        const isProbe = conn.type === 'probe' || (conn.from === 'subagent_7_qa' && conn.to !== 'lead_supervisor') || (conn.label && conn.label.toLowerCase().includes('probu'));
+        const isProbe = conn.type === 'probe' || (conn.from === 'subagent_7_qa') || (conn.label && conn.label.toLowerCase().includes('prob'));
         const effectiveType = isProbe ? 'probe' : conn.type;
 
         renderPortDot(fromEl, 'out', outFrac, effectiveType);
         renderPortDot(toEl, 'in', inFrac, effectiveType);
 
-        const x1 = r1.right - canvasRect.left + scrollLeft;
-        const y1 = r1.top + r1.height * outFrac - canvasRect.top + scrollTop;
+        const x1 = r1.right - canvasRect.left;
+        const y1 = r1.top + r1.height * outFrac - canvasRect.top;
 
-        const x2 = r2.left - canvasRect.left + scrollLeft;
-        const y2 = r2.top + r2.height * inFrac - canvasRect.top + scrollTop;
+        const x2 = r2.left - canvasRect.left;
+        const y2 = r2.top + r2.height * inFrac - canvasRect.top;
 
         let d = '';
 
         if (colTo === colFrom) {
-          // Same column: arch out to the right into the inter-column gap
-          const sameIdx = sameColumnConns.indexOf(conn);
-          const archOffset = 18 + (sameIdx * 10);
+          // Same column: subtle arch to the right
+          const archOffset = 14 + (outIdx * 5);
           const archX = Math.max(x1, x2) + archOffset;
           d = `M ${x1} ${y1} C ${archX} ${y1}, ${archX} ${y2}, ${x2} ${y2}`;
-        } else if (colTo < colFrom || (colTo - colFrom) > 1) {
-          // Highway bus routing with unique non-overlapping laneY
-          const laneIdx = highwayConnections.indexOf(conn);
-          const laneY = baseHighwayY + (laneIdx * 15);
-          const rCurve = 12;
-
-          // Drop X staggered based on output port index
-          const dropX = x1 + 14 + (outIdx * 6);
-          // Rise X staggered based on input port index
-          const riseX = x2 - 14 - (inIdx * 6);
-
-          if (colTo > colFrom) {
-            // Forward highway (jumping intermediate columns)
-            d = `M ${x1} ${y1} ` +
-                `C ${dropX} ${y1}, ${dropX} ${y1 + rCurve}, ${dropX} ${y1 + rCurve} ` +
-                `L ${dropX} ${laneY - rCurve} ` +
-                `C ${dropX} ${laneY}, ${dropX + rCurve} ${laneY}, ${dropX + rCurve} ${laneY} ` +
-                `L ${riseX - rCurve} ${laneY} ` +
-                `C ${riseX} ${laneY}, ${riseX} ${laneY - rCurve}, ${riseX} ${laneY - rCurve} ` +
-                `L ${riseX} ${y2 + rCurve} ` +
-                `C ${riseX} ${y2}, ${x2} ${y2}, ${x2} ${y2}`;
-          } else {
-            // Reverse highway (looping back to previous column)
-            d = `M ${x1} ${y1} ` +
-                `C ${dropX} ${y1}, ${dropX} ${y1 + rCurve}, ${dropX} ${y1 + rCurve} ` +
-                `L ${dropX} ${laneY - rCurve} ` +
-                `C ${dropX} ${laneY}, ${dropX - rCurve} ${laneY}, ${dropX - rCurve} ${laneY} ` +
-                `L ${riseX + rCurve} ${laneY} ` +
-                `C ${riseX} ${laneY}, ${riseX} ${laneY - rCurve}, ${riseX} ${laneY - rCurve} ` +
-                `L ${riseX} ${y2 + rCurve} ` +
-                `C ${riseX} ${y2}, ${x2} ${y2}, ${x2} ${y2}`;
-          }
+        } else if (x2 >= x1) {
+          // Direct forward connection: smooth horizontal cubic bezier
+          const dist = Math.max(18, (x2 - x1) * 0.45);
+          d = `M ${x1} ${y1} C ${x1 + dist} ${y1}, ${x2 - dist} ${y2}, ${x2} ${y2}`;
         } else {
-          // Direct forward (colTo === colFrom + 1)
-          const dist = Math.max(24, x2 - x1);
-          const cpX1 = x1 + dist * 0.45;
-          const cpX2 = x2 - dist * 0.45;
-          d = `M ${x1} ${y1} C ${cpX1} ${y1}, ${cpX2} ${y2}, ${x2} ${y2}`;
+          // Reverse connection (if any): compact arch without going to the bottom
+          const archX = (x1 + x2) / 2;
+          d = `M ${x1} ${y1} C ${x1 + 18} ${y1}, ${archX} ${Math.min(y1, y2) - 12}, ${x2} ${y2}`;
         }
 
         const isHighlighted = activeFilterId && (activeFilterId === conn.from || activeFilterId === conn.to);

@@ -2104,29 +2104,28 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     }
                 ],
                                 "connections": [
-                    # 1. Giriş & Dış Trafik (Column 1 -> Column 2 & 3)
+                    # 1. Giriş & Dış Trafik (Column 1 -> Column 2)
                     {"from": "client_customer", "to": "srv_github_platform", "label": "Web Sitesi Ziyareti & CDN", "type": "network"},
                     {"from": "client_customer", "to": "srv_hetzner_cloud", "label": "Dinamik API İstekleri (Stok/Sepet)", "type": "network"},
-                    {"from": "client_customer", "to": "svc_paytr", "label": "3D Secure Ödeme Talebi", "type": "payment"},
                     {"from": "trigger_cron_2h", "to": "srv_hetzner_cloud", "label": "2 Saatlik Otonom Döngü Tetikleyici", "type": "trigger"},
                     {"from": "trigger_github_dispatch", "to": "srv_github_platform", "label": "cloud_market_sync.py CI/CD", "type": "trigger"},
 
-                    # 2. Sunucu & Altyapı İletişimi (Column 2 -> Column 3 & 6)
-                    {"from": "srv_hetzner_cloud", "to": "svc_smtp_mail", "label": "Sipariş Onay & Fatura Postası", "type": "data"},
+                    # 2. Sunucu & Altyapı İletişimi (Column 2 -> Column 3, 4, 6)
+                    {"from": "srv_hetzner_cloud", "to": "svc_paytr", "label": "3D Secure Ödeme Entegrasyonu", "type": "payment"},
+                    {"from": "srv_hetzner_cloud", "to": "svc_smtp_mail", "label": "İşlemsel E-Posta Servisi", "type": "data"},
+                    {"from": "srv_hetzner_cloud", "to": "subagent_9_security", "label": "WAF & Girdi Güvenlik Probu", "type": "probe"},
+                    {"from": "srv_hetzner_cloud", "to": "lead_supervisor", "label": "Sunucu Durumu & Telemetri", "type": "data"},
                     {"from": "srv_github_platform", "to": "output_pozitron_web", "label": "GitHub Pages CDN Canlı Yayını", "type": "publish"},
 
-                    # 3. Harici Servisler, POS & Güvenlik (Column 3 -> Column 1, 2, 4)
-                    {"from": "svc_paytr", "to": "srv_hetzner_cloud", "label": "Ödeme Onay Webhook (/api/paytr/callback)", "type": "payment"},
-                    {"from": "svc_smtp_mail", "to": "client_customer", "label": "Müşteriye Sipariş Dekontu İletimi", "type": "data"},
-                    {"from": "subagent_9_security", "to": "srv_hetzner_cloud", "label": "WAF & SQLi Savunma Probu", "type": "probe"},
+                    # 3. Harici Servisler & Güvenlik (Column 3 -> Column 3 & 4)
+                    {"from": "svc_paytr", "to": "svc_smtp_mail", "label": "Ödeme Başarılı -> Fatura & Dekont", "type": "payment"},
                     {"from": "subagent_9_security", "to": "lead_supervisor", "label": "Siber Güvenlik Denetim Raporu", "type": "probe"},
                     {"from": "svc_gemini_ai", "to": "lead_supervisor", "label": "Gemini 3.8 Flash Karar Yanıtı", "type": "data"},
 
-                    # 4. İstihbarat & Karar Motoru (Column 4 Dahili & Supervisor Direktifleri -> Column 5)
+                    # 4. İstihbarat & Karar Motoru (Column 4 -> Column 4 & 5)
                     {"from": "subagent_5_price", "to": "lead_supervisor", "label": "Fiyat Arbitraj Raporu", "type": "data"},
                     {"from": "subagent_3_telemetry", "to": "lead_supervisor", "label": "Performans Metrikleri", "type": "data"},
                     {"from": "subagent_6_trend", "to": "lead_supervisor", "label": "Yeni Trend Ürün Önerileri", "type": "data"},
-                    {"from": "lead_supervisor", "to": "svc_gemini_ai", "label": "Bilişsel Analiz & Direktif İsteği", "type": "data"},
                     {"from": "lead_supervisor", "to": "subagent_8_procurement", "label": "procurement_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_1_instagram", "label": "instagram_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_2_reddit", "label": "reddit_directive", "type": "directive"},
@@ -2134,9 +2133,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     {"from": "lead_supervisor", "to": "subagent_7_qa", "label": "qa_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_10_media", "label": "media_quality_directive", "type": "directive"},
 
-                    # 5. Uzman Ajanlar -> Kayıt & Dağıtım (Column 5 -> Column 2 & 6)
-                    {"from": "subagent_8_procurement", "to": "srv_hetzner_cloud", "label": "Tedarik Planı Kaydı (JSON/CSV)", "type": "data"},
-                    {"from": "subagent_7_qa", "to": "srv_hetzner_cloud", "label": "API, Port & DB Sağlık Probu", "type": "probe"},
+                    # 5. Uzman Ajanlar -> Kayıt & Dağıtım (Column 5 -> Column 6)
+                    {"from": "subagent_8_procurement", "to": "output_pozitron_web", "label": "Tedarik Planı & Stok Girişi", "type": "data"},
+                    {"from": "subagent_7_qa", "to": "output_pozitron_web", "label": "Mağaza Sağlık & Sepet Doğrulama", "type": "probe"},
                     {"from": "subagent_1_instagram", "to": "svc_meta_graph", "label": "Afiş & Hikaye Yayını", "type": "publish"},
                     {"from": "subagent_2_reddit", "to": "svc_reddit_platform", "label": "Otonom Yanıt Yayını", "type": "publish"},
                     {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "İç Linkli Teknik Rehber", "type": "publish"},
