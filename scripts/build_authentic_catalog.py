@@ -1205,9 +1205,9 @@ CATALOG_SPECS = [
         ]
     },
     {
-        "cat": "antennas", "prefix": "PZTR-ANT", "brand": "MenaceRC", "model": "Matchstick 5.8GHz",
-        "base_name_en": "MenaceRC Matchstick 5.8GHz Carbon Omni Antenna",
-        "base_name_tr": "MenaceRC Matchstick 5.8GHz Karbon Destekli Anten",
+        "cat": "antennas", "prefix": "PZTR-ANT", "brand": "TrueRC", "model": "Matchstick 5.8GHz",
+        "base_name_en": "TrueRC Matchstick 5.8GHz Carbon Omni Antenna",
+        "base_name_tr": "TrueRC Matchstick 5.8GHz Karbon Destekli Anten",
         "base_price": 16.90, "image_key": "MenaceRC Matchstick 5.8GHz",
         "variants": [
             ("RHCP SMA Straight", "Impact Resistant Polycarbonate Head", "SMA Male", 16.90),
