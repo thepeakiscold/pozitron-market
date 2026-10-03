@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-03T11:30:09.179351",
+  "timestamp": "2026-10-03T11:57:25.238486",
   "total_products": 511,
   "category_distribution": {
     "motors": 55,
@@ -26,7 +26,7 @@
       "category": "motors",
       "image_file": "PZTR-MOT-0001.jpg",
       "source_master": "model_F60_PRO_V.jpg",
-      "file_size": 77928
+      "file_size": 70942
     },
     {
       "sku": "PZTR-MOT-0002",
@@ -36,7 +36,7 @@
       "category": "motors",
       "image_file": "PZTR-MOT-0002.jpg",
       "source_master": "model_F60_PRO_V.jpg",
-      "file_size": 77928
+      "file_size": 70942
     },
     {
       "sku": "PZTR-MOT-0003",
@@ -46,7 +46,7 @@
       "category": "motors",
       "image_file": "PZTR-MOT-0003.jpg",
       "source_master": "model_F60_PRO_V.jpg",
-      "file_size": 77928
+      "file_size": 70942
     },
     {
       "sku": "PZTR-MOT-0004",
@@ -56,7 +56,7 @@
       "category": "motors",
       "image_file": "PZTR-MOT-0004.jpg",
       "source_master": "model_F60_PRO_V.jpg",
-      "file_size": 77928
+      "file_size": 70942
     },
     {
       "sku": "PZTR-MOT-0005",
@@ -66,7 +66,7 @@
       "category": "motors",
       "image_file": "PZTR-MOT-0005.jpg",
       "source_master": "model_F60_PRO_V.jpg",
-      "file_size": 77928
+      "file_size": 70942
     },
     {
       "sku": "PZTR-MOT-0006",
