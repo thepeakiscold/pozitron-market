@@ -1,7 +1,7 @@
 {
-  "today_date": "2026-10-02",
-  "today_follows_count": 2,
-  "today_comments_count": 2,
+  "today_date": "2026-10-03",
+  "today_follows_count": 10,
+  "today_comments_count": 10,
   "max_daily_limit": 10,
   "followed_user_ids": [
     "73181351103",
@@ -156,7 +156,25 @@
     "46534860962",
     "36008896229",
     "44043475831",
-    "1668563160"
+    "1668563160",
+    "1545290710",
+    "37319464229",
+    "38699028846",
+    "46175559102",
+    "74859192805",
+    "51203602519",
+    "15651011709",
+    "34478931885",
+    "45245547486",
+    "1934497006",
+    "28435903443",
+    "14501438855",
+    "4178153435",
+    "64322492483",
+    "528482016",
+    "41700850451",
+    "44314896599",
+    "69541236531"
   ],
   "commented_media_ids": [
     "3983912198478190450_73181351103",
@@ -311,7 +329,25 @@
     "3988374496191231741_62610541565",
     "3797578917557885364_1451616674",
     "2058226878682201313_14256933607",
-    "2058229738394384671_14256933607"
+    "2058229738394384671_14256933607",
+    "3975192646882729318_1545290710",
+    "3998489061535987401_38699028846",
+    "3999287111457097901_46175559102",
+    "3999276406099091732_74859192805",
+    "3998918100047131356_51203602519",
+    "3998514211329161722_15651011709",
+    "3999284793164598534_34478931885",
+    "3998415328214611937_80676880898",
+    "2505447087887094058_45245547486",
+    "2766319498413523870_1934497006",
+    "3648946150326525341_28435903443",
+    "2537836945065792612_14501438855",
+    "3798242655143314337_4178153435",
+    "3271285185096998802_64322492483",
+    "3073384276786536525_1934497006",
+    "2541307847556398916_14501438855",
+    "3287406890872505771_64322492483",
+    "3317265323428622288_64322492483"
   ],
   "history": [
     {
@@ -2913,6 +2949,312 @@
       "username": "memo.sky",
       "user_id": "1668563160",
       "timestamp": "2026-10-02T19:43:42.194134",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "kubra_oktan",
+      "user_id": "1545290710",
+      "timestamp": "2026-10-02T23:38:13.383269",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "kubra_oktan",
+      "user_id": "1545290710",
+      "media_id": "3975192646882729318_1545290710",
+      "media_code": "DcquKafMJ1m",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-10-02T23:38:23.564609",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "profiloortaokulu63",
+      "user_id": "37319464229",
+      "timestamp": "2026-10-02T23:38:45.716149",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gezginn08_",
+      "user_id": "38699028846",
+      "timestamp": "2026-10-02T23:39:23.046147",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "gezginn08_",
+      "user_id": "38699028846",
+      "media_id": "3998489061535987401_38699028846",
+      "media_code": "Dd9fJ3XIzbJ",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-10-02T23:39:36.168614",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "urfa.tarihi",
+      "user_id": "46175559102",
+      "timestamp": "2026-10-02T23:39:57.932723",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "urfa.tarihi",
+      "user_id": "46175559102",
+      "media_id": "3999287111457097901_46175559102",
+      "media_code": "DeAUnBRMsit",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-10-02T23:40:07.915145",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "biranneningunlugu.90",
+      "user_id": "74859192805",
+      "timestamp": "2026-10-02T23:40:32.204393",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "biranneningunlugu.90",
+      "user_id": "74859192805",
+      "media_id": "3999276406099091732_74859192805",
+      "media_code": "DeASLPIIyEU",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-10-02T23:40:42.080417",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "alicannyildizz1",
+      "user_id": "51203602519",
+      "timestamp": "2026-10-02T23:41:11.146685",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "alicannyildizz1",
+      "user_id": "51203602519",
+      "media_id": "3998918100047131356_51203602519",
+      "media_code": "Dd_AtMnMHLc",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-10-02T23:41:24.598072",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "skysdronetr",
+      "user_id": "15651011709",
+      "timestamp": "2026-10-02T23:41:53.609650",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "skysdronetr",
+      "user_id": "15651011709",
+      "media_id": "3998514211329161722_15651011709",
+      "media_code": "Dd9k317oDn6",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-10-02T23:42:06.488147",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "tugbadaily.vlog",
+      "user_id": "34478931885",
+      "timestamp": "2026-10-02T23:42:32.533162",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "tugbadaily.vlog",
+      "user_id": "34478931885",
+      "media_id": "3999284793164598534_34478931885",
+      "media_code": "DeAUFSMMo0G",
+      "comment": "Tebrikler pilot, yarış parkurunda başarılarının devamını dileriz!",
+      "timestamp": "2026-10-02T23:42:44.467853",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "balgibicift",
+      "user_id": "80676880898",
+      "media_id": "3998415328214611937_80676880898",
+      "media_code": "Dd9OY52tXfh",
+      "comment": "Tebrikler ve başarılar! Parkurda bol podyumlu ve kırımsız yarışlar dileriz.",
+      "timestamp": "2026-10-02T23:43:09.869399",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "amazingfpv",
+      "user_id": "45245547486",
+      "timestamp": "2026-10-03T01:45:41.433143",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "amazingfpv",
+      "user_id": "45245547486",
+      "media_id": "2505447087887094058_45245547486",
+      "media_code": "CLFItodDBEq",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı keyifli uçuşlar dileriz!",
+      "timestamp": "2026-10-03T01:45:50.846142",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "bambucopter",
+      "user_id": "1934497006",
+      "timestamp": "2026-10-03T01:46:14.250910",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "bambucopter",
+      "user_id": "1934497006",
+      "media_id": "2766319498413523870_1934497006",
+      "media_code": "CZj8O1eLMOe",
+      "comment": "Süper akıcı freestyle hatları, keyifle izledik! Kırımsız günler dileriz.",
+      "timestamp": "2026-10-03T01:46:26.080801",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "rontworry",
+      "user_id": "28435903443",
+      "timestamp": "2026-10-03T01:46:57.938531",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "rontworry",
+      "user_id": "28435903443",
+      "media_id": "3648946150326525341_28435903443",
+      "media_code": "DKjqTDWvd2d",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı keyifli uçuşlar dileriz!",
+      "timestamp": "2026-10-03T01:47:10.832520",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "trickshot_production",
+      "user_id": "14501438855",
+      "timestamp": "2026-10-03T01:47:45.125554",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "trickshot_production",
+      "user_id": "14501438855",
+      "media_id": "2537836945065792612_14501438855",
+      "media_code": "CM4NUFoglRk",
+      "comment": "Setup ve motor tepkisi çok iyi görünüyor, elinize sağlık!",
+      "timestamp": "2026-10-03T01:47:53.738425",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "latiftufekcifpv",
+      "user_id": "4178153435",
+      "timestamp": "2026-10-03T01:48:23.042304",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "latiftufekcifpv",
+      "user_id": "4178153435",
+      "media_id": "3798242655143314337_4178153435",
+      "media_code": "DS2EZImjcOh",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-03T01:48:32.193760",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "skyfeelingmedia",
+      "user_id": "64322492483",
+      "timestamp": "2026-10-03T01:49:01.624742",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "skyfeelingmedia",
+      "user_id": "64322492483",
+      "media_id": "3271285185096998802_64322492483",
+      "media_code": "C1l8Is4tF-S",
+      "comment": "Çok temiz ve özenli bir build olmuş, elinize sağlık! Maiden uçuşunda başarılar.",
+      "timestamp": "2026-10-03T01:49:14.651866",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "bambucopter",
+      "user_id": "1934497006",
+      "media_id": "3073384276786536525_1934497006",
+      "media_code": "Cqm2rdcIeBN",
+      "comment": "Tebrikler, çok akıcı ve temiz bir uçuş olmuş! Gökyüzünde başarılar.",
+      "timestamp": "2026-10-03T01:49:41.632916",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "trickshot_production",
+      "user_id": "14501438855",
+      "media_id": "2541307847556398916_14501438855",
+      "media_code": "CNEigXegv9E",
+      "comment": "Harika uçuş! Akıcı hatlar ve temiz kontrol, kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-03T01:50:04.949706",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "skyfeelingmedia",
+      "user_id": "64322492483",
+      "media_id": "3287406890872505771_64322492483",
+      "media_code": "C2fNyZaoIWr",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-03T01:50:39.183366",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "skyfeelingmedia",
+      "user_id": "64322492483",
+      "media_id": "3317265323428622288_64322492483",
+      "media_code": "C4JSzxsry_Q",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-03T01:51:02.580455",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "mparlakyigit",
+      "user_id": "528482016",
+      "timestamp": "2026-10-03T01:51:34.041717",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "msaidcavus",
+      "user_id": "41700850451",
+      "timestamp": "2026-10-03T01:52:03.057714",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gezdim_dinledim",
+      "user_id": "44314896599",
+      "timestamp": "2026-10-03T01:52:24.464492",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "1dilay_blog",
+      "user_id": "69541236531",
+      "timestamp": "2026-10-03T01:52:48.103359",
       "status": "success"
     }
   ]

@@ -1,16 +1,16 @@
 {
-  "timestamp": "2026-10-02T20:50:47.467217",
-  "total_products_scanned": 15,
-  "verified_clean_count": 13,
-  "visual_health_score": 86,
+  "timestamp": "2026-10-03T05:35:18.964095",
+  "total_products_scanned": 50,
+  "verified_clean_count": 11,
+  "visual_health_score": 22,
   "issues_summary": {
     "category_mismatch": 0,
-    "duplicate_images": 2,
+    "duplicate_images": 39,
     "low_resolution": 0,
     "corrupt_or_missing": 0,
     "description_issues": 0
   },
-  "quarantine_candidates_count": 2,
+  "quarantine_candidates_count": 39,
   "findings": [
     {
       "product_id": "716dde25-4d11-4718-b6ac-e1e790e8faf9",
@@ -23,9 +23,9 @@
       "confidence_score": 0.6,
       "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
       "details": {
-        "file_size_bytes": 136201,
-        "width": 940,
-        "height": 1051,
+        "file_size_bytes": 77928,
+        "width": 1000,
+        "height": 1000,
         "format": "JPEG",
         "duplicate_with_sku": "PZTR-MOT-0001"
       }
@@ -41,11 +41,677 @@
       "confidence_score": 0.6,
       "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
       "details": {
-        "file_size_bytes": 67318,
-        "width": 1400,
-        "height": 1400,
-        "format": "WEBP",
+        "file_size_bytes": 107765,
+        "width": 2000,
+        "height": 2000,
+        "format": "JPEG",
         "duplicate_with_sku": "PZTR-MOT-0002"
+      }
+    },
+    {
+      "product_id": "94a20986-efe3-4653-97f7-fc9200589b17",
+      "sku": "PZTR-MOT-0014",
+      "name": "BrotherHobby XING2 2207 V2 Fırçasız FPV Drone Motoru (2755KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0014.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 27641,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0003"
+      }
+    },
+    {
+      "product_id": "f3b82e2e-7750-4c29-ba51-262307bc3a60",
+      "sku": "PZTR-MOT-0015",
+      "name": "BetaFPV SPEEDX2 2105.5 V2 Fırçasız FPV Drone Motoru (2650KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0015.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 76095,
+        "width": 2000,
+        "height": 2000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0004"
+      }
+    },
+    {
+      "product_id": "8b59548c-72a8-416a-9103-7ab4d14fe46b",
+      "sku": "PZTR-MOT-0016",
+      "name": "Flywoo Avenger V3 2306.5 V2 Fırçasız FPV Drone Motoru (1750KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0016.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 31513,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0005"
+      }
+    },
+    {
+      "product_id": "97ddb276-c0ca-41d0-9fe7-8e849043dba5",
+      "sku": "PZTR-MOT-0017",
+      "name": "iFlight Velox V3 2207 V2 Fırçasız FPV Drone Motoru (1950KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0017.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 81189,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0006"
+      }
+    },
+    {
+      "product_id": "f6e8a92c-ead3-476b-84fe-4c9aaca51ae7",
+      "sku": "PZTR-MOT-0018",
+      "name": "GEPRC NINJA 1404 V2 Fırçasız FPV Drone Motoru (4600KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0018.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 55305,
+        "width": 1200,
+        "height": 1200,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0007"
+      }
+    },
+    {
+      "product_id": "7d1ed636-155a-4c33-8c60-cdcaafa1fdf7",
+      "sku": "PZTR-MOT-0019",
+      "name": "Sunnysky ROBO RB 1202.5 V2 Fırçasız FPV Drone Motoru (6000KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0019.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 57981,
+        "width": 1800,
+        "height": 1800,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0008"
+      }
+    },
+    {
+      "product_id": "7da517b1-ceb6-44ba-a0a9-3709f1230c14",
+      "sku": "PZTR-MOT-0020",
+      "name": "AxisFlyer C2807 2807 V2 Fırçasız FPV Drone Motoru (1500KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0020.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 26656,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0009"
+      }
+    },
+    {
+      "product_id": "ae96867c-718c-4d68-8b8b-0e8d2e40ec5c",
+      "sku": "PZTR-MOT-0021",
+      "name": "FlashHobby U8 II Heavy Lift 8515 V2 Fırçasız FPV Drone Motoru (85KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0021.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 5194,
+        "width": 361,
+        "height": 361,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0010"
+      }
+    },
+    {
+      "product_id": "2a2f8538-8d13-4566-bbb4-3b4c5572ad42",
+      "sku": "PZTR-MOT-0022",
+      "name": "MEPSKing V2207.5 2207.5 V2 Fırçasız FPV Drone Motoru (2550KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0022.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 38546,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0011"
+      }
+    },
+    {
+      "product_id": "f18cc7be-b8e2-4b89-a473-0be5189678e4",
+      "sku": "PZTR-MOT-0023",
+      "name": "T-Motor F60 PRO V 2207.5 V3 Fırçasız FPV Drone Motoru (2020KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0023.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 77928,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0001"
+      }
+    },
+    {
+      "product_id": "992c4578-3bf3-4c3e-afa3-112463181745",
+      "sku": "PZTR-MOT-0024",
+      "name": "EMAX ECO II 2207 V3 Fırçasız FPV Drone Motoru (2400KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0024.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 107765,
+        "width": 2000,
+        "height": 2000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0002"
+      }
+    },
+    {
+      "product_id": "d753e8d6-b77c-4ca6-acb8-8da04e65622d",
+      "sku": "PZTR-MOT-0025",
+      "name": "BrotherHobby XING2 2207 V3 Fırçasız FPV Drone Motoru (1855KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0025.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 27641,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0003"
+      }
+    },
+    {
+      "product_id": "750ba6f7-1d99-48b0-af7e-9b8a7f4247c9",
+      "sku": "PZTR-MOT-0026",
+      "name": "BetaFPV SPEEDX2 2105.5 V3 Fırçasız FPV Drone Motoru (3450KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0026.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 76095,
+        "width": 2000,
+        "height": 2000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0004"
+      }
+    },
+    {
+      "product_id": "ba86ca5f-c74a-4bf9-b6b6-c36e8f2e97ca",
+      "sku": "PZTR-MOT-0027",
+      "name": "Flywoo Avenger V3 2306.5 V3 Fırçasız FPV Drone Motoru (2450KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0027.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 31513,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0005"
+      }
+    },
+    {
+      "product_id": "02d59e3c-fa3f-4bcd-9dd5-e2021407437c",
+      "sku": "PZTR-MOT-0028",
+      "name": "iFlight Velox V3 2207 V3 Fırçasız FPV Drone Motoru (1750KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0028.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 81189,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0006"
+      }
+    },
+    {
+      "product_id": "193c99a2-8035-403b-8f83-ab798a02abd0",
+      "sku": "PZTR-MOT-0029",
+      "name": "GEPRC NINJA 1404 V3 Fırçasız FPV Drone Motoru (3800KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0029.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 55305,
+        "width": 1200,
+        "height": 1200,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0007"
+      }
+    },
+    {
+      "product_id": "379eefb3-e5b8-48d0-bfd5-2443a9675ee8",
+      "sku": "PZTR-MOT-0030",
+      "name": "Sunnysky ROBO RB 1202.5 V3 Fırçasız FPV Drone Motoru (11500KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0030.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 57981,
+        "width": 1800,
+        "height": 1800,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0008"
+      }
+    },
+    {
+      "product_id": "4c6c6d7e-e1ce-4d07-8154-6a595824cae0",
+      "sku": "PZTR-MOT-0031",
+      "name": "AxisFlyer C2807 2807 V3 Fırçasız FPV Drone Motoru (1300KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0031.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 26656,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0009"
+      }
+    },
+    {
+      "product_id": "34cc01e3-a349-447c-b8a0-54294f1ed07b",
+      "sku": "PZTR-MOT-0032",
+      "name": "FlashHobby U8 II Heavy Lift 8515 V3 Fırçasız FPV Drone Motoru (100KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0032.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 5194,
+        "width": 361,
+        "height": 361,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0010"
+      }
+    },
+    {
+      "product_id": "236ff230-6472-4915-935a-73bc636e9009",
+      "sku": "PZTR-MOT-0033",
+      "name": "MEPSKing V2207.5 2207.5 V3 Fırçasız FPV Drone Motoru (1960KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0033.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 38546,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0011"
+      }
+    },
+    {
+      "product_id": "dd7884d2-ddbf-4679-aa27-b7753f9be339",
+      "sku": "PZTR-MOT-0034",
+      "name": "T-Motor F60 PRO V 2207.5 V4 Fırçasız FPV Drone Motoru (1950KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0034.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 77928,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0001"
+      }
+    },
+    {
+      "product_id": "90a74c55-333d-4036-b1bb-5f3ef4349b33",
+      "sku": "PZTR-MOT-0035",
+      "name": "EMAX ECO II 2207 V4 Fırçasız FPV Drone Motoru (1900KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0035.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 107765,
+        "width": 2000,
+        "height": 2000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0002"
+      }
+    },
+    {
+      "product_id": "b9ba0f9a-f0d6-4df4-9e9b-c787c12dbc5e",
+      "sku": "PZTR-MOT-0036",
+      "name": "BrotherHobby XING2 2207 V4 Fırçasız FPV Drone Motoru (2755KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0036.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 27641,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0003"
+      }
+    },
+    {
+      "product_id": "e66dada5-9138-4289-9259-c02a27cb45e4",
+      "sku": "PZTR-MOT-0037",
+      "name": "BetaFPV SPEEDX2 2105.5 V4 Fırçasız FPV Drone Motoru (2650KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0037.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 76095,
+        "width": 2000,
+        "height": 2000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0004"
+      }
+    },
+    {
+      "product_id": "58f5069e-6d5a-4918-9677-40782831fb6a",
+      "sku": "PZTR-MOT-0038",
+      "name": "Flywoo Avenger V3 2306.5 V4 Fırçasız FPV Drone Motoru (1950KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0038.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 31513,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0005"
+      }
+    },
+    {
+      "product_id": "8de7a8e2-bdf9-413e-895c-a7c13c0b16af",
+      "sku": "PZTR-MOT-0039",
+      "name": "iFlight Velox V3 2207 V4 Fırçasız FPV Drone Motoru (2450KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0039.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 81189,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0006"
+      }
+    },
+    {
+      "product_id": "a6ddddb3-1025-4868-add9-561a8cb923fc",
+      "sku": "PZTR-MOT-0040",
+      "name": "GEPRC NINJA 1404 V4 Fırçasız FPV Drone Motoru (2750KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0040.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 55305,
+        "width": 1200,
+        "height": 1200,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0007"
+      }
+    },
+    {
+      "product_id": "6f4de59d-f494-478f-a153-1951ca417424",
+      "sku": "PZTR-MOT-0041",
+      "name": "Sunnysky ROBO RB 1202.5 V4 Fırçasız FPV Drone Motoru (6000KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0041.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 57981,
+        "width": 1800,
+        "height": 1800,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0008"
+      }
+    },
+    {
+      "product_id": "fa5c5036-fc20-4131-8006-e03aee1f90ce",
+      "sku": "PZTR-MOT-0042",
+      "name": "AxisFlyer C2807 2807 V4 Fırçasız FPV Drone Motoru (1700KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0042.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 26656,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0009"
+      }
+    },
+    {
+      "product_id": "b29f5779-d6e6-4168-9c55-72774ad9c075",
+      "sku": "PZTR-MOT-0043",
+      "name": "FlashHobby U8 II Heavy Lift 8515 V4 Fırçasız FPV Drone Motoru (85KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0043.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 5194,
+        "width": 361,
+        "height": 361,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0010"
+      }
+    },
+    {
+      "product_id": "79ed81c1-573d-4554-9fd4-8b7bd15bb529",
+      "sku": "PZTR-MOT-0044",
+      "name": "MEPSKing V2207.5 2207.5 V4 Fırçasız FPV Drone Motoru (2550KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0044.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 38546,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0011"
+      }
+    },
+    {
+      "product_id": "7effdeb1-3704-4b42-9171-aa322d34cd84",
+      "sku": "PZTR-MOT-0045",
+      "name": "T-Motor F60 PRO V 2207.5 V5 Fırçasız FPV Drone Motoru (1750KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0045.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 77928,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0001"
+      }
+    },
+    {
+      "product_id": "2c9da8b7-a745-4dfd-bb99-f2066a331b96",
+      "sku": "PZTR-MOT-0046",
+      "name": "EMAX ECO II 2207 V5 Fırçasız FPV Drone Motoru (1700KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0046.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 107765,
+        "width": 2000,
+        "height": 2000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0002"
+      }
+    },
+    {
+      "product_id": "6f8c07ed-2ed1-458c-becf-a2025aef2464",
+      "sku": "PZTR-MOT-0047",
+      "name": "BrotherHobby XING2 2207 V5 Fırçasız FPV Drone Motoru (1855KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0047.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 27641,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0003"
+      }
+    },
+    {
+      "product_id": "66822352-f13b-45cc-8b37-b8ffa0c099c0",
+      "sku": "PZTR-MOT-0048",
+      "name": "BetaFPV SPEEDX2 2105.5 V5 Fırçasız FPV Drone Motoru (3450KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0048.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 76095,
+        "width": 2000,
+        "height": 2000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0004"
+      }
+    },
+    {
+      "product_id": "e0fd1c2b-2c43-4c5a-a29b-443a729bbfc6",
+      "sku": "PZTR-MOT-0049",
+      "name": "Flywoo Avenger V3 2306.5 V5 Fırçasız FPV Drone Motoru (1750KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0049.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 31513,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0005"
+      }
+    },
+    {
+      "product_id": "d93ed34b-f479-4e2d-aeaa-60488a464b03",
+      "sku": "PZTR-MOT-0050",
+      "name": "iFlight Velox V3 2207 V5 Fırçasız FPV Drone Motoru (1950KV)",
+      "category_id": "motors",
+      "current_image": "./assets/products/PZTR-MOT-0050.jpg",
+      "status": "DUPLICATE",
+      "issue_type": "DUPLICATE_IMAGE_HASH",
+      "confidence_score": 0.6,
+      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
+      "details": {
+        "file_size_bytes": 81189,
+        "width": 1000,
+        "height": 1000,
+        "format": "JPEG",
+        "duplicate_with_sku": "PZTR-MOT-0006"
       }
     }
   ]
