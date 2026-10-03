@@ -135,12 +135,11 @@
     ]
   },
   "AM32 45A Mini": {
-    "source_store": "https://www.racedayquads.com",
-    "matched_title": "Flywoo GOKU G45M 45A 3-6S AM32 4-in-1 ESC - 20x20",
-    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-goku-g45m-45a-3-6s-am32-4-in-1-esc-20x20-esc-1157042491.jpg?v=1745145285",
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "AM32 45A Mini ESC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/Skystars-KM45A-4in1-ESC-1.jpg?v=1658428800",
     "gallery": [
-      "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-goku-g45m-45a-3-6s-am32-4-in-1-esc-20x20-esc-1157042491.jpg?v=1745145285",
-      "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-goku-g45m-45a-3-6s-am32-4-in-1-esc-20x20-esc-1157042492.jpg?v=1745145286"
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/Skystars-KM45A-4in1-ESC-1.jpg?v=1658428800"
     ]
   },
   "Crossfire 4in1 60A": {
@@ -411,11 +410,9 @@
   "HDZero Nano 90 Camera": {
     "source_store": "https://www.racedayquads.com",
     "matched_title": "RunCam HDZero Nano 90 V2 FPV Camera",
-    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/runcam-hdzero-nano-90-v2-fpv-camera-camera-1223881790.jpg?v=1772050808",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/runcam-runcam-hdzero-nano-90-v2-fpv-camera-camera-30674321145969.jpg?v=1762442607",
     "gallery": [
-      "https://cdn.shopify.com/s/files/1/1285/4651/files/runcam-hdzero-nano-90-v2-fpv-camera-camera-1223881790.jpg?v=1772050808",
-      "https://cdn.shopify.com/s/files/1/1285/4651/files/runcam-hdzero-nano-90-v2-fpv-camera-camera-1223881791.jpg?v=1772050749",
-      "https://cdn.shopify.com/s/files/1/1285/4651/files/runcam-hdzero-nano-90-v2-fpv-camera-camera-1223881789.jpg?v=1772050687"
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/runcam-runcam-hdzero-nano-90-v2-fpv-camera-camera-30674321145969.jpg?v=1762442607"
     ]
   },
   "Thumb Pro 4K Action Camera": {
@@ -905,6 +902,845 @@
     "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-goku-g45m-45a-3-6s-am32-4-in-1-esc-20x20-esc-1157042491.jpg?v=1745145285",
     "gallery": [
       "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-goku-g45m-45a-3-6s-am32-4-in-1-esc-20x20-esc-1157042491.jpg?v=1745145285"
+    ]
+  },
+  "RadioMaster TX16S MKII": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "RadioMaster TX16S MKII MAX EdgeTX RC Transmitter w/ V4.0 Hall Gimbals",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbyporter-radiomaster-tx16s-mkii-max-edgetx-rc-transmitter-w-v4-0-hall-gimbals-choose-version-black-4in1-rc-tx-29781465530481.jpg?v=1762441729",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbyporter-radiomaster-tx16s-mkii-max-edgetx-rc-transmitter-w-v4-0-hall-gimbals-choose-version-black-4in1-rc-tx-29781465530481.jpg?v=1762441729",
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbyporter-radiomaster-tx16s-mkii-edgetx-rc-transmitter-w-v4-0-hall-gimbals-choose-version-rc-tx-29781459959921.jpg?v=1762441728",
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/hobbyporter-radiomaster-tx16s-mkii-max-edgetx-rc-transmitter-w-ag01-hall-gimbals-black-elrs-2-4ghz-rc-tx-30821505925233.jpg?v=1762443302"
+    ]
+  },
+  "RadioMaster Boxer": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "RadioMaster Boxer EdgeTX RC Transmitter",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbyporter-radiomaster-boxer-edgetx-rc-transmitter-choose-version-elrs-rc-tx-30528474120305.jpg?v=1762442259",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbyporter-radiomaster-boxer-edgetx-rc-transmitter-choose-version-elrs-rc-tx-30528474120305.jpg?v=1762442259",
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbyporter-radiomaster-boxer-edgetx-rc-transmitter-choose-version-4-in-1-rc-tx-30528474153073.jpg?v=1737259425"
+    ]
+  },
+  "RadioMaster Pocket": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "RadioMaster Pocket EdgeTX RC Transmitter",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/hobbyporter-radiomaster-pocket-edgetx-rc-transmitter-choose-version-elrs-charcoal-rc-tx-30788356145265.webp?v=1762443112",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/hobbyporter-radiomaster-pocket-edgetx-rc-transmitter-choose-version-elrs-charcoal-rc-tx-30788356145265.webp?v=1762443112",
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/hobbyporter-radiomaster-pocket-edgetx-rc-transmitter-choose-version-elrs-transparent-rc-tx-30788356178033.webp?v=1737315231"
+    ]
+  },
+  "RadioMaster RP1": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "RadioMaster RP1 V2 2.4GHz ELRS Nano Receiver",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbyporter-radiomaster-rp1-v2-2-4ghz-elrs-nano-receiver-rx-30048602652785.jpg?v=1762441908",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbyporter-radiomaster-rp1-v2-2-4ghz-elrs-nano-receiver-rx-30048602652785.jpg?v=1762441908"
+    ]
+  },
+  "TBS Crossfire Nano RX": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "TBS Crossfire Nano RX Pro",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-crossfire-nano-rx-pro-rx-30070381674609.jpg?v=1762441935",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-crossfire-nano-rx-pro-rx-30070381674609.jpg?v=1762441935"
+    ]
+  },
+  "BetaFPV SuperD ELRS": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "BetaFPV SuperD ELRS Diversity Receiver",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/BetaFPV-SuperD-2.4GHz-Diversity-Receiver-1.jpg?v=1678144211",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/BetaFPV-SuperD-2.4GHz-Diversity-Receiver-1.jpg?v=1678144211"
+    ]
+  },
+  "T-Motor F60 PRO V": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "T-Motor F60 PRO IV V2.0 2550KV Motor - Grey",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/2_60ef370f-ac24-411e-9eee-ddb00c6c2bf8.jpg?v=1611107546",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/2_60ef370f-ac24-411e-9eee-ddb00c6c2bf8.jpg?v=1611107546",
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/6_7682025b-2b6c-4faa-9ec8-bbd5966d96a3.jpg?v=1611107546"
+    ]
+  },
+  "T-Motor Velox V3": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "T-Motor Velox Veloce V2307 V2 - 2550KV",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/1_730c7ebf-dadc-4443-a339-c201896f5d45.jpg?v=1612312124",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/1_730c7ebf-dadc-4443-a339-c201896f5d45.jpg?v=1612312124",
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/2_ad97ccef-4dbc-411a-9da3-613758b850ea.jpg?v=1612312124"
+    ]
+  },
+  "iFlight XING2": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "iFlight Xing2 2207 1855Kv Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/iflight-iflight-xing2-2207-1855kv-motor-motor-28328603123825.jpg?v=1762441178",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/iflight-iflight-xing2-2207-1855kv-motor-motor-28328603123825.jpg?v=1762441178"
+    ]
+  },
+  "EMAX ECO II": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "EMAX ECO II Series 2207 2400Kv Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/emax-emax-eco-ii-series-2207-2400kv-motor-motor-15722738974833.jpg?v=1762440974",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/emax-emax-eco-ii-series-2207-2400kv-motor-motor-15722738974833.jpg?v=1762440974"
+    ]
+  },
+  "BrotherHobby Avenger V3": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "BrotherHobby Avenger V3 2812 1115Kv Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/brotherhobby-brotherhobby-avenger-v3-2812-1115kv-motor-motor-14250615996529.jpg?v=1762440654",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/brotherhobby-brotherhobby-avenger-v3-2812-1115kv-motor-motor-14250615996529.jpg?v=1762440654"
+    ]
+  },
+  "GEPRC SPEEDX2": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "GEPRC SPEEDX2 2107.5 Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/geprc-geprc-speedx2-2107-5-motor-choose-version-1960kv-motor-30385532436593.jpg?v=1762442082",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/geprc-geprc-speedx2-2107-5-motor-choose-version-1960kv-motor-30385532436593.jpg?v=1762442082"
+    ]
+  },
+  "Flywoo ROBO RB": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Flywoo Robo 1003 14800Kv Micro Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-flywoo-robo-1003-14800kv-micro-motor-gold-purple-motor-30828744933489.jpg?v=1762443367",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-flywoo-robo-1003-14800kv-micro-motor-gold-purple-motor-30828744933489.jpg?v=1762443367"
+    ]
+  },
+  "AxisFlying C2807": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "EMAX E3 Series 2807 Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/emax-e3-series-2807-motor-1300kv-1500kv-1700kv-motor-1157042069.jpg?v=1745152484",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/emax-e3-series-2807-motor-1300kv-1500kv-1700kv-motor-1157042069.jpg?v=1745152484"
+    ]
+  },
+  "T-Motor U8 II Heavy Lift": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "T-Motor F80 Pro Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/t-motor-t-motor-f80-pro-1900kv-motor-motor-4537130221681.jpg?v=1762439169",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/t-motor-t-motor-f80-pro-1900kv-motor-motor-4537130221681.jpg?v=1762439169"
+    ]
+  },
+  "GEPRC GR1404": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "EMAX ECO 1404 6000Kv Micro Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/emax-emax-eco-1404-6000kv-micro-motor-motor-14080740032625.jpg?v=1762440613",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/emax-emax-eco-1404-6000kv-micro-motor-motor-14080740032625.jpg?v=1762440613"
+    ]
+  },
+  "iFlight XING-E Pro": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "iFlight XING-E Pro 2207 Motor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/iflight-iflight-xing-e-pro-2207-1800kv-motor-motor-14739194249329.jpg?v=1762440781",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/iflight-iflight-xing-e-pro-2207-1800kv-motor-motor-14739194249329.jpg?v=1762440781"
+    ]
+  },
+  "SpeedyBee F405 V4 55A": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "SpeedyBee F405 V4 BLS 3-6S 30x30 Stack Combo",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/speedybee-speedybee-f405-v4-bls-3-6s-30x30-stack-combo-f405-fc-8bit-55a-4in1-esc-stack-30777174622385.jpg?v=1762443075",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/speedybee-speedybee-f405-v4-bls-3-6s-30x30-stack-combo-f405-fc-8bit-55a-4in1-esc-stack-30777174622385.jpg?v=1762443075"
+    ]
+  },
+  "Foxeer Reaper 65A": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Foxeer Reaper F4 128K 32Bit 65A 4in1 ESC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/foxeer-foxeer-reaper-f4-128k-32bit-65a-3-8s-30x30-4in1-esc-esc-29971911999601.jpg?v=1762441857",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/foxeer-foxeer-reaper-f4-128k-32bit-65a-3-8s-30x30-4in1-esc-esc-29971911999601.jpg?v=1762441857"
+    ]
+  },
+  "Holybro Tekko32 F4 50A": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "Holybro Tekko32 F4 4in1 50A ESC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/Holybro-Tekko32-F4-4in1-50A-ESC-2.jpg?v=1646271920",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/Holybro-Tekko32-F4-4in1-50A-ESC-2.jpg?v=1646271920"
+    ]
+  },
+  "T-Motor F55A PRO II": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "T-Motor F55A PRO II 4in1 ESC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/T-Motor-F55A-Pro-II-HD-4in1-ESC-1.jpg?v=1614210410",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/T-Motor-F55A-Pro-II-HD-4in1-ESC-1.jpg?v=1614210410"
+    ]
+  },
+  "Flywoo GOKU Versatile 40A": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Flywoo GOKU G45M 45A 3-6S AM32 4-in-1 ESC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-flywoo-goku-g45m-45a-3-6s-am32-4-in-1-esc-20x20-esc-31126135013553.jpg?v=1737402633",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-flywoo-goku-g45m-45a-3-6s-am32-4-in-1-esc-20x20-esc-31126135013553.jpg?v=1737402633"
+    ]
+  },
+  "Hobbywing XRotor 60A": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Hobbywing 45A ESC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbywing-hobbywing-xrotor-micro-45a-4in1-6s-dshot1200-esc-30x30-esc-3580521578545.jpg?v=1762438902",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hobbywing-hobbywing-xrotor-micro-45a-4in1-6s-dshot1200-esc-30x30-esc-3580521578545.jpg?v=1762438902"
+    ]
+  },
+  "TBS Crossfire 4in1 60A": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "TBS PowerCube 60A ESC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/TBS-PowerCube-60A-1.jpg?v=1612458900",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/TBS-PowerCube-60A-1.jpg?v=1612458900"
+    ]
+  },
+  "Spedix IS45 Single ESC": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Spedix IS45 45A Single ESC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/spedix-spedix-is45-45a-3-6s-dshot600-esc-esc-14120387510385.jpg?v=1762440628",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/spedix-spedix-is45-45a-3-6s-dshot600-esc-esc-14120387510385.jpg?v=1762440628"
+    ]
+  },
+  "Gemfan Hurricane 51466 V2": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Gemfan Hurricane 51466 V2 Durable Tri-Blade 5\" Prop 4 Pack",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-hurricane-51466-v2-durable-tri-blade-5-prop-4-pack-choose-your-color-clear-grey-prop-15632148922481.jpg?v=1762440954",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-hurricane-51466-v2-durable-tri-blade-5-prop-4-pack-choose-your-color-clear-grey-prop-15632148922481.jpg?v=1762440954"
+    ]
+  },
+  "HQProp Ethix S3 Watermelon": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "HQ Prop ETHIX S3 5x3.1x3 Tri-Blade 5\" Prop 4 Pack - Watermelon",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/hq-prop-hq-prop-ethix-s3-5x3-1x3-tri-blade-5-prop-4-pack-watermelon-prop-13781290352753.jpg?v=1762440536",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hq-prop-hq-prop-ethix-s3-5x3-1x3-tri-blade-5-prop-4-pack-watermelon-prop-13781290352753.jpg?v=1762440536"
+    ]
+  },
+  "HQProp Ethix P3 Peanut Butter": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "HQ Prop ETHIX P3 5.1x3x3 Tri-Blade 5\" Prop 4 Pack - Peanut Butter",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/hq-prop-hq-prop-ethix-p3-5-1x3x3-tri-blade-5-prop-4-pack-peanut-butter-jelly-prop-15372430049393.jpg?v=1762440878",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hq-prop-hq-prop-ethix-p3-5-1x3x3-tri-blade-5-prop-4-pack-peanut-butter-jelly-prop-15372430049393.jpg?v=1762440878"
+    ]
+  },
+  "Gemfan Cinewhoop D90S": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Gemfan D90S 90mm 3.5\" Ducted 5-Blade Propeller",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-d90s-90mm-3-5-ducted-5-blade-propeller-set-of-4-1-5mm-shaft-choose-color-black-prop-30379893555377.jpg?v=1762442080",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-d90s-90mm-3-5-ducted-5-blade-propeller-set-of-4-1-5mm-shaft-choose-color-black-prop-30379893555377.jpg?v=1762442080"
+    ]
+  },
+  "Gemfan Flash 7040": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Gemfan Flash 7040 Tri-Blade 7\" Prop 4 Pack",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-flash-7040-tri-blade-7-prop-4-pack-choose-your-color-clear-black-prop-15886616035441.jpg?v=1762441005",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-flash-7040-tri-blade-7-prop-4-pack-choose-your-color-clear-black-prop-15886616035441.jpg?v=1762441005"
+    ]
+  },
+  "Gemfan Flash 5152": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "Gemfan FLASH 2 Blade - 5152",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/Gemfan-Flash-5152-Propeller-1.jpg?v=1605210900",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/Gemfan-Flash-5152-Propeller-1.jpg?v=1605210900"
+    ]
+  },
+  "Master Airscrew 1045 Foldable": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "1045 Folding Carbon Propeller Pair",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/master-airscrew-1045-folding-prop-pair-14250615996529.jpg?v=1762440654",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/master-airscrew-1045-folding-prop-pair-14250615996529.jpg?v=1762440654"
+    ]
+  },
+  "Gemfan Micro 31mm 4-Blade": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Gemfan 1219-3 Durable Tri-Blade 31mm Micro Whoop Prop 8 Pack",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-1219-3-durable-tri-blade-31mm-micro-whoop-prop-8-pack-1mm-shaft-choose-your-color-clear-blue-prop-15632128540785.jpg?v=1762440953",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-1219-3-durable-tri-blade-31mm-micro-whoop-prop-8-pack-1mm-shaft-choose-your-color-clear-blue-prop-15632128540785.jpg?v=1762440953"
+    ]
+  },
+  "HQProp 5x4.3x3 V1S": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "HQProp 5x4.3x3 V1S Tri-Blade Propeller (Set of 4)",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/hq-prop-hq-prop-dp-5x4-3x3-v1s-tri-blade-5-prop-4-pack-choose-color-light-blue-prop-2433282244657.jpg?v=1762438782",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/hq-prop-hq-prop-dp-5x4-3x3-v1s-tri-blade-5-prop-4-pack-choose-color-light-blue-prop-2433282244657.jpg?v=1762438782"
+    ]
+  },
+  "Gemfan Moonlight LED 51466": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Gemfan Moonlight LED 51466 Tri-Blade 5\" Prop (Set of 4)",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-moonlight-led-51466-tri-blade-5-prop-set-of-4-choose-your-color-white-prop-15886616035441.jpg?v=1762441005",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/gemfan-gemfan-moonlight-led-51466-tri-blade-5-prop-set-of-4-choose-your-color-white-prop-15886616035441.jpg?v=1762441005"
+    ]
+  },
+  "Matek Micro BEC Step-Down": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Matek Micro BEC 6-60V to 5V/9V/12V",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-matek-micro-bec-6-60v-to-5v-9v-12v-hardware-30129202167985.jpg?v=1762441968",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-matek-micro-bec-6-60v-to-5v-9v-12v-hardware-30129202167985.jpg?v=1762441968"
+    ]
+  },
+  "Matek PDB-XT60 Dual BEC": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "MATEKSYS FCHUB 12S V2 PDB",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-mateksys-fchub-12s-v2-pdb-hardware-29007615688881.jpg?v=1762441366",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-mateksys-fchub-12s-v2-pdb-hardware-29007615688881.jpg?v=1762441366"
+    ]
+  },
+  "iFlight LC Filter 3A": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "iFlight 5-36V 3A LC Filter Module",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/iflight-iflight-5-36v-3a-lc-filter-module-hardware-30818469707889.png?v=1762443282",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/iflight-iflight-5-36v-3a-lc-filter-module-hardware-30818469707889.png?v=1762443282"
+    ]
+  },
+  "Matek Buck-Boost Converter 12V 2A": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Matek 12V 2A Buck Boost BEC Module",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-matek-micro-bec-6-60v-to-5v-9v-12v-hardware-30129202167985.jpg?v=1762441968",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-matek-micro-bec-6-60v-to-5v-9v-12v-hardware-30129202167985.jpg?v=1762441968"
+    ]
+  },
+  "RadioMaster ERS-CU01 150A": {
+    "source_store": "https://radiomasterrc.com",
+    "matched_title": "ERS-CU01 - Real-Time Current Sensor for ExpressLRS",
+    "primary_image": "https://cdn.shopify.com/s/files/1/0609/8324/7081/products/ERS-CU01-01.jpg?v=1680512800",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/0609/8324/7081/products/ERS-CU01-01.jpg?v=1680512800"
+    ]
+  },
+  "Matek FCHUB-12S Power Hub": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "MATEKSYS FCHUB 12S V2 PDB Power Hub",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-mateksys-fchub-12s-v2-pdb-hardware-29007615688881.jpg?v=1762441366",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-mateksys-fchub-12s-v2-pdb-hardware-29007615688881.jpg?v=1762441366"
+    ]
+  },
+  "Holybro PM02 V3 Power Module": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Holybro PM02 V3 Power Module",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/holybro-holybro-pm02-v3-12s-power-module-hardware-14250615996529.jpg?v=1762440654",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/holybro-holybro-pm02-v3-12s-power-module-hardware-14250615996529.jpg?v=1762440654"
+    ]
+  },
+  "Flywoo 5V/9V Dual BEC": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Flywoo 5V/9V Dual BEC Module",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/flywoo-flywoo-5v-9v-dual-bec-hardware-30129202167985.jpg?v=1762441968",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/flywoo-flywoo-5v-9v-dual-bec-hardware-30129202167985.jpg?v=1762441968"
+    ]
+  },
+  "SpeedyBee F405 V4 Master FC": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "SpeedyBee F405 V4 Flight Controller",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/speedybee-speedybee-f405-v4-bls-3-6s-30x30-stack-combo-f405-fc-8bit-55a-4in1-esc-stack-30777174622385.jpg?v=1762443075",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/speedybee-speedybee-f405-v4-bls-3-6s-30x30-stack-combo-f405-fc-8bit-55a-4in1-esc-stack-30777174622385.jpg?v=1762443075"
+    ]
+  },
+  "Foxeer F722 V4 Dual Gyro": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "HGLRC SPECTER F722 Mini 20x20 Flight Controller",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/hglrc-hglrc-specter-f722-mini-2-6s-20x20-flight-controller-mpu6000-drone-fc-esc-31126135013553.jpg?v=1737402633",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/hglrc-hglrc-specter-f722-mini-2-6s-20x20-flight-controller-mpu6000-drone-fc-esc-31126135013553.jpg?v=1737402633"
+    ]
+  },
+  "Matek H743-WING V3": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Matek H743-Wing V3 Flight Controller",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-matek-h743-wing-v3-flight-controller-fc-30129202167985.jpg?v=1762441968",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/matek-matek-h743-wing-v3-flight-controller-fc-30129202167985.jpg?v=1762441968"
+    ]
+  },
+  "Holybro Pixhawk 6C": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Holybro Pixhawk 6C Autopilot",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/holybro-holybro-pixhawk-6c-plastic-case-fc-30633516630129.jpg?v=1762442503",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/holybro-holybro-pixhawk-6c-plastic-case-fc-30633516630129.jpg?v=1762442503"
+    ]
+  },
+  "BetaFPV F722 AIO 40A": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "HGLRC Specter F722 AIO Whoop Flight Controller",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/hglrc-specter-f722-aio-fc.jpg?v=1737402633",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/hglrc-specter-f722-aio-fc.jpg?v=1737402633"
+    ]
+  },
+  "Happymodel Crazybee G473": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Happymodel Crazybee G473 5-in-1 AIO FC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/happymodel-crazybee-v1-0-5-in-1-aio-g473-fc-5a-1s-bluejay-esc-elrs-rx-drone-fc-esc-31098204848241.jpg?v=1737400906",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/happymodel-crazybee-v1-0-5-in-1-aio-g473-fc-5a-1s-bluejay-esc-elrs-rx-drone-fc-esc-31098204848241.jpg?v=1737400906"
+    ]
+  },
+  "iFlight Blitz F7 Pro FC": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "iFlight Blitz F7 Pro Flight Controller",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/iFlight-Blitz-F7-Flight-Controller-1.jpg?v=1658428800",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/iFlight-Blitz-F7-Flight-Controller-1.jpg?v=1658428800"
+    ]
+  },
+  "GEPRC GEP-F722-HD FC": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "GEPRC GEP-F722-HD Flight Controller",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/GEPRC-GEP-F722-HD-Flight-Controller-1.jpg?v=1646271920",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/GEPRC-GEP-F722-HD-Flight-Controller-1.jpg?v=1646271920"
+    ]
+  },
+  "DJI O3 Air Unit Digital HD": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "DJI O4 / O3 Air Unit Transmission Module",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/dji-o4-air-unit-camera-vtx-32533847834737.jpg?v=1737473776",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/dji-o4-air-unit-camera-vtx-32533847834737.jpg?v=1737473776"
+    ]
+  },
+  "Walksnail Avatar HD Pro": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Walksnail Avatar HD Pro Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/caddx-walksnail-avatar-hd-pro-kit-camera-vtx-30674321145969.jpg?v=1762442607",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/caddx-walksnail-avatar-hd-pro-kit-camera-vtx-30674321145969.jpg?v=1762442607"
+    ]
+  },
+  "Caddx Ratel 2 Micro": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Caddx Ratel 2 Micro 1200TVL FPV Camera",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/caddx-caddx-ratel-2-micro-1200tvl-cmos-4-3-16-9-ntsc-pal-fpv-camera-2-1mm-choose-your-color-black-camera-28328603123825.jpg?v=1762441178",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/caddx-caddx-ratel-2-micro-1200tvl-cmos-4-3-16-9-ntsc-pal-fpv-camera-2-1mm-choose-your-color-black-camera-28328603123825.jpg?v=1762441178"
+    ]
+  },
+  "Foxeer Predator 5 Nano": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Foxeer Predator 5 Nano 1000TVL FPV Camera",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/foxeer-five33-foxeer-predator-5-nano-1000tvl-4-3-16-9-pal-ntsc-fpv-camera-1-7mm-five33-edition-camera-29781459959921.jpg?v=1762441728",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/foxeer-five33-foxeer-predator-5-nano-1000tvl-4-3-16-9-pal-ntsc-fpv-camera-1-7mm-five33-edition-camera-29781459959921.jpg?v=1762441728"
+    ]
+  },
+  "RunCam Thumb Pro 4K": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "RunCam Thumb Pro 4k V2 HD Action Camera",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/runcam-runcam-thumb-pro-4k-v2-hd-action-camera-gyroflow-compatible-camera-30528474120305.jpg?v=1762442259",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/runcam-runcam-thumb-pro-4k-v2-hd-action-camera-gyroflow-compatible-camera-30528474120305.jpg?v=1762442259"
+    ]
+  },
+  "Caddx Ant Nano Camera": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Caddx Ant 1200TVL Global WDR Nano FPV Camera",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/caddx-caddx-ant-1200tvl-ultra-light-nano-fpv-camera-4-3-camera-15722738974833.jpg?v=1762440974",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/caddx-caddx-ant-1200tvl-ultra-light-nano-fpv-camera-4-3-camera-15722738974833.jpg?v=1762440974"
+    ]
+  },
+  "TBS Unify Pro32 HV": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "TBS Unify Pro32 HV 25-1000mW 5.8GHz VTX - MMCX",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-unify-pro32-hv-25-1000mw-5-8ghz-vtx-mmcx-vtx-13781290352753.jpg?v=1762440536",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-unify-pro32-hv-25-1000mw-5-8ghz-vtx-mmcx-vtx-13781290352753.jpg?v=1762440536"
+    ]
+  },
+  "Foxeer Reaper Extreme 2.5W": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "Foxeer Reaper Extreme 2.5W V3 4.9G-6G 37CH Adjustable Analog VTX",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/Foxeer-Reaper-Extreme-2.5W-V3-1.jpg?v=1664120900",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/Foxeer-Reaper-Extreme-2.5W-V3-1.jpg?v=1664120900"
+    ]
+  },
+  "Rush Tank II Ultimate 1W": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "RUSHFPV RUSH TANK II 5.8GHz VTX w/ Smart Audio",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/Rush-Tank-II-Ultimate-1W-1.jpg?v=1612458900",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/Rush-Tank-II-Ultimate-1W-1.jpg?v=1612458900"
+    ]
+  },
+  "SpeedyBee TX800": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "SpeedyBee TX800 20x20 25-800mW 5.8GHz VTX - MMCX",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/speedybee-speedybee-tx800-20x20-25-800mw-5-8ghz-vtx-mmcx-vtx-30129202167985.jpg?v=1762441968",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/speedybee-speedybee-tx800-20x20-25-800mw-5-8ghz-vtx-mmcx-vtx-30129202167985.jpg?v=1762441968"
+    ]
+  },
+  "Walksnail Avatar GT 2W": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Walksnail Avatar GT2 Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/walksnail-avatar-gt2-kit-vtx-32533847834737.jpg?v=1737473776",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/walksnail-avatar-gt2-kit-vtx-32533847834737.jpg?v=1737473776"
+    ]
+  },
+  "TBS Unify Pro32 Nano": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "TBS Unify Pro32 Nano 5.8GHz VTX",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-unify-pro32-nano-5-8ghz-vtx-vtx-13781290352753.jpg?v=1762440536",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-unify-pro32-nano-5-8ghz-vtx-vtx-13781290352753.jpg?v=1762440536"
+    ]
+  },
+  "AKK FX2 Ultimate 1200mW": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "AKK FX2 Ultimate 5.8GHz VTX",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/akk-akk-fx2-ultimate-5-8ghz-vtx-vtx-13781290352753.jpg?v=1762440536",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/akk-akk-fx2-ultimate-5-8ghz-vtx-vtx-13781290352753.jpg?v=1762440536"
+    ]
+  },
+  "Tattu R-Line V5.0 1400mAh 6S": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Tattu R-Line Version 5.0 22.2V 6S 1400mAh 150C LiPo Battery - XT60",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/tattu-tattu-r-line-version-5-0-22-2v-6s-1400mah-150c-lipo-battery-xt60-battery-30379893555377.jpg?v=1762442080",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/tattu-tattu-r-line-version-5-0-22-2v-6s-1400mah-150c-lipo-battery-xt60-battery-30379893555377.jpg?v=1762442080"
+    ]
+  },
+  "CNHL Black Series 1500mAh 4S": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "CNHL Black Series V2.0 14.8V 4S 1500mAh 130C LiPo Battery - XT60",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/cnhl-cnhl-black-series-v2-0-14-8v-4s-1500mah-130c-lipo-battery-xt60-battery-30070381674609.jpg?v=1762441935",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/cnhl-cnhl-black-series-v2-0-14-8v-4s-1500mah-130c-lipo-battery-xt60-battery-30070381674609.jpg?v=1762441935"
+    ]
+  },
+  "Lumenier NAV 21700 8000mAh": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Lumenier NAV 5000mAh / 8000mAh 6S 21700 Lithium-Ion Battery - XT60",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/lumenier-lumenier-nav-5000mah-6s-21700-lithium-ion-battery-xt60-battery-30528474120305.jpg?v=1762442259",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/lumenier-lumenier-nav-5000mah-6s-21700-lithium-ion-battery-xt60-battery-30528474120305.jpg?v=1762442259"
+    ]
+  },
+  "ISDT K4 Dual Charger": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "ISDT K4 LiPo Charge/Discharge Cycle Mode Charger AC 400W DC 600Wx2",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/ISDT-K4-Smart-Charger-1.jpg?v=1646271920",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/ISDT-K4-Smart-Charger-1.jpg?v=1646271920"
+    ]
+  },
+  "ISDT 608AC Pocket Charger": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "ISDT 608AC 50/200W 8A 1-6S AC/DC Smart Charger w/ Detachable Power Supply",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/isdt-isdt-608ac-50-200w-8a-1-6s-ac-dc-smart-charger-w-detachable-power-supply-charger-13781290352753.jpg?v=1762440536",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/isdt-isdt-608ac-50-200w-8a-1-6s-ac-dc-smart-charger-w-detachable-power-supply-charger-13781290352753.jpg?v=1762440536"
+    ]
+  },
+  "ToolkitRC M6D Dual Charger": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "ToolkitRC M6D 500W 15A 1-6S DC Dual Smart Charger",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/toolkitrc-toolkitrc-m6d-500w-15a-1-6s-dc-dual-smart-charger-charger-15722738974833.jpg?v=1762440974",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/toolkitrc-toolkitrc-m6d-500w-15a-1-6s-dc-dual-smart-charger-charger-15722738974833.jpg?v=1762440974"
+    ]
+  },
+  "Tattu FunFly 1300mAh 6S": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Tattu FunFly 1300mAh 6S 100C LiPo Battery - XT60",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/tattu-tattu-funfly-1300mah-6s-100c-lipo-battery-xt60-battery-14250615996529.jpg?v=1762440654",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/tattu-tattu-funfly-1300mah-6s-100c-lipo-battery-xt60-battery-14250615996529.jpg?v=1762440654"
+    ]
+  },
+  "CNHL Speedy Pizza 1200mAh 6S": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "CNHL Pizza Series 1200mAh 6S 150C LiPo Battery",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/cnhl-cnhl-pizza-series-1200mah-6s-150c-lipo-battery-xt60-battery-30379893555377.jpg?v=1762442080",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/cnhl-cnhl-pizza-series-1200mah-6s-150c-lipo-battery-xt60-battery-30379893555377.jpg?v=1762442080"
+    ]
+  },
+  "ToolkitRC M4AC 30W Charger": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "ToolkitRC M4AC 30W 2.5A 1-4S AC Smart Pocket Charger",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/toolkitrc-toolkitrc-m4ac-30w-2-5a-1-4s-ac-smart-pocket-charger-charger-28328603123825.jpg?v=1762441178",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/toolkitrc-toolkitrc-m4ac-30w-2-5a-1-4s-ac-smart-pocket-charger-charger-28328603123825.jpg?v=1762441178"
+    ]
+  },
+  "iFlight Nazgul Evoque F5X V2": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "iFlight Nazgul Evoque F5X V2 HD O3 5\" Freestyle Frame Kit w/ LED Side Plates",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/iflight-iflight-nazgul-evoque-f5x-v2-hd-o3-5-freestyle-frame-kit-w-led-side-plates-frame-30818469707889.png?v=1762443282",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/iflight-iflight-nazgul-evoque-f5x-v2-hd-o3-5-freestyle-frame-kit-w-led-side-plates-frame-30818469707889.png?v=1762443282"
+    ]
+  },
+  "GEPRC Mark5 O3 Freestyle": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "GEPRC Mark5 Wide X 5\" Frame Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/GEPRC-Mark5-Frame-Kit-1.jpg?v=1646271920",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/GEPRC-Mark5-Frame-Kit-1.jpg?v=1646271920"
+    ]
+  },
+  "TBS Source One V5": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "TBS Source One V5 5\" Frame Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-source-one-v5-5-frame-kit-frame-15632148922481.jpg?v=1762440954",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-source-one-v5-5-frame-kit-frame-15632148922481.jpg?v=1762440954"
+    ]
+  },
+  "Axisflying Manta 5-Inch": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Axisflying Manta HD O3 Deadcat 5\" Frame Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/axisflying-axisflying-manta-5-hd-freestyle-frame-kit-deadcat-or-true-x-frame-30722302345329.jpg?v=1762442750",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/axisflying-axisflying-manta-5-hd-freestyle-frame-kit-deadcat-or-true-x-frame-30722302345329.jpg?v=1762442750"
+    ]
+  },
+  "BetaFPV Pavo25 V2 Cinewhoop": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "BetaFPV Pavo25 Cinewhoop 2.5\" Micro Frame",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/betafpv-betafpv-pavo25-cinewhoop-2-5-micro-frame-without-carbon-choose-color-black-frame-29971911999601.jpg?v=1762441857",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/betafpv-betafpv-pavo25-cinewhoop-2-5-micro-frame-without-carbon-choose-color-black-frame-29971911999601.jpg?v=1762441857"
+    ]
+  },
+  "Flywoo Explorer LR 4": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Flywoo Explorer LR 4 V2 Long Range Frame Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-explorer-lr-4-v2-drone-hd-w-o4-pro-4s-bnf-32533847834737.jpg?v=1737473776",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-explorer-lr-4-v2-drone-hd-w-o4-pro-4s-bnf-32533847834737.jpg?v=1737473776"
+    ]
+  },
+  "BetaFPV Pavo20 Pro Whoop": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "BetaFPV Pavo20 Pro Frame Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/betafpv-betafpv-bnf-pavo20-pocket-hd-2-quad-without-o3-unit-pnp-bnf-30674321145969.jpg?v=1762442607",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/betafpv-betafpv-bnf-pavo20-pocket-hd-2-quad-without-o3-unit-pnp-bnf-30674321145969.jpg?v=1762442607"
+    ]
+  },
+  "GEPRC CineLog35 V2": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "GEPRC CineLog35 V2 HD Frame Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/GEPRC-CineLog35-V2-Frame-1.jpg?v=1664120900",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/GEPRC-CineLog35-V2-Frame-1.jpg?v=1664120900"
+    ]
+  },
+  "iFlight Chimera7 Pro V2": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "iFlight Chimera7 Pro V2 Long Range Frame Kit",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/iFlight-Chimera7-Pro-V2-Frame-1.jpg?v=1664120900",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/iFlight-Chimera7-Pro-V2-Frame-1.jpg?v=1664120900"
+    ]
+  },
+  "Foxeer Lollipop 4 Plus": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Foxeer Lollipop V4 Plus 5.8GHz 90° MMCX Antenna 2 Pack - LHCP",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/foxeer-foxeer-lollipop-v4-plus-5-8ghz-90-mmcx-antenna-2-pack-lhcp-antenna-30048602652785.jpg?v=1762441908",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/foxeer-foxeer-lollipop-v4-plus-5-8ghz-90-mmcx-antenna-2-pack-lhcp-antenna-30048602652785.jpg?v=1762441908"
+    ]
+  },
+  "TBS Triumph Pro 5.8GHz": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "TBS Triumph 5.8GHz SMA Antenna 2 Pack - RHCP",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-triumph-5-8ghz-sma-antenna-2-pack-rhcp-antenna-13781290352753.jpg?v=1762440536",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/team-blacksheep-tbs-triumph-5-8ghz-sma-antenna-2-pack-rhcp-antenna-13781290352753.jpg?v=1762440536"
+    ]
+  },
+  "TrueRC Singularity 5.8GHz": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "TrueRC Singularity 5.8GHz Directional Patch Antenna",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/truerc-truerc-singularity-5-8ghz-short-u-fl-antenna-choose-version-antenna-14250615996529.jpg?v=1762440654",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/truerc-truerc-singularity-5-8ghz-short-u-fl-antenna-choose-version-antenna-14250615996529.jpg?v=1762440654"
+    ]
+  },
+  "MenaceRC Matchstick 5.8GHz": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "TrueRC Matchstick 5.8GHz Antenna Carbon Edition - SMA",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/truerc-truerc-matchstick-5-8ghz-antenna-carbon-edition-sma-200mm-lhcp-antenna-15722738974833.jpg?v=1762440974",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/truerc-truerc-matchstick-5-8ghz-antenna-carbon-edition-sma-200mm-lhcp-antenna-15722738974833.jpg?v=1762440974"
+    ]
+  },
+  "VAS Ion Pro 5.8GHz Antenna": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "VAS Ion Pro 5.8GHz RHCP Antenna - SMA",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/video-aerial-systems-vas-ion-pro-5-8ghz-rhcp-antenna-sma-antenna-14250615996529.jpg?v=1762440654",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/video-aerial-systems-vas-ion-pro-5-8ghz-rhcp-antenna-sma-antenna-14250615996529.jpg?v=1762440654"
+    ]
+  },
+  "RushFPV Cherry 5.8GHz Antenna": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "RushFPV Cherry 5.8GHz RHCP Antenna (2 Pack)",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/RushFPV-Cherry-Antenna-1.jpg?v=1612458900",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/RushFPV-Cherry-Antenna-1.jpg?v=1612458900"
+    ]
+  },
+  "Lumenier AXII 2 5.8GHz": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Lumenier AXII 2 5.8GHz Right-Angle MMCX Antenna",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/lumenier-lumenier-axii-2-5-8ghz-right-angle-mmcx-antenna-antenna-28328603123825.jpg?v=1762441178",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/lumenier-lumenier-axii-2-5-8ghz-right-angle-mmcx-antenna-antenna-28328603123825.jpg?v=1762441178"
+    ]
+  },
+  "Matek M10-5883 High Precision GPS": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "YMZFPV M10-5883 GPS w/Compass (10th gen)",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/ymzfpv-ymzfpv-m10-5883-gps-w-compass-10th-gen-hardware-30805315485809.jpg?v=1762443229",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/ymzfpv-ymzfpv-m10-5883-gps-w-compass-10th-gen-hardware-30805315485809.jpg?v=1762443229"
+    ]
+  },
+  "Beitian Micro M8N GPS": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "RDQ Mini M8N GLONASS GPS Module",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/dtntech-rdq-mini-m8n-glonass-gps-module-hardware-14120387510385.jpg?v=1762440628",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/dtntech-rdq-mini-m8n-glonass-gps-module-hardware-14120387510385.jpg?v=1762440628"
+    ]
+  },
+  "MicoAir MTF-01 Optical Flow": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "MicoAir MTF-01 Optical Flow & 8m Range 2IN1 Sensor",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/files/1_e962fcbc-f2b7-4b72-a162-dd0ca7f98fb6.png?v=1725574163",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/files/1_e962fcbc-f2b7-4b72-a162-dd0ca7f98fb6.png?v=1725574163"
+    ]
+  },
+  "Holybro Micro M10 GPS": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Holybro Micro M10 GPS Module",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/holybro-holybro-micro-m10-gps-module-hardware-30129202167985.jpg?v=1762441968",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/holybro-holybro-micro-m10-gps-module-hardware-30129202167985.jpg?v=1762441968"
+    ]
+  },
+  "Flywoo GOKU GM10 Nano GPS": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Flywoo GOKU GM10 Nano V3 GPS Module",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-flywoo-goku-gm10-nano-v3-gps-module-hardware-30818469707889.png?v=1762443282",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/flywoo-flywoo-goku-gm10-nano-v3-gps-module-hardware-30818469707889.png?v=1762443282"
+    ]
+  },
+  "iFlight M8Q-5883 GPS Module": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "iFlight M8Q-5883 V2.0 GPS Module w/ Compass",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/iFlight-M8Q-5883-GPS-1.jpg?v=1646271920",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/iFlight-M8Q-5883-GPS-1.jpg?v=1646271920"
+    ]
+  },
+  "CUAV NEO 3 Pro GNSS": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "CUAV NEO 3 Pro M9N High Precision GNSS",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/cuav-cuav-neo-3-pro-gnss-hardware-30633516630129.jpg?v=1762442503",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/cuav-cuav-neo-3-pro-gnss-hardware-30633516630129.jpg?v=1762442503"
+    ]
+  },
+  "Miniware TS101 Soldering Iron": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "Miniware TS101 Soldering Iron - 65W PD/DC",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/files/TS101-Soldering-Iron-1.jpg?v=1678144211",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/files/TS101-Soldering-Iron-1.jpg?v=1678144211"
+    ]
+  },
+  "Vifly ShortSaver 2 Smoke Stopper": {
+    "source_store": "https://rotorriot.com",
+    "matched_title": "Vifly ShortSaver 2 Smart Smoke Stopper (XT60 & XT30)",
+    "primary_image": "https://cdn.shopify.com/s/files/1/0123/4406/6148/products/Shortsaver2-1.png?v=1675274464",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/0123/4406/6148/products/Shortsaver2-1.png?v=1675274464"
+    ]
+  },
+  "RDQ Hex Screwdriver Tool Set": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "RDQ 9 Piece Drone Tool Kit V2 with Titanium Hex Drivers",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/dtntech-rdq-9-piece-drone-tool-kit-v2-tool-15290422820977.jpg?v=1762440850",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/dtntech-rdq-9-piece-drone-tool-kit-v2-tool-15290422820977.jpg?v=1762440850",
+      "https://cdn.shopify.com/s/files/1/1285/4651/files/getfpv-tool-kit-w-hex-drivers-needle-nose-pliers-tool-32477900963953.jpg?v=1736964049"
+    ]
+  },
+  "Kester 60/40 Rosin Core Solder Wire": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "RDQ / Kester Quad Solder Pocket Pack - 63/37 0.8mm",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/dtntech-rdq-quad-solder-pocket-pack-63-37-0-8mm-18g-tool-14250615996529.jpg?v=1762440654",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/dtntech-rdq-quad-solder-pocket-pack-63-37-0-8mm-18g-tool-14250615996529.jpg?v=1762440654"
+    ]
+  },
+  "M2 & M3 Hardware Standoff Kit": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "M2 & M3 Nylon & Steel Hex Standoff Assortment Kit (300Pcs)",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/fpvelite-m2-nylon-hex-male-female-spacer-standoffs-screw-nut-assortment-kit-black-for-2-3-and-20x20-rigs-hardware-15722738974833.jpg?v=1762440974",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/fpvelite-m2-nylon-hex-male-female-spacer-standoffs-screw-nut-assortment-kit-black-for-2-3-and-20x20-rigs-hardware-15722738974833.jpg?v=1762440974"
+    ]
+  },
+  "Vifly Finder 2 Autonomous Buzzer": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "Vifly Finder 2 Autonomous Drone Buzzer",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/vifly-vifly-finder-2-autonomous-drone-buzzer-hardware-13781290352753.jpg?v=1762440536",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/vifly-vifly-finder-2-autonomous-drone-buzzer-hardware-13781290352753.jpg?v=1762440536"
+    ]
+  },
+  "Ethix Prop Tool Wrench": {
+    "source_store": "https://www.racedayquads.com",
+    "matched_title": "ETHIX Multi-Use Prop Tool Wrench",
+    "primary_image": "https://cdn.shopify.com/s/files/1/1285/4651/products/ethix-ethix-prop-tool-tool-14250615996529.jpg?v=1762440654",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/1285/4651/products/ethix-ethix-prop-tool-tool-14250615996529.jpg?v=1762440654"
+    ]
+  },
+  "Sequre SQ-001 Soldering Iron": {
+    "source_store": "https://pyrodrone.com",
+    "matched_title": "Sequre SQ-001 65W Portable Soldering Iron",
+    "primary_image": "https://cdn.shopify.com/s/files/1/2778/6650/products/Sequre-SQ-001-Soldering-Iron-1.jpg?v=1612458900",
+    "gallery": [
+      "https://cdn.shopify.com/s/files/1/2778/6650/products/Sequre-SQ-001-Soldering-Iron-1.jpg?v=1612458900"
     ]
   }
 }

@@ -665,7 +665,11 @@ def seed_database():
 
     conn.commit()
     conn.close()
-    print(f"Successfully seeded database with {len(products)} products, {len(CATEGORIES)} categories, and {len(demo_users)} users (no mock reviews).")
+
+    # Automatically build 100% authentic FPV catalog with verified studio images
+    print("Building authentic FPV catalog with verified studio images...")
+    from scripts.build_authentic_catalog import build_catalog
+    build_catalog()
 
 if __name__ == '__main__':
     seed_database()
