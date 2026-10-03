@@ -1,754 +1,272 @@
 {
-  "timestamp": "2026-10-03T09:35:25.784979",
-  "total_products_scanned": 50,
-  "verified_clean_count": 9,
-  "visual_health_score": 18,
-  "issues_summary": {
-    "category_mismatch": 0,
-    "duplicate_images": 41,
-    "low_resolution": 0,
-    "corrupt_or_missing": 0,
-    "description_issues": 0
+  "timestamp": "2026-10-03T10:48:22.172925",
+  "total_products": 511,
+  "category_distribution": {
+    "motors": 55,
+    "esc": 40,
+    "propellers": 40,
+    "converters": 30,
+    "flight_controllers": 35,
+    "cameras": 35,
+    "vtx": 30,
+    "transmitters_receivers": 30,
+    "batteries_chargers": 40,
+    "frames": 45,
+    "antennas": 25,
+    "gps_telemetry": 25,
+    "tools_accessories": 81
   },
-  "quarantine_candidates_count": 41,
-  "findings": [
+  "local_images_verified": 511,
+  "audit_sample": [
     {
-      "product_id": "8fc3e9ec-ce06-4d25-b048-9a0a3db98c50",
+      "sku": "PZTR-MOT-0001",
+      "brand": "T-Motor",
+      "model": "F60 PRO V",
+      "name": "T-Motor F60 PRO V (1750KV)",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0001.jpg",
+      "source_master": "model_F60_PRO_V.jpg",
+      "file_size": 77928
+    },
+    {
       "sku": "PZTR-MOT-0002",
+      "brand": "T-Motor",
+      "model": "F60 PRO V",
       "name": "T-Motor F60 PRO V (1950KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0002.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 68040,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0001"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0002.jpg",
+      "source_master": "model_F60_PRO_V.jpg",
+      "file_size": 77928
     },
     {
-      "product_id": "e2302943-57ca-4f4b-908b-d370bac209a2",
       "sku": "PZTR-MOT-0003",
+      "brand": "T-Motor",
+      "model": "F60 PRO V",
       "name": "T-Motor F60 PRO V (2020KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0003.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 68040,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0001"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0003.jpg",
+      "source_master": "model_F60_PRO_V.jpg",
+      "file_size": 77928
     },
     {
-      "product_id": "ceef5f72-0d9c-42c8-8dd1-14d2993e8859",
       "sku": "PZTR-MOT-0004",
+      "brand": "T-Motor",
+      "model": "F60 PRO V",
       "name": "T-Motor F60 PRO V (2550KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0004.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 68040,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0001"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0004.jpg",
+      "source_master": "model_F60_PRO_V.jpg",
+      "file_size": 77928
     },
     {
-      "product_id": "73ceaeb0-62c2-4a40-a684-f67670ea9eb7",
       "sku": "PZTR-MOT-0005",
-      "name": "T-Motor F60 PRO V (1950KV Pac)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0005.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 68040,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0001"
-      }
+      "brand": "T-Motor",
+      "model": "F60 PRO V",
+      "name": "T-Motor F60 PRO V (1950KV Gold)",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0005.jpg",
+      "source_master": "model_F60_PRO_V.jpg",
+      "file_size": 77928
     },
     {
-      "product_id": "15ec468a-5a46-4edd-98f6-66877d9a30a1",
+      "sku": "PZTR-MOT-0006",
+      "brand": "T-Motor",
+      "model": "Velox V3",
+      "name": "T-Motor Velox V3 (1750KV)",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0006.jpg",
+      "source_master": "model_Velox_V3.jpg",
+      "file_size": 81189
+    },
+    {
       "sku": "PZTR-MOT-0007",
+      "brand": "T-Motor",
+      "model": "Velox V3",
       "name": "T-Motor Velox V3 (1950KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0007.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 40056,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0006"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0007.jpg",
+      "source_master": "model_Velox_V3.jpg",
+      "file_size": 81189
     },
     {
-      "product_id": "e85db4c7-a80d-4b54-98c8-a00df675ef3a",
       "sku": "PZTR-MOT-0008",
+      "brand": "T-Motor",
+      "model": "Velox V3",
       "name": "T-Motor Velox V3 (2050KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0008.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 40056,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0006"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0008.jpg",
+      "source_master": "model_Velox_V3.jpg",
+      "file_size": 81189
     },
     {
-      "product_id": "eb18f75a-ffb6-4adb-a7d8-f1950338f592",
       "sku": "PZTR-MOT-0009",
+      "brand": "T-Motor",
+      "model": "Velox V3",
       "name": "T-Motor Velox V3 (2550KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0009.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 40056,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0006"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0009.jpg",
+      "source_master": "model_Velox_V3.jpg",
+      "file_size": 81189
     },
     {
-      "product_id": "e54cf532-bf7d-4a6f-821b-b2f57554caa0",
       "sku": "PZTR-MOT-0010",
-      "name": "T-Motor Velox V3 (1950KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0010.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 40056,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0006"
-      }
+      "brand": "T-Motor",
+      "model": "Velox V3",
+      "name": "T-Motor Velox V3 (1950KV (4-Pack))",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0010.jpg",
+      "source_master": "model_Velox_V3.jpg",
+      "file_size": 81189
     },
     {
-      "product_id": "7067a368-daf5-487c-9895-1b683d1d5136",
+      "sku": "PZTR-MOT-0011",
+      "brand": "iFlight",
+      "model": "XING2 2207",
+      "name": "iFlight XING2 2207 (1855KV)",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0011.jpg",
+      "source_master": "model_XING2.jpg",
+      "file_size": 27641
+    },
+    {
       "sku": "PZTR-MOT-0012",
+      "brand": "iFlight",
+      "model": "XING2 2207",
       "name": "iFlight XING2 2207 (2755KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0012.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0012.jpg",
+      "source_master": "model_XING2.jpg",
+      "file_size": 27641
     },
     {
-      "product_id": "ec11ac97-af60-47a4-b1c4-4e6f8bd2e4d9",
       "sku": "PZTR-MOT-0013",
+      "brand": "iFlight",
+      "model": "XING2 2207",
       "name": "iFlight XING2 2207 (1855KV Gold)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0013.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0013.jpg",
+      "source_master": "model_XING2.jpg",
+      "file_size": 27641
     },
     {
-      "product_id": "50ef5bde-fb99-4f58-94fa-86b451eea6ed",
       "sku": "PZTR-MOT-0014",
-      "name": "iFlight XING2 2207 (1855KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0014.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "brand": "iFlight",
+      "model": "XING2 2207",
+      "name": "iFlight XING2 2207 (1855KV (4-Pack))",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0014.jpg",
+      "source_master": "model_XING2.jpg",
+      "file_size": 27641
     },
     {
-      "product_id": "40b861e6-52fc-4532-b166-235003ae7cb5",
       "sku": "PZTR-MOT-0015",
-      "name": "iFlight XING2 2207 (2755KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0015.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "brand": "iFlight",
+      "model": "XING2 2207",
+      "name": "iFlight XING2 2207 (2755KV (4-Pack))",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0015.jpg",
+      "source_master": "model_XING2.jpg",
+      "file_size": 27641
     },
     {
-      "product_id": "f365d151-5711-4816-8857-734546edcba0",
       "sku": "PZTR-MOT-0016",
+      "brand": "iFlight",
+      "model": "XING-E Pro 2207",
       "name": "iFlight XING-E Pro 2207 (1800KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0016.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0016.jpg",
+      "source_master": "model_iFlight_XING-E_Pro.jpg",
+      "file_size": 55941
     },
     {
-      "product_id": "68d78ec3-92c2-4f5d-ab14-ca06b852db2e",
       "sku": "PZTR-MOT-0017",
+      "brand": "iFlight",
+      "model": "XING-E Pro 2207",
       "name": "iFlight XING-E Pro 2207 (2450KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0017.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0017.jpg",
+      "source_master": "model_iFlight_XING-E_Pro.jpg",
+      "file_size": 55941
     },
     {
-      "product_id": "dc8f9874-7e05-4ba3-bc3a-5bb924d3cde6",
       "sku": "PZTR-MOT-0018",
+      "brand": "iFlight",
+      "model": "XING-E Pro 2207",
       "name": "iFlight XING-E Pro 2207 (2750KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0018.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0018.jpg",
+      "source_master": "model_iFlight_XING-E_Pro.jpg",
+      "file_size": 55941
     },
     {
-      "product_id": "7a659d27-b42b-4ff5-814d-45d35aa6008d",
       "sku": "PZTR-MOT-0019",
-      "name": "iFlight XING-E Pro 2207 (1800KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0019.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "brand": "iFlight",
+      "model": "XING-E Pro 2207",
+      "name": "iFlight XING-E Pro 2207 (1800KV (4-Pack))",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0019.jpg",
+      "source_master": "model_iFlight_XING-E_Pro.jpg",
+      "file_size": 55941
     },
     {
-      "product_id": "08e3d0f6-3b3e-4a22-a470-0175bf5c8efa",
       "sku": "PZTR-MOT-0020",
-      "name": "iFlight XING-E Pro 2207 (2450KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0020.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 27641,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0011"
-      }
+      "brand": "iFlight",
+      "model": "XING-E Pro 2207",
+      "name": "iFlight XING-E Pro 2207 (2450KV (4-Pack))",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0020.jpg",
+      "source_master": "model_iFlight_XING-E_Pro.jpg",
+      "file_size": 55941
     },
     {
-      "product_id": "19ed9548-a620-4780-aab2-a16da5feac73",
+      "sku": "PZTR-MOT-0021",
+      "brand": "EMAX",
+      "model": "ECO II 2207",
+      "name": "EMAX ECO II 2207 (1700KV)",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0021.jpg",
+      "source_master": "model_ECO_II.jpg",
+      "file_size": 107765
+    },
+    {
       "sku": "PZTR-MOT-0022",
+      "brand": "EMAX",
+      "model": "ECO II 2207",
       "name": "EMAX ECO II 2207 (1900KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0022.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 69110,
-        "width": 2000,
-        "height": 2000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0021"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0022.jpg",
+      "source_master": "model_ECO_II.jpg",
+      "file_size": 107765
     },
     {
-      "product_id": "010aa1e0-81d0-445e-87f0-9fc608f1372b",
       "sku": "PZTR-MOT-0023",
+      "brand": "EMAX",
+      "model": "ECO II 2207",
       "name": "EMAX ECO II 2207 (2400KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0023.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 69110,
-        "width": 2000,
-        "height": 2000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0021"
-      }
+      "category": "motors",
+      "image_file": "PZTR-MOT-0023.jpg",
+      "source_master": "model_ECO_II.jpg",
+      "file_size": 107765
     },
     {
-      "product_id": "c867369c-9db5-40f4-9c2b-069677d6eba4",
       "sku": "PZTR-MOT-0024",
-      "name": "EMAX ECO II 2207 (1700KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0024.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 69110,
-        "width": 2000,
-        "height": 2000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0021"
-      }
+      "brand": "EMAX",
+      "model": "ECO II 2207",
+      "name": "EMAX ECO II 2207 (1700KV (4-Pack))",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0024.jpg",
+      "source_master": "model_ECO_II.jpg",
+      "file_size": 107765
     },
     {
-      "product_id": "36797c99-cc96-4fec-9bfe-83d02da0af22",
       "sku": "PZTR-MOT-0025",
-      "name": "EMAX ECO II 2207 (1900KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0025.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 69110,
-        "width": 2000,
-        "height": 2000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0021"
-      }
-    },
-    {
-      "product_id": "64537dc3-5c5d-483d-abbc-ccd499c5ba67",
-      "sku": "PZTR-MOT-0027",
-      "name": "BrotherHobby Avenger V3 2306.5 (1950KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0027.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 22914,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0026"
-      }
-    },
-    {
-      "product_id": "0b2932d5-bcc6-4d41-a938-275786d50d82",
-      "sku": "PZTR-MOT-0028",
-      "name": "BrotherHobby Avenger V3 2306.5 (2450KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0028.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 22914,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0026"
-      }
-    },
-    {
-      "product_id": "547dbb50-3b4d-4076-9c2d-4bed1c6a9718",
-      "sku": "PZTR-MOT-0029",
-      "name": "BrotherHobby Avenger V3 2306.5 (2000KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0029.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 22914,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0026"
-      }
-    },
-    {
-      "product_id": "576bcd4c-3377-4ab6-814b-c721748c3996",
-      "sku": "PZTR-MOT-0030",
-      "name": "BrotherHobby Avenger V3 2306.5 (1750KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0030.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 22914,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0026"
-      }
-    },
-    {
-      "product_id": "32b8c255-00e5-415d-ae5e-fe93dee06816",
-      "sku": "PZTR-MOT-0032",
-      "name": "GEPRC SPEEDX2 2107.5 (2450KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0032.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 76095,
-        "width": 2000,
-        "height": 2000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0031"
-      }
-    },
-    {
-      "product_id": "b59bd387-c993-419a-b992-95ce9e2c580e",
-      "sku": "PZTR-MOT-0033",
-      "name": "GEPRC SPEEDX2 2107.5 (1960KV Gold)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0033.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 76095,
-        "width": 2000,
-        "height": 2000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0031"
-      }
-    },
-    {
-      "product_id": "0f2ff348-7ce5-41df-8cd0-aa0a63c93c3f",
-      "sku": "PZTR-MOT-0034",
-      "name": "GEPRC SPEEDX2 2107.5 (1960KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0034.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 76095,
-        "width": 2000,
-        "height": 2000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0031"
-      }
-    },
-    {
-      "product_id": "a55b8ac8-5551-4f1f-a4fb-1ed7b55bc258",
-      "sku": "PZTR-MOT-0035",
-      "name": "GEPRC SPEEDX2 2107.5 (2450KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0035.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 76095,
-        "width": 2000,
-        "height": 2000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0031"
-      }
-    },
-    {
-      "product_id": "321aab21-8bd9-4976-9dc0-620db98c839b",
-      "sku": "PZTR-MOT-0037",
-      "name": "Flywoo ROBO RB 1202.5 (11500KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0037.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 52794,
-        "width": 1800,
-        "height": 1800,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0036"
-      }
-    },
-    {
-      "product_id": "a5338a6f-46b4-4f6d-9929-72518cc7accb",
-      "sku": "PZTR-MOT-0038",
-      "name": "Flywoo ROBO RB 1202.5 (14800KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0038.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 52794,
-        "width": 1800,
-        "height": 1800,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0036"
-      }
-    },
-    {
-      "product_id": "644ef70e-d921-40f5-af92-9f698d2700ea",
-      "sku": "PZTR-MOT-0039",
-      "name": "Flywoo ROBO RB 1202.5 (6000KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0039.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 52794,
-        "width": 1800,
-        "height": 1800,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0036"
-      }
-    },
-    {
-      "product_id": "8037f57c-85f5-49bb-8fba-aaa49d675753",
-      "sku": "PZTR-MOT-0040",
-      "name": "Flywoo ROBO RB 1202.5 (11500KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0040.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 52794,
-        "width": 1800,
-        "height": 1800,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0036"
-      }
-    },
-    {
-      "product_id": "c56bf1cf-65a2-4cb2-addf-9ec34126341c",
-      "sku": "PZTR-MOT-0042",
-      "name": "AxisFlying C2807 Long Range (1500KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0042.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 25626,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0041"
-      }
-    },
-    {
-      "product_id": "647a8509-7244-4a02-a78c-1298b4adf1c9",
-      "sku": "PZTR-MOT-0043",
-      "name": "AxisFlying C2807 Long Range (1700KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0043.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 25626,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0041"
-      }
-    },
-    {
-      "product_id": "33a92c13-50a2-4940-a6ea-f585b64dd996",
-      "sku": "PZTR-MOT-0044",
-      "name": "AxisFlying C2807 Long Range (1300KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0044.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 25626,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0041"
-      }
-    },
-    {
-      "product_id": "43f36290-4a05-4156-9d48-3d6205a1cc2a",
-      "sku": "PZTR-MOT-0045",
-      "name": "AxisFlying C2807 Long Range (1500KV 4-Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0045.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 25626,
-        "width": 1000,
-        "height": 1000,
-        "format": "WEBP",
-        "duplicate_with_sku": "PZTR-MOT-0041"
-      }
-    },
-    {
-      "product_id": "7efc50b7-c842-4ad2-9393-392441c18b51",
-      "sku": "PZTR-MOT-0047",
-      "name": "T-Motor U8 II Heavy Lift (100KV)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0047.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 77928,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0046"
-      }
-    },
-    {
-      "product_id": "d4eae6b5-4fe6-46a8-a6bd-8a27d02dde7b",
-      "sku": "PZTR-MOT-0048",
-      "name": "T-Motor U8 II Heavy Lift (85KV Pair)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0048.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 77928,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0046"
-      }
-    },
-    {
-      "product_id": "ee8c6158-cd60-4a5c-ba7d-66c5d602de88",
-      "sku": "PZTR-MOT-0049",
-      "name": "T-Motor U8 II Heavy Lift (100KV Pair)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0049.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 77928,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0046"
-      }
-    },
-    {
-      "product_id": "1e0bdaf3-7a3c-49d9-bdf6-bbbb92a258a8",
-      "sku": "PZTR-MOT-0050",
-      "name": "T-Motor U8 II Heavy Lift (85KV Quad Pack)",
-      "category_id": "motors",
-      "current_image": "./assets/products/PZTR-MOT-0050.jpg",
-      "status": "DUPLICATE",
-      "issue_type": "DUPLICATE_IMAGE_HASH",
-      "confidence_score": 0.6,
-      "suggested_image": "./assets/products/trend_tmotor_velox_v3.jpg",
-      "details": {
-        "file_size_bytes": 77928,
-        "width": 1000,
-        "height": 1000,
-        "format": "JPEG",
-        "duplicate_with_sku": "PZTR-MOT-0046"
-      }
+      "brand": "EMAX",
+      "model": "ECO II 2207",
+      "name": "EMAX ECO II 2207 (1900KV (4-Pack))",
+      "category": "motors",
+      "image_file": "PZTR-MOT-0025.jpg",
+      "source_master": "model_ECO_II.jpg",
+      "file_size": 107765
     }
   ]
 }
