@@ -792,7 +792,7 @@
     "category_id": "propellers",
     "brand": "Dalprop",
     "price_usd": 5.65,
-    "price_try": 282.39,
+    "price_try": 282.5,
     "original_price_usd": null,
     "original_price_try": null,
     "discount_pct": 0,
@@ -972,7 +972,7 @@
     "category_id": "motors",
     "brand": "AxisFlyer",
     "price_usd": 40.74,
-    "price_try": 2037.13,
+    "price_try": 2037.0,
     "original_price_usd": null,
     "original_price_try": null,
     "discount_pct": 0,
@@ -30163,8 +30163,8 @@
     "badge": "TREND",
     "specs_json": "{\"Sensör\": \"1/1.7 inç CMOS 48MP\", \"Video Çözünürlüğü\": \"4K@60fps, 2.7K@120fps, 1080p@120fps\", \"Gecikme\": \"En düşük 30ms (Canvas Mode)\", \"Menzil\": \"10 km (FCC) / 2 km (CE)\", \"Dahili Hafıza\": \"20 GB eMMC + MicroSD slot\", \"Ağırlık\": \"36.4 g (kamera + hava ünitesi)\"}",
     "tags_json": "[\"dji\", \"o3\", \"digital\", \"hd\", \"cinematic\", \"rocksteady\", \"fpv-camera\"]",
-    "image_url": "./assets/products/trend_dji_o3_air_unit.jpg",
-    "gallery_json": "[\"./assets/products/trend_dji_o3_air_unit.jpg\"]",
+    "image_url": "./assets/products/PZT-CAME-7632.jpg",
+    "gallery_json": "[\"./assets/products/PZT-CAME-7632.jpg\"]",
     "description_en": "DJI O3 Air Unit Digital HD Transmission Module by DJI. Top trending global FPV hardware sourced for Pozitron Market.",
     "description_tr": "DJI O3 Air Unit Dijital HD Görüntü İletim Modülü (DJI). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
     "compatibility_json": "{}",
@@ -30192,7 +30192,7 @@
       "fpv-camera"
     ],
     "gallery": [
-      "./assets/products/trend_dji_o3_air_unit.jpg"
+      "./assets/products/PZT-CAME-7632.jpg"
     ],
     "compatibility": {}
   },
@@ -30215,8 +30215,8 @@
     "badge": "YAKINDA",
     "specs_json": "{\"KV Değeri\": \"1950KV\", \"Statör Ebadı\": \"2207\", \"Giriş Voltajı\": \"6S LiPo\", \"Şaft Çapı\": \"M5 Titanyum Alaşım\", \"Maksimum İtki\": \"1850 g+\", \"Ağırlık\": \"34.5 g (kablolu)\"}",
     "tags_json": "[\"tmotor\", \"velox\", \"2207\", \"1950kv\", \"freestyle\", \"motor\", \"6s\"]",
-    "image_url": "./assets/products/trend_tmotor_velox_v3.jpg",
-    "gallery_json": "[\"./assets/products/trend_tmotor_velox_v3.jpg\"]",
+    "image_url": "./assets/products/PZT-MOTO-4307.jpg",
+    "gallery_json": "[\"./assets/products/PZT-MOTO-4307.jpg\"]",
     "description_en": "T-Motor Velox V3 V2207 1950KV Freestyle Motor by T-Motor. Top trending global FPV hardware sourced for Pozitron Market.",
     "description_tr": "T-Motor Velox V3 V2207 1950KV Freestyle Motor (T-Motor). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
     "compatibility_json": "{}",
@@ -30244,7 +30244,7 @@
       "6s"
     ],
     "gallery": [
-      "./assets/products/trend_tmotor_velox_v3.jpg"
+      "./assets/products/PZT-MOTO-4307.jpg"
     ],
     "compatibility": {}
   },
@@ -30267,8 +30267,8 @@
     "badge": "TREND",
     "specs_json": "{\"Sensör\": \"1/1.8 inç Sony Starvis II\", \"Çözünürlük\": \"1080p@60fps / 720p@100fps\", \"Düşük Işık\": \"0.00001 Lux Gece Görüş\", \"Dahili Hafıza\": \"32 GB dahili depolama\", \"Giriş Voltajı\": \"6V - 25.2V\", \"Ağırlık\": \"29.5 g\"}",
     "tags_json": "[\"caddx\", \"walksnail\", \"avatar\", \"hd-pro\", \"starvis\", \"night-vision\"]",
-    "image_url": "./assets/products/trend_caddx_walksnail_avatar.jpg",
-    "gallery_json": "[\"./assets/products/trend_caddx_walksnail_avatar.jpg\"]",
+    "image_url": "./assets/products/PZT-CAME-8359.jpg",
+    "gallery_json": "[\"./assets/products/PZT-CAME-8359.jpg\"]",
     "description_en": "Caddx Walksnail Avatar HD Pro Kit (Dual Antennas) by Caddx. Top trending global FPV hardware sourced for Pozitron Market.",
     "description_tr": "Caddx Walksnail Avatar HD Pro Kit Çift Antenli Dijital VTX (Caddx). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
     "compatibility_json": "{}",
@@ -30295,7 +30295,7 @@
       "night-vision"
     ],
     "gallery": [
-      "./assets/products/trend_caddx_walksnail_avatar.jpg"
+      "./assets/products/PZT-CAME-8359.jpg"
     ],
     "compatibility": {}
   },
@@ -30318,8 +30318,8 @@
     "badge": "TREND",
     "specs_json": "{\"Dingil Mesafesi\": \"90 mm\", \"Desteklenen Pervane\": \"2.2 inç (Gemfan 22110)\", \"Kamera Uyumluluğu\": \"DJI O3 / Walksnail / HDZero\", \"Malzeme\": \"PA12 Kalınlaştırılmış Kanal + Karbon Plaka\", \"Ağırlık\": \"32 g\"}",
     "tags_json": "[\"betafpv\", \"pavo20\", \"pro\", \"cinewhoop\", \"whoop\", \"frame\", \"dji-o3\"]",
-    "image_url": "./assets/products/trend_betafpv_pavo20_pro.jpg",
-    "gallery_json": "[\"./assets/products/trend_betafpv_pavo20_pro.jpg\"]",
+    "image_url": "./assets/products/PZT-FRAM-2703.jpg",
+    "gallery_json": "[\"./assets/products/PZT-FRAM-2703.jpg\"]",
     "description_en": "BetaFPV Pavo20 Pro Brushless Whoop Frame Kit by BetaFPV. Top trending global FPV hardware sourced for Pozitron Market.",
     "description_tr": "BetaFPV Pavo20 Pro Fırçasız Whoop Gövde Kiti (BetaFPV). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
     "compatibility_json": "{}",
@@ -30346,7 +30346,7 @@
       "dji-o3"
     ],
     "gallery": [
-      "./assets/products/trend_betafpv_pavo20_pro.jpg"
+      "./assets/products/PZT-FRAM-2703.jpg"
     ],
     "compatibility": {}
   },
@@ -30369,8 +30369,8 @@
     "badge": "TREND",
     "specs_json": "{\"İşletim Sistemi\": \"EdgeTX\", \"RF Protokolü\": \"Dahili ExpressLRS 2.4GHz\", \"Gimbal\": \"Hall Sensörlü Hassas Gimbal\", \"Pil Tipi\": \"2x 18650 Li-ion (Dahil değil)\", \"Ekran\": \"Monokrom LCD\", \"Boyut\": \"156.6 x 65.1 x 125.3 mm\", \"Ağırlık\": \"288 g\"}",
     "tags_json": "[\"radiomaster\", \"pocket\", \"elrs\", \"edgetx\", \"kumanda\", \"controller\"]",
-    "image_url": "./assets/products/trend_radiomaster_pocket.jpg",
-    "gallery_json": "[\"./assets/products/trend_radiomaster_pocket.jpg\"]",
+    "image_url": "./assets/products/PZT-TRAN-4761.jpg",
+    "gallery_json": "[\"./assets/products/PZT-TRAN-4761.jpg\"]",
     "description_en": "RadioMaster Pocket ELRS 2.4GHz Radio Controller by RadioMaster. Top trending global FPV hardware sourced for Pozitron Market.",
     "description_tr": "RadioMaster Pocket ELRS 2.4GHz Kompakt Kumanda (RadioMaster). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
     "compatibility_json": "{}",
@@ -30398,7 +30398,7 @@
       "controller"
     ],
     "gallery": [
-      "./assets/products/trend_radiomaster_pocket.jpg"
+      "./assets/products/PZT-TRAN-4761.jpg"
     ],
     "compatibility": {}
   },
@@ -30421,8 +30421,8 @@
     "badge": "YAKINDA",
     "specs_json": "{\"Giriş Voltajı\": \"DC 7-28V (Maks 30A)\", \"Şarj Gücü\": \"2x 250W veya Senkron Modda 500W (Maks 15A)\", \"Pil Desteği\": \"1-6S LiPo, LiHV, LiFe, Lion, NiMh, Pb\", \"Ekran\": \"2.4 inç Renkli IPS LCD 320x240\", \"Boyut\": \"98 x 68 x 35 mm\", \"Ağırlık\": \"220 g\"}",
     "tags_json": "[\"toolkitrc\", \"m6d\", \"charger\", \"lipo\", \"500w\", \"sarj\"]",
-    "image_url": "./assets/products/trend_toolkitrc_m6d.jpg",
-    "gallery_json": "[\"./assets/products/trend_toolkitrc_m6d.jpg\"]",
+    "image_url": "./assets/products/PZT-BATT-1901.jpg",
+    "gallery_json": "[\"./assets/products/PZT-BATT-1901.jpg\"]",
     "description_en": "ToolkitRC M6D 500W 15A Dual Channel Smart DC Charger by ToolkitRC. Top trending global FPV hardware sourced for Pozitron Market.",
     "description_tr": "ToolkitRC M6D 500W 15A Çift Kanal Akıllı DC Şarj Cihazı (ToolkitRC). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
     "compatibility_json": "{}",
@@ -30449,7 +30449,7 @@
       "sarj"
     ],
     "gallery": [
-      "./assets/products/trend_toolkitrc_m6d.jpg"
+      "./assets/products/PZT-BATT-1901.jpg"
     ],
     "compatibility": {}
   },
@@ -30472,8 +30472,8 @@
     "badge": "TREND",
     "specs_json": "{\"Sürekli Akım\": \"65A x 4\", \"Anlık Akım\": \"75A (10 saniye)\", \"İşlemci\": \"F4 128K\", \"Yazılım\": \"BLHeli_32\", \"Giriş Voltajı\": \"3S - 8S LiPo\", \"Montaj\": \"30.5 x 30.5 mm\"}",
     "tags_json": "[\"foxeer\", \"reaper\", \"esc\", \"65a\", \"blheli32\", \"128k\"]",
-    "image_url": "./assets/products/trend_foxeer_reaper_f4.jpg",
-    "gallery_json": "[\"./assets/products/trend_foxeer_reaper_f4.jpg\"]",
+    "image_url": "./assets/products/PZT-ESC-7141.jpg",
+    "gallery_json": "[\"./assets/products/PZT-ESC-7141.jpg\"]",
     "description_en": "Foxeer Reaper F4 128K 65A 32Bit 4in1 ESC by Foxeer. Top trending global FPV hardware sourced for Pozitron Market.",
     "description_tr": "Foxeer Reaper F4 128K 65A 32Bit 4in1 ESC (Foxeer). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
     "compatibility_json": "{}",
@@ -30500,7 +30500,7 @@
       "128k"
     ],
     "gallery": [
-      "./assets/products/trend_foxeer_reaper_f4.jpg"
+      "./assets/products/PZT-ESC-7141.jpg"
     ],
     "compatibility": {}
   },
@@ -30523,8 +30523,8 @@
     "badge": "TREND",
     "specs_json": "{\"MCU\": \"STM32F405\", \"IMU\": \"ICM42688P\", \"Baro\": \"Dahili SPL06-001\", \"OSD\": \"AT7456E\", \"ESC Akımı\": \"55A Sürekli / 70A Anlık\", \"Giriş Voltajı\": \"3S - 6S LiPo\", \"Kablosuz\": \"Bluetooth & WiFi Dahili\"}",
     "tags_json": "[\"speedybee\", \"f405\", \"stack\", \"esc\", \"bluetooth\", \"betaflight\", \"55a\"]",
-    "image_url": "./assets/products/trend_speedybee_f405_v4.jpg",
-    "gallery_json": "[\"./assets/products/trend_speedybee_f405_v4.jpg\"]",
+    "image_url": "./assets/products/PZT-FLIG-7202.jpg",
+    "gallery_json": "[\"./assets/products/PZT-FLIG-7202.jpg\"]",
     "description_en": "SpeedyBee F405 V4 BLS 55A 30x30 Stack by SpeedyBee. Top trending global FPV hardware sourced for Pozitron Market.",
     "description_tr": "SpeedyBee F405 V4 BLS 55A 30x30 Uçuş ve ESC Kulesi (SpeedyBee). Dünyada en çok tercih edilen FPV donanımı, Türkiye yerel stok ve en uygun fiyat avantajıyla Pozitron Market'te.",
     "compatibility_json": "{}",
@@ -30553,7 +30553,7 @@
       "55a"
     ],
     "gallery": [
-      "./assets/products/trend_speedybee_f405_v4.jpg"
+      "./assets/products/PZT-FLIG-7202.jpg"
     ],
     "compatibility": {}
   }

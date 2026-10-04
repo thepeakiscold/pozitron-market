@@ -1,5 +1,5 @@
 {
-  "today_date": "2026-10-03",
+  "today_date": "2026-10-04",
   "today_follows_count": 10,
   "today_comments_count": 10,
   "max_daily_limit": 10,
@@ -174,7 +174,17 @@
     "528482016",
     "41700850451",
     "44314896599",
-    "69541236531"
+    "69541236531",
+    "54860807121",
+    "2298927405",
+    "8265897327",
+    "35764647776",
+    "1449874170",
+    "1615364166",
+    "1356538890",
+    "29010486881",
+    "348241883",
+    "1628663032"
   ],
   "commented_media_ids": [
     "3983912198478190450_73181351103",
@@ -347,7 +357,17 @@
     "3073384276786536525_1934497006",
     "2541307847556398916_14501438855",
     "3287406890872505771_64322492483",
-    "3317265323428622288_64322492483"
+    "3317265323428622288_64322492483",
+    "3995240511835498253_27506314899",
+    "3907108377924777302_54860807121",
+    "3997908391637980071_2298927405",
+    "3996905892509741996_62591553312",
+    "3999859872701297950_35764647776",
+    "3819244630504817444_1449874170",
+    "3754190092966048855_1615364166",
+    "3795698374759214251_1356538890",
+    "3997156431699865882_29010486881",
+    "2502381623079981440_348241883"
   ],
   "history": [
     {
@@ -3255,6 +3275,176 @@
       "username": "1dilay_blog",
       "user_id": "69541236531",
       "timestamp": "2026-10-03T01:52:48.103359",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "seyr1dunya",
+      "user_id": "27506314899",
+      "media_id": "3995240511835498253_27506314899",
+      "media_code": "Ddx8hPsNGcN",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-04T00:20:18.182562",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "gozumde_ardahan",
+      "user_id": "54860807121",
+      "timestamp": "2026-10-04T00:20:43.076229",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "gozumde_ardahan",
+      "user_id": "54860807121",
+      "media_id": "3907108377924777302_54860807121",
+      "media_code": "DY41l51KLVW",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-04T00:20:55.450514",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "zek.kilic",
+      "user_id": "2298927405",
+      "timestamp": "2026-10-04T00:21:21.878167",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "zek.kilic",
+      "user_id": "2298927405",
+      "media_id": "3997908391637980071_2298927405",
+      "media_code": "Dd7bIAYIpOn",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-04T00:21:32.203536",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "mugekapitan",
+      "user_id": "8265897327",
+      "timestamp": "2026-10-04T00:22:02.743924",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "qezqin07",
+      "user_id": "62591553312",
+      "media_id": "3996905892509741996_62591553312",
+      "media_code": "Dd33LuTtXOs",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı keyifli uçuşlar dileriz!",
+      "timestamp": "2026-10-04T00:22:35.479498",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "fatih.fromabove",
+      "user_id": "35764647776",
+      "timestamp": "2026-10-04T00:23:08.664005",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "fatih.fromabove",
+      "user_id": "35764647776",
+      "media_id": "3999859872701297950_35764647776",
+      "media_code": "DeCW1yvszUe",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı keyifli uçuşlar dileriz!",
+      "timestamp": "2026-10-04T00:23:20.788029",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "ismail.oztuncc",
+      "user_id": "1449874170",
+      "timestamp": "2026-10-04T00:24:01.797913",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "ismail.oztuncc",
+      "user_id": "1449874170",
+      "media_id": "3819244630504817444_1449874170",
+      "media_code": "DUArsGXjsMk",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-04T00:24:11.331828",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "tugba_k07",
+      "user_id": "1615364166",
+      "timestamp": "2026-10-04T00:24:42.263014",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "tugba_k07",
+      "user_id": "1615364166",
+      "media_id": "3754190092966048855_1615364166",
+      "media_code": "DQZj_--iDRX",
+      "comment": "Elinize sağlık, kırımsız ve bol irtifalı keyifli uçuşlar dileriz!",
+      "timestamp": "2026-10-04T00:24:55.715250",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "enes.zerturk",
+      "user_id": "1356538890",
+      "timestamp": "2026-10-04T00:25:18.737137",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "enes.zerturk",
+      "user_id": "1356538890",
+      "media_id": "3795698374759214251_1356538890",
+      "media_code": "DStB4-2DOyr",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-04T00:25:28.699296",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "skyrion_dynamics",
+      "user_id": "29010486881",
+      "timestamp": "2026-10-04T00:25:56.611528",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "skyrion_dynamics",
+      "user_id": "29010486881",
+      "media_id": "3997156431699865882_29010486881",
+      "media_code": "Dd4wJjHI3Ea",
+      "comment": "Çok temiz ve özenli bir build olmuş, elinize sağlık! Maiden uçuşunda başarılar.",
+      "timestamp": "2026-10-04T00:26:08.967528",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "cakaritoo",
+      "user_id": "348241883",
+      "timestamp": "2026-10-04T00:26:40.254857",
+      "status": "success"
+    },
+    {
+      "type": "comment",
+      "username": "cakaritoo",
+      "user_id": "348241883",
+      "media_id": "2502381623079981440_348241883",
+      "media_code": "CK6PtP4JdGA",
+      "comment": "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz.",
+      "timestamp": "2026-10-04T00:26:49.985240",
+      "status": "success"
+    },
+    {
+      "type": "follow",
+      "username": "mey_art_",
+      "user_id": "1628663032",
+      "timestamp": "2026-10-04T00:27:15.860811",
       "status": "success"
     }
   ]
