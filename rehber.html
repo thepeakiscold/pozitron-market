@@ -886,6 +886,24 @@
         }
       }
 
+      // Defensive de-duplication: never render numbered clones or repeated titles.
+      const _norm = (s) => (s || '').toLowerCase()
+        .replace(/\(\s*\d{2,6}\s*\)\s*$/, '')
+        .replace(/\s+#\d+\s*$/, '')
+        .replace(/[^a-z0-9çğıöşü ]+/g, ' ')
+        .replace(/\s+/g, ' ').trim();
+      const _seen = new Set();
+      _allArticles = (_allArticles || []).filter(a => {
+        const raw = (a.title || '').trim();
+        if (/\(\s*\d{2,6}\s*\)\s*$/.test(raw) || /\s#\d+\s*$/.test(raw)) return false;
+        const title = _norm(a.title);
+        const base = _norm(a.component_focus);
+        if ((title && _seen.has(title)) || (base && _seen.has(base))) return false;
+        if (title) _seen.add(title);
+        if (base) _seen.add(base);
+        return true;
+      });
+
       if (_allArticles.length > 0) {
         if (slug) {
           showArticleDetail(slug);
