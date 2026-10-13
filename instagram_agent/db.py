@@ -138,7 +138,10 @@ def init_instagram_tables():
         ('carousel_enabled', 'INTEGER', '1'),
         ('dm_automation_enabled', 'INTEGER', '1'),
         ('peak_scheduler_enabled', 'INTEGER', '0'),
-        ('reels_enabled', 'INTEGER', '1')
+        ('reels_enabled', 'INTEGER', '1'),
+        ('bilingual_enabled', 'INTEGER', '0'),
+        ('content_mix_enabled', 'INTEGER', '0'),
+        ('flux_enabled', 'INTEGER', '1')
     ]:
         if col_name not in cfg_cols:
             cursor.execute(f"ALTER TABLE instagram_agent_config ADD COLUMN {col_name} {col_type} DEFAULT {default_val}")
@@ -194,7 +197,8 @@ def update_agent_config(updates: dict):
         'public_base_url', 'preferred_language', 'default_hashtags',
         'last_run_at', 'next_run_at',
         'story_enabled', 'carousel_enabled', 'dm_automation_enabled',
-        'peak_scheduler_enabled', 'reels_enabled'
+        'peak_scheduler_enabled', 'reels_enabled', 'bilingual_enabled', 'content_mix_enabled',
+        'flux_enabled'
     ]
     fields = []
     params = []
@@ -409,6 +413,70 @@ def get_recent_posted_content_types(limit: int = 10) -> list:
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("SELECT content_type FROM instagram_posts WHERE status IN ('published', 'draft', 'scheduled') ORDER BY created_at DESC LIMIT ?", (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [r[0] for r in rows if r[0]]
+
+def get_recent_posted_content_types_by_media(media_type: str, limit: int = 10) -> list:
+    """Returns recent content_type values for a specific media type (e.g. 'REEL', 'IMAGE').
+
+    Used by the content-mix planner so consecutive Reels/posts never repeat the same
+    theme back-to-back and Instagram's duplicate-content detection is not triggered.
+    """
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT content_type FROM instagram_posts "
+        "WHERE media_type = ? AND status IN ('published', 'draft', 'scheduled') "
+        "ORDER BY created_at DESC LIMIT ?",
+        (media_type, limit)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return [r[0] for r in rows if r[0]]
+
+def get_recent_reel_combo_ids(limit: int = 8) -> list:
+    """Returns recently used Reels combination IDs (stored in metadata_json).
+
+    Lets the Reels planner avoid repeating the exact same visual combo back-to-back.
+    """
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT metadata_json FROM instagram_posts "
+        "WHERE media_type = 'REEL' AND status IN ('published', 'draft', 'scheduled') "
+        "ORDER BY created_at DESC LIMIT ?",
+        (limit,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    combos = []
+    for r in rows:
+        raw = r[0] if not isinstance(r, dict) else r.get('metadata_json')
+        if not raw:
+            continue
+        try:
+            meta = json.loads(raw)
+        except Exception:
+            continue
+        combo = (meta or {}).get('reel_combo')
+        if combo:
+            combos.append(combo)
+    return combos
+
+def get_recent_captions(limit: int = 30) -> list:
+    """Returns recent captions so the generator can detect near-duplicate text."""
+    init_instagram_tables()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT caption FROM instagram_posts "
+        "WHERE status IN ('published', 'draft', 'scheduled') "
+        "ORDER BY created_at DESC LIMIT ?",
+        (limit,)
+    )
     rows = cursor.fetchall()
     conn.close()
     return [r[0] for r in rows if r[0]]

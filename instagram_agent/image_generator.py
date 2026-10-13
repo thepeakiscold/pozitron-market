@@ -26,6 +26,17 @@ FONT_CANDIDATES_REG = [
     '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
 ]
 
+# --- Visual palette rotation (breaks the "always carbon-cyan" look) ---
+VISUAL_PALETTES = {
+    'carbon_cyan':    {'bg_top': (11, 15, 25), 'bg_bottom': (18, 27, 46), 'glow1': (2, 132, 199, 45),   'glow2': (6, 182, 212, 35),   'grid': (255, 255, 255, 6)},
+    'sunset_orange':  {'bg_top': (24, 12, 8),  'bg_bottom': (48, 20, 10), 'glow1': (249, 115, 22, 50),  'glow2': (239, 68, 68, 35),   'grid': (255, 200, 150, 7)},
+    'neon_purple':    {'bg_top': (17, 10, 32), 'bg_bottom': (33, 16, 58), 'glow1': (147, 51, 234, 50),  'glow2': (59, 130, 246, 35),  'grid': (255, 255, 255, 6)},
+    'mono_slate':     {'bg_top': (15, 17, 21), 'bg_bottom': (31, 35, 41), 'glow1': (148, 163, 184, 35), 'glow2': (100, 116, 139, 30), 'grid': (255, 255, 255, 5)},
+    'forest_green':   {'bg_top': (8, 18, 14),  'bg_bottom': (14, 38, 28), 'glow1': (16, 185, 129, 45),  'glow2': (34, 197, 94, 30),   'grid': (255, 255, 255, 6)},
+    'electric_blue':  {'bg_top': (6, 14, 35),  'bg_bottom': (8, 28, 66),  'glow1': (37, 99, 235, 50),   'glow2': (6, 182, 212, 35),   'grid': (255, 255, 255, 6)},
+}
+DEFAULT_PALETTE = 'carbon_cyan'
+
 def get_font(size: int, bold: bool = False):
     candidates = FONT_CANDIDATES_BOLD if bold else FONT_CANDIDATES_REG
     for path in candidates:
@@ -35,6 +46,23 @@ def get_font(size: int, bold: bool = False):
             except Exception:
                 pass
     return ImageFont.load_default()
+
+def perceptual_hash(image_path: str, hash_size: int = 8) -> str:
+    """Average-hash (aHash) of an image as a bit string, for near-duplicate detection."""
+    try:
+        img = Image.open(image_path).convert('L').resize((hash_size, hash_size), Image.Resampling.LANCZOS)
+        pixels = list(img.tobytes())
+        if not pixels:
+            return ''
+        avg = sum(pixels) / len(pixels)
+        return ''.join('1' if p > avg else '0' for p in pixels)
+    except Exception:
+        return ''
+
+def hamming_distance(h1: str, h2: str) -> int:
+    if not h1 or not h2 or len(h1) != len(h2):
+        return 999
+    return sum(1 for a, b in zip(h1, h2) if a != b)
 
 def clean_canvas_text(text: str) -> str:
     """Removes unsupported unicode emojis that render as missing boxes on Linux fonts."""
@@ -91,8 +119,9 @@ class ImageGenerator:
         img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
         draw = ImageDraw.Draw(img)
 
-        # Draw tech gradient background
-        self._draw_background(img, draw)
+        # Draw themed background (rotating palette)
+        palette = post_data.get('visual_palette') or DEFAULT_PALETTE
+        self._draw_background(img, draw, palette)
 
         # Draw Top Branding Bar
         self._draw_header(draw, content_type)
@@ -118,26 +147,205 @@ class ImageGenerator:
 
         return f"./assets/instagram/posts/{filename}"
 
-    def _draw_background(self, img: Image, draw: ImageDraw.Draw):
-        # Layered dark gradient with cyan/blue accents
+    def generate_text_poster(self, post_data: dict) -> str:
+        """
+        Creates a bold typographic 1080x1080 poster (no product photo) for non-product
+        themes. Adds a genuinely different visual form to the feed alongside photo cards.
+        """
+        post_id = post_data['id']
+        img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
+        draw = ImageDraw.Draw(img)
+        self._draw_background(img, draw, post_data.get('visual_palette'))
+
+        visual = post_data.get('visual_summary') or {}
+        badge = clean_canvas_text(visual.get('badge') or 'POZITRON FPV')
+        headline = clean_canvas_text(visual.get('headline') or post_data.get('title', 'FPV'))
+        subhead = clean_canvas_text(visual.get('subhead') or '')
+        points = [clean_canvas_text(p) for p in (visual.get('key_points') or [])][:3]
+
+        # Top brand bar
+        self._draw_header(draw, post_data.get('content_type', 'product_spotlight'))
+
+        # Big badge label
+        draw.rounded_rectangle([(80, 220), (min(80 + len(badge) * 22 + 70, self.width - 80), 300)], radius=14, fill=(15, 23, 42), outline=(56, 189, 248), width=3)
+        draw.text((105, 240), badge, fill=(56, 189, 248), font=get_font(30, bold=True))
+
+        # Headline (large, wrapped)
+        font_head = get_font(58, bold=True)
+        y = 350
+        for line in self._wrap_text(headline, 20)[:3]:
+            draw.text((80, y), line, fill=(255, 255, 255), font=font_head)
+            y += 74
+
+        # Subhead
+        if subhead:
+            font_sub = get_font(26, bold=False)
+            for line in self._wrap_text(subhead, 44)[:2]:
+                draw.text((80, y + 10), line, fill=(148, 163, 184), font=font_sub)
+                y += 38
+
+        # Key points as bold rows
+        y_pt = max(y + 60, 720)
+        font_pt = get_font(25, bold=True)
+        for pt in points:
+            draw.text((80, y_pt), f"-> {pt[:52]}", fill=(226, 232, 240), font=font_pt)
+            y_pt += 58
+
+        self._draw_footer(draw)
+
+        filename = f"{post_id}_poster.jpg"
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        img.save(file_path, format='JPEG', quality=92, optimize=True)
+        return f"./assets/instagram/posts/{filename}"
+
+    def _cover_crop(self, image_path: str, target_w: int, target_h: int):
+        """Loads an image and centre-crops it to exactly cover target_w x target_h."""
+        try:
+            src = Image.open(image_path).convert('RGB')
+        except Exception:
+            return None
+        src_ratio = src.width / src.height
+        target_ratio = target_w / target_h
+        if src_ratio > target_ratio:
+            new_h = target_h
+            new_w = int(target_h * src_ratio)
+        else:
+            new_w = target_w
+            new_h = int(target_w / src_ratio)
+        src = src.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        left = (new_w - target_w) // 2
+        top = (new_h - target_h) // 2
+        return src.crop((left, top, left + target_w, top + target_h))
+
+    def generate_stock_photo_post(self, post_data: dict, image_path: str, suffix: str = "stock") -> str:
+        """
+        Creates a 1080x1080 post using a downloadable (copyright-free) or AI-generated
+        (FLUX) photo as a full-bleed ambient background, with a dark gradient and text overlay.
+        """
+        post_id = post_data['id']
+        base = self._cover_crop(image_path, self.width, self.height)
+        if base is None:
+            return self.generate_post_image(post_data)
+
+        overlay = Image.new('RGBA', (self.width, self.height), (0, 0, 0, 0))
+        od = ImageDraw.Draw(overlay)
+        pal = VISUAL_PALETTES.get(post_data.get('visual_palette') or DEFAULT_PALETTE) or VISUAL_PALETTES[DEFAULT_PALETTE]
+        # Bottom-heavy dark gradient for legibility
         for y in range(self.height):
             ratio = y / self.height
-            # Deep carbon navy: (11, 15, 25) to (18, 27, 46)
-            r = int(11 + (18 - 11) * ratio)
-            g = int(15 + (27 - 15) * ratio)
-            b = int(25 + (46 - 25) * ratio)
+            alpha = int(40 + max(0.0, (ratio - 0.35) / 0.65) * 175)
+            od.line([(0, y), (self.width, y)], fill=(4, 8, 18, min(alpha, 215)))
+        # Themed tint glow
+        od.ellipse([(-150, self.height - 500), (500, self.height + 150)], fill=pal['glow1'])
+        overlay = overlay.filter(ImageFilter.GaussianBlur(18))
+        base = base.convert('RGB')
+        base.paste(overlay, (0, 0), overlay)
+
+        draw = ImageDraw.Draw(base)
+        self._draw_header(draw, post_data.get('content_type', 'product_spotlight'))
+
+        visual = post_data.get('visual_summary') or {}
+        badge = clean_canvas_text(visual.get('badge') or 'POZITRON FPV')
+        headline = clean_canvas_text(visual.get('headline') or post_data.get('title', 'FPV'))
+        points = [clean_canvas_text(p) for p in (visual.get('key_points') or [])][:2]
+
+        draw.rounded_rectangle([(70, 620), (min(70 + len(badge) * 20 + 60, self.width - 70), 690)], radius=12, fill=(15, 23, 42, 220), outline=(56, 189, 248), width=2)
+        draw.text((92, 640), badge, fill=(56, 189, 248), font=get_font(26, bold=True))
+
+        font_head = get_font(54, bold=True)
+        y = 720
+        for line in self._wrap_text(headline, 22)[:2]:
+            draw.text((70, y), line, fill=(255, 255, 255), font=font_head)
+            y += 68
+
+        font_pt = get_font(24, bold=True)
+        for pt in points:
+            draw.text((70, y + 6), f"-> {pt[:50]}", fill=(224, 242, 254), font=font_pt)
+            y += 46
+
+        self._draw_footer(draw)
+
+        filename = f"{post_id}_{suffix}.jpg"
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        base.save(file_path, 'JPEG', quality=92, optimize=True)
+        return f"./assets/instagram/posts/{filename}"
+
+    def generate_flux_photo_post(self, post_data: dict, image_path: str) -> str:
+        """Post renderer for a locally AI-generated (FLUX) photo background."""
+        return self.generate_stock_photo_post(post_data, image_path, suffix="flux")
+
+    def generate_stock_story(self, post_data: dict, image_path: str) -> str:
+        """
+        Creates a 1080x1920 Story using a copyright-free photo as ambient background.
+        Falls back to the standard story graphic on failure.
+        """
+        post_id = post_data['id']
+        story_w, story_h = 1080, 1920
+        base = self._cover_crop(image_path, story_w, story_h)
+        if base is None:
+            return self.generate_story_image(post_data)
+
+        pal = VISUAL_PALETTES.get(post_data.get('visual_palette') or DEFAULT_PALETTE) or VISUAL_PALETTES[DEFAULT_PALETTE]
+        overlay = Image.new('RGBA', (story_w, story_h), (0, 0, 0, 0))
+        od = ImageDraw.Draw(overlay)
+        for y in range(story_h):
+            ratio = y / story_h
+            alpha = int(30 + max(0.0, (ratio - 0.3) / 0.7) * 185)
+            od.line([(0, y), (story_w, y)], fill=(4, 8, 18, min(alpha, 220)))
+        od.ellipse([(story_w // 2 - 340, 1180), (story_w // 2 + 340, 1860)], fill=pal['glow1'])
+        overlay = overlay.filter(ImageFilter.GaussianBlur(24))
+        base = base.convert('RGB')
+        base.paste(overlay, (0, 0), overlay)
+
+        draw = ImageDraw.Draw(base)
+        draw.rounded_rectangle([(60, 130), (430, 195)], radius=14, fill=(15, 23, 42, 220), outline=(56, 189, 248), width=2)
+        draw.text((85, 147), "POZITRON MARKET", fill=(255, 255, 255), font=get_font(28, bold=True))
+
+        title = clean_canvas_text(post_data.get('title', 'Pozitron FPV'))
+        if len(title) > 46:
+            title = title[:43] + '...'
+        draw.text((70, 1000), title, fill=(255, 255, 255), font=get_font(40, bold=True))
+
+        visual = post_data.get('visual_summary') or {}
+        points = (visual.get('key_points') or [])[:3]
+        y_pt = 1220
+        font_pt = get_font(26, bold=True)
+        for pt in points:
+            draw.rounded_rectangle([(80, y_pt), (story_w - 80, y_pt + 92)], radius=12, fill=(15, 23, 42, 190), outline=(51, 65, 85), width=1)
+            draw.text((108, y_pt + 30), clean_canvas_text(pt)[:46], fill=(240, 245, 255), font=font_pt)
+            y_pt += 108
+
+        draw.rounded_rectangle([(100, 1630), (story_w - 100, 1780)], radius=30, fill=(2, 132, 199, 235), outline=(56, 189, 248), width=3)
+        draw.text((story_w // 2 - 220, 1665), "pozitronmarket.com", fill=(255, 255, 255), font=get_font(30, bold=True))
+        draw.text((story_w // 2 - 160, 1720), "Linke Tikla ve Incele >", fill=(224, 242, 254), font=get_font(20, bold=False))
+
+        filename = f"{post_id}_story_stock.jpg"
+        file_path = os.path.join(OUTPUT_DIR, filename)
+        base.save(file_path, 'JPEG', quality=92, optimize=True)
+        return f"./assets/instagram/posts/{filename}"
+
+    def _draw_background(self, img: Image, draw: ImageDraw.Draw, palette: str = None):
+        pal = VISUAL_PALETTES.get(palette) or VISUAL_PALETTES[DEFAULT_PALETTE]
+        bg_top = pal['bg_top']
+        bg_bottom = pal['bg_bottom']
+        # Layered dark gradient with themed accents
+        for y in range(self.height):
+            ratio = y / self.height
+            r = int(bg_top[0] + (bg_bottom[0] - bg_top[0]) * ratio)
+            g = int(bg_top[1] + (bg_bottom[1] - bg_top[1]) * ratio)
+            b = int(bg_top[2] + (bg_bottom[2] - bg_top[2]) * ratio)
             draw.line([(0, y), (self.width, y)], fill=(r, g, b))
 
-        # Top corner cyber glow
+        # Themed corner glows
         glow = Image.new('RGBA', (self.width, self.height), (0, 0, 0, 0))
         glow_draw = ImageDraw.Draw(glow)
-        glow_draw.ellipse([(-100, -100), (380, 380)], fill=(2, 132, 199, 45))
-        glow_draw.ellipse([(self.width - 300, self.height - 300), (self.width + 100, self.height + 100)], fill=(6, 182, 212, 35))
+        glow_draw.ellipse([(-100, -100), (380, 380)], fill=pal['glow1'])
+        glow_draw.ellipse([(self.width - 300, self.height - 300), (self.width + 100, self.height + 100)], fill=pal['glow2'])
         glow = glow.filter(ImageFilter.GaussianBlur(80))
         img.paste(glow, (0, 0), glow)
 
         # Subtle cyber grid lines
-        grid_color = (255, 255, 255, 6)
+        grid_color = pal['grid']
         grid_img = Image.new('RGBA', (self.width, self.height), (0, 0, 0, 0))
         g_draw = ImageDraw.Draw(grid_img)
         step = 60
@@ -172,7 +380,10 @@ class ImageGenerator:
             'deal_drop': 'HAFTANIN KAMPANYASI',
             'pilot_tip': 'FPV PILOT AKADEMISI',
             'seo_article': 'TEKNIK MUHENDISLIK REHBERI',
-            'review_highlight': 'DOGRULANMIS PILOT YORUMU'
+            'review_highlight': 'DOGRULANMIS PILOT YORUMU',
+            'myth_buster': 'FPV EFSANE AVCISI',
+            'maintenance_checklist': 'FPV BAKIM KONTROL LISTESI',
+            'beginner_roadmap': 'YENI BASLAYAN YOL HARITASI'
         }
         tag_text = type_labels.get(content_type, 'PRO FPV DONANIM')
         font_tag = get_font(20, bold=True)
@@ -532,14 +743,7 @@ class ImageGenerator:
                 "model_used": "pil-validator"
             }
 
-        # If Gemini API key is available, run multimodal Gemini 3.8 Flash Vision audit
-        if gemini_api_key:
-            try:
-                with open(abs_path, "rb") as f:
-                    img_bytes = f.read()
-                img_b64 = base64.b64encode(img_bytes).decode("utf-8")
-
-                vision_prompt = """Sen Pozitron Market FPV e-ticaret platformunun Baş Görsel ve Marka Kalite Denetçisisin (Model: Gemini 3.8 Flash Multimodal Vision).
+        vision_prompt = """Sen Pozitron Market FPV e-ticaret platformunun Baş Görsel ve Marka Kalite Denetçisisin (Model: DeepSeek V4.1 Flash High Multimodal Vision).
 Bu 1080x1080 Instagram FPV afiş kartını denetle:
 1. Çözünürlük ve Çerçeveleme: 1080x1080 oranına tam uygun mu, ürün veya metin taşması var mı?
 2. Tipografi ve Okunabilirlik: Başlık, alt başlık, teknik özellik maddeleri ve fiyat rozeti yüksek kontrastla net okunuyor mu?
@@ -559,6 +763,26 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
   "recommendations": "Tipografi, kontrast ve görsel hiyerarşi kurumsal standartlara tam uyumlu.",
   "model_used": "gemini-3.8-flash"
 }"""
+
+        # 1. Unified LLM vision audit (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                parsed = llm.generate_vision_json(vision_prompt, image_path=abs_path, max_tokens=4096, temperature=0.2)
+                if isinstance(parsed, dict) and 'quality_score' in parsed:
+                    parsed['file_size_kb'] = file_size_kb
+                    parsed['model_used'] = "deepseek-v4.1-flash-high-vision"
+                    return parsed
+        except Exception:
+            pass
+
+        # 2. Legacy Gemini Vision fallback
+        if gemini_api_key:
+            try:
+                with open(abs_path, "rb") as f:
+                    img_bytes = f.read()
+                img_b64 = base64.b64encode(img_bytes).decode("utf-8")
 
                 payload = {
                     "contents": [{
@@ -849,7 +1073,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         # Slayt 2: Specs & Details (2/4)
         s2_img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
         s2_draw = ImageDraw.Draw(s2_img)
-        self._draw_background(s2_img, s2_draw)
+        self._draw_background(s2_img, s2_draw, post_data.get('visual_palette'))
         self._draw_header(s2_draw, post_data.get('content_type', 'product_spotlight'))
 
         font_heading = get_font(34, bold=True)
@@ -890,7 +1114,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         # Slayt 3: Pozitron Advantage & Pricing (3/4)
         s3_img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
         s3_draw = ImageDraw.Draw(s3_img)
-        self._draw_background(s3_img, s3_draw)
+        self._draw_background(s3_img, s3_draw, post_data.get('visual_palette'))
         self._draw_header(s3_draw, post_data.get('content_type', 'product_spotlight'))
 
         s3_draw.rounded_rectangle([(self.width - 240, 50), (self.width - 60, 105)], radius=12, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
@@ -927,7 +1151,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         # Slayt 4: Save & Follow CTA (4/4)
         s4_img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
         s4_draw = ImageDraw.Draw(s4_img)
-        self._draw_background(s4_img, s4_draw)
+        self._draw_background(s4_img, s4_draw, post_data.get('visual_palette'))
         self._draw_header(s4_draw, post_data.get('content_type', 'product_spotlight'))
 
         s4_draw.rounded_rectangle([(self.width - 240, 50), (self.width - 60, 105)], radius=12, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
@@ -968,18 +1192,20 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         img = Image.new('RGB', (story_w, story_h), color=(11, 15, 25))
         draw = ImageDraw.Draw(img)
 
-        # Vertical Cyber Gradient
+        # Vertical Themed Gradient (rotating palette)
+        pal = VISUAL_PALETTES.get(post_data.get('visual_palette') or DEFAULT_PALETTE) or VISUAL_PALETTES[DEFAULT_PALETTE]
+        bg_top, bg_bottom = pal['bg_top'], pal['bg_bottom']
         for y in range(story_h):
             ratio = y / story_h
-            r = int(11 * (1 - ratio) + 20 * ratio)
-            g = int(15 * (1 - ratio) + 30 * ratio)
-            b = int(25 * (1 - ratio) + 55 * ratio)
+            r = int(bg_top[0] * (1 - ratio) + bg_bottom[0] * ratio)
+            g = int(bg_top[1] * (1 - ratio) + bg_bottom[1] * ratio)
+            b = int(bg_top[2] * (1 - ratio) + bg_bottom[2] * ratio)
             draw.line([(0, y), (story_w, y)], fill=(r, g, b))
 
         # Glowing circles
         glow = Image.new('RGBA', (story_w, story_h), (0, 0, 0, 0))
         gdraw = ImageDraw.Draw(glow)
-        gdraw.ellipse([(story_w // 2 - 350, 400), (story_w // 2 + 350, 1100)], fill=(2, 132, 199, 45))
+        gdraw.ellipse([(story_w // 2 - 350, 400), (story_w // 2 + 350, 1100)], fill=pal['glow1'])
         glow = glow.filter(ImageFilter.GaussianBlur(100))
         img.paste(glow, (0, 0), glow)
 
@@ -1299,17 +1525,19 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         def make_base_canvas():
             img = Image.new('RGB', (story_w, story_h), color=(11, 15, 25))
             draw = ImageDraw.Draw(img)
-            # Cyber Gradient
+            # Themed gradient (rotating palette)
+            pal = VISUAL_PALETTES.get(post_data.get('visual_palette') or DEFAULT_PALETTE) or VISUAL_PALETTES[DEFAULT_PALETTE]
+            bg_top, bg_bottom = pal['bg_top'], pal['bg_bottom']
             for y in range(story_h):
                 ratio = y / story_h
-                r = int(11 * (1 - ratio) + 20 * ratio)
-                g = int(15 * (1 - ratio) + 30 * ratio)
-                b = int(25 * (1 - ratio) + 55 * ratio)
+                r = int(bg_top[0] * (1 - ratio) + bg_bottom[0] * ratio)
+                g = int(bg_top[1] * (1 - ratio) + bg_bottom[1] * ratio)
+                b = int(bg_top[2] * (1 - ratio) + bg_bottom[2] * ratio)
                 draw.line([(0, y), (story_w, y)], fill=(r, g, b))
             # Radial glow
             glow = Image.new('RGBA', (story_w, story_h), (0, 0, 0, 0))
             gdraw = ImageDraw.Draw(glow)
-            gdraw.ellipse([(story_w // 2 - 380, 420), (story_w // 2 + 380, 1180)], fill=(2, 132, 199, 45))
+            gdraw.ellipse([(story_w // 2 - 380, 420), (story_w // 2 + 380, 1180)], fill=pal['glow1'])
             glow = glow.filter(ImageFilter.GaussianBlur(120))
             img.paste(glow, (0, 0), glow)
             return img, draw
@@ -1473,19 +1701,34 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             s1, s2, s3 = slides[0], slides[1], slides[2]
             audio_path = self._get_reels_audio()
 
+            # Variable slide duration + transition for Reels format diversity.
+            try:
+                slide_dur = float(post_data.get('reel_slide_dur', 3.0))
+            except Exception:
+                slide_dur = 3.0
+            slide_dur = max(2.0, min(slide_dur, 4.5))
+            xfade = 0.5
+            offset1 = round(slide_dur - xfade, 2)
+            offset2 = round(2 * slide_dur - 2 * xfade, 2)
+            total_dur = round(3 * slide_dur - 3 * xfade, 2)
+            transition = post_data.get('reel_transition') or random.choice(
+                ['wipeleft', 'slideleft', 'smoothleft', 'circleopen', 'fade', 'wiperight']
+            )
+            audio_fade_start = max(0.5, round(total_dur - 0.7, 2))
+
             filter_str = (
                 "[0:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v0];"
                 "[1:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v1];"
                 "[2:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v2];"
-                "[v0][v1]xfade=transition=wipeleft:duration=0.5:offset=2.5[v01];"
-                "[v01][v2]xfade=transition=wipeleft:duration=0.5:offset=5.0[v]"
+                f"[v0][v1]xfade=transition={transition}:duration={xfade}:offset={offset1}[v01];"
+                f"[v01][v2]xfade=transition={transition}:duration={xfade}:offset={offset2}[v]"
             )
 
             cmd = [
                 'ffmpeg',
-                '-loop', '1', '-t', '3', '-i', s1,
-                '-loop', '1', '-t', '3', '-i', s2,
-                '-loop', '1', '-t', '3', '-i', s3,
+                '-loop', '1', '-t', str(slide_dur), '-i', s1,
+                '-loop', '1', '-t', str(slide_dur), '-i', s2,
+                '-loop', '1', '-t', str(slide_dur), '-i', s3,
             ]
 
             if audio_path and os.path.exists(audio_path):
@@ -1497,9 +1740,9 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                     '-c:v', 'libx264',
                     '-c:a', 'aac',
                     '-b:a', '192k',
-                    '-t', '7.5',
+                    '-t', str(total_dur),
                     '-pix_fmt', 'yuv420p',
-                    '-af', 'afade=t=out:st=6.8:d=0.7',
+                    '-af', f'afade=t=out:st={audio_fade_start}:d=0.7',
                     '-movflags', '+faststart',
                     abs_video_path,
                     '-y'
@@ -1509,7 +1752,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                     '-filter_complex', filter_str,
                     '-map', '[v]',
                     '-c:v', 'libx264',
-                    '-t', '7.5',
+                    '-t', str(total_dur),
                     '-pix_fmt', 'yuv420p',
                     '-movflags', '+faststart',
                     abs_video_path,

@@ -1048,6 +1048,21 @@
                 Reels Teaser Desteği
               </label>
 
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;" title="Story ve Reel'i her döngüde değil, rastgele aralıklarla paylaşır">
+                <input type="checkbox" id="cfg-ig-mix" style="width:16px; height:16px;">
+                İçerik Çeşitlilik Modu (Story/Reel Seyreltme)
+              </label>
+
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;" title="Gönderilere kısa İngilizce açıklama satırı ekler">
+                <input type="checkbox" id="cfg-ig-bilingual" style="width:16px; height:16px;">
+                İngilizce Açıklama Satırı
+              </label>
+
+              <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;" title="Yerel FLUX (ComfyUI) ile yapay zeka görseli üretir; postların bir kısmında kullanılır">
+                <input type="checkbox" id="cfg-ig-flux" checked style="width:16px; height:16px;">
+                Yerel FLUX AI Görsel Üretimi
+              </label>
+
               <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:600; color:#334155; cursor:pointer;">
                 <input type="checkbox" id="cfg-ig-autonomous" checked style="width:16px; height:16px;">
                 Otonom Döngü
@@ -1946,6 +1961,9 @@
           const elDm = document.getElementById('cfg-ig-dm');
           const elPeak = document.getElementById('cfg-ig-peak');
           const elReels = document.getElementById('cfg-ig-reels');
+          const elMix = document.getElementById('cfg-ig-mix');
+          const elBilingual = document.getElementById('cfg-ig-bilingual');
+          const elFlux = document.getElementById('cfg-ig-flux');
           const elAuto = document.getElementById('cfg-ig-autonomous');
 
           if (elCar) elCar.checked = cfg.carousel_enabled !== false && cfg.carousel_enabled !== 0;
@@ -1953,6 +1971,9 @@
           if (elDm) elDm.checked = cfg.dm_automation_enabled !== false && cfg.dm_automation_enabled !== 0;
           if (elPeak) elPeak.checked = cfg.peak_scheduler_enabled !== false && cfg.peak_scheduler_enabled !== 0;
           if (elReels) elReels.checked = cfg.reels_enabled !== false && cfg.reels_enabled !== 0;
+          if (elMix) elMix.checked = cfg.content_mix_enabled === true || cfg.content_mix_enabled === 1;
+          if (elBilingual) elBilingual.checked = cfg.bilingual_enabled === true || cfg.bilingual_enabled === 1;
+          if (elFlux) elFlux.checked = cfg.flux_enabled !== false && cfg.flux_enabled !== 0;
           if (elAuto) elAuto.checked = cfg.is_autonomous_enabled !== false && cfg.is_autonomous_enabled !== 0;
         }
       } catch (e) {
@@ -1968,6 +1989,9 @@
         dm_automation_enabled: document.getElementById('cfg-ig-dm')?.checked ? 1 : 0,
         peak_scheduler_enabled: document.getElementById('cfg-ig-peak')?.checked ? 1 : 0,
         reels_enabled: document.getElementById('cfg-ig-reels')?.checked ? 1 : 0,
+        content_mix_enabled: document.getElementById('cfg-ig-mix')?.checked ? 1 : 0,
+        bilingual_enabled: document.getElementById('cfg-ig-bilingual')?.checked ? 1 : 0,
+        flux_enabled: document.getElementById('cfg-ig-flux')?.checked ? 1 : 0,
         is_autonomous_enabled: document.getElementById('cfg-ig-autonomous')?.checked ? 1 : 0
       };
 
