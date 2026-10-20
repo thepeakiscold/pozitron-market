@@ -1,9 +1,10 @@
 import os
+import re
 import json
 import time
 import random
 import requests
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import List, Dict, Optional
 
 INTERACTIONS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'instagram_interactions.json')
@@ -55,6 +56,34 @@ class InstagramEngagementEngine:
         self.csrf_token = csrf_token or ''
         self.gemini_api_key = gemini_api_key or os.environ.get('GEMINI_API_KEY', '')
         self.max_daily = 10
+        # Anti-rate-limit pacing: never burst-follow. Drip a few follows per run
+        # with human-like 45-120s gaps so Instagram's follow action-block
+        # ("feedback_required") is not triggered.
+        try:
+            self.per_run_follow_cap = int(os.environ.get('IG_PER_RUN_FOLLOW_CAP', '4'))
+        except Exception:
+            self.per_run_follow_cap = 4
+        try:
+            self.follow_delay_range = (
+                float(os.environ.get('IG_FOLLOW_MIN_DELAY', '45')),
+                float(os.environ.get('IG_FOLLOW_MAX_DELAY', '120')),
+            )
+        except Exception:
+            self.follow_delay_range = (45.0, 120.0)
+        # Likes are lighter than follows; drip a larger batch per run with short
+        # human-like 5-12s gaps to keep the daily 10-like quota natural.
+        try:
+            self.per_run_like_cap = int(os.environ.get('IG_PER_RUN_LIKE_CAP', '6'))
+        except Exception:
+            self.per_run_like_cap = 6
+        try:
+            self.like_delay_range = (
+                float(os.environ.get('IG_LIKE_MIN_DELAY', '5')),
+                float(os.environ.get('IG_LIKE_MAX_DELAY', '12')),
+            )
+        except Exception:
+            self.like_delay_range = (5.0, 12.0)
+        self._web_tokens = None
         self._load_gemini_key_if_needed()
         self._load_session_if_needed()
 
@@ -145,9 +174,11 @@ class InstagramEngagementEngine:
             "today_date": today_str,
             "today_follows_count": 0,
             "today_comments_count": 0,
+            "today_likes_count": 0,
             "max_daily_limit": self.max_daily,
             "followed_user_ids": [],
             "commented_media_ids": [],
+            "liked_media_ids": [],
             "history": []
         }
 
@@ -161,6 +192,10 @@ class InstagramEngagementEngine:
                     data['today_date'] = today_str
                     data['today_follows_count'] = 0
                     data['today_comments_count'] = 0
+                    data['today_likes_count'] = 0
+                # Backfill newer keys for older interaction files
+                data.setdefault('today_likes_count', 0)
+                data.setdefault('liked_media_ids', [])
                 return data
             except Exception:
                 return default_data
@@ -209,9 +244,7 @@ class InstagramEngagementEngine:
         cap_lower = caption.lower()
         self._load_gemini_key_if_needed()
 
-        if self.gemini_api_key:
-            models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
-            prompt = f"""Bir Türk FPV drone pilotunun Instagram gönderisine Pozitron Market FPV ekibi olarak samimi, motive edici, nazik TEK CÜMLELİK kısa bir yorum yaz.
+        prompt = f"""Bir Türk FPV drone pilotunun Instagram gönderisine Pozitron Market FPV ekibi olarak samimi, motive edici, nazik TEK CÜMLELİK kısa bir yorum yaz.
 Pilot Kullanıcı Adı: @{username}
 Gönderi Metni: {caption[:300]}
 
@@ -225,6 +258,23 @@ KRİTİK UYARI VE İÇERİK UYUMU:
 3. KESİNLİKLE HİÇBİR EMOJİ KULLANMA.
 4. Sadece yorum metnini döndür."""
 
+        # 1. Unified LLM (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                text = llm.generate_text(prompt, max_tokens=1024, temperature=0.6)
+                import re as _re
+                text = (text or "").strip().strip('"')
+                text = _re.sub(r'[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf]', '', text).strip()
+                if text and len(text) < 160:
+                    return text
+        except Exception:
+            pass
+
+        # 2. Legacy Gemini fallback
+        if self.gemini_api_key:
+            models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
             payload = {"contents": [{"parts": [{"text": prompt}]}]}
             import re
             for m in models:
@@ -277,14 +327,68 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             "Tebrikler, gökyüzünde bol kırımsız ve keyifli uçuşlar dileriz."
         ])
 
-    def follow_user(self, user_id: str, username: str) -> bool:
-        """Sends follow request to an Instagram user via GraphQL mutation."""
+    def _fetch_web_tokens(self) -> dict:
+        """
+        Fetches the LSD token and rollout hash (X-Instagram-AJAX) that the current
+        Instagram web app sends with every GraphQL mutation. Without these headers
+        Instagram answers /graphql/query with the HTML app shell instead of JSON,
+        which silently breaks every follow mutation.
+        """
+        tokens = {"lsd": "", "rollout_hash": ""}
+        if not self.session_cookies:
+            return tokens
+        try:
+            ua = self._get_headers().get('User-Agent')
+            res = requests.get(
+                'https://www.instagram.com/',
+                headers={'User-Agent': ua},
+                cookies=self.session_cookies,
+                timeout=12
+            )
+            if res.status_code == 200:
+                m_lsd = re.search(r'"LSD",\[\],\{"token":"(.*?)"\}', res.text)
+                if m_lsd:
+                    tokens["lsd"] = m_lsd.group(1)
+                m_roll = re.search(r'rollout_hash":"(\d+)"', res.text)
+                if m_roll:
+                    tokens["rollout_hash"] = m_roll.group(1)
+        except Exception:
+            pass
+        return tokens
+
+    def follow_user(self, user_id: str, username: str) -> dict:
+        """
+        Sends a follow request to an Instagram user via the web GraphQL mutation.
+
+        Returns a diagnostic dictionary so callers (and the QA Sentinel agent) can
+        distinguish a real follow, a silent HTML/non-JSON response, and an Instagram
+        action-block ("feedback_required" / "Try Again Later"):
+            {"success": bool, "status_code": int, "error": str|None,
+             "message": str, "blocked": bool}
+        """
+        detail = {"success": False, "status_code": 0, "error": None, "message": "", "blocked": False}
+
         if not self.session_cookies or not self.session_cookies.get('sessionid'):
-            return False
+            detail["error"] = "no_session"
+            detail["message"] = "Instagram oturum cerezi (sessionid) bulunamadi."
+            return detail
+
+        if self._web_tokens is None:
+            self._web_tokens = self._fetch_web_tokens()
+        tokens = self._web_tokens or {}
+
+        headers = self._get_headers(referer=f"https://www.instagram.com/{username}/")
+        if tokens.get("rollout_hash"):
+            headers["X-Instagram-AJAX"] = tokens["rollout_hash"]
+        if tokens.get("lsd"):
+            headers["X-FB-LSD"] = tokens["lsd"]
+        headers["X-IG-WWW-Claim"] = "0"
+        if self.session_cookies.get("mid"):
+            headers["X-Mid"] = self.session_cookies["mid"]
+        if self.session_cookies.get("ig_did"):
+            headers["X-Web-Device-Id"] = self.session_cookies["ig_did"]
 
         url = 'https://www.instagram.com/graphql/query'
-        headers = self._get_headers(referer=f"https://www.instagram.com/{username}/")
-        
         payload = {
             'doc_id': '27767812149509802',
             'variables': json.dumps({
@@ -292,18 +396,98 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                 'data': {
                     'include_follow_friction_check': True
                 }
-            })
+            }),
+            'fb_api_caller_class': 'RelayModern',
+            'fb_api_req_friendly_name': 'usePolarisFollowUserFollowMutation',
+            'server_timestamps': 'true'
         }
+        if tokens.get("lsd"):
+            payload['lsd'] = tokens["lsd"]
 
         try:
             res = requests.post(url, headers=headers, cookies=self.session_cookies, data=payload, timeout=12)
-            if res.status_code == 200:
+            detail["status_code"] = res.status_code
+
+            content_type = (res.headers.get('content-type') or '').lower()
+            if 'json' not in content_type:
+                detail["error"] = "non_json_response"
+                detail["message"] = "Instagram JSON yerine HTML uygulama kabugu dondurdu (istek API olarak kabul edilmedi)."
+                return detail
+
+            try:
                 body = res.json()
-                friendship = body.get('data', {}).get('xdt_create_friendship', {}).get('friendship_status', {})
-                return friendship.get('following') is True or friendship.get('outgoing_request') is True
+            except Exception as jerr:
+                detail["error"] = "json_parse_error"
+                detail["message"] = str(jerr)[:200]
+                return detail
+
+            if res.status_code != 200:
+                msg = str(body.get('message') or body.get('error') or '')
+                feedback_msg = str(body.get('feedback_message') or '')
+                detail["message"] = (feedback_msg or msg)[:300]
+                if (msg == 'feedback_required' or body.get('spam') is True
+                        or 'limit how often' in feedback_msg.lower()
+                        or body.get('feedback_title')):
+                    detail["error"] = "feedback_required"
+                    detail["blocked"] = True
+                else:
+                    detail["error"] = f"http_{res.status_code}"
+                return detail
+
+            friendship = (body.get('data', {}) or {}).get('xdt_create_friendship', {}).get('friendship_status', {}) or {}
+            if friendship.get('following') is True or friendship.get('outgoing_request') is True:
+                detail["success"] = True
+                return detail
+
+            detail["error"] = "not_following"
+            detail["message"] = json.dumps(body.get('data', {}), ensure_ascii=False)[:200]
+            return detail
         except Exception as e:
+            detail["error"] = "exception"
+            detail["message"] = str(e)[:200]
             print(f"Follow error for {username}: {e}")
-        return False
+            return detail
+
+    def diagnose_follow_capability(self) -> dict:
+        """
+        Performs a single, idempotent follow probe against an account the bot already
+        follows (no real side effect) to capture the live Instagram response, then
+        persists the diagnostic state into data/instagram_interactions.json.
+        Throttled to at most once every 12 hours. Used by the QA Sentinel agent.
+        """
+        data = self.load_interactions_data()
+        diag = data.get('follow_diagnostics') or {}
+
+        last_probe = diag.get('last_follow_probe_at')
+        if last_probe:
+            try:
+                if (datetime.now() - datetime.fromisoformat(last_probe)).total_seconds() < 12 * 3600:
+                    return diag
+            except Exception:
+                pass
+
+        my_id = str(self.session_cookies.get('ds_user_id', '')) if self.session_cookies else ''
+        target_id = ''
+        for uid in reversed(data.get('followed_user_ids', [])):
+            if uid and str(uid) != my_id:
+                target_id = str(uid)
+                break
+        if not target_id:
+            target_id = my_id or '0'
+
+        res = self.follow_user(target_id, 'pozitron_diagnostic')
+        now_iso = datetime.now().isoformat()
+        diag['last_follow_probe_at'] = now_iso
+        diag['last_follow_attempt_at'] = now_iso
+        diag['last_follow_error'] = res.get('error')
+        diag['last_follow_message'] = res.get('message')
+        diag['last_follow_status_code'] = res.get('status_code')
+        diag['follow_blocked'] = bool(res.get('blocked'))
+        if res.get('blocked') and not diag.get('follow_blocked_until'):
+            diag['follow_blocked_until'] = (datetime.now() + timedelta(hours=24)).isoformat()
+        data['follow_diagnostics'] = diag
+        self.save_interactions_data(data)
+        return diag
 
     def post_comment(self, media_id: str, media_code: str, comment_text: str) -> bool:
         """Adds a comment to an Instagram media post."""
@@ -324,6 +508,72 @@ KRİTİK UYARI VE İÇERİK UYUMU:
         except Exception as e:
             print(f"Comment error on {media_code}: {e}")
         return False
+
+    def like_media(self, media_id: str, media_code: str) -> dict:
+        """
+        Likes an Instagram media via the web API.
+
+        Returns a diagnostic dictionary so callers can distinguish a real like,
+        a silent HTML/non-JSON response, and an Instagram action-block
+        ("feedback_required" / "Try Again Later"):
+            {"success": bool, "status_code": int, "error": str|None,
+             "message": str, "blocked": bool}
+        """
+        detail = {"success": False, "status_code": 0, "error": None, "message": "", "blocked": False}
+
+        if not self.session_cookies or not self.session_cookies.get('sessionid'):
+            detail["error"] = "no_session"
+            detail["message"] = "Instagram oturum cerezi (sessionid) bulunamadi."
+            return detail
+
+        # Clean numeric media ID (strip any "userid_mediaid" composite form)
+        clean_id = media_id.split('_')[0] if '_' in str(media_id) else str(media_id)
+        url = f"https://www.instagram.com/api/v1/web/likes/{clean_id}/like/"
+        headers = self._get_headers(referer=f"https://www.instagram.com/p/{media_code}/")
+        headers["X-IG-WWW-Claim"] = "0"
+
+        try:
+            res = requests.post(url, headers=headers, cookies=self.session_cookies, data={}, timeout=12)
+            detail["status_code"] = res.status_code
+
+            content_type = (res.headers.get('content-type') or '').lower()
+            if 'json' not in content_type:
+                detail["error"] = "non_json_response"
+                detail["message"] = "Instagram JSON yerine HTML uygulama kabugu dondurdu (istek API olarak kabul edilmedi)."
+                return detail
+
+            try:
+                body = res.json()
+            except Exception as jerr:
+                detail["error"] = "json_parse_error"
+                detail["message"] = str(jerr)[:200]
+                return detail
+
+            if res.status_code != 200:
+                msg = str(body.get('message') or body.get('error') or '')
+                feedback_msg = str(body.get('feedback_message') or '')
+                detail["message"] = (feedback_msg or msg)[:300]
+                if (msg == 'feedback_required' or body.get('spam') is True
+                        or 'limit how often' in feedback_msg.lower()
+                        or body.get('feedback_title')):
+                    detail["error"] = "feedback_required"
+                    detail["blocked"] = True
+                else:
+                    detail["error"] = f"http_{res.status_code}"
+                return detail
+
+            if body.get('status') == 'ok' or body.get('id'):
+                detail["success"] = True
+                return detail
+
+            detail["error"] = "not_liked"
+            detail["message"] = json.dumps(body, ensure_ascii=False)[:200]
+            return detail
+        except Exception as e:
+            detail["error"] = "exception"
+            detail["message"] = str(e)[:200]
+            print(f"Like error on {media_code}: {e}")
+            return detail
 
     def search_recent_drone_posts(self, target_tag: str = 'fpvturkey') -> List[Dict]:
         """Finds recent posts from pilots under drone hashtags."""
@@ -371,22 +621,61 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             }
 
         data = self.load_interactions_data()
+
+        follow_diag = data.get('follow_diagnostics') or {}
+        follows_blocked = False
         
         follows_needed = max(0, min(self.max_daily, target_count) - data.get('today_follows_count', 0))
         comments_needed = max(0, min(self.max_daily, target_count) - data.get('today_comments_count', 0))
+        likes_needed = max(0, min(self.max_daily, target_count) - data.get('today_likes_count', 0))
 
-        if follows_needed == 0 and comments_needed == 0:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [KOTA DOLU] Bugünün 10 takip ve 10 yorum kotası zaten tamamlandı.")
+        # Anti-burst: cap follows per run so the daily quota drips across several cycles.
+        follows_needed = min(follows_needed, max(1, self.per_run_follow_cap))
+        likes_needed = min(likes_needed, max(1, self.per_run_like_cap))
+
+        # Respect any active Instagram follow action-block cooldown. Instagram returns
+        # "feedback_required" ("Try Again Later") for follow mutations while the account
+        # is rate-limited, so we must not keep hammering the endpoint.
+        blocked_until_str = follow_diag.get('follow_blocked_until')
+        if blocked_until_str and follows_needed > 0:
+            try:
+                if datetime.now() < datetime.fromisoformat(blocked_until_str):
+                    follows_blocked = True
+                    follows_needed = 0
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [TAKIP BEKLEMEDE] Takip aksiyonu Instagram tarafindan kisitli "
+                          f"(son hata: {follow_diag.get('last_follow_error')}). Tekrar deneme zamani: {blocked_until_str}")
+            except Exception:
+                pass
+
+        # Respect any active Instagram like action-block cooldown (likes are lighter
+        # than follows but Instagram can still rate-limit them).
+        like_diag = data.get('like_diagnostics') or {}
+        likes_blocked = False
+        like_blocked_until_str = like_diag.get('like_blocked_until')
+        if like_blocked_until_str and likes_needed > 0:
+            try:
+                if datetime.now() < datetime.fromisoformat(like_blocked_until_str):
+                    likes_blocked = True
+                    likes_needed = 0
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [BEGENI BEKLEMEDE] Begeni aksiyonu Instagram tarafindan kisitli "
+                          f"(son hata: {like_diag.get('last_like_error')}). Tekrar deneme zamani: {like_blocked_until_str}")
+            except Exception:
+                pass
+
+        if follows_needed == 0 and comments_needed == 0 and likes_needed == 0:
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [KOTA DOLU] Bugünün 10 takip, 10 yorum ve 10 beğeni kotası zaten tamamlandı.")
             return {
                 "success": True,
                 "completed_already": True,
                 "today_follows": data.get('today_follows_count', 0),
                 "today_comments": data.get('today_comments_count', 0),
-                "message": "Bugünkü 10 takip ve yorum kotası dolu."
+                "today_likes": data.get('today_likes_count', 0),
+                "message": "Bugünkü 10 takip, 10 yorum ve 10 beğeni kotası dolu."
             }
 
         followed_ids = set(data.get('followed_user_ids', []))
         commented_media_ids = set(data.get('commented_media_ids', []))
+        liked_media_ids = set(data.get('liked_media_ids', []))
 
         # Randomize hashtag order for natural engagement
         shuffled_tags = list(TARGET_HASHTAGS)
@@ -394,14 +683,18 @@ KRİTİK UYARI VE İÇERİK UYUMU:
 
         new_follows = 0
         new_comments = 0
+        new_likes = 0
+        follow_attempts = 0
+        follow_failures = 0
+        liked_media_attempts = 0
         interacted_pilots = []
 
         my_user_id = str(self.session_cookies.get('ds_user_id', '30375317594'))
 
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] [ETKİLEŞİM BAŞLADI] Drone topluluğu etkileşim döngüsü başladı. Hedef: {follows_needed} takip, {comments_needed} yorum.")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] [ETKİLEŞİM BAŞLADI] Drone topluluğu etkileşim döngüsü başladı. Hedef: {follows_needed} takip, {comments_needed} yorum, {likes_needed} beğeni.")
 
         for tag in shuffled_tags:
-            if follows_needed <= 0 and comments_needed <= 0:
+            if follows_needed <= 0 and comments_needed <= 0 and likes_needed <= 0:
                 break
 
             candidates = self.search_recent_drone_posts(tag)
@@ -424,16 +717,21 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                 did_something = False
 
                 # 1. Follow Pilot
-                if follows_needed > 0 and u_id not in followed_ids:
+                if follows_needed > 0 and not follows_blocked and u_id not in followed_ids:
                     print(f"[{datetime.now().strftime('%H:%M:%S')}] [PILOT TAKIP] Pilot takip ediliyor: @{u_name} (ID: {u_id})")
-                    ok = self.follow_user(u_id, u_name)
-                    if ok:
+                    follow_attempts += 1
+                    f_res = self.follow_user(u_id, u_name)
+                    if f_res.get('success'):
                         followed_ids.add(u_id)
                         data['followed_user_ids'].append(u_id)
                         data['today_follows_count'] += 1
                         new_follows += 1
                         follows_needed -= 1
+                        follow_failures = 0
                         did_something = True
+                        follow_diag['follow_failure_streak'] = 0
+                        follow_diag['follow_blocked'] = False
+                        follow_diag['follow_blocked_until'] = None
                         data['history'].append({
                             "type": "follow",
                             "username": u_name,
@@ -441,7 +739,45 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                             "timestamp": datetime.now().isoformat(),
                             "status": "success"
                         })
-                    time.sleep(random.uniform(5, 10))
+                    else:
+                        follow_failures += 1
+                        err_code = f_res.get('error')
+                        err_msg = f_res.get('message')
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] [TAKIP HATASI] @{u_name} takip edilemedi "
+                              f"(error={err_code}, status={f_res.get('status_code')}): {err_msg}")
+                        follow_diag['last_follow_attempt_at'] = datetime.now().isoformat()
+                        follow_diag['last_follow_error'] = err_code
+                        follow_diag['last_follow_message'] = err_msg
+                        follow_diag['last_follow_status_code'] = f_res.get('status_code')
+                        follow_diag['follow_failure_streak'] = follow_diag.get('follow_failure_streak', 0) + 1
+                        data['history'].append({
+                            "type": "follow",
+                            "username": u_name,
+                            "user_id": u_id,
+                            "timestamp": datetime.now().isoformat(),
+                            "status": "failed",
+                            "error": err_code,
+                            "message": err_msg
+                        })
+                        if f_res.get('blocked'):
+                            # Instagram action-block: stop follow attempts for a full day
+                            follow_diag['follow_blocked'] = True
+                            follow_diag['follow_blocked_until'] = (datetime.now() + timedelta(hours=24)).isoformat()
+                            follows_blocked = True
+                            follows_needed = 0
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] [TAKIP ENGELLENDI] Instagram takip aksiyonunu kisitladi "
+                                  f"(feedback_required). 24 saat boyunca takip denemesi yapilmayacak.")
+                        elif follow_failures >= 3:
+                            # Repeated non-block failures: back off so we do not spam the API or history
+                            follow_diag['follow_blocked'] = True
+                            follow_diag['follow_blocked_until'] = (datetime.now() + timedelta(hours=6)).isoformat()
+                            follows_blocked = True
+                            follows_needed = 0
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] [TAKIP GERI CEKILME] Ust uste 3 takip hatasi alindi, "
+                                  f"6 saat boyunca takip denemesi durduruldu.")
+                        data['follow_diagnostics'] = follow_diag
+                        self.save_interactions_data(data)
+                    time.sleep(random.uniform(*self.follow_delay_range))
 
                 # 2. Leave Encouraging Drone Comment
                 if comments_needed > 0 and m_id not in commented_media_ids:
@@ -467,6 +803,69 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                         })
                     time.sleep(random.uniform(8, 14))
 
+                # 3. Like the Pilot's Post (daily 10-like quota, like the comments)
+                if likes_needed > 0 and not likes_blocked and m_id not in liked_media_ids:
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [BEGENI] Gonderi begeniliyor (@{u_name} / https://instagram.com/p/{m_code}/)")
+                    liked_media_attempts += 1
+                    l_res = self.like_media(m_id, m_code)
+                    if l_res.get('success'):
+                        liked_media_ids.add(m_id)
+                        data['liked_media_ids'].append(m_id)
+                        data['today_likes_count'] += 1
+                        new_likes += 1
+                        likes_needed -= 1
+                        did_something = True
+                        like_diag['like_blocked'] = False
+                        like_diag['like_blocked_until'] = None
+                        like_diag['like_failure_streak'] = 0
+                        data['history'].append({
+                            "type": "like",
+                            "username": u_name,
+                            "user_id": u_id,
+                            "media_id": m_id,
+                            "media_code": m_code,
+                            "timestamp": datetime.now().isoformat(),
+                            "status": "success"
+                        })
+                    else:
+                        err_code = l_res.get('error')
+                        err_msg = l_res.get('message')
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] [BEGENI HATASI] @{u_name} gonderisi begenilemedi "
+                              f"(error={err_code}, status={l_res.get('status_code')}): {err_msg}")
+                        like_diag['last_like_attempt_at'] = datetime.now().isoformat()
+                        like_diag['last_like_error'] = err_code
+                        like_diag['last_like_message'] = err_msg
+                        like_diag['last_like_status_code'] = l_res.get('status_code')
+                        like_diag['like_failure_streak'] = like_diag.get('like_failure_streak', 0) + 1
+                        data['history'].append({
+                            "type": "like",
+                            "username": u_name,
+                            "user_id": u_id,
+                            "media_id": m_id,
+                            "media_code": m_code,
+                            "timestamp": datetime.now().isoformat(),
+                            "status": "failed",
+                            "error": err_code,
+                            "message": err_msg
+                        })
+                        if l_res.get('blocked'):
+                            like_diag['like_blocked'] = True
+                            like_diag['like_blocked_until'] = (datetime.now() + timedelta(hours=24)).isoformat()
+                            likes_blocked = True
+                            likes_needed = 0
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] [BEGENI ENGELLENDI] Instagram begeni aksiyonunu kisitladi "
+                                  f"(feedback_required). 24 saat boyunca begeni denemesi yapilmayacak.")
+                        elif like_diag.get('like_failure_streak', 0) >= 3:
+                            like_diag['like_blocked'] = True
+                            like_diag['like_blocked_until'] = (datetime.now() + timedelta(hours=6)).isoformat()
+                            likes_blocked = True
+                            likes_needed = 0
+                            print(f"[{datetime.now().strftime('%H:%M:%S')}] [BEGENI GERI CEKILME] Ust uste 3 begeni hatasi alindi, "
+                                  f"6 saat boyunca begeni denemesi durduruldu.")
+                        data['like_diagnostics'] = like_diag
+                        self.save_interactions_data(data)
+                    time.sleep(random.uniform(*self.like_delay_range))
+
                 if did_something:
                     interacted_pilots.append({
                         "username": u_name,
@@ -475,18 +874,35 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                     # Delay between different accounts (natural human pacing)
                     time.sleep(random.uniform(8, 16))
 
-                if follows_needed <= 0 and comments_needed <= 0:
+                if follows_needed <= 0 and comments_needed <= 0 and likes_needed <= 0:
                     break
 
+        follow_diag['follow_diagnostics_updated_at'] = datetime.now().isoformat()
+        data['follow_diagnostics'] = follow_diag
+        like_diag['like_diagnostics_updated_at'] = datetime.now().isoformat()
+        data['like_diagnostics'] = like_diag
         self.save_interactions_data(data)
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] [TAMAMLANDI] Etkilesim tamamlandi: +{new_follows} takip, +{new_comments} yorum.")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] [TAMAMLANDI] Etkilesim tamamlandi: "
+              f"+{new_follows} takip ({follow_attempts} deneme), +{new_comments} yorum, +{new_likes} begeni.")
 
         return {
             "success": True,
             "new_follows": new_follows,
             "new_comments": new_comments,
+            "new_likes": new_likes,
+            "follow_attempts": follow_attempts,
+            "follow_failed": max(0, follow_attempts - new_follows),
+            "follow_blocked": bool(follow_diag.get('follow_blocked')),
+            "follow_last_error": follow_diag.get('last_follow_error'),
+            "follow_message": follow_diag.get('last_follow_message'),
+            "like_attempts": liked_media_attempts,
+            "like_failed": max(0, liked_media_attempts - new_likes),
+            "like_blocked": bool(like_diag.get('like_blocked')),
+            "like_last_error": like_diag.get('last_like_error'),
+            "like_message": like_diag.get('last_like_message'),
             "today_follows": data.get('today_follows_count', 0),
             "today_comments": data.get('today_comments_count', 0),
+            "today_likes": data.get('today_likes_count', 0),
             "interacted_pilots": interacted_pilots
         }
 

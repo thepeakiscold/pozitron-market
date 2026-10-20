@@ -8,8 +8,11 @@ import re
 from datetime import datetime
 from .db import (
     get_db, get_recent_posted_product_ids,
-    get_recent_posted_titles, get_recent_posted_content_types
+    get_recent_posted_titles, get_recent_posted_content_types,
+    get_recent_posted_content_types_by_media, get_recent_captions,
+    get_recent_reel_combo_ids
 )
+from .text_utils import humanize_content, humanize_caption, humanize_line
 
 FPV_PILOT_TIPS = [
     {
@@ -451,17 +454,500 @@ COMMUNITY_QUIZZES = [
     }
 ]
 
+# --- Extra diversity formats (new mechanisms) ---
+MYTH_BUSTERS = [
+    {
+        'title': '[EFSANE] "Yüksek KV Motor Her Zaman Daha Hızlıdır" — Yanlış!',
+        'myth': 'Pilotlar arasında yüksek KV motorun her zaman daha hızlı olduğu sanılır.',
+        'reality': 'Yüksek KV daha fazla devir verir ama torku düşürür. Ağır pervanede motor aşırı ısınır, verim düşer ve akım tüketimi artar. Doğru motor, pervaneniz ve pil hücre sayınızla uyumlu olandır.',
+        'points': [
+            "[EFSANE] Yüksek KV = Daha fazla hız",
+            "[GERCEK] Tork ve devir dengesi önemlidir",
+            "[COZUM] 6S 5 inç için 1750-1950KV ideal aralıktır"
+        ],
+        'tags': '#fpvefsane #motorkv #fpvbilgi #pozitronmarket #dronetopla'
+    },
+    {
+        'title': '[EFSANE] "Lipo Pili Tamamen Bitene Kadar Kullanmak Zararsız" — Yanlış!',
+        'myth': 'Lipo pili 3.0V altına düşürmenin bir zararı olmadığı düşünülür.',
+        'reality': 'Hücre voltajını 3.5V altına düşürmek Lipo kimyasını kalıcı olarak bozar. Pil şişer, kapasitesi düşer ve yangın riski oluşur. İniş voltajı 3.5V olmalıdır.',
+        'points': [
+            "[EFSANE] 3.0V altına inmek sorun değil",
+            "[GERCEK] 3.5V altı hücreyi kalıcı bozar",
+            "[COZUM] Uçuş sonrası pili depolama voltajına getir"
+        ],
+        'tags': '#lipo #pilbakimi #fpvguvenlik #pozitronmarket #droneguvenlik'
+    },
+    {
+        'title': '[EFSANE] "Antensiz VTX Testi Kısa Sürede Zarar Vermez" — Yanlış!',
+        'myth': 'Kısa bir antensiz güç testinin VTX için güvenli olduğu sanılır.',
+        'reality': 'VTX güç amplifikatörü anten yükü olmadan saniyeler içinde aşırı ısınıp yanar. Anten bağlamadan asla güç vermeyin; yüklü bir anten veya uygun bir yük direnci kullanın.',
+        'points': [
+            "[EFSANE] Kısa test zarar vermez",
+            "[GERCEK] PA çipi saniyeler içinde yanar",
+            "[COZUM] Her zaman anten takılı iken güç ver"
+        ],
+        'tags': '#vtx #fpvguvenlik #dronebakim #pozitronmarket #fpvturkey'
+    }
+]
+
+MAINTENANCE_CHECKS = [
+    {
+        'title': '[BAKIM] Her 10 Uçuşta Yapılması Gereken FPV Kontrol Listesi',
+        'intro': 'FPV drone kazaların çoğu küçük bir bakım eksikliğinden başlar. İşte her 10 uçuşta tekrarlaman gereken 5 adım:',
+        'points': [
+            "[KONTROL] Motor vidaları ve pervane somunlarını sıkılığını doğrula",
+            "[KONTROL] Kablo lehimlerinde çatlak veya soğuk lehim ara",
+            "[KONTROL] Frame çatlaklarını ve vidaların gevşemesini incele",
+            "[KONTROL] Anten konnektörünü (UFL/MMCX) hafifçe yokla",
+            "[KONTROL] Betaflight motor sıcaklığı ve RSSI değerlerini kontrol et"
+        ],
+        'tags': '#fpvbakim #dronebakim #kontrollistesi #pozitronmarket #fpvpilot'
+    },
+    {
+        'title': '[BAKIM] Kışın FPV Drone İçin 5 Kritik Depolama Kuralı',
+        'intro': 'Soğuk ve nemli havada yanlış depolama, bahara kadar donanımını bitirebilir. İşte kışlık bakım listesi:',
+        'points': [
+            "[KONTROL] Lipo pilleri 3.8V depolama voltajında sakla",
+            "[KONTROL] Drone'u nem alıcı ile kapalı kutuda tut",
+            "[KONTROL] Pilleri düşük sıcaklıkta şarj etme",
+            "[KONTROL] Uçuş sonrası kondansatörleri birkaç saniye boşalt"
+        ],
+        'tags': '#lipobakimi #kisbakimi #fpvdepolama #pozitronmarket #dronetopla'
+    }
+]
+
+BEGINNER_ROADMAP = [
+    {
+        'title': '[YOL HARITASI] Sıfırdan FPV Pilotu Olma Rehberi (5 Adım)',
+        'intro': 'FPV dünyasına yeni mi başlıyorsun? Bu 5 adımı sırayla takip ederek ilk uçuşuna güvenle çık:',
+        'steps': [
+            "[ADIM 1] Simülatörde en az 10 saat pratik yap (Liftoff / Velocidrone)",
+            "[ADIM 2] Küçük bir whoop veya 3 inç ile başla, 5 inç ile başlama",
+            "[ADIM 3] Gözlük ve kumanda bağlantısını yerde test et",
+            "[ADIM 4] Açık bir arazide, GPS ve failsafe ayarlarını doğrula",
+            "[ADIM 5] İlk 20 uçuşu sakin uç, sadece hover ve temel manevralar"
+        ],
+        'tags': '#fpvbaslangic #yenibaslayan #fpvyolharitasi #pozitronmarket #dronebuild'
+    },
+    {
+        'title': '[YOL HARITASI] İlk FPV Donanımını Seçerken 4 Altın Kural',
+        'intro': 'İlk donanım seçimi toplam maliyetini ve öğrenme hızını doğrudan etkiler. Kolay bir başlangıç için:',
+        'steps': [
+            "[ADIM 1] Bütçeni önce gözlük ve kumandaya ayır",
+            "[ADIM 2] Uyumlu stack + motor + pervane setini birlikte seç",
+            "[ADIM 3] En az 4 adet yedek pervane ve 2 yedek Lipo al",
+            "[ADIM 4] Yedek parça bulunabilirliği yüksek markaları tercih et"
+        ],
+        'tags': '#fpvdonanim #dronebuild #yenibaslayan #pozitronmarket #dronetopla'
+    }
+]
+
+# --- Post Types & Reels Formats Metadata ---
+ALL_POST_TYPES = [
+    {"id": "product_spotlight", "name": "Ürün Spot Işığı & Detay", "icon": "📦", "desc": "Öne çıkan donanım ve teknik özellikleri"},
+    {"id": "deal_drop", "name": "İndirim & Fırsat Alarmı", "icon": "🏷️", "desc": "Haftalık kupon ve indirim kodlu kampanya"},
+    {"id": "pilot_tip", "name": "FPV Pilot İpuçları & Püf Noktaları", "icon": "💡", "desc": "Uçuş tekniği, lehim ve pratik saha taktikleri"},
+    {"id": "hardware_battle", "name": "Donanım Karşılaştırması & Kıyas", "icon": "⚔️", "desc": "Analog vs Dijital, Motor boyutları ve stack karşılaştırması"},
+    {"id": "drone_build_showcase", "name": "Drone Toplama & Build Rehberi", "icon": "🛠️", "desc": "Komple parça listesi ve montaj kılavuzu"},
+    {"id": "carousel_guide", "name": "Çoklu Kaydırmalı Kılavuz (Carousel)", "icon": "📑", "desc": "4 slaytlık adım adım eğitim kartları"},
+    {"id": "mistake_breakdown", "name": "Sık Yapılan FPV Hataları", "icon": "⚠️", "desc": "Motor yakma, ters pervane ve PID hataları analizi"},
+    {"id": "community_quiz", "name": "Topluluk Soru & Quiz", "icon": "❓", "desc": "Pilotlara yönelik teknik soru ve etkileşim testi"},
+    {"id": "myth_buster", "name": "FPV Efsaneleri ve Yanlışlar", "icon": "🔍", "desc": "LiPo, anten ve menzil hakkındaki yanlış inanışlar"},
+    {"id": "maintenance_checklist", "name": "Uçuş Öncesi Bakım & Kontrol", "icon": "✅", "desc": "Saha hazırlığı ve donanım kontrol listesi"},
+    {"id": "beginner_roadmap", "name": "Yeni Başlayan Yol Haritası", "icon": "🗺️", "desc": "Simülatörden ilk 5 inç freestyle uçuşa adımlar"},
+    {"id": "flight_weather_radar", "name": "Uçuş Hava Durumu Radarı", "icon": "🌤️", "desc": "Rüzgar, sıcaklık ve FPV hava durumu değerlendirmesi"},
+    {"id": "tool_showcase", "name": "Atölye ve Araç Tanıtımı", "icon": "🔧", "desc": "Lehim istasyonları, duman önleyiciler ve araçlar"},
+    {"id": "spot_guide", "name": "Uçuş Noktaları Rehberi", "icon": "📍", "desc": "Türkiye'deki güvenli ve popüler uçuş lokasyonları"},
+    {"id": "review_highlight", "name": "Kullanıcı Yorumları & Değerlendirme", "icon": "⭐", "desc": "Gerçek pilot deneyimleri ve parça incelemeleri"},
+    {"id": "seo_article", "name": "Mühendislik & Teknik Rehber", "icon": "📘", "desc": "Derinlemesine motor dinamikleri ve elektronik makalesi"}
+]
+
+# 8 Distinct Reels Formats (including toggleable Real FPV Video Reels)
+REELS_TYPES_METADATA = [
+    {
+        "id": "real_fpv_broll",
+        "name": "Gerçek FPV Uçuş Videosu",
+        "icon": "🎥",
+        "desc": "Arka planda gerçek FPV uçuş b-roll çekimi ve üzerinde dinamik Pozitron bilgi katmanı",
+        "default_enabled": True
+    },
+    {
+        "id": "freestyle_acro",
+        "name": "Akro & Hız Freestyle",
+        "icon": "⚡",
+        "desc": "Gap-dive, power loop, bando dalışları ve yüksek tempolu adrenalin kurgusu",
+        "default_enabled": True
+    },
+    {
+        "id": "hardware_vs",
+        "name": "Donanım Karşılaştırma (VS)",
+        "icon": "⚔️",
+        "desc": "2207 vs 2306 motor, Analog vs HD veya Stack karşılaştırmalı hızlı karar videosu",
+        "default_enabled": True
+    },
+    {
+        "id": "quick_tip_fix",
+        "name": "15 Saniyede Pratik İpucu",
+        "icon": "💡",
+        "desc": "Betaflight ince ayarları, motor yönü çevirme veya sahada hayat kurtaran lehim tüyosu",
+        "default_enabled": True
+    },
+    {
+        "id": "mistake_warning",
+        "name": "Bu Hatayı Sakın Yapma!",
+        "icon": "⚠️",
+        "desc": "Antensiz VTX yakma, ters pervane kırımını ve failsafe felaketlerini önleyen uyarı",
+        "default_enabled": True
+    },
+    {
+        "id": "secret_spot",
+        "name": "Gizli Uçuş Sahası & Spot",
+        "icon": "📍",
+        "desc": "Türkiye'nin terk edilmiş bando binaları, kanyonları ve tepe uçuş rotaları",
+        "default_enabled": True
+    },
+    {
+        "id": "product_cinematic",
+        "name": "Sinematik Donanım Vitrini",
+        "icon": "💎",
+        "desc": "Makro karbon detayları, fırçasız motor sargıları, canlı fiyat ve stok kartı",
+        "default_enabled": True
+    },
+    {
+        "id": "flash_deal",
+        "name": "Flaş Fırsat & Stok Alarmı",
+        "icon": "🔥",
+        "desc": "Sınırlı stok indirimleri, kupon çağrıları ve aciliyet hissi yüksek e-ticaret vitrini",
+        "default_enabled": True
+    }
+]
+
+ALL_REELS_TYPES = [t['id'] for t in REELS_TYPES_METADATA]
+
+REELS_TYPE_THEME_MAP = {
+    'real_fpv_broll': ['drone_build_showcase', 'spot_guide', 'product_spotlight', 'pilot_tip'],
+    'freestyle_acro': ['drone_build_showcase', 'spot_guide', 'pilot_tip'],
+    'hardware_vs': ['hardware_battle'],
+    'quick_tip_fix': ['pilot_tip', 'tool_showcase'],
+    'mistake_warning': ['mistake_breakdown', 'maintenance_checklist'],
+    'secret_spot': ['spot_guide'],
+    'product_cinematic': ['product_spotlight'],
+    'flash_deal': ['deal_drop'],
+}
+
+# --- Reels theme rotation (fixes the 100% product_spotlight problem) ---
+REELS_THEME_WEIGHTS = {
+    'community_quiz': 0.14,
+    'product_spotlight': 0.13,
+    'hardware_battle': 0.11,
+    'pilot_tip': 0.10,
+    'mistake_breakdown': 0.10,
+    'drone_build_showcase': 0.09,
+    'myth_buster': 0.07,
+    'spot_guide': 0.06,
+    'flight_weather_radar': 0.05,
+    'maintenance_checklist': 0.05,
+    'deal_drop': 0.05,
+    'tool_showcase': 0.03,
+    'review_highlight': 0.02,
+}
+
+REELS_HOOKS = {
+    'community_quiz': [
+        "[REELS QUIZ] Bu FPV sorusunu 5 saniyede bilen gerçek pilot!",
+        "[BILGI TESTI] Cevabı sonuna kadar izle, bilemezsen kaydet!",
+        "[FPSORU] Yanlış cevap veren pilot sayısı azımsanmayacak kadar çok!"
+    ],
+    'product_spotlight': [
+        "[REELS] Bu donanımı uçan pilotlar farkı hemen anlıyor!",
+        "[STOK] Yeni sezonun en çok konuşulan FPV donanımı!",
+        "[ONERI] Bütçeni zorlamadan performansını artırmanın yolu."
+    ],
+    'hardware_battle': [
+        "[DUELLO] İki donanım, tek kazanan! Hangisini seçerdin?",
+        "[KARSILASTIRMA] Aradaki farkı 10 saniyede anlıyorsun!",
+        "[VS] Pilotlar ikiye bölündü: hangi taraf daha güçlü?"
+    ],
+    'pilot_tip': [
+        "[PILOT TAVSIYESI] Bu ipucu uçuş süresini ciddi artırıyor!",
+        "[TAKTIK] Ustaların sessizce kullandığı FPV ayarı!",
+        "[IPUCU] Bunu erken bilseydim yüzlerce lira tasarruf ederdim."
+    ],
+    'mistake_breakdown': [
+        "[HATA] Yeni pilotların %90'ının yaptığı bu hatayı sen de yapıyor musun?",
+        "[UYARI] Bu hata drone'unu bir günde bitirebilir!",
+        "[KIRIM] En pahalı FPV hatası ve nasıl önlenir?"
+    ],
+    'drone_build_showcase': [
+        "[BUILD] Sıfırdan toplanan bu FPV canavarını incele!",
+        "[ATOLYE] Parça parça güç katan bir build hikayesi!",
+        "[SETUP] Bu build ile ulaşılan hız inanılmaz!"
+    ],
+    'myth_buster': [
+        "[EFSANE AVCISI] FPV'de yayılan bu bilgi tamamen yanlış!",
+        "[YANLIS BILINEN] Herkesin doğru sandığı büyük FPV efsanesi!",
+        "[GERCEK] Bu iddiayı tarihe gömüyoruz!"
+    ],
+    'spot_guide': [
+        "[SPOT] Türkiye'nin en iyi FPV uçuş noktalarından biri!",
+        "[SAHA] Bu spotta uçan pilot bir daha başka yere gitmiyor!",
+        "[ROTA] Hafta sonu için mükemmel FPV rotası!"
+    ],
+    'flight_weather_radar': [
+        "[UCUS RADARI] Bugün uçmak için hava şartları nasıl?",
+        "[HAVA DURUMU] Pilotlar bugün hangi saatte uçmalı?",
+        "[RADAR] Rüzgar ve görüş şartları uçuşa uygun mu?"
+    ],
+    'maintenance_checklist': [
+        "[BAKIM] Bu kontrol listesi sana yüzlerce lira kazandırır!",
+        "[KONTROL] Her 10 uçuşta bu adımları atlıyorsan dur!",
+        "[LISTE] Donanımını uzun yıllar koruyan adımlar!"
+    ],
+    'deal_drop': [
+        "[FIRSAT] Bu indirim çok yakında bitecek, acele et!",
+        "[KAMPANYA] Haftanın en iyi FPV fırsatı burada!",
+        "[INDIRIM] Bu fiyata bir daha bulamayabilirsin!"
+    ],
+    'tool_showcase': [
+        "[ARAC] Bu ücretsiz araç FPV toplamayı çocuk oyuncağına çeviriyor!",
+        "[SIHIRBAZ] Motor-ESC uyumunu saniyeler içinde test et!",
+        "[ONLINE ARAC] Yanlış parça siparişine son!"
+    ],
+    'review_highlight': [
+        "[YORUM] Pilotların bu donanım hakkında söyledikleri!",
+        "[DENEYIM] Gerçek kullanıcı deneyimi: fiyatına değer mi?",
+        "[INCELEME] Alıp memnun kalanların ortak görüşü!"
+    ],
+    # 8 Reels Formats Hooks
+    'real_fpv_broll': [
+        "[GERCEK UCUS] Kokpitteymiş gibi hisset! Gerçek FPV uçuşu!",
+        "[FPV ADRENALIN] Gözlüğü taktığın an dünya değişiyor!",
+        "[PILOT GOZUNDEN] Gerçek FPV akrobasisi ve saf hız!"
+    ],
+    'freestyle_acro': [
+        "[AKRO FREESTYLE] Bu gap'ten geçebilecek kaç pilot var?",
+        "[HIZ & ADRENALIN] 150 km/s hızla engellerin arasından süzülüş!",
+        "[PRO PILOT] Bu manevrayı simülatörde kaç saat çalıştın?"
+    ],
+    'hardware_vs': [
+        "[DUELLO] İki efsane karşı karşıya! Hangisini seçerdin?",
+        "[KARSILASTIRMA] Fiyat/performans farkını 10 saniyede gör!",
+        "[SECIM] Pilotlar ikiye bölündü: Hangi taraf daha güçlü?"
+    ],
+    'quick_tip_fix': [
+        "[15S IPUCU] Sahada hayat kurtaran o küçük ayar!",
+        "[ATOLYE SIRRI] Motor yönünü BLHeli olmadan 10 saniyede çevir!",
+        "[PILOT HILESI] Lehim yaparken bunu uygula, kopma derdini unut!"
+    ],
+    'mistake_warning': [
+        "[UYARI] Bu hatayı sakın yapma! VTX anında çöp olur!",
+        "[KIRIM ALARMI] Yeni pilotların %90'ının düştüğü büyük tuzak!",
+        "[DIKKAT] Kalkıştan önce bu testi yapmadıysan quad'ı unut!"
+    ],
+    'secret_spot': [
+        "[GIZLI SPOT] Türkiye'nin en iyi FPV uçuş noktalarından biri!",
+        "[BANDO ROTA] Bu terk edilmiş mekanda uçmaya cesaretin var mı?",
+        "[SAHA REHBERI] Hafta sonu için keşfedilmemiş FPV cenneti!"
+    ],
+    'product_cinematic': [
+        "[DONANIM] 8K Makro detaylarla yeni sezon FPV canavarı!",
+        "[VITRIN] Titreşimsiz uçuşun gizli kahramanı bu donanım!",
+        "[KALITE] Pozitron vitrininin en çok konuşulan parçası!"
+    ],
+    'flash_deal': [
+        "[FLAS FIRSAT] Stoklar sınırlı! Bu fiyata bir daha gelmez!",
+        "[KAMPANYA] Haftanın en çok aranan FPV donanımında indirim!",
+        "[STOK ALARMI] Tükenmeden yakala, aynı gün kargoda!"
+    ]
+}
+
+REELS_CTA = {
+    'community_quiz': "Cevabını yoruma yaz! Doğru cevabı story'de açıklıyoruz. Yeni başlayanlar için tüm donanım: pozitronmarket.com",
+    'product_spotlight': "Detaylar ve fiyat için profildeki linke göz at. Yoruma 'LINK' yazarsan DM'den hemen gönderelim.",
+    'hardware_battle': "Sen hangisini seçerdin? Yoruma yaz! İkisini de incelemek için: pozitronmarket.com",
+    'pilot_tip': "Bu ipucunu kaydet, uçuşta işine yarayacak. Daha fazlası için takipte kal. pozitronmarket.com",
+    'mistake_breakdown': "Başına geldi mi? Yorumlarda paylaş. Kırılmaz yedek parçalar: pozitronmarket.com",
+    'drone_build_showcase': "Parça listesini yoruma istemeyi unutma. Tüm build donanımı: pozitronmarket.com",
+    'myth_buster': "Sen bu efsaneye inanıyor muydun? Yoruma yaz! Doğrusunu öğrenmek için takipte kal.",
+    'spot_guide': "Bu spotu kaydet, hafta sonu planına ekle. Uçuş donanımı: pozitronmarket.com",
+    'flight_weather_radar': "Günlük uçuş radarı için takipte kal. Her koşul için donanım: pozitronmarket.com",
+    'maintenance_checklist': "Bu listeyi kaydet! Yedek parça ve korumalar: pozitronmarket.com",
+    'deal_drop': "Stoklar tükenmeden profildeki linki ziyaret et. Yoruma 'FIYAT' yaz, DM'den fiyat gönderelim.",
+    'tool_showcase': "Aracı hemen dene: pozitronmarket.com/drone-toplama-sihirbazi",
+    'review_highlight': "Sen de deneyimini paylaş. Binlerce pilot gibi sen de güvenle sipariş ver: pozitronmarket.com",
+    # 8 Reels Formats CTAs
+    'real_fpv_broll': "Bu hissi yaşamak istediğin arkadaşını etiketle! Hayalindeki FPV setup'ı topla: pozitronmarket.com",
+    'freestyle_acro': "Senin en sevdiğin akro manevrası hangisi? Yoruma yaz! Dayanıklı freestyle parçaları: pozitronmarket.com",
+    'hardware_vs': "Sen hangi tarafı seçerdin? Yoruma yaz! İkisini de incelemek için: pozitronmarket.com",
+    'quick_tip_fix': "Bu taktiği kaydet, sahada çok lazım olacak. Pratik pilot aletleri: pozitronmarket.com",
+    'mistake_warning': "Senin başına geldi mi? Yorumlarda anlat. Kırılmaz yedek parçalar: pozitronmarket.com",
+    'secret_spot': "Bu spotu kaydet, hafta sonu ekiple git! Uçuş donanımı: pozitronmarket.com",
+    'product_cinematic': "Detaylar ve canlı fiyat için profildeki linke göz at. Yoruma 'FIYAT' yaz, linki anında DM'den atalım.",
+    'flash_deal': "Fırsatı kaçırmamak için hemen pozitronmarket.com'u ziyaret et. Yoruma 'KUPON' yaz!"
+}
+
+REELS_EXTRA_TAGS = "#reels #fpvreels #dronereels #fpvvideo #dronevideo"
+
+# Theme-aware cinematic style presets so reel video prompts are not identical.
+REEL_STYLE_PRESETS = {
+    'studio_neon': "dark high-tech studio with neon cyan and amber rim lighting, macro carbon fiber detail",
+    'golden_field': "sunny outdoor FPV field with warm golden-hour light, dynamic low-angle tracking shot",
+    'holo_lab': "futuristic lab bench with blue holographic overlays, slow controlled dolly-in",
+    'mountain_dawn': "misty mountain ridge at dawn with soft volumetric light, sweeping aerial reveal",
+    'clean_stage': "clean white product stage with soft studio softbox lighting, elegant rotating pedestal",
+    'workshop_grit': "moody workshop with sparks and warm tungsten light, gritty industrial macro pans",
+    'night_city': "night city rooftop with bokeh lights and cool teal highlights, slow sweeping pan",
+    'flatlay_slider': "bright tech table with top-down flat-lay, precise robotic slider movement",
+}
+
+# Backward-compatible flat list (used as fallback when no combo specifies a style).
+REEL_VISUAL_STYLES = list(REEL_STYLE_PRESETS.values())
+
+# Hook tone -> which of the 3 theme hooks to prefer (keeps hook variety controlled).
+REEL_HOOK_TONES = {
+    'question': 0,
+    'bold': 1,
+    'listicle': 2,
+    'challenge': 0,
+    'versus': 1,
+    'warning': 1,
+    'story': 2,
+}
+
+# Curated random combinations. Each Reel randomly draws ONE of these presets,
+# bundling reels_type + theme + visual style + video mode + hook tone into a coherent look.
+REEL_COMBINATIONS = [
+    # Explicit 8 Reels Types Presets
+    {'id': 'reels_real_broll',   'reels_type': 'real_fpv_broll',   'themes': ['spot_guide', 'drone_build_showcase', 'product_spotlight'], 'style': 'golden_field', 'video_mode': 'mode2', 'tone': 'story'},
+    {'id': 'reels_acro_dawn',    'reels_type': 'freestyle_acro',   'themes': ['drone_build_showcase', 'spot_guide'], 'style': 'mountain_dawn', 'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'reels_acro_field',   'reels_type': 'freestyle_acro',   'themes': ['drone_build_showcase', 'pilot_tip'],  'style': 'golden_field',  'video_mode': 'mode1', 'tone': 'challenge'},
+    {'id': 'reels_vs_stage',     'reels_type': 'hardware_vs',      'themes': ['hardware_battle'],       'style': 'clean_stage',    'video_mode': 'mode1', 'tone': 'versus'},
+    {'id': 'reels_vs_neon',      'reels_type': 'hardware_vs',      'themes': ['hardware_battle'],       'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'reels_tip_workshop', 'reels_type': 'quick_tip_fix',    'themes': ['pilot_tip'],             'style': 'workshop_grit',  'video_mode': 'mode1', 'tone': 'listicle'},
+    {'id': 'reels_tip_flatlay',  'reels_type': 'quick_tip_fix',    'themes': ['pilot_tip'],             'style': 'flatlay_slider', 'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'reels_warn_workshop','reels_type': 'mistake_warning',  'themes': ['mistake_breakdown'],     'style': 'workshop_grit',  'video_mode': 'mode1', 'tone': 'warning'},
+    {'id': 'reels_warn_holo',    'reels_type': 'mistake_warning',  'themes': ['mistake_breakdown'],     'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'reels_spot_mountain','reels_type': 'secret_spot',      'themes': ['spot_guide'],            'style': 'mountain_dawn',  'video_mode': 'mode1', 'tone': 'story'},
+    {'id': 'reels_spot_night',   'reels_type': 'secret_spot',      'themes': ['spot_guide'],            'style': 'night_city',     'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'reels_prod_neon',    'reels_type': 'product_cinematic','themes': ['product_spotlight'],     'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'reels_prod_stage',   'reels_type': 'product_cinematic','themes': ['product_spotlight'],     'style': 'clean_stage',    'video_mode': 'mode1', 'tone': 'listicle'},
+    {'id': 'reels_deal_neon',    'reels_type': 'flash_deal',       'themes': ['deal_drop'],             'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'bold'},
+
+    # Classic thematic rotation presets
+    {'id': 'quiz_neon',          'reels_type': 'quick_tip_fix',    'themes': ['community_quiz'],        'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'question'},
+    {'id': 'quiz_holo',          'reels_type': 'quick_tip_fix',    'themes': ['community_quiz'],        'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'challenge'},
+    {'id': 'quiz_flatlay',       'reels_type': 'quick_tip_fix',    'themes': ['community_quiz'],        'style': 'flatlay_slider', 'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'battle_stage',       'reels_type': 'hardware_vs',      'themes': ['hardware_battle'],       'style': 'clean_stage',    'video_mode': 'mode1', 'tone': 'versus'},
+    {'id': 'battle_neon',        'reels_type': 'hardware_vs',      'themes': ['hardware_battle'],       'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'tip_workshop',       'reels_type': 'quick_tip_fix',    'themes': ['pilot_tip'],             'style': 'workshop_grit',  'video_mode': 'mode1', 'tone': 'listicle'},
+    {'id': 'tip_flatlay',        'reels_type': 'quick_tip_fix',    'themes': ['pilot_tip'],             'style': 'flatlay_slider', 'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'mistake_workshop',   'reels_type': 'mistake_warning',  'themes': ['mistake_breakdown'],     'style': 'workshop_grit',  'video_mode': 'mode1', 'tone': 'warning'},
+    {'id': 'mistake_holo',       'reels_type': 'mistake_warning',  'themes': ['mistake_breakdown'],     'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'build_field',        'reels_type': 'freestyle_acro',   'themes': ['drone_build_showcase'],  'style': 'golden_field',   'video_mode': 'mode1', 'tone': 'story'},
+    {'id': 'build_night',        'reels_type': 'freestyle_acro',   'themes': ['drone_build_showcase'],  'style': 'night_city',     'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'myth_holo',          'reels_type': 'quick_tip_fix',    'themes': ['myth_buster'],           'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'myth_workshop',      'reels_type': 'quick_tip_fix',    'themes': ['myth_buster'],           'style': 'workshop_grit',  'video_mode': 'mode1', 'tone': 'story'},
+    {'id': 'maintenance_flatlay','reels_type': 'mistake_warning',  'themes': ['maintenance_checklist'],'style': 'flatlay_slider', 'video_mode': 'mode1', 'tone': 'listicle'},
+    {'id': 'roadmap_holo',       'reels_type': 'quick_tip_fix',    'themes': ['beginner_roadmap'],      'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'listicle'},
+    {'id': 'spot_mountain',      'reels_type': 'secret_spot',      'themes': ['spot_guide'],            'style': 'mountain_dawn',  'video_mode': 'mode1', 'tone': 'story'},
+    {'id': 'spot_field',         'reels_type': 'secret_spot',      'themes': ['spot_guide'],            'style': 'golden_field',   'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'weather_dawn',       'reels_type': 'secret_spot',      'themes': ['flight_weather_radar'],  'style': 'mountain_dawn',  'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'weather_night',      'reels_type': 'secret_spot',      'themes': ['flight_weather_radar'],  'style': 'night_city',     'video_mode': 'mode1', 'tone': 'story'},
+    {'id': 'deal_neon',          'reels_type': 'flash_deal',       'themes': ['deal_drop'],             'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'product_neon',       'reels_type': 'product_cinematic','themes': ['product_spotlight'],     'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'product_stage',      'reels_type': 'product_cinematic','themes': ['product_spotlight'],     'style': 'clean_stage',    'video_mode': 'mode1', 'tone': 'listicle'},
+    {'id': 'product_night',      'reels_type': 'product_cinematic','themes': ['product_spotlight'],     'style': 'night_city',     'video_mode': 'mode1', 'tone': 'story'},
+    {'id': 'tool_holo',          'reels_type': 'quick_tip_fix',    'themes': ['tool_showcase'],         'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'listicle'},
+    {'id': 'review_stage',       'reels_type': 'product_cinematic','themes': ['review_highlight'],      'style': 'clean_stage',    'video_mode': 'mode1', 'tone': 'story'},
+]
+
+# --- Text diversity layer: hashtag sets, caption structures, CTA closers ---
+HASHTAG_SETS = {
+    'broad': '#fpv #drone #dronelife #fpvdrone #dronevideo #droneoftheday',
+    'niche': '#fpvracing #fpvfreestyle #cinedrone #digitalfpv #fpvbuild #elrs #bfphoton',
+    'local': '#türkiyefpv #istanbuldrone #ankarafpv #izmirfpv #teknofest #türkiyedrone',
+    'product': '#dronetopla #dronehardware #fpvdonanim #droneparça #fpvmalzeme #droneaksesuar',
+    'community': '#fpvpilot #fpvturkey #dronecommunity #fpvfamily #dronetürkiye #fpvakademi',
+    'lifestyle': '#fpvlifestyle #makerlife #3dprinting #teknoloji #dronefotografi #havacilik',
+}
+
+CAPTION_STYLES = {
+    'save_for_later': {
+        'opener': 'KAYDET -> Bu içerik sonra lazım olacak.',
+        'closer': 'Kaydet ki bir daha aramak zorunda kalmayasın.'
+    },
+    'share_with_friend': {
+        'opener': "Bunu bir FPV'ci arkadaşına gönder!",
+        'closer': 'Yeni başlayan bir arkadaşına gönder, ona zaman kazandır.'
+    },
+    'quick_read': {
+        'opener': 'HIZLI OKU: 20 saniyede özet.',
+        'closer': 'Faydalı bulduysan kaydet ve takipte kal.'
+    },
+    'expert_note': {
+        'opener': 'PILOT NOTU: Tecrübeyle sabit bir detay.',
+        'closer': 'Senin de bir notun varsa yoruma yaz.'
+    },
+    'debate': {
+        'opener': 'Bu konuda pilotlar ikiye bölünmüş durumda.',
+        'closer': 'Sen hangi taraftasın? Yoruma yaz.'
+    },
+}
+
+CTA_CLOSERS = [
+    "Ürün ve detaylar: pozitronmarket.com",
+    "Profildeki linkten hemen incele: pozitronmarket.com",
+    "Yoruma 'LINK' yaz, DM'den gönderelim.",
+    "Tüm FPV donanımı: pozitronmarket.com",
+    "Stokları kontrol et: pozitronmarket.com",
+    "Daha fazlası için takipte kal | pozitronmarket.com",
+]
+
+BILINGUAL_TAGLINES = {
+    'product_spotlight': "Power up your FPV fleet with pro-grade gear. Ship within Turkey.",
+    'community_quiz': "Think you know FPV? Drop your answer below!",
+    'hardware_battle': "Two setups, one winner. Which side are you on?",
+    'pilot_tip': "A pro tip that saves you money and crashes.",
+    'mistake_breakdown': "The FPV mistake that costs beginners the most.",
+    'drone_build_showcase': "Screw-by-screw FPV build showcase.",
+    'myth_buster': "The FPV myth everyone still believes.",
+    'maintenance_checklist': "Keep your drone alive: maintenance checklist.",
+    'beginner_roadmap': "From zero to FPV pilot: the step-by-step roadmap.",
+    'spot_guide': "The best FPV flying spots in Turkey.",
+    'flight_weather_radar': "Daily FPV flying weather radar.",
+    'deal_drop': "This week's best FPV deal.",
+    'tool_showcase': "Free FPV builder tool - test compatibility instantly.",
+    'review_highlight': "What real pilots say before buying.",
+}
+
 class ContentGenerator:
     def __init__(self, gemini_api_key: str = ""):
         self.gemini_api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY", "")
         self.models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
         self._session_recent_titles = []
         self._session_recent_product_ids = []
+        self._session_recent_caption_sigs = []
+        self._session_recent_combo_ids = []
+        self.bilingual_enabled = False
 
     def set_api_key(self, key: str):
         self.gemini_api_key = key
 
-    def generate_content(self, content_type: str = None, product_id: str = None) -> dict:
+    def set_bilingual(self, enabled: bool):
+        self.bilingual_enabled = bool(enabled)
+
+    def _llm_available(self) -> bool:
+        """True if any text LLM (unified gateway or legacy Gemini) can write copy."""
+        try:
+            from llm_client import get_llm
+            if get_llm().is_configured():
+                return True
+        except Exception:
+            pass
+        return bool(self.gemini_api_key)
+
+    def generate_content(self, content_type: str = None, product_id: str = None, allowed_types: list = None) -> dict:
         """
         Generates content dictionary with strict anti-duplicate guarantee and balanced catalog rotation:
         {
@@ -478,12 +964,31 @@ class ContentGenerator:
             'product_spotlight', 'drone_build_showcase', 'carousel_guide',
             'flight_weather_radar', 'pilot_tip', 'tool_showcase',
             'spot_guide', 'deal_drop', 'seo_article', 'review_highlight',
-            'hardware_battle', 'mistake_breakdown', 'community_quiz'
+            'hardware_battle', 'mistake_breakdown', 'community_quiz',
+            'myth_buster', 'maintenance_checklist', 'beginner_roadmap'
         ]
+
+        requested_product_id = product_id
+
+        # Respect user-configured enabled post types if provided
+        if allowed_types:
+            active_allowed = [t for t in valid_types if t in allowed_types]
+            if active_allowed:
+                valid_types = active_allowed
         
         recent_types = get_recent_posted_content_types(limit=5)
         db_titles = set(get_recent_posted_titles(limit=40))
         all_recent_titles = db_titles.union(set(self._session_recent_titles[-30:]))
+
+        # Near-duplicate caption signatures (first 60 normalized chars) to stop
+        # repetitive text that Instagram de-ranks.
+        recent_captions = get_recent_captions(limit=30)
+        recent_caption_sigs = set()
+        for cap in recent_captions:
+            sig = self._caption_signature(cap)
+            if sig:
+                recent_caption_sigs.add(sig)
+        recent_caption_sigs.update(self._session_recent_caption_sigs[-40:])
 
         explicit_type = content_type if (content_type and content_type in valid_types) else None
 
@@ -493,21 +998,24 @@ class ContentGenerator:
             if not candidate_types:
                 candidate_types = valid_types
 
-            # Balanced PR & e-commerce diversity weights (10+ distinct formats)
+            # Balanced PR & e-commerce diversity weights (16 distinct formats)
             type_weights = {
-                'product_spotlight': 0.16,
-                'drone_build_showcase': 0.12,
-                'carousel_guide': 0.12,
-                'hardware_battle': 0.10,
-                'mistake_breakdown': 0.10,
-                'community_quiz': 0.10,
-                'flight_weather_radar': 0.08,
-                'pilot_tip': 0.08,
-                'tool_showcase': 0.05,
-                'spot_guide': 0.05,
-                'seo_article': 0.05,
-                'review_highlight': 0.05,
-                'deal_drop': 0.04
+                'product_spotlight': 0.13,
+                'drone_build_showcase': 0.10,
+                'carousel_guide': 0.09,
+                'hardware_battle': 0.09,
+                'mistake_breakdown': 0.08,
+                'community_quiz': 0.09,
+                'flight_weather_radar': 0.07,
+                'pilot_tip': 0.07,
+                'myth_buster': 0.07,
+                'maintenance_checklist': 0.05,
+                'beginner_roadmap': 0.05,
+                'tool_showcase': 0.04,
+                'spot_guide': 0.04,
+                'seo_article': 0.03,
+                'review_highlight': 0.03,
+                'deal_drop': 0.03
             }
             weights = [type_weights.get(t, 0.05) for t in candidate_types]
             content_type = random.choices(candidate_types, weights=weights, k=1)[0]
@@ -519,7 +1027,7 @@ class ContentGenerator:
             if cur_type == 'product_spotlight':
                 content = self._generate_product_spotlight(product_id)
             elif cur_type == 'drone_build_showcase':
-                content = self._generate_drone_build_showcase()
+                content = self._generate_drone_build_showcase(product_id)
             elif cur_type == 'carousel_guide':
                 content = self._generate_carousel_guide()
             elif cur_type == 'flight_weather_radar':
@@ -527,44 +1035,173 @@ class ContentGenerator:
             elif cur_type == 'spot_guide':
                 content = self._generate_spot_guide()
             elif cur_type == 'tool_showcase':
-                content = self._generate_tool_showcase()
+                content = self._generate_tool_showcase(product_id)
             elif cur_type == 'deal_drop':
-                content = self._generate_deal_drop()
+                content = self._generate_deal_drop(product_id)
             elif cur_type == 'pilot_tip':
-                content = self._generate_pilot_tip()
+                content = self._generate_pilot_tip(product_id)
             elif cur_type == 'seo_article':
                 content = self._generate_seo_article()
             elif cur_type == 'review_highlight':
-                content = self._generate_review_highlight()
+                content = self._generate_review_highlight(product_id)
             elif cur_type == 'hardware_battle':
-                content = self._generate_hardware_battle()
+                content = self._generate_hardware_battle(product_id)
             elif cur_type == 'mistake_breakdown':
-                content = self._generate_mistake_breakdown()
+                content = self._generate_mistake_breakdown(product_id)
             elif cur_type == 'community_quiz':
                 content = self._generate_community_quiz()
+            elif cur_type == 'myth_buster':
+                content = self._generate_myth_buster()
+            elif cur_type == 'maintenance_checklist':
+                content = self._generate_maintenance_checklist(product_id)
+            elif cur_type == 'beginner_roadmap':
+                content = self._generate_beginner_roadmap()
             else:
                 content = self._generate_product_spotlight(product_id)
 
+            # Humanize BEFORE the duplicate check so titles that only differ by
+            # machine-made tags ("[FREKANS] ...") are correctly seen as duplicates.
+            if content:
+                content = humanize_content(content)
+
             if content and content.get('title'):
-                if content.get('title') not in all_recent_titles or explicit_type:
+                is_dup_title = content.get('title') in all_recent_titles
+                is_dup_caption = self._caption_signature(content.get('caption', '')) in recent_caption_sigs
+                if explicit_type or not (is_dup_title or is_dup_caption):
                     break
-            
-            # If candidate was recently posted and not explicitly requested, try another category or pillar
+
+            # If candidate was recently posted and not explicitly requested, rotate to a
+            # DIFFERENT pillar instead of collapsing everything into product_spotlight.
             if not explicit_type:
-                content_type = 'product_spotlight'
+                alt_types = [t for t in valid_types if t != content_type and t != 'carousel_guide' and t != 'seo_article']
+                if not alt_types:
+                    alt_types = [t for t in valid_types if t != content_type]
+                content_type = random.choice(alt_types)
                 product_id = None
+
+        # Explicit product selection (Post Studio) must be honoured for EVERY post
+        # type, not only product_spotlight. Previously non-product generators
+        # hard-coded product_data=None so the chosen product's photo never rendered.
+        if content and requested_product_id:
+            cur_pd = content.get('product_data') or {}
+            if not cur_pd.get('image_url') or content.get('product_id') != requested_product_id:
+                try:
+                    chosen_prod = self._get_candidate_product(requested_product_id)
+                except Exception:
+                    chosen_prod = None
+                if chosen_prod:
+                    content['product_data'] = chosen_prod
+                    content['product_id'] = chosen_prod.get('id')
 
         if content:
             # Ensure DM / Comment Call-To-Action is attached to caption
             content['caption'] = self._append_dm_cta(content['caption'])
+            # Rotating hashtag sets, caption structure, CTA and optional English line.
+            content['bilingual_enabled'] = self.bilingual_enabled
+            content = self._apply_text_diversity(content, content.get('content_type', content_type))
+            # Final human-voice pass: strip machine-made markers, brackets, ALL-CAPS.
+            content = humanize_content(content)
             self._session_recent_titles.append(content['title'])
             if len(self._session_recent_titles) > 50:
                 self._session_recent_titles = self._session_recent_titles[-50:]
+            sig = self._caption_signature(content['caption'])
+            if sig:
+                self._session_recent_caption_sigs.append(sig)
+                if len(self._session_recent_caption_sigs) > 60:
+                    self._session_recent_caption_sigs = self._session_recent_caption_sigs[-60:]
             if content.get('product_id'):
                 self._session_recent_product_ids.append(content['product_id'])
                 if len(self._session_recent_product_ids) > 50:
                     self._session_recent_product_ids = self._session_recent_product_ids[-50:]
 
+        return content
+
+    @staticmethod
+    def _caption_signature(caption: str) -> str:
+        """Normalized first-60-char signature used for fuzzy near-duplicate detection."""
+        if not caption:
+            return ''
+        text = re.sub(r'\s+', ' ', str(caption)).strip().lower()
+        text = re.sub(r'[^a-z0-9çğıöşü ]', '', text)
+        return text[:60]
+
+    @staticmethod
+    def _split_hashtags(tags_str: str) -> list:
+        if not tags_str:
+            return []
+        return [t for t in re.split(r'\s+', str(tags_str).strip()) if t.startswith('#')]
+
+    def _pick_hashtags(self, content_type: str, base_tags: str) -> str:
+        """Rotates hashtag sets per theme and de-duplicates, capping the total count."""
+        theme_sets = {
+            'product_spotlight': ['product', 'broad', 'lifestyle'],
+            'deal_drop': ['product', 'broad'],
+            'tool_showcase': ['lifestyle', 'niche', 'broad'],
+            'community_quiz': ['community', 'niche', 'broad'],
+            'hardware_battle': ['niche', 'community', 'broad'],
+            'mistake_breakdown': ['community', 'niche'],
+            'pilot_tip': ['niche', 'community'],
+            'myth_buster': ['community', 'niche'],
+            'maintenance_checklist': ['community', 'product'],
+            'beginner_roadmap': ['community', 'broad', 'lifestyle'],
+            'drone_build_showcase': ['niche', 'product'],
+            'spot_guide': ['local', 'lifestyle'],
+            'flight_weather_radar': ['local', 'broad'],
+            'review_highlight': ['product', 'community'],
+        }
+        candidates = theme_sets.get(content_type, ['broad', 'community'])
+        picks = random.sample(candidates, k=min(2, len(candidates)))
+        rotated = []
+        for name in picks:
+            rotated.extend(self._split_hashtags(HASHTAG_SETS.get(name, '')))
+
+        merged = self._split_hashtags(base_tags) + rotated
+        seen = set()
+        unique = []
+        for tag in merged:
+            low = tag.lower()
+            if low not in seen:
+                seen.add(low)
+                unique.append(tag)
+        return ' '.join(unique[:22])
+
+    def _apply_text_diversity(self, content: dict, content_type: str) -> dict:
+        """
+        Applies rotating caption structure, hook formula, CTA closer, hashtag set and
+        (optionally) a bilingual English line so consecutive posts do not look templated.
+        """
+        caption = content.get('caption', '') or ''
+        # 1. Caption structure style (applied with probability to preserve natural voice).
+        if random.random() < 0.6:
+            style_name = random.choice(list(CAPTION_STYLES.keys()))
+            style = CAPTION_STYLES[style_name]
+            if style['opener'] not in caption:
+                caption = f"{style['opener']}\n\n{caption}"
+            caption = f"{caption}\n\n{style['closer']}"
+            content['caption_style'] = style_name
+        else:
+            content['caption_style'] = 'plain'
+
+        # 2. Rotating CTA closer (skip if the caption already carries a DM call-to-action).
+        if 'OTOMATIK DM' not in caption:
+            closer = random.choice(CTA_CLOSERS)
+            if closer not in caption:
+                caption = f"{caption}\n\n{closer}"
+            content['cta_variant'] = closer
+        else:
+            content['cta_variant'] = 'dm_auto'
+
+        # 3. Optional bilingual English tagline.
+        if content.get('bilingual_enabled'):
+            en = BILINGUAL_TAGLINES.get(content_type)
+            if en and en not in caption:
+                caption = f"{caption}\n\n[EN] {en}"
+                content['bilingual'] = True
+
+        content['caption'] = caption.strip()
+
+        # 4. Rotating hashtag sets.
+        content['hashtags'] = self._pick_hashtags(content_type, content.get('hashtags', ''))
         return content
 
     def _load_products_from_json(self):
@@ -719,7 +1356,7 @@ class ContentGenerator:
         post_title = f"{brand} — {name}"
 
         # Try Gemini AI enhancement if key is provided
-        if self.gemini_api_key:
+        if self._llm_available():
             ai_data = self._call_gemini_post_and_summary('product_spotlight', {
                 'name': name, 'brand': brand, 'price_try': price_try, 'price_usd': price_usd,
                 'discount_pct': discount_pct, 'specs': specs, 'description': prod.get('description_tr')
@@ -742,7 +1379,7 @@ class ContentGenerator:
             'tool_info': None
         }
 
-    def _generate_tool_showcase(self) -> dict:
+    def _generate_tool_showcase(self, product_id: str = None) -> dict:
         recent_titles = set(get_recent_posted_titles(40))
 
         tools = [
@@ -878,7 +1515,7 @@ Pozitron 5.8GHz Frekans Tablosu ile:
         visual_summary = tool['visual_summary']
         tool_info = tool['tool_info']
 
-        if self.gemini_api_key:
+        if self._llm_available():
             ai_data = self._call_gemini_post_and_summary('tool_showcase', {
                 'tool_title': title, 'caption_draft': caption, 'visual_summary': visual_summary
             })
@@ -889,18 +1526,19 @@ Pozitron 5.8GHz Frekans Tablosu ile:
                 if ai_data.get('visual_summary'):
                     visual_summary = ai_data['visual_summary']
 
+        prod = self._get_candidate_product(product_id) if product_id else None
         return {
             'content_type': 'tool_showcase',
-            'product_id': None,
+            'product_id': prod.get('id') if prod else None,
             'title': title,
             'caption': caption.strip(),
             'hashtags': hashtags,
             'visual_summary': visual_summary,
-            'product_data': None,
+            'product_data': prod if prod else None,
             'tool_info': tool_info
         }
 
-    def _generate_deal_drop(self) -> dict:
+    def _generate_deal_drop(self, product_id: str = None) -> dict:
         recent_titles = set(get_recent_posted_titles(40))
 
         deals = [
@@ -980,7 +1618,7 @@ Kupon stoklarla ve süreyle sınırlıdır.
             'cta': '> İNDİRİMDEN YARARLANMAK İÇİN TIKLA'
         }
 
-        if self.gemini_api_key:
+        if self._llm_available():
             ai_data = self._call_gemini_post_and_summary('deal_drop', {
                 'coupon_code': coupon_code, 'discount_desc': discount_desc
             })
@@ -991,18 +1629,25 @@ Kupon stoklarla ve süreyle sınırlıdır.
                 if ai_data.get('visual_summary'):
                     visual_summary = ai_data['visual_summary']
 
+        prod = self._get_candidate_product(product_id) if product_id else None
+        if prod:
+            p_name = prod.get('name_tr') or prod.get('name_en') or ''
+            if p_name:
+                title = f"[FIRSAT] {p_name} — {deal['code']} Kuponu Aktif!"
+                visual_summary['subhead'] = f"{p_name[:32]} ve FPV parçalarında geçerli"
+
         return {
             'content_type': 'deal_drop',
-            'product_id': None,
+            'product_id': prod.get('id') if prod else None,
             'title': title,
             'caption': caption.strip(),
             'hashtags': hashtags,
             'visual_summary': visual_summary,
-            'product_data': None,
+            'product_data': prod if prod else None,
             'tool_info': {'coupon_code': coupon_code}
         }
 
-    def _generate_pilot_tip(self) -> dict:
+    def _generate_pilot_tip(self, product_id: str = None) -> dict:
         recent_titles = set(get_recent_posted_titles(40))
         
         # Filter out recently posted tips
@@ -1032,7 +1677,7 @@ Merak ettiğiniz teknik soruları yorumlarda pilotlarımızla paylaşın!
         }
 
         # Try Gemini AI enhancement if key is provided
-        if self.gemini_api_key:
+        if self._llm_available():
             ai_data = self._call_gemini_post_and_summary('pilot_tip', {
                 'tip_title': tip['title'], 'tip_summary': tip['summary']
             })
@@ -1043,14 +1688,15 @@ Merak ettiğiniz teknik soruları yorumlarda pilotlarımızla paylaşın!
                 if ai_data.get('visual_summary'):
                     visual_summary = ai_data['visual_summary']
 
+        prod = self._get_candidate_product(product_id) if product_id else None
         return {
             'content_type': 'pilot_tip',
-            'product_id': None,
+            'product_id': prod.get('id') if prod else None,
             'title': title,
             'caption': caption.strip(),
             'hashtags': hashtags,
             'visual_summary': visual_summary,
-            'product_data': None,
+            'product_data': prod if prod else None,
             'tool_info': None
         }
 
@@ -1122,17 +1768,44 @@ Pozitron Mühendislik Ekibi tarafından hazırlanan bu teknik kılavuz ile FPV d
         # Fallback to pilot tip
         return self._generate_pilot_tip()
 
-    def _generate_review_highlight(self) -> dict:
+    def _generate_review_highlight(self, product_id: str = None) -> dict:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute('''
-            SELECT r.*, p.name_tr, p.name_en, p.brand, p.image_url, p.slug
-            FROM reviews r
-            LEFT JOIN products p ON r.product_id = p.id
-            WHERE r.rating >= 4
-            ORDER BY RANDOM() LIMIT 1
-        ''')
-        row = cursor.fetchone()
+        row = None
+        if product_id:
+            cursor.execute('''
+                SELECT r.*, p.name_tr, p.name_en, p.brand, p.image_url, p.slug
+                FROM reviews r
+                JOIN products p ON r.product_id = p.id
+                WHERE p.id = ? OR p.slug = ?
+                ORDER BY r.rating DESC LIMIT 1
+            ''', (product_id, product_id))
+            row = cursor.fetchone()
+            if not row:
+                cursor.execute("SELECT * FROM products WHERE id = ? OR slug = ?", (product_id, product_id))
+                p_row = cursor.fetchone()
+                if p_row:
+                    p_dict = dict(p_row)
+                    row = {
+                        'user_name': 'Doğrulanmış FPV Pilotu',
+                        'comment': f"{p_dict.get('name_tr') or p_dict.get('name_en')} donanımını titizlikle test ettim. Pozitron Market kalitesi ve malzeme sağlamlığı harika!",
+                        'rating': 5,
+                        'name_tr': p_dict.get('name_tr'),
+                        'name_en': p_dict.get('name_en'),
+                        'brand': p_dict.get('brand'),
+                        'slug': p_dict.get('slug'),
+                        'product_id': p_dict.get('id'),
+                        'image_url': p_dict.get('image_url')
+                    }
+        if not row:
+            cursor.execute('''
+                SELECT r.*, p.name_tr, p.name_en, p.brand, p.image_url, p.slug
+                FROM reviews r
+                LEFT JOIN products p ON r.product_id = p.id
+                WHERE r.rating >= 4
+                ORDER BY RANDOM() LIMIT 1
+            ''')
+            row = cursor.fetchone()
         conn.close()
 
         if not row:
@@ -1181,7 +1854,7 @@ Detaylar ve sipariş için profildeki linke tıkla: {link}"""
         }
 
         # Try Gemini AI enhancement if key is provided
-        if self.gemini_api_key:
+        if self._llm_available():
             ai_data = self._call_gemini_post_and_summary('review_highlight', {
                 'product': product_name, 'user_name': user_name, 'comment': comment
             })
@@ -1191,6 +1864,9 @@ Detaylar ve sipariş için profildeki linke tıkla: {link}"""
                 title = ai_data.get('title', title)
                 if ai_data.get('visual_summary'):
                     visual_summary = ai_data['visual_summary']
+
+        if r.get('product_id') and 'id' not in r:
+            r['id'] = r.get('product_id')
 
         return {
             'content_type': 'review_highlight',
@@ -1203,7 +1879,7 @@ Detaylar ve sipariş için profildeki linke tıkla: {link}"""
             'tool_info': None
         }
 
-    def _generate_hardware_battle(self) -> dict:
+    def _generate_hardware_battle(self, product_id: str = None) -> dict:
         recent_titles = set(get_recent_posted_titles(40))
         eligible = [b for b in HARDWARE_BATTLES if b['title'] not in recent_titles]
         if not eligible:
@@ -1230,7 +1906,7 @@ Sen hangi taraftasın? Tercihini ve tecrübeni yorumlarda FPV topluluğuyla payl
             'key_points': battle['points'],
             'cta': '> SEN HANGİSİNİ TERCİH EDİYORSUN? YORUMA YAZ'
         }
-        if self.gemini_api_key:
+        if self._llm_available():
             ai_data = self._call_gemini_post_and_summary('hardware_battle', {
                 'title': title, 'summary': battle['summary']
             })
@@ -1240,18 +1916,19 @@ Sen hangi taraftasın? Tercihini ve tecrübeni yorumlarda FPV topluluğuyla payl
                 title = ai_data.get('title', title)
                 if ai_data.get('visual_summary'):
                     visual_summary = ai_data['visual_summary']
+        prod = self._get_candidate_product(product_id) if product_id else None
         return {
             'content_type': 'hardware_battle',
-            'product_id': None,
+            'product_id': prod.get('id') if prod else None,
             'title': title,
             'caption': caption.strip(),
             'hashtags': hashtags,
             'visual_summary': visual_summary,
-            'product_data': None,
+            'product_data': prod if prod else None,
             'tool_info': None
         }
 
-    def _generate_mistake_breakdown(self) -> dict:
+    def _generate_mistake_breakdown(self, product_id: str = None) -> dict:
         recent_titles = set(get_recent_posted_titles(40))
         eligible = [m for m in MISTAKE_BREAKDOWNS if m['title'] not in recent_titles]
         if not eligible:
@@ -1278,7 +1955,7 @@ Daha önce bu hatayı yaşadın mı? Deneyimini yorumlarda paylaş, yeni pilotla
             'key_points': mistake['points'],
             'cta': '> SEN DE DENEYİMİNİ YORUMDA PAYLAŞ'
         }
-        if self.gemini_api_key:
+        if self._llm_available():
             ai_data = self._call_gemini_post_and_summary('mistake_breakdown', {
                 'title': title, 'summary': mistake['summary']
             })
@@ -1288,14 +1965,15 @@ Daha önce bu hatayı yaşadın mı? Deneyimini yorumlarda paylaş, yeni pilotla
                 title = ai_data.get('title', title)
                 if ai_data.get('visual_summary'):
                     visual_summary = ai_data['visual_summary']
+        prod = self._get_candidate_product(product_id) if product_id else None
         return {
             'content_type': 'mistake_breakdown',
-            'product_id': None,
+            'product_id': prod.get('id') if prod else None,
             'title': title,
             'caption': caption.strip(),
             'hashtags': hashtags,
             'visual_summary': visual_summary,
-            'product_data': None,
+            'product_data': prod if prod else None,
             'tool_info': None
         }
 
@@ -1327,7 +2005,7 @@ Doğru cevabını yorumlara yaz! Doğru yanıt günün sonunda hikayemizde ve yo
             'key_points': quiz['points'],
             'cta': '> CEVABINI YORUMA BIRAK!'
         }
-        if self.gemini_api_key:
+        if self._llm_available():
             ai_data = self._call_gemini_post_and_summary('community_quiz', {
                 'title': title, 'summary': quiz['summary'], 'options': quiz['points']
             })
@@ -1348,41 +2026,204 @@ Doğru cevabını yorumlara yaz! Doğru yanıt günün sonunda hikayemizde ve yo
             'tool_info': None
         }
 
+    def _generate_myth_buster(self) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+        eligible = [m for m in MYTH_BUSTERS if m['title'] not in recent_titles]
+        if not eligible:
+            eligible = MYTH_BUSTERS
+        myth = random.choice(eligible)
+        title = myth['title']
+        caption = f"""{myth['title']}
+
+[YAYGIN INANIS]
+{myth['myth']}
+
+[GERCEK DURUM]
+{myth['reality']}
+
+[OZET]
+• {myth['points'][0]}
+• {myth['points'][1]}
+• {myth['points'][2]}
+
+Sen bu efsaneye inanıyor muydun? Yoruma yaz, doğruyu birlikte yayalım!
+
+> Doğru donanım ve rehber: pozitronmarket.com"""
+        hashtags = f"{myth['tags']} #fpvefsane #dogrubilgi #pozitronmarket"
+        visual_summary = {
+            'badge': 'FPV EFSANE AVCISI',
+            'headline': 'EFSANE vs GERCEK',
+            'subhead': myth['myth'][:70],
+            'key_points': myth['points'],
+            'cta': '> SEN DE GORUSUNU YORUMA YAZ'
+        }
+        if self._llm_available():
+            ai_data = self._call_gemini_post_and_summary('myth_buster', {
+                'title': title, 'myth': myth['myth'], 'reality': myth['reality']
+            })
+            if ai_data:
+                caption = ai_data.get('caption', caption)
+                hashtags = ai_data.get('hashtags', hashtags)
+                title = ai_data.get('title', title)
+                if ai_data.get('visual_summary'):
+                    visual_summary = ai_data['visual_summary']
+        return {
+            'content_type': 'myth_buster',
+            'product_id': None,
+            'title': title,
+            'caption': caption.strip(),
+            'hashtags': hashtags,
+            'visual_summary': visual_summary,
+            'product_data': None,
+            'tool_info': None
+        }
+
+    def _generate_maintenance_checklist(self, product_id: str = None) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+        eligible = [m for m in MAINTENANCE_CHECKS if m['title'] not in recent_titles]
+        if not eligible:
+            eligible = MAINTENANCE_CHECKS
+        chk = random.choice(eligible)
+        title = chk['title']
+        points_block = "\n".join(f"{i+1}. {p}" for i, p in enumerate(chk['points']))
+        caption = f"""{chk['title']}
+
+{chk['intro']}
+
+{points_block}
+
+Bu listeyi kaydet, sonraki bakımda tekrar kullan! Sorularını yoruma bırakabilirsin.
+
+> Yedek parça ve koruma ürünleri: pozitronmarket.com"""
+        hashtags = f"{chk['tags']} #fpvbakimlistesi #dronbakimi #pozitronmarket"
+        visual_summary = {
+            'badge': 'FPV BAKIM KONTROL LISTESI',
+            'headline': 'BAKIM ADIMLARI',
+            'subhead': chk['intro'][:70],
+            'key_points': chk['points'][:4],
+            'cta': '> LISTEYI KAYDET VE PAYLAS'
+        }
+        if self._llm_available():
+            ai_data = self._call_gemini_post_and_summary('maintenance_checklist', {
+                'title': title, 'intro': chk['intro'], 'steps': chk['points']
+            })
+            if ai_data:
+                caption = ai_data.get('caption', caption)
+                hashtags = ai_data.get('hashtags', hashtags)
+                title = ai_data.get('title', title)
+                if ai_data.get('visual_summary'):
+                    visual_summary = ai_data['visual_summary']
+        prod = self._get_candidate_product(product_id) if product_id else None
+        return {
+            'content_type': 'maintenance_checklist',
+            'product_id': prod.get('id') if prod else None,
+            'title': title,
+            'caption': caption.strip(),
+            'hashtags': hashtags,
+            'visual_summary': visual_summary,
+            'product_data': prod if prod else None,
+            'tool_info': None
+        }
+
+    def _generate_beginner_roadmap(self) -> dict:
+        recent_titles = set(get_recent_posted_titles(40))
+        eligible = [r for r in BEGINNER_ROADMAP if r['title'] not in recent_titles]
+        if not eligible:
+            eligible = BEGINNER_ROADMAP
+        road = random.choice(eligible)
+        title = road['title']
+        steps_block = "\n".join(road['steps'])
+        caption = f"""{road['title']}
+
+{road['intro']}
+
+{steps_block}
+
+Bu rehberi yeni başlayan bir arkadaşına gönder, ona zaman kazandır!
+
+> Başlangıç için uygun donanımlar: pozitronmarket.com"""
+        hashtags = f"{road['tags']} #fpvyenibaslayan #fpvrehberi #pozitronmarket"
+        visual_summary = {
+            'badge': 'YENI BASLAYAN YOL HARITASI',
+            'headline': 'FPV BASLANGIC REHBERI',
+            'subhead': road['intro'][:70],
+            'key_points': road['steps'][:4],
+            'cta': '> REHBERI ARKADASINA GONDER'
+        }
+        if self._llm_available():
+            ai_data = self._call_gemini_post_and_summary('beginner_roadmap', {
+                'title': title, 'intro': road['intro'], 'steps': road['steps']
+            })
+            if ai_data:
+                caption = ai_data.get('caption', caption)
+                hashtags = ai_data.get('hashtags', hashtags)
+                title = ai_data.get('title', title)
+                if ai_data.get('visual_summary'):
+                    visual_summary = ai_data['visual_summary']
+        return {
+            'content_type': 'beginner_roadmap',
+            'product_id': None,
+            'title': title,
+            'caption': caption.strip(),
+            'hashtags': hashtags,
+            'visual_summary': visual_summary,
+            'product_data': None,
+            'tool_info': None
+        }
+
     def _call_gemini_post_and_summary(self, content_type: str, context: dict) -> dict:
         """
-        Calls Gemini 2.5/3.8 Flash API to generate Turkish Instagram post caption and visual summary card.
-        """
-        if not self.gemini_api_key:
-            return None
+        Generates the Turkish Instagram caption + visual summary card.
 
-        prompt = f"""Sen Pozitron Market (pozitronmarket.com) FPV drone platformunun bas sosyal medya ve PR uzmanisin (Model: Gemini 3.8 Flash).
+        Primary: Flash 3.8 (Qwen 3.8 Flash Next / Gemini 3.8 Flash) via the unified OpenCode/Evren gateway.
+        Fallback: legacy Gemini endpoint.
+        """
+        prompt = f"""Sen Pozitron Market (pozitronmarket.com) icin yazan, deneyimli bir Turk FPV pilotu ve icerik yazarisin.
 Icerik Turu: {content_type}
 Icerik Bilgileri:
 {json.dumps(context, ensure_ascii=False, indent=2)}
 
-GOREV:
-1. Instagram icin etkileyici, Turkce, enerjik ve samimi bir gonderi metni (caption) ve hashtag'ler yaz.
-2. Bu gonderide anlatilan konunun/urunun EN ONEMLI noktalarini ozetleyen bir "visual_summary" (gorsel ozet) olustur.
-   Bu gorsel ozet, 1080x1080 boyutundaki Instagram grafik gorselinin uzerine buyuk ve net sekilde basilacaktir.
-3. KESIN KURAL: KESINLIKLE HICBIR EMOJI KULLANMA. Butun vurgulari koseli parantez veya temiz tipografi ile yap.
+En onemli kural: METIN INSAN YAZMIS GIBI OLMALI. Bir makine, bot veya reklam ajansi gibi DEGIL.
+- Dogal, samimi, akici Turkce yaz. Konusuyormus gibi.
+- KESINLIKLE: koseli parantezli etiket YOK ([FREKANS], [ONLINE ARAC], [GUC] gibi), EMOJI YOK, TAMAMI BUYUK HARF YOK, "->", ">>", "KAYDET", "HIZLI OKU", "PILOT NOTU" gibi kalip ifadeler YOK, "gonderi", "icerik", "slayt", "reels" kelimeleri YOK.
+- Basliklar ve gorsel metinleri normal cumle duzeninde olsun; sadece ilk harf buyuk, gerisi kucuk (FPV, VTX, LiPo, GPS gibi kisaltmalar buyuk kalabilir).
+- Abartili satis dili kullanma; gercek bir pilotun paylasacagi gibi sade ve guvenilir ol.
+- Gereksiz uzatma; 2-4 kisa cumle yeterli.
+
+Ayrica gorsele basilacak kisa bir ozet ("visual_summary") uret: rozet (kisa etiket), ana baslik, kisa alt aciklama, en fazla 3 madde ve tek satirlik davet.
 
 SADECE gecerli bir JSON objesi dondur:
 {{
-  "title": "Gonderi basligi (maks 40 karakter)",
-  "caption": "Instagram gonderi metni (dikkat cekici kanca, teknik avantajlar, sifir emoji, profildeki linke yonlendirme)",
+  "title": "Kisa, dogal baslik (maks 60 karakter)",
+  "caption": "Instagram icin insan gibi yazilmis Turkce metin",
   "hashtags": "#fpvturkey #pozitronmarket #dronetopla #fpvdrone #betaflight",
   "visual_summary": {{
-    "badge": "Gorsel ustu rozet (orn: [ONE CIKAN DONANIM], [FIRSAT ALARMI], [PILOT REHBERI])",
-    "headline": "Gorsel uzerindeki ana baslik (maks 32 karakter)",
-    "subhead": "Gorsel uzerindeki kisa aciklama (maks 45 karakter)",
+    "badge": "Kisa etiket, normal cumle duzeni (maks 28 karakter)",
+    "headline": "Gorselin ana basligi, normal cumle duzeni (maks 40 karakter)",
+    "subhead": "Tek satir kisa aciklama (maks 55 karakter)",
     "key_points": [
-      "[1] Gonderi metninin 1. ozet maddesi (maks 42 karakter)",
-      "[2] Gonderi metninin 2. ozet maddesi (maks 42 karakter)",
-      "[3] Gonderi metninin 3. ozet maddesi (maks 42 karakter)"
+      "1. kisa madde (maks 50 karakter)",
+      "2. kisa madde (maks 50 karakter)",
+      "3. kisa madde (maks 50 karakter)"
     ],
-    "cta": "[PROFILDEKI LINKTEN HEMEN KESFET]"
+    "cta": "Tek satir davet, ornegin: Detaylar profildeki linkte"
   }}
 }}"""
+
+        # 1. Unified LLM (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                data = llm.generate_json(prompt, max_tokens=8192, temperature=0.5)
+                if isinstance(data, dict) and data.get('caption') and data.get('visual_summary'):
+                    return data
+        except Exception:
+            pass
+
+        # 2. Legacy Gemini fallback
+        if not self.gemini_api_key:
+            return None
 
         payload = {
             "contents": [{
@@ -1547,7 +2388,7 @@ Slaytlari kaydir, drone'unu guvenceye al!
             'tool_info': None
         }
 
-    def _generate_drone_build_showcase(self) -> dict:
+    def _generate_drone_build_showcase(self, product_id: str = None) -> dict:
         recent_titles = set(get_recent_posted_titles(40))
 
         builds = [
@@ -1640,15 +2481,16 @@ Yoruma 'KUPON', 'PARCA' veya 'FIYAT' yaz, bu build'in parca listesini ve ozel in
             'cta': '> TUM PARCALAR STOKTA: pozitronmarket.com <'
         }
 
+        prod = self._get_candidate_product(product_id) if product_id else None
         return {
             'content_type': 'drone_build_showcase',
             'media_type': 'IMAGE',
-            'product_id': None,
+            'product_id': prod.get('id') if prod else None,
             'title': b['title'],
             'caption': caption.strip(),
             'hashtags': b['tags'],
             'visual_summary': visual_summary,
-            'product_data': None,
+            'product_data': prod if prod else None,
             'tool_info': None
         }
 
@@ -1783,34 +2625,196 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
             'tool_info': None
         }
 
+    def generate_reels_content(self, content_type: str = None, product_id: str = None, allowed_reels_types: list = None, reels_type: str = None) -> dict:
+        """
+        Builds Reels-native content for one of the 8 distinct Reels formats:
+        - real_fpv_broll (toggleable authentic FPV flight clip + brand overlay)
+        - freestyle_acro (gap-dive, power loop, high speed acrobatics)
+        - hardware_vs (component vs component comparison)
+        - quick_tip_fix (15s quick pilot tip, soldering, Betaflight)
+        - mistake_warning (preventing crashes, smoke stopper, failsafe)
+        - secret_spot (Turkey's canyon/abandoned factory FPV spots)
+        - product_cinematic (macro hardware, live price pill, stock)
+        - flash_deal (limited coupon, urgency e-commerce vitrine)
+
+        Strictly limits selection to allowed_reels_types if provided.
+        """
+        allowed = [t for t in (allowed_reels_types or ALL_REELS_TYPES) if t in ALL_REELS_TYPES]
+        if not allowed:
+            allowed = list(ALL_REELS_TYPES)
+
+        # If user explicitly requested a reels_type, check if it's allowed or fallback to allowed
+        if reels_type and reels_type in allowed:
+            chosen_reels_type = reels_type
+        elif reels_type and reels_type not in allowed:
+            chosen_reels_type = random.choice(allowed)
+        else:
+            chosen_reels_type = None
+
+        recent_reel_types = get_recent_posted_content_types_by_media('REEL', limit=6)
+        recent_combos = set(get_recent_reel_combo_ids(limit=8))
+        recent_combos.update(self._session_recent_combo_ids[-10:])
+
+        # Filter combos: strictly match allowed reels types
+        combos = [c for c in REEL_COMBINATIONS if c.get('reels_type') in allowed]
+        if not combos:
+            combos = list(REEL_COMBINATIONS)
+
+        if chosen_reels_type:
+            type_combos = [c for c in combos if c.get('reels_type') == chosen_reels_type]
+            if type_combos:
+                combos = type_combos
+
+        if content_type:
+            theme_combos = [c for c in combos if content_type in c['themes']]
+            if theme_combos:
+                combos = theme_combos
+        else:
+            preferred = [c for c in combos if all(t not in recent_reel_types[:2] for t in c['themes'])]
+            if preferred:
+                combos = preferred
+
+        fresh = [c for c in combos if c['id'] not in recent_combos]
+        pool = fresh if fresh else combos
+
+        # Down-weight combos whose themes were used very recently
+        weights = []
+        for c in pool:
+            w = 1.0
+            if any(t in recent_reel_types[:3] for t in c['themes']):
+                w *= 0.3
+            weights.append(w)
+        combo = random.choices(pool, weights=weights, k=1)[0]
+        chosen_reels_type = combo.get('reels_type') or chosen_reels_type or 'product_cinematic'
+        chosen = None
+
+        content = None
+        # Try themes corresponding to chosen_reels_type or combo themes
+        target_themes = REELS_TYPE_THEME_MAP.get(chosen_reels_type, combo['themes'])
+        theme_order = list(dict.fromkeys(target_themes + combo['themes'] + [t for c in REEL_COMBINATIONS for t in c['themes']]))
+        for theme in theme_order:
+            try:
+                content = self.generate_content(content_type=theme, product_id=product_id)
+            except Exception:
+                content = None
+            if content and content.get('title'):
+                chosen = theme
+                break
+        if not content:
+            content = self.generate_content(content_type='product_spotlight', product_id=product_id)
+        if not content:
+            return {}
+
+        content['content_type'] = chosen
+        content['media_type'] = 'REEL'
+        content['reels_type'] = chosen_reels_type
+        content['allowed_reels_types'] = allowed
+        content['reel_combo'] = combo['id']
+        content['visual_style_key'] = combo['style']
+        content['visual_style'] = REEL_STYLE_PRESETS.get(combo['style'], random.choice(REEL_VISUAL_STYLES))
+        content['video_mode'] = 'mode2' if chosen_reels_type == 'real_fpv_broll' else combo.get('video_mode', 'mode1')
+        content['hook_tone'] = combo['tone']
+        hooks = REELS_HOOKS.get(chosen_reels_type) or REELS_HOOKS.get(chosen) or REELS_HOOKS['product_spotlight']
+        idx = REEL_HOOK_TONES.get(combo['tone'], random.randrange(len(hooks)))
+        hook = hooks[idx % len(hooks)]
+        cta = REELS_CTA.get(chosen_reels_type) or REELS_CTA.get(chosen) or REELS_CTA['product_spotlight']
+        content['hook'] = hook
+        content['cta'] = cta
+        content['caption'] = self._build_reels_caption(chosen_reels_type, content.get('caption', ''), tone=combo['tone'], fallback_type=chosen, hook=hook, cta=cta)
+        base_tags = content.get('hashtags', '') or ''
+        content['hashtags'] = f"{base_tags} {REELS_EXTRA_TAGS}".strip()
+        content = humanize_content(content)
+
+        self._session_recent_combo_ids.append(combo['id'])
+        if len(self._session_recent_combo_ids) > 20:
+            self._session_recent_combo_ids = self._session_recent_combo_ids[-20:]
+        return content
+
+    def _build_reels_caption(self, content_type: str, base_caption: str, tone: str = None, fallback_type: str = None, hook: str = None, cta: str = None) -> str:
+        """Wraps the informative body with a reels-native hook and theme-specific CTA."""
+        if not hook:
+            hooks = REELS_HOOKS.get(content_type) or REELS_HOOKS.get(fallback_type) or REELS_HOOKS['product_spotlight']
+            idx = REEL_HOOK_TONES.get(tone, random.randrange(len(hooks)))
+            hook = hooks[idx % len(hooks)]
+        if not cta:
+            cta = REELS_CTA.get(content_type) or REELS_CTA.get(fallback_type) or REELS_CTA['product_spotlight']
+
+        body = (base_caption or '').strip()
+        # Drop the generic feed DM CTA if present; Reels use their own CTA.
+        for marker in ('[OTOMATIK DM ALARMI]', '[OTOMATIK DM ALARM]'):
+            if marker in body:
+                body = body.split(marker)[0].strip()
+        # Trim overly long feed captions for Reels best practice (< ~1200 chars total).
+        if len(body) > 900:
+            body = body[:900].rstrip() + '...'
+
+        parts = [hook]
+        if body:
+            parts.append(body)
+        parts.append(cta)
+        parts.append(f"Takip et: @pozitronmarket | Alışveriş: pozitronmarket.com")
+        return "\n\n".join(parts)
+
     def generate_reels_video_prompt(self, post_data: dict) -> str:
         """
-        Generates an optimized, cinematic video generation prompt for Gemini Omni Flash (gemini-omni-1.1-flash).
-        Directs camera motion, lighting, focus on FPV/drone hardware or 3D printing details, and 9:16 vertical staging.
+        Generates an optimized, cinematic video generation prompt for LTX-Video / Gemini Omni Flash.
+        Theme-aware and style-rotating across all 8 distinct Reels formats.
         """
         title = post_data.get('title', 'FPV Drone & Maker Technology')
+        content_type = post_data.get('content_type', 'product_spotlight')
+        reels_type = post_data.get('reels_type') or content_type
         prod = post_data.get('product_data') or {}
         prod_name = prod.get('name_tr') or prod.get('name') or title
         category = prod.get('category', 'FPV Drone Components')
         description = prod.get('description_tr') or prod.get('description') or ''
+        style = post_data.get('visual_style') or random.choice(REEL_VISUAL_STYLES)
 
-        # If Gemini API key is available, craft a dynamic prompt via Gemini 3.8 Flash
+        reels_type_prompts = {
+            'freestyle_acro': f"High-speed acrobatic FPV drone performing an aggressive gap-dive and snappy power-loop, low ground skimming, motion blur, {style}",
+            'hardware_vs': f"Side-by-side comparison of two high-performance FPV drone components on illuminated pedestals, macro rotating camera, brushed carbon and titanium, {style}",
+            'quick_tip_fix': f"Extreme macro workshop shot of precision soldering tip touching gold ESC pad with light rosin flux smoke rising, professional clean tools, {style}",
+            'mistake_warning': f"Dramatic slow-motion of drone electronics on bench, warning LED flashing red, smoke stopper safety test, intense cinematic lighting, {style}",
+            'secret_spot': f"Sweeping cinematic aerial reveal flying low over a rugged hidden canyon and abandoned industrial structure, golden-hour volumetric mist, {style}",
+            'product_cinematic': f"Ultra-detailed 360-degree turntable shot of {prod_name}, macro view of brushless copper stator windings and carbon fiber frame, {style}",
+            'flash_deal': f"Futuristic neon-lit retail vitrine, glowing digital price tag and hologram discount aura around {prod_name}, cyber aesthetic, {style}",
+            'real_fpv_broll': f"Authentic first-person-view drone camera flight racing fast across scenic terrain, smooth brushless stabilization, {style}"
+        }
+        reels_prompt_direction = reels_type_prompts.get(reels_type, f"Cinematic vertical 9:16 FPV video about {prod_name}, {style}")
+
+        system_instruction = (
+            "You are an award-winning cinematic director and prompt engineer for AI video generation (LTX-Video / Gemini Omni). "
+            "Write a single concise video generation prompt (40-60 words) for a 9:16 vertical commercial video. "
+            "Specify: subject, camera movement (slow orbit, macro pan, or aerial reveal), the given visual style/lighting, "
+            "material textures (carbon fiber, copper windings, PCB traces, titanium hardware, or outdoor terrain), "
+            "and a continuous unbroken shot. "
+            "NO text, NO logo overlays, NO scene cuts, NO speech, photorealistic 8K."
+        )
+        user_msg = (
+            f"Reels format: {reels_type}\nContent theme: {content_type}\nSubject: {prod_name}\nCategory: {category}\n"
+            f"Details: {description[:200]}\nVisual style to follow: {style}\nFormat direction: {reels_prompt_direction}"
+        )
+
+        # 1. Unified LLM (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                text = llm.generate_text(f"{system_instruction}\n\n{user_msg}", max_tokens=400, temperature=0.9)
+                text = (text or "").strip().strip('"\'`')
+                if len(text) > 20:
+                    return text
+        except Exception:
+            pass
+
+        # 2. Legacy Gemini fallback
         if self.gemini_api_key:
-            system_instruction = (
-                "You are an award-winning cinematic director and prompt engineer for Gemini Omni Flash (gemini-omni-1.1-flash). "
-                "Write a single concise video generation prompt (40-60 words) for a 9:16 vertical commercial video. "
-                "Specify: subject, camera movement (slow 360 orbit or dynamic macro pan), atmospheric lighting (dark tech studio, neon cyan/orange accents), "
-                "textures (matte carbon fiber, copper motor windings, PCB traces, titanium hardware), and continuous unbroken shot. "
-                "NO text, NO logo overlays, NO scene cuts, NO speech, photorealistic 8K."
-            )
-            user_msg = f"Product: {prod_name}\nCategory: {category}\nDetails: {description[:200]}"
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.gemini_api_key}"
             payload = {
                 "contents": [
                     {"role": "user", "parts": [{"text": f"{system_instruction}\n\n{user_msg}"}]}
                 ],
                 "generationConfig": {
-                    "temperature": 0.7,
+                    "temperature": 0.9,
                     "maxOutputTokens": 150
                 }
             }
@@ -1830,12 +2834,12 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
             except Exception:
                 pass
 
-        # High-quality rule-based fallback prompt
+        # High-quality rule-based fallback prompt (format-aware)
         return (
-            f"Cinematic vertical 9:16 product showcase of {prod_name}. "
-            "Smooth 360-degree rotating camera shot in a sleek minimalist dark tech studio with neon cyan and amber rim lighting. "
-            "Macro close-up detailing carbon fiber patterns, gold soldering contacts, and brushless motor mechanics. "
-            "Smooth 60fps motion, realistic reflections, continuous unbroken single shot, photorealistic commercial quality, no text."
+            f"Cinematic vertical 9:16 FPV video. {reels_prompt_direction}. "
+            "Continuous unbroken single shot, photorealistic 8K, cinematic volumetric lighting, "
+            "no text, no watermark, no overlays."
         )
+
 
 

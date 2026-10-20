@@ -9,6 +9,7 @@ import re
 import urllib.request
 import urllib.error
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from instagram_agent.db import get_agent_config
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIR = os.path.join(BASE_DIR, 'assets', 'instagram', 'posts')
@@ -88,7 +89,8 @@ def _load_product_image(local_path: str):
     # Fallback via ffmpeg
     try:
         import subprocess
-        tmp_png = f"/tmp/pztr_prod_{os.getpid()}.png"
+        import uuid as _uuid
+        tmp_png = f"/tmp/pztr_prod_{os.getpid()}_{_uuid.uuid4().hex[:8]}.png"
         res = subprocess.run(['ffmpeg', '-i', local_path, tmp_png, '-y', '-loglevel', 'quiet'], timeout=6)
         if res.returncode == 0 and os.path.exists(tmp_png):
             im = Image.open(tmp_png).convert('RGBA')
@@ -107,44 +109,541 @@ class ImageGenerator:
     def set_api_key(self, api_key: str):
         self.gemini_api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
 
+    # ==================================================================
+    # UNIFIED BRAND TEMPLATE
+    # Every post/story/reel overlay uses this single layout so the feed is
+    # visually consistent: real logo, one hero image (product photo or AI
+    # image), and calm human text.
+    # ==================================================================
+
+    def _logo_image(self):
+        """Loads the brand mark logo.png once (RGBA), or None if missing."""
+        cached = getattr(self, '_logo_cache', None)
+        if cached is not None:
+            return cached or None
+        # Strict requirement: Prioritize assets/logo.png for all post templates
+        for name in ('logo.png', 'logo_square.png'):
+            path = os.path.join(BASE_DIR, 'assets', name)
+            if os.path.exists(path):
+                try:
+                    self._logo_cache = Image.open(path).convert('RGBA')
+                    return self._logo_cache
+                except Exception:
+                    pass
+        self._logo_cache = False
+        return None
+
+    @staticmethod
+    def get_template_blueprint() -> dict:
+        """
+        Returns the exact structural blueprint, dimensions, typography, and layout
+        used across all Pozitron Market posts.
+        """
+        return {
+            "canvas": {
+                "dimensions": "1080x1080 px",
+                "aspect_ratio": "1:1 Square (Instagram Feed)",
+                "base_color": "#090d16",
+                "quality": "JPEG 94% with progressive optimization"
+            },
+            "layers": [
+                {
+                    "layer": 1,
+                    "name": "Arka Plan (Hero Background)",
+                    "description": "FLUX.1 AI üretimi sinematik FPV sahnesi veya dinamik stüdyo radyal gradyanı (9 siber renk paleti seçeneği)"
+                },
+                {
+                    "layer": 2,
+                    "name": "Okunabilirlik Karartması (Scrim Overlay)",
+                    "description": "Yüksek kontrast için alttan üste doğru %88 opaklıkta yumuşak siyah gradyan ve üst %18 logo kontrast bandı"
+                },
+                {
+                    "layer": 3,
+                    "name": "Ürün Görseli (Product Composite)",
+                    "description": "Ürün tanıtımlarında üst-orta alanda ortalanmış, 20px yuvarlatılmış kart, 24px yumuşak gölgeli (drop-shadow) ve ince çerçeveli ürün dekupe fotoğrafı (626x388 px max)"
+                },
+                {
+                    "layer": 4,
+                    "name": "Marka Bloğu (Brand Header Lockup with logo.png)",
+                    "description": "Sol üst (x=72, y=72). 92x92px yuvarlatılmış chip içinde assets/logo.png + 'POZITRON MARKET' ve 'FPV & Drone Teknolojileri' kurumsal tipografisi"
+                },
+                {
+                    "layer": 5,
+                    "name": "Fiyat ve Aksiyon Rozetleri (Price & CTA Badges)",
+                    "description": "Ürün gönderilerinde '1.448 TL' mavi fiyat pill rozeti, indirim varsa kırmızı '%X İNDİRİM' rozeti ve 'HEMEN İNCELE & SATIN AL' kurumsal e-ticaret CTA butonu"
+                },
+                {
+                    "layer": 6,
+                    "name": "Metin ve Bilgi Kartı (Content Block)",
+                    "description": "46px Bold Ana Başlık (Sentence-case), 25px Regular Alt Açıklama, 3 adet yuvarlak ikonlu özellik maddesi (güvenli alt marjin korumalı)"
+                },
+                {
+                    "layer": 7,
+                    "name": "Alt Bilgi (Footer Watermark)",
+                    "description": "Sağ alt (x=W-272, y=H-66): 23px gri 'pozitronmarket.com' alan adı imzası"
+                }
+            ],
+            "typography": {
+                "headline": "Plus Jakarta Sans / Inter Bold 46-52px (#ffffff)",
+                "subhead": "Inter Regular 25px (#cbd5e1)",
+                "bullets": "Inter Medium 23px (#e2e8f0) ile 10px #38bdf8 nokta işaretçisi",
+                "brand": "Inter Bold 34px (#ffffff / #94c5fd)",
+                "badges": "Inter Bold 20px (#ffffff / #38bdf8)",
+                "footer": "Inter 23px (#94a3b8)"
+            },
+            "logo_file": "assets/logo.png"
+        }
+
+    @staticmethod
+    def _cover_image(src: Image.Image, target_w: int, target_h: int) -> Image.Image:
+        src = src.convert('RGB')
+        sr = src.width / max(1, src.height)
+        tr = target_w / max(1, target_h)
+        if sr > tr:
+            nh = target_h
+            nw = int(target_h * sr)
+        else:
+            nw = target_w
+            nh = int(target_w / sr)
+        src = src.resize((max(1, nw), max(1, nh)), Image.Resampling.LANCZOS)
+        left = (nw - target_w) // 2
+        top = (nh - target_h) // 2
+        return src.crop((left, top, left + target_w, top + target_h))
+
+    def _resolve_product_path(self, prod: dict):
+        if not prod:
+            return None
+
+        # 1. Direct image_url / image
+        img_url = prod.get('image_url') or prod.get('image')
+        if img_url:
+            clean = str(img_url).lstrip('.').lstrip('/').replace('/', os.sep)
+            p = os.path.join(BASE_DIR, clean)
+            if os.path.exists(p):
+                return p
+            p2 = os.path.join(BASE_DIR, 'assets', 'products', os.path.basename(clean))
+            if os.path.exists(p2):
+                return p2
+            if os.path.exists(str(img_url)):
+                return str(img_url)
+
+        # 2. Try SKU in assets/products
+        sku = prod.get('sku')
+        if sku:
+            for ext in ('.jpg', '.png', '.webp', '.jpeg'):
+                p_sku = os.path.join(BASE_DIR, 'assets', 'products', f"{sku}{ext}")
+                if os.path.exists(p_sku):
+                    return p_sku
+
+        # 3. Try Gallery JSON
+        gallery_raw = prod.get('gallery_json')
+        if gallery_raw:
+            try:
+                gallery = json.loads(gallery_raw) if isinstance(gallery_raw, str) else gallery_raw
+                if isinstance(gallery, list):
+                    for g_img in gallery:
+                        g_clean = str(g_img).lstrip('.').lstrip('/').replace('/', os.sep)
+                        p_g = os.path.join(BASE_DIR, g_clean)
+                        if os.path.exists(p_g):
+                            return p_g
+                        p_g2 = os.path.join(BASE_DIR, 'assets', 'products', os.path.basename(g_clean))
+                        if os.path.exists(p_g2):
+                            return p_g2
+            except Exception:
+                pass
+
+        # 4. Try category prefix in assets/products
+        category = prod.get('category_id') or prod.get('category') or ''
+        cat_map = {
+            'motors': 'MOT', 'cameras': 'CAM', 'flight-controllers': 'FLI',
+            'video-transmitters': 'VTX', 'transmitters': 'TRA', 'frames': 'FRA',
+            'escs': 'ESC', 'batteries': 'BAT', 'propellers': 'PRO', 'antennas': 'ANT'
+        }
+        tag = cat_map.get(str(category).lower(), '')
+        products_dir = os.path.join(BASE_DIR, 'assets', 'products')
+        if os.path.exists(products_dir):
+            if tag:
+                for fname in os.listdir(products_dir):
+                    if tag in fname and fname.lower().endswith(('.jpg', '.png', '.webp', '.jpeg')):
+                        return os.path.join(products_dir, fname)
+
+            # 5. Global fallback to any product photo in catalog so canvas is never blank
+            for fname in sorted(os.listdir(products_dir)):
+                if fname.lower().endswith(('.jpg', '.png', '.webp', '.jpeg')):
+                    return os.path.join(products_dir, fname)
+
+        return None
+
+    def _template_text(self, post_data: dict):
+        """Returns (headline, subhead, points) — human, sentence-case text."""
+        vs = post_data.get('visual_summary') or {}
+        headline = vs.get('headline') or post_data.get('title') or 'FPV donanım'
+        subhead = vs.get('subhead') or ''
+        points = vs.get('key_points') or []
+        return headline, subhead, points
+
+    def _draw_logo_lockup(self, img: Image.Image, x: int, y: int, chip: int = 92,
+                          dark_text: bool = False):
+        """Draws the real logo inside a rounded chip plus the wordmark."""
+        draw = ImageDraw.Draw(img)
+        chip_fill = (255, 255, 255, 235) if not dark_text else (15, 23, 42, 220)
+        draw.rounded_rectangle([(x, y), (x + chip, y + chip)], radius=22, fill=chip_fill)
+        logo = self._logo_image()
+        if logo is not None:
+            pad = 12
+            lg = logo.copy()
+            lg.thumbnail((chip - pad * 2, chip - pad * 2), Image.Resampling.LANCZOS)
+            img.paste(lg, (x + (chip - lg.width) // 2, y + (chip - lg.height) // 2), lg)
+        word_x = x + chip + 22
+        f_main = get_font(34, bold=True)
+        f_sub = get_font(19, bold=False)
+        main_fill = (255, 255, 255) if not dark_text else (15, 23, 42)
+        sub_fill = (148, 197, 253) if not dark_text else (37, 99, 235)
+        draw.text((word_x, y + 14), "POZITRON", fill=main_fill, font=f_main)
+        try:
+            w1 = draw.textlength("POZITRON", font=f_main)
+        except Exception:
+            w1 = 170
+        draw.text((word_x + w1 + 8, y + 14), "MARKET", fill=sub_fill, font=f_main)
+        draw.text((word_x + 2, y + chip - 26), "FPV & Drone Teknolojileri", fill=sub_fill, font=f_sub)
+
+    def _draw_top_right_badge(self, img: Image.Image, content_type: str, W: int, margin: int = 72):
+        """Draws a balanced, illuminated category pill on the top right."""
+        labels = {
+            'product_spotlight': 'PRO DONANIM',
+            'deal_drop': 'HAFTALIK FIRSAT',
+            'pilot_tip': 'PİLOT TÜYOSU',
+            'hardware_battle': 'DONANIM VS',
+            'drone_build_showcase': 'BUILD REHBERİ',
+            'carousel_guide': 'KILAVUZ KARTI',
+            'mistake_breakdown': 'HATA ÖNLEME',
+            'community_quiz': 'TEKNİK QUİZ',
+            'myth_buster': 'EFSANE AVCISI',
+            'maintenance_checklist': 'BAKIM KONTROLÜ',
+            'beginner_roadmap': 'YOL HARİTASI',
+            'flight_weather_radar': 'UÇUŞ RADARI',
+            'tool_showcase': 'ATÖLYE & ARAÇ',
+            'spot_guide': 'UÇUŞ SPATLARI',
+            'review_highlight': 'PİLOT DENEYİMİ',
+            'seo_article': 'TEKNİK REHBER'
+        }
+        text = labels.get(content_type, 'POZITRON FPV')
+        f_badge = get_font(20, bold=True)
+        draw = ImageDraw.Draw(img)
+        try:
+            tw = int(draw.textlength(text, font=f_badge))
+        except Exception:
+            tw = 140
+        pill_w = tw + 40
+        pill_h = 40
+        px1 = W - margin - pill_w
+        py1 = margin + 26
+        px2 = px1 + pill_w
+        py2 = py1 + pill_h
+
+        overlay = Image.new('RGBA', img.size, (0, 0, 0, 0))
+        od = ImageDraw.Draw(overlay)
+        od.rounded_rectangle([(px1, py1), (px2, py2)], radius=12, fill=(15, 23, 42, 210),
+                             outline=(56, 189, 248, 140), width=2)
+        od.ellipse([(px1 + 12, py1 + 15), (px1 + 22, py1 + 25)], fill=(56, 189, 248, 255))
+        img.paste(overlay, (0, 0), overlay)
+
+        draw = ImageDraw.Draw(img)
+        draw.text((px1 + 28, py1 + 8), text, fill=(240, 249, 255), font=f_badge)
+
+    def _draw_product_pedestal(self, img: Image.Image, center_x: int, center_y: int,
+                               card_w: int, card_h: int, palette_name: str = None):
+        """Draws an elliptical neon pedestal glow beneath the product stage."""
+        pal = VISUAL_PALETTES.get(palette_name) or VISUAL_PALETTES[DEFAULT_PALETTE]
+        glow_color = pal.get('glow1', (2, 132, 199, 45))
+        glow_img = Image.new('RGBA', img.size, (0, 0, 0, 0))
+        gd = ImageDraw.Draw(glow_img)
+        el_w = int(card_w * 1.15)
+        el_h = int(card_h * 0.40)
+        el_top = center_y + card_h // 2 - int(el_h * 0.55)
+        gd.ellipse([(center_x - el_w // 2, el_top), (center_x + el_w // 2, el_top + el_h)],
+                   fill=(glow_color[0], glow_color[1], glow_color[2], min(110, glow_color[3] * 2)))
+        glow_img = glow_img.filter(ImageFilter.GaussianBlur(34))
+        img.paste(glow_img, (0, 0), glow_img)
+
+    def _paste_product(self, img: Image.Image, product_path: str, center_x: int,
+                        center_y: int, max_w: int, max_h: int, palette_name: str = None):
+        prod = _load_product_image(product_path)
+        if prod is None:
+            return
+
+        # 0. Draw ambient pedestal lighting under the product
+        self._draw_product_pedestal(img, center_x, center_y, max_w, max_h, palette_name)
+
+        p = prod.copy()
+        p.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+
+        radius = 22
+        px = center_x - p.width // 2
+        py = center_y - p.height // 2
+
+        # 1. Soft Gaussian drop shadow for studio depth
+        try:
+            shadow = Image.new('RGBA', (p.width + 80, p.height + 80), (0, 0, 0, 0))
+            sd = ImageDraw.Draw(shadow)
+            sd.rounded_rectangle([(40, 44), (p.width + 40, p.height + 44)], radius=radius + 6, fill=(0, 0, 0, 215))
+            shadow = shadow.filter(ImageFilter.GaussianBlur(26))
+            img.paste(shadow, (px - 40, py - 40), shadow)
+        except Exception:
+            pass
+
+        # 2. Glassmorphic back-card framing
+        card_backing = Image.new('RGBA', img.size, (0, 0, 0, 0))
+        cbd = ImageDraw.Draw(card_backing)
+        cbd.rounded_rectangle([(px - 6, py - 6), (px + p.width + 6, py + p.height + 6)],
+                              radius=radius + 4, fill=(15, 23, 42, 195),
+                              outline=(56, 189, 248, 75), width=2)
+        img.paste(card_backing, (0, 0), card_backing)
+
+        # 3. Paste product image with rounded mask
+        mask = Image.new('L', (p.width, p.height), 0)
+        md = ImageDraw.Draw(mask)
+        md.rounded_rectangle([(0, 0), (p.width, p.height)], radius=radius, fill=255)
+
+        p_rgba = p.convert('RGBA')
+        p_rgba.putalpha(mask)
+        img.paste(p_rgba, (px, py), p_rgba)
+
+        # 4. Subtle inner border
+        draw = ImageDraw.Draw(img)
+        draw.rounded_rectangle([(px, py), (px + p.width, py + p.height)], radius=radius,
+                               outline=(255, 255, 255, 45), width=1)
+
+    def _draw_feature_chips(self, img: Image.Image, points: list, start_x: int, start_y: int,
+                            max_w: int, is_compact: bool = False) -> int:
+        """Renders key points as modern numbered technical chips with glowing borders."""
+        draw = ImageDraw.Draw(img)
+        f_num = get_font(18 if is_compact else 20, bold=True)
+        f_text = get_font(21 if is_compact else 23, bold=False)
+
+        clean_points = [clean_canvas_text(str(p)).strip() for p in points if p][:3]
+        chip_h = 44 if is_compact else 54
+        gap = 10 if is_compact else 14
+        cur_y = start_y
+
+        for idx, pt in enumerate(clean_points, start=1):
+            num_str = f"0{idx}" if idx < 10 else f"{idx}"
+            box = [(start_x, cur_y), (start_x + max_w, cur_y + chip_h)]
+
+            # Card background with glass-like fill
+            overlay = Image.new('RGBA', img.size, (0, 0, 0, 0))
+            od = ImageDraw.Draw(overlay)
+            od.rounded_rectangle(box, radius=12, fill=(13, 21, 38, 210),
+                                 outline=(38, 55, 82, 230), width=1)
+            # Left vertical cyber accent bar
+            od.rounded_rectangle([(start_x, cur_y + 4), (start_x + 4, cur_y + chip_h - 4)],
+                                 radius=2, fill=(56, 189, 248, 255))
+            # Number pill badge
+            num_w = 34
+            badge_top = cur_y + (chip_h - 26) // 2
+            od.rounded_rectangle([(start_x + 12, badge_top),
+                                  (start_x + 12 + num_w, badge_top + 26)],
+                                 radius=6, fill=(2, 132, 199, 130),
+                                 outline=(56, 189, 248, 120), width=1)
+            img.paste(overlay, (0, 0), overlay)
+
+            draw = ImageDraw.Draw(img)
+            draw.text((start_x + 18, cur_y + (chip_h - 22) // 2), num_str, fill=(224, 242, 254), font=f_num)
+
+            pt_clean = pt
+            for marker in ('[GUC]', '[HEDEF]', '[STOK]', '[KUPON]', '[FIRSAT]', '[DONANIM]', '[OZELLIK]', '[YORUM]', '[FPV]'):
+                pt_clean = pt_clean.replace(marker, '').strip()
+            pt_clean = pt_clean.lstrip('•-–> ').strip()
+            max_len = 54 if is_compact else 50
+            if len(pt_clean) > max_len:
+                pt_clean = pt_clean[:max_len - 3] + "..."
+            draw.text((start_x + 12 + num_w + 14, cur_y + (chip_h - 26) // 2), pt_clean, fill=(241, 245, 249), font=f_text)
+
+            cur_y += chip_h + gap
+        return cur_y
+
+    def render_brand_template(self, post_data: dict, size=(1080, 1080),
+                              variant: str = 'post') -> Image.Image:
+        """
+        The single, consistent brand template.
+        - full-bleed hero (FLUX AI image or radiant studio background) with a dark gradient
+        - real brand logo lockup top-left (assets/logo.png) + category badge top-right
+        - real product photo composited on glassmorphic stage with drop shadow & pedestal
+        - prominent gradient price badge pill, discount pill, and e-commerce CTA button
+        - modern numbered technical feature chips for maximum engagement & readability
+        - vertically balanced and centered layout for non-product / educational posts
+        """
+        W, H = size
+        img = Image.new('RGB', (W, H), (9, 13, 22))
+        palette = post_data.get('visual_palette') or DEFAULT_PALETTE
+        pal = VISUAL_PALETTES.get(palette) or VISUAL_PALETTES[DEFAULT_PALETTE]
+
+        hero_path = post_data.get('hero_image')
+        hero = None
+        if hero_path:
+            clean = str(hero_path).lstrip('.').lstrip('/').replace('/', os.sep)
+            abs_hero = os.path.join(BASE_DIR, clean)
+            if os.path.exists(abs_hero):
+                try:
+                    hero = self._cover_image(Image.open(abs_hero), W, H)
+                except Exception:
+                    hero = None
+        if hero is not None:
+            img.paste(hero, (0, 0))
+        else:
+            # Fallback: deep studio gradient + soft glow
+            draw = ImageDraw.Draw(img)
+            bt, bb = pal['bg_top'], pal['bg_bottom']
+            for yy in range(H):
+                r = int(bt[0] + (bb[0] - bt[0]) * yy / H)
+                g = int(bt[1] + (bb[1] - bt[1]) * yy / H)
+                b = int(bt[2] + (bb[2] - bt[2]) * yy / H)
+                draw.line([(0, yy), (W, yy)], fill=(r, g, b))
+            glow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+            gd = ImageDraw.Draw(glow)
+            gd.ellipse([(W // 2 - 430, H // 2 - 430), (W // 2 + 430, H // 2 + 430)], fill=pal['glow1'])
+            glow = glow.filter(ImageFilter.GaussianBlur(150))
+            img.paste(glow, (0, 0), glow)
+
+        # Readability gradient (bottom heavy) + subtle top scrim for the logo
+        overlay = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        od = ImageDraw.Draw(overlay)
+        for yy in range(H):
+            ratio = yy / H
+            alpha = int(28 + max(0.0, (ratio - 0.38) / 0.62) * 215)
+            od.line([(0, yy), (W, yy)], fill=(5, 9, 18, min(alpha, 238)))
+        od.rectangle([(0, 0), (W, int(H * 0.18))], fill=(5, 9, 18, 85))
+        overlay = overlay.filter(ImageFilter.GaussianBlur(0.5))
+        img.paste(overlay, (0, 0), overlay)
+
+        margin = 72
+        prod_data = post_data.get('product_data') or {}
+        product_path = self._resolve_product_path(prod_data)
+        content_type = post_data.get('content_type', 'product_spotlight')
+
+        # Top-right Category Badge
+        self._draw_top_right_badge(img, content_type, W, margin)
+
+        if product_path:
+            # Product photo sits in upper-middle area with generous spacing & glassmorphic stage
+            self._paste_product(img, product_path, W // 2, int(H * 0.38),
+                                int(W * 0.56), int(H * 0.36), palette_name=palette)
+
+        # Logo lockup
+        self._draw_logo_lockup(img, margin, margin, chip=92)
+
+        draw = ImageDraw.Draw(img)
+        headline, subhead, points = self._template_text(post_data)
+
+        if product_path:
+            f_head = get_font(44, bold=True)
+            f_sub = get_font(24, bold=False)
+            f_badge = get_font(20, bold=True)
+
+            y_text = int(H * 0.58)
+
+            # Price badge & CTA pills
+            price_val = prod_data.get('price_try')
+            discount = prod_data.get('discount_pct', 0)
+            if price_val:
+                price_str = f"{float(price_val):,.0f} TL".replace(',', '.')
+                pill_h = 38
+                pw = int(draw.textlength(price_str, font=f_badge)) + 28
+                draw.rounded_rectangle([(margin, y_text), (margin + pw, y_text + pill_h)], radius=10, fill=(2, 132, 199))
+                draw.text((margin + 14, y_text + 8), price_str, fill=(255, 255, 255), font=f_badge)
+
+                cur_x = margin + pw + 12
+                if discount and discount > 0:
+                    disc_str = f"%{discount} İNDİRİM"
+                    dw = int(draw.textlength(disc_str, font=f_badge)) + 24
+                    draw.rounded_rectangle([(cur_x, y_text), (cur_x + dw, y_text + pill_h)], radius=10, fill=(225, 29, 72))
+                    draw.text((cur_x + 12, y_text + 8), disc_str, fill=(255, 255, 255), font=f_badge)
+                    cur_x += dw + 12
+
+                # CTA Pill Button
+                cta_str = "HEMEN İNCELE & SATIN AL  ›"
+                cw = int(draw.textlength(cta_str, font=f_badge)) + 26
+                draw.rounded_rectangle([(cur_x, y_text), (cur_x + cw, y_text + pill_h)], radius=10, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+                draw.text((cur_x + 13, y_text + 8), cta_str, fill=(56, 189, 248), font=f_badge)
+
+                y_text += pill_h + 16
+            else:
+                draw.rounded_rectangle([(margin, y_text - 12), (margin + 96, y_text - 6)], radius=3, fill=(56, 189, 248))
+                y_text += 10
+
+            # Headline
+            for line in self._wrap_text(headline, 26)[:2]:
+                draw.text((margin, y_text), line, fill=(255, 255, 255), font=f_head)
+                y_text += f_head.size + 8
+
+            # Subhead
+            if subhead:
+                for line in self._wrap_text(subhead, 46)[:1]:
+                    draw.text((margin, y_text), line, fill=(203, 213, 225), font=f_sub)
+                    y_text += f_sub.size + 12
+
+            # Feature chips (compact 3 cards)
+            self._draw_feature_chips(img, points, margin, y_text + 4, W - margin * 2, is_compact=True)
+
+        else:
+            # NON-PRODUCT / GUIDE POST: Vertically centered, perfectly balanced layout!
+            f_head = get_font(52, bold=True)
+            f_sub = get_font(25, bold=False)
+            f_hero_badge = get_font(21, bold=True)
+
+            y_text = int(H * 0.28)
+
+            # Prominent Hero Pill
+            hero_badge_text = "💡 FPV REHBERİ & TEKNİK KART"
+            if 'maintenance' in content_type or 'checklist' in content_type:
+                hero_badge_text = "✅ UÇUŞ ÖNCESİ KONTROL LİSTESİ"
+            elif 'deal' in content_type:
+                hero_badge_text = "🏷️ HAFTALIK ÖZEL FIRSAT ALARMI"
+            elif 'quiz' in content_type:
+                hero_badge_text = "❓ PİLOT TESTİ & TEKNİK SORU"
+            elif 'weather' in content_type:
+                hero_badge_text = "🌤️ GÜNLÜK UÇUŞ HAVA RADARI"
+
+            hw = int(draw.textlength(hero_badge_text, font=f_hero_badge)) + 36
+            draw.rounded_rectangle([(margin, y_text), (margin + hw, y_text + 42)], radius=10, fill=(2, 132, 199, 180), outline=(56, 189, 248), width=2)
+            draw.text((margin + 18, y_text + 9), hero_badge_text, fill=(255, 255, 255), font=f_hero_badge)
+            y_text += 60
+
+            # Headline (Large, bold)
+            for line in self._wrap_text(headline, 22)[:2]:
+                draw.text((margin, y_text), line, fill=(255, 255, 255), font=f_head)
+                y_text += f_head.size + 10
+
+            # Subhead
+            if subhead:
+                for line in self._wrap_text(subhead, 42)[:2]:
+                    draw.text((margin, y_text), line, fill=(203, 213, 225), font=f_sub)
+                    y_text += f_sub.size + 8
+                y_text += 10
+
+            # Spacious Feature Chips
+            self._draw_feature_chips(img, points, margin, y_text + 12, W - margin * 2, is_compact=False)
+
+        # Footer handle
+        f_foot = get_font(23, bold=False)
+        footer = "pozitronmarket.com"
+        try:
+            fw = draw.textlength(footer, font=f_foot)
+        except Exception:
+            fw = 200
+        draw.text((W - margin - fw, H - margin + 6), footer, fill=(148, 163, 184), font=f_foot)
+        return img
+
     def generate_post_image(self, post_data: dict) -> str:
         """
-        Creates a 1080x1080 high-res graphic and returns the relative image path.
+        Creates the unified 1080x1080 brand post (real logo + hero image + human text)
+        and returns the relative image path.
         """
         post_id = post_data['id']
-        content_type = post_data.get('content_type', 'product_spotlight')
-        prod = post_data.get('product_data')
-        tool_info = post_data.get('tool_info')
-
-        img = Image.new('RGB', (self.width, self.height), color=(11, 15, 25))
-        draw = ImageDraw.Draw(img)
-
-        # Draw themed background (rotating palette)
-        palette = post_data.get('visual_palette') or DEFAULT_PALETTE
-        self._draw_background(img, draw, palette)
-
-        # Draw Top Branding Bar
-        self._draw_header(draw, content_type)
-
-        # Center Content Area
-        visual_summary = post_data.get('visual_summary') or {}
-        if content_type == 'drone_build_showcase':
-            self._draw_drone_build_card(img, draw, post_data, visual_summary)
-        elif content_type == 'flight_weather_radar':
-            self._draw_weather_radar_card(img, draw, post_data, visual_summary)
-        elif content_type in ('product_spotlight', 'review_highlight') and prod:
-            self._draw_product_card(img, draw, prod, visual_summary)
-        else:
-            self._draw_tool_or_tip_card(img, draw, post_data, visual_summary)
-
-        # Bottom CTA Footer Bar
-        self._draw_footer(draw)
-
-        # Save to disk
+        img = self.render_brand_template(post_data, size=(self.width, self.height), variant='post')
         filename = f"{post_id}.jpg"
         file_path = os.path.join(OUTPUT_DIR, filename)
-        img.save(file_path, format='JPEG', quality=92, optimize=True)
-
+        img.save(file_path, format='JPEG', quality=94, optimize=True)
         return f"./assets/instagram/posts/{filename}"
 
     def generate_text_poster(self, post_data: dict) -> str:
@@ -356,16 +855,28 @@ class ImageGenerator:
         img.paste(grid_img, (0, 0), grid_img)
 
     def _draw_header(self, draw: ImageDraw.Draw, content_type: str):
-        # Pozitron Pill
-        draw.rounded_rectangle([(60, 50), (370, 105)], radius=12, fill=(15, 23, 42), outline=(30, 41, 59), width=2)
-        
+        # Pozitron Pill — width is measured from the actual rendered logo text so the
+        # ".MARKET" suffix never overflows the rounded badge (font metrics vary by
+        # platform, so the old hardcoded 60..370 box was not reliable).
+        font_logo = get_font(28, bold=True)
+        logo_white, logo_blue = "POZITRON", ".MARKET"
+        text_x, text_y = 102, 62
+        gap = 8
+        pad_right = 24
+        try:
+            w_white = draw.textlength(logo_white, font=font_logo)
+            w_blue = draw.textlength(logo_blue, font=font_logo)
+        except Exception:
+            w_white, w_blue = 145, 128
+        pill_x1 = int(text_x + w_white + gap + w_blue + pad_right)
+        draw.rounded_rectangle([(60, 50), (pill_x1, 105)], radius=12, fill=(15, 23, 42), outline=(30, 41, 59), width=2)
+
         # Cyber Lightning bolt vector icon
         bolt = [(80, 80), (88, 62), (83, 74), (94, 74), (82, 95), (86, 81)]
         draw.polygon(bolt, fill=(56, 189, 248))
-        
-        font_logo = get_font(28, bold=True)
-        draw.text((102, 62), "POZITRON", fill=(248, 250, 252), font=font_logo)
-        draw.text((254, 62), ".MARKET", fill=(2, 132, 199), font=font_logo)
+
+        draw.text((text_x, text_y), logo_white, fill=(248, 250, 252), font=font_logo)
+        draw.text((text_x + w_white + gap, text_y), logo_blue, fill=(2, 132, 199), font=font_logo)
 
         # Right-side Category Tag
         type_labels = {
@@ -398,9 +909,37 @@ class ImageGenerator:
         card_box = [(60, 130), (self.width - 60, 935)]
         draw.rounded_rectangle(card_box, radius=24, fill=(15, 23, 42), outline=(30, 58, 95), width=2)
 
+        # Load Product Image (before drawing container so we can pick a proper backdrop)
+        prod_img = None
+        img_url = prod.get('image_url', '')
+        if img_url:
+            clean_rel_path = img_url.lstrip('./').replace('/', os.sep)
+            local_prod_img_path = os.path.join(BASE_DIR, clean_rel_path)
+            prod_img = _load_product_image(local_prod_img_path)
+
         # Inner Product Photo Container
         photo_box = [(90, 150), (self.width - 90, 545)]
-        draw.rounded_rectangle(photo_box, radius=18, fill=(248, 250, 252))
+        if prod_img:
+            draw.rounded_rectangle(photo_box, radius=18, fill=(248, 250, 252))
+            try:
+                max_w, max_h = 720, 370
+                prod_img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
+                paste_x = int(90 + (photo_box[1][0] - 90 - prod_img.width) / 2)
+                paste_y = int(150 + (photo_box[1][1] - 150 - prod_img.height) / 2)
+                img.paste(prod_img, (paste_x, paste_y), prod_img)
+            except Exception:
+                pass
+        else:
+            # No product photo: fill with a dark procedural visual instead of a white panel.
+            panel_w = photo_box[1][0] - photo_box[0][0]
+            panel_h = photo_box[1][1] - photo_box[0][1]
+            panel = self._generate_procedural_panel(
+                prod.get('name_tr') or prod.get('name') or 'Pozitron FPV',
+                'product_spotlight', panel_w, panel_h
+            )
+            panel_mask = Image.new('L', (panel_w, panel_h), 0)
+            ImageDraw.Draw(panel_mask).rounded_rectangle([(0, 0), (panel_w - 1, panel_h - 1)], radius=18, fill=255)
+            img.paste(panel, photo_box[0], panel_mask)
 
         # Brand Badge inside photo
         brand = clean_canvas_text(prod.get('brand', 'Pozitron'))
@@ -415,22 +954,6 @@ class ImageGenerator:
             disc_w = 170
             draw.rounded_rectangle([(self.width - 110 - disc_w, 168), (self.width - 110, 214)], radius=8, fill=(220, 38, 38))
             draw.text((self.width - 110 - disc_w + 14, 178), f"-%{discount} INDIRIM", fill=(255, 255, 255), font=font_disc)
-
-        # Load & Paste Product Image
-        img_url = prod.get('image_url', '')
-        if img_url:
-            clean_rel_path = img_url.lstrip('./').replace('/', os.sep)
-            local_prod_img_path = os.path.join(BASE_DIR, clean_rel_path)
-            prod_img = _load_product_image(local_prod_img_path)
-            if prod_img:
-                try:
-                    max_w, max_h = 720, 370
-                    prod_img.thumbnail((max_w, max_h), Image.Resampling.LANCZOS)
-                    paste_x = int(90 + (photo_box[1][0] - 90 - prod_img.width) / 2)
-                    paste_y = int(150 + (photo_box[1][1] - 150 - prod_img.height) / 2)
-                    img.paste(prod_img, (paste_x, paste_y), prod_img)
-                except Exception:
-                    pass
 
         # Product Name
         name = clean_canvas_text(prod.get('name_tr') or prod.get('name_en', 'Pozitron FPV Component'))
@@ -689,7 +1212,7 @@ class ImageGenerator:
 
     def audit_generated_image(self, image_path: str, gemini_api_key: str = "", context: dict = None) -> dict:
         """
-        Multimodal visual quality audit using Gemini 3.8 Flash Vision.
+        Multimodal visual quality audit using DeepSeek V4.1 Flash vision (Gemini removed).
         Inspects 1080x1080 rendered Instagram FPV banner:
         - Image dimensions, composition, framing, and contrast
         - Text legibility, clipping, and absence of overflow
@@ -743,7 +1266,7 @@ class ImageGenerator:
                 "model_used": "pil-validator"
             }
 
-        vision_prompt = """Sen Pozitron Market FPV e-ticaret platformunun Baş Görsel ve Marka Kalite Denetçisisin (Model: DeepSeek V4.1 Flash High Multimodal Vision).
+        vision_prompt = """Sen Pozitron Market FPV e-ticaret platformunun Baş Görsel ve Marka Kalite Denetçisisin (Model: Gemini / Flash 3.8 Multimodal Vision).
 Bu 1080x1080 Instagram FPV afiş kartını denetle:
 1. Çözünürlük ve Çerçeveleme: 1080x1080 oranına tam uygun mu, ürün veya metin taşması var mı?
 2. Tipografi ve Okunabilirlik: Başlık, alt başlık, teknik özellik maddeleri ve fiyat rozeti yüksek kontrastla net okunuyor mu?
@@ -761,10 +1284,10 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
   "framing_and_contrast": "UYGUN",
   "issues": [],
   "recommendations": "Tipografi, kontrast ve görsel hiyerarşi kurumsal standartlara tam uyumlu.",
-  "model_used": "gemini-3.8-flash"
+  "model_used": "gemini-3.8-flash-vision"
 }"""
 
-        # 1. Unified LLM vision audit (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        # 1. Unified LLM vision audit (Flash 3.8 / Gemini 3.8 Flash Vision)
         try:
             from llm_client import get_llm
             llm = get_llm()
@@ -772,12 +1295,12 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 parsed = llm.generate_vision_json(vision_prompt, image_path=abs_path, max_tokens=4096, temperature=0.2)
                 if isinstance(parsed, dict) and 'quality_score' in parsed:
                     parsed['file_size_kb'] = file_size_kb
-                    parsed['model_used'] = "deepseek-v4.1-flash-high-vision"
+                    parsed['model_used'] = "gemini-3.8-flash-vision"
                     return parsed
         except Exception:
             pass
 
-        # 2. Legacy Gemini Vision fallback
+        # 2. Direct Gemini fallback
         if gemini_api_key:
             try:
                 with open(abs_path, "rb") as f:
@@ -839,7 +1362,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             "framing_and_contrast": "UYGUN",
             "issues": [],
             "recommendations": f"{width}x{height} afis cozunurlugu, siber arka plan ve tipografi duzeni basariyla dogrulandi.",
-            "model_used": "gemini-3.8-flash-vision-auditor"
+            "model_used": "gemini-3.8-flash-heuristic"
         }
 
     def generate_gemini_ai_image(self, post_data: dict, gemini_api_key: str = None) -> str:
@@ -992,6 +1515,31 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             draw.text((cx - 260, cy + 78), "POZITRON ATOLYE & AR-GE", fill=(255, 255, 255), font=get_font(22, bold=True))
 
         return base
+
+    def _generate_procedural_panel(self, title: str, content_type: str, width: int, height: int) -> Image.Image:
+        """
+        Produces a dark, themed placeholder visual sized to width x height for Reels
+        photo containers that have no product photo.
+
+        Built on the same procedural dark-tech visual as _generate_procedural_ai_visual
+        (called with an empty product so its graphic branch runs), then centre-cropped
+        to fit the requested box. This prevents themed (non-product) Reels from
+        rendering an empty white panel.
+        """
+        base = self._generate_procedural_ai_visual(title, content_type, {})
+        bw, bh = base.size
+        src_ratio = bw / bh
+        target_ratio = width / height
+        if src_ratio > target_ratio:
+            new_h = height
+            new_w = int(height * src_ratio)
+        else:
+            new_w = width
+            new_h = int(width / src_ratio)
+        base = base.resize((max(1, new_w), max(1, new_h)), Image.Resampling.LANCZOS)
+        left = (base.width - width) // 2
+        top = (base.height - height) // 2
+        return base.crop((left, top, left + width, top + height))
 
     def _overlay_ai_branding(self, img: Image.Image, post_data: dict):
         """Overlays cyberpunk header and footer branding on the AI generated image."""
@@ -1184,106 +1732,250 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         return slides
 
     def generate_story_image(self, post_data: dict) -> str:
-        """
-        Creates a 1080x1920 (9:16) vertical Story graphic and returns the relative image path.
-        """
+        """Creates the unified 1080x1920 (9:16) brand story and returns the path."""
         post_id = post_data['id']
-        story_w, story_h = 1080, 1920
-        img = Image.new('RGB', (story_w, story_h), color=(11, 15, 25))
-        draw = ImageDraw.Draw(img)
-
-        # Vertical Themed Gradient (rotating palette)
-        pal = VISUAL_PALETTES.get(post_data.get('visual_palette') or DEFAULT_PALETTE) or VISUAL_PALETTES[DEFAULT_PALETTE]
-        bg_top, bg_bottom = pal['bg_top'], pal['bg_bottom']
-        for y in range(story_h):
-            ratio = y / story_h
-            r = int(bg_top[0] * (1 - ratio) + bg_bottom[0] * ratio)
-            g = int(bg_top[1] * (1 - ratio) + bg_bottom[1] * ratio)
-            b = int(bg_top[2] * (1 - ratio) + bg_bottom[2] * ratio)
-            draw.line([(0, y), (story_w, y)], fill=(r, g, b))
-
-        # Glowing circles
-        glow = Image.new('RGBA', (story_w, story_h), (0, 0, 0, 0))
-        gdraw = ImageDraw.Draw(glow)
-        gdraw.ellipse([(story_w // 2 - 350, 400), (story_w // 2 + 350, 1100)], fill=pal['glow1'])
-        glow = glow.filter(ImageFilter.GaussianBlur(100))
-        img.paste(glow, (0, 0), glow)
-
-        # Top Header (y: 120-220)
-        draw.rounded_rectangle([(60, 130), (420, 195)], radius=14, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
-        font_brand = get_font(28, bold=True)
-        draw.text((85, 147), "POZITRON MARKET", fill=(255, 255, 255), font=font_brand)
-
-        if post_data.get('content_type') == 'deal_drop':
-            draw.rounded_rectangle([(story_w - 400, 130), (story_w - 60, 195)], radius=14, fill=(2, 132, 199), outline=(56, 189, 248), width=2)
-            font_badge = get_font(22, bold=True)
-            draw.text((story_w - 375, 149), "GUNUN FIRSATI", fill=(255, 255, 255), font=font_badge)
-
-        # Center Visual / Product Area (y: 280-950)
-        prod = post_data.get('product_data') or {}
-        prod_img = None
-        if prod and prod.get('image_url'):
-            local_p = prod.get('image_url', '').lstrip('/')
-            abs_p = os.path.join(BASE_DIR, local_p)
-            prod_img = _load_product_image(abs_p)
-
-        if prod_img:
-            prod_img.thumbnail((620, 620), Image.Resampling.LANCZOS)
-            px = (story_w - prod_img.width) // 2
-            py = 350 + (620 - prod_img.height) // 2
-            img.paste(prod_img, (px, py), prod_img if prod_img.mode == 'RGBA' else None)
-        else:
-            # Procedural Drone Frame Vector
-            cx, cy = story_w // 2, 620
-            draw.line([(cx - 240, cy - 240), (cx + 240, cy + 240)], fill=(56, 189, 248), width=6)
-            draw.line([(cx - 240, cy + 240), (cx + 240, cy - 240)], fill=(56, 189, 248), width=6)
-            for mx, my in [(cx - 240, cy - 240), (cx + 240, cy - 240), (cx - 240, cy + 240), (cx + 240, cy + 240)]:
-                draw.ellipse([(mx - 40, my - 40), (mx + 40, my + 40)], fill=(15, 23, 42), outline=(14, 165, 233), width=4)
-            draw.rectangle([(cx - 70, cy - 60), (cx + 70, cy + 60)], fill=(15, 23, 42), outline=(56, 189, 248), width=4)
-
-        # Title Card (y: 1000-1160)
-        title = clean_canvas_text(post_data.get('title', 'Pozitron Market FPV'))
-        font_story_title = get_font(36, bold=True)
-        if len(title) > 48:
-            title = title[:45] + "..."
-        draw.text((70, 1020), title, fill=(255, 255, 255), font=font_story_title)
-
-        if prod and prod.get('price_try'):
-            price_str = f"{float(prod['price_try']):.2f} TL"
-            draw.rounded_rectangle([(70, 1080), (380, 1145)], radius=12, fill=(22, 101, 52), outline=(74, 222, 128), width=2)
-            draw.text((95, 1098), price_str, fill=(255, 255, 255), font=font_brand)
-
-        # Feature Card (y: 1180-1580)
-        draw.rounded_rectangle([(60, 1180), (story_w - 60, 1580)], radius=20, fill=(15, 23, 42, 230), outline=(30, 41, 59), width=2)
-        font_point = get_font(24, bold=True)
-        points = (post_data.get('visual_summary') or {}).get('key_points') or [
-            "[ORIJINAL] %100 Orijinal Urun ve Guvenli Teslimat",
-            "[AYNI GUN] Saat 16:00'ya Kadar Verilen Siparisler Kargoda",
-            "[TEKNIK] FPV Pilotlarindan Uzman Destek"
-        ]
-        y_pt = 1220
-        for pt in points[:3]:
-            draw.rounded_rectangle([(90, y_pt), (story_w - 90, y_pt + 100)], radius=12, fill=(24, 34, 53), outline=(51, 65, 85), width=1)
-            draw.text((120, y_pt + 35), clean_canvas_text(pt)[:48], fill=(248, 250, 252), font=font_point)
-            y_pt += 115
-
-        # Bottom Link Sticker Box (y: 1620-1800)
-        draw.rounded_rectangle([(100, 1630), (story_w - 100, 1780)], radius=30, fill=(2, 132, 199), outline=(56, 189, 248), width=3)
-        font_sticker = get_font(30, bold=True)
-        font_sticker_sub = get_font(20, bold=False)
-        draw.text((story_w // 2 - 220, 1665), "🔗 pozitronmarket.com", fill=(255, 255, 255), font=font_sticker)
-        draw.text((story_w // 2 - 160, 1720), "Linke Tikla ve Incele >", fill=(224, 242, 254), font=font_sticker_sub)
-
+        img = self.render_brand_template(post_data, size=(1080, 1920), variant='story')
         filename = f"{post_id}_story.jpg"
         file_path = os.path.join(OUTPUT_DIR, filename)
-        img.save(file_path, format='JPEG', quality=93, optimize=True)
+        img.save(file_path, format='JPEG', quality=94, optimize=True)
         return f"./assets/instagram/posts/{filename}"
+
+    def _get_video_duration(self, video_path: str) -> float:
+        """Retrieves exact video duration in seconds via ffprobe."""
+        if not video_path or not os.path.exists(video_path):
+            return 0.0
+        try:
+            cmd = [
+                'ffprobe', '-v', 'error',
+                '-show_entries', 'format=duration',
+                '-of', 'default=noprint_wrappers=1:nokey=1',
+                video_path
+            ]
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10)
+            return float((res.stdout or '').strip())
+        except Exception:
+            return 0.0
+
+    def _render_reels_outro_card(self, post_data: dict, width: int = 576, height: int = 1024) -> Image.Image:
+        """
+        Renders a high-converting, cinematic Pozitron outro card for Reels:
+        - Deep gradient brand background
+        - High-resolution Pozitron logo lockup
+        - Clean typography: brand name, slogan, product price (if any), and CTA
+        - Perfectly matches 9:16 aspect ratio
+        """
+        img = Image.new('RGB', (width, height), color=(10, 15, 26))
+        draw = ImageDraw.Draw(img)
+
+        # Scale factor relative to 576x1024 base
+        scale_f = width / 576.0
+
+        # Top Badge
+        badge_y = int(140 * scale_f)
+        badge_w = int(270 * scale_f)
+        badge_h = int(36 * scale_f)
+        draw.rounded_rectangle(
+            [(width // 2 - badge_w // 2, badge_y), (width // 2 + badge_w // 2, badge_y + badge_h)],
+            radius=int(10 * scale_f), fill=(15, 23, 42), outline=(56, 189, 248), width=2
+        )
+        f_badge = get_font(int(15 * scale_f), bold=True)
+        draw.text((width // 2, badge_y + badge_h // 2), "POZITRON FPV EKOSİSTEMİ", fill=(56, 189, 248), font=f_badge, anchor="mm")
+
+        # Logo
+        logo_size = int(120 * scale_f)
+        logo_y = int(210 * scale_f)
+        logo_path = os.path.join(BASE_DIR, 'assets', 'instagram', 'logo.png')
+        if os.path.exists(logo_path):
+            try:
+                logo = Image.open(logo_path).convert('RGBA')
+                logo = logo.resize((logo_size, logo_size), Image.Resampling.LANCZOS)
+                # Outer glow ring
+                ring_rad = logo_size // 2 + int(14 * scale_f)
+                draw.ellipse(
+                    [(width // 2 - ring_rad, logo_y + logo_size // 2 - ring_rad),
+                     (width // 2 + ring_rad, logo_y + logo_size // 2 + ring_rad)],
+                    fill=(15, 23, 42), outline=(56, 189, 248), width=int(3 * scale_f)
+                )
+                img.paste(logo, (width // 2 - logo_size // 2, logo_y), logo)
+            except Exception:
+                pass
+
+        # Brand Headline
+        name_y = logo_y + logo_size + int(36 * scale_f)
+        f_brand = get_font(int(36 * scale_f), bold=True)
+        draw.text((width // 2, name_y), "POZITRON MARKET", fill=(255, 255, 255), font=f_brand, anchor="mm")
+
+        # Subtitle
+        sub_y = name_y + int(40 * scale_f)
+        f_sub = get_font(int(18 * scale_f), bold=False)
+        draw.text((width // 2, sub_y), "Türkiye'nin FPV Drone ve Robotik Merkezi", fill=(148, 163, 184), font=f_sub, anchor="mm")
+
+        # Product Pill (if price available)
+        prod = (post_data or {}).get('product_data') or {}
+        card_top = sub_y + int(45 * scale_f)
+        if prod and prod.get('price_try'):
+            try:
+                price_val = float(prod['price_try'])
+                f_price = get_font(int(20 * scale_f), bold=True)
+                p_box_w = int(320 * scale_f)
+                p_box_h = int(50 * scale_f)
+                draw.rounded_rectangle(
+                    [(width // 2 - p_box_w // 2, card_top), (width // 2 + p_box_w // 2, card_top + p_box_h)],
+                    radius=int(12 * scale_f), fill=(22, 101, 52), outline=(74, 222, 128), width=2
+                )
+                draw.text((width // 2, card_top + p_box_h // 2), f"GÜNCEL FİYAT: {price_val:,.0f} TL", fill=(255, 255, 255), font=f_price, anchor="mm")
+                card_top += p_box_h + int(24 * scale_f)
+            except Exception:
+                pass
+
+        # Call To Action Box
+        cta_box_w = int(440 * scale_f)
+        cta_box_h = int(170 * scale_f)
+        draw.rounded_rectangle(
+            [(width // 2 - cta_box_w // 2, card_top), (width // 2 + cta_box_w // 2, card_top + cta_box_h)],
+            radius=int(16 * scale_f), fill=(15, 23, 42), outline=(56, 189, 248), width=2
+        )
+        f_cta_title = get_font(int(22 * scale_f), bold=True)
+        f_cta_desc = get_font(int(16 * scale_f), bold=False)
+        f_cta_action = get_font(int(18 * scale_f), bold=True)
+
+        draw.text((width // 2, card_top + int(36 * scale_f)), "Daha Fazlası İçin Takip Et & Kaydet", fill=(255, 255, 255), font=f_cta_title, anchor="mm")
+        draw.text((width // 2, card_top + int(76 * scale_f)), "Yoruma 'KUPON' yaz, anında indirim kodunu al!", fill=(250, 204, 21), font=f_cta_desc, anchor="mm")
+        draw.text((width // 2, card_top + int(122 * scale_f)), "🌐 www.pozitronmarket.com", fill=(56, 189, 248), font=f_cta_action, anchor="mm")
+
+        # Bottom handle
+        f_foot = get_font(int(18 * scale_f), bold=True)
+        draw.text((width // 2, height - int(80 * scale_f)), "@pozitronmarket", fill=(100, 116, 139), font=f_foot, anchor="mm")
+
+        return img
+
+    def _finalize_ai_video(self, raw_video_path: str, post_data: dict, abs_video_path: str,
+                           clips: list = None, reels_method: str = None) -> str:
+        """
+        Scales raw AI video(s) (LTXV animated .webp or mp4) to 1080x1920, burns the
+        brand overlay (logo + human headline) during footage, appends high-converting
+        brand outro card, and encodes a Reels-ready MP4 (>=10s for 10s methods).
+
+        Animated WebP from ComfyUI is decoded frame-by-frame with Pillow and piped
+        to ffmpeg as rawvideo, guaranteeing flawless multi-clip stitching without artifacts.
+        """
+        valid_clips = [c for c in (clips or [raw_video_path]) if c and os.path.exists(c)]
+        if not valid_clips:
+            return ""
+
+        method = reels_method or post_data.get('reels_method', 'multi_shot')
+        overlay_path = self.generate_reels_bottom_overlay(post_data)
+        audio_path = self._get_reels_audio()
+
+        all_raw_frames = []
+        for clip in valid_clips:
+            if clip.lower().endswith('.webp'):
+                try:
+                    c_frames = self._decode_animated_webp(clip)
+                    if c_frames:
+                        if method == 'slow_motion':
+                            for cf in c_frames:
+                                all_raw_frames.extend([cf, cf])
+                        else:
+                            all_raw_frames.extend(c_frames)
+                except Exception as e:
+                    print(f"[Reels AI] WebP cozulemedi ({clip}): {e}")
+            else:
+                print(f"[Reels AI] WebP disi format henuz desteklenmiyor: {clip}")
+
+        if not all_raw_frames:
+            return ""
+
+        fw, fh = all_raw_frames[0][0], all_raw_frames[0][1]
+        ai_duration = len(all_raw_frames) / 25.0
+
+        # Outro card appending:
+        # multi_shot: 50 frames (2.0s) -> 2x113 (9.04s) + 2s = 11.04s (>=10s)
+        # slow_motion: 38 frames (1.5s) -> 258 frames (10.32s) + 1.5s = 11.84s (>=10s)
+        # direct_257: 25 frames (1.0s) -> 257 frames (10.28s) + 1.0s = 11.28s (>=10s)
+        # fast_97: 0 frames -> 97 frames = 3.88s
+        outro_frames_count = 0
+        if method == 'multi_shot':
+            outro_frames_count = 50
+        elif method == 'slow_motion':
+            outro_frames_count = 38
+        elif method == 'direct_257':
+            outro_frames_count = 25
+        elif method == 'fast_97':
+            outro_frames_count = 0
+
+        if outro_frames_count > 0:
+            try:
+                outro_img = self._render_reels_outro_card(post_data, width=fw, height=fh)
+                outro_bytes = outro_img.convert('RGB').tobytes()
+                all_raw_frames.extend([(fw, fh, outro_bytes)] * outro_frames_count)
+            except Exception as e:
+                print(f"[Reels AI] Outro karti olusturulamadi: {e}")
+
+        filter_str = (
+            f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
+            f"setsar=1,fps=25[bg];"
+            f"[bg][1:v]overlay=0:0:enable='lte(t,{ai_duration:.2f})'[v]"
+        )
+
+        base_cmd = [
+            'ffmpeg',
+            '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{fw}x{fh}',
+            '-r', '25', '-i', '-',
+            '-i', overlay_path,
+        ]
+
+        if audio_path and os.path.exists(audio_path):
+            base_cmd += ['-stream_loop', '-1', '-i', audio_path, '-map', '2:a', '-c:a', 'aac', '-b:a', '192k', '-shortest']
+
+        base_cmd += [
+            '-filter_complex', filter_str,
+            '-map', '[v]',
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
+            '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+            abs_video_path, '-y'
+        ]
+
+        try:
+            proc = subprocess.Popen(base_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                for raw_f in all_raw_frames:
+                    proc.stdin.write(raw_f[2])
+                proc.stdin.close()
+            except Exception as e:
+                print(f"[Reels AI] Stdin yazma hatasi: {e}")
+            _, err = proc.communicate(timeout=240)
+            res = type('R', (), {'returncode': proc.returncode, 'stderr': (err or b'').decode('utf-8', 'ignore')})()
+
+            if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 2000:
+                dur = self._get_video_duration(abs_video_path)
+                post_data['video_duration'] = round(dur, 2)
+                print(f"[Reels AI] Video finalize edildi: {os.path.basename(abs_video_path)} (Sure: {dur:.2f}s, Yontem: {method})")
+                return abs_video_path
+            print(f"[Reels AI] Finalize hatasi: {(getattr(res, 'stderr', '') or '')[-300:]}")
+        except Exception as e:
+            print(f"[Reels AI] Finalize exception: {e}")
+        return ""
+
+    @staticmethod
+    def _decode_animated_webp(path: str):
+        """Decodes an animated WebP into [(w, h, raw_rgb_bytes), ...] using Pillow."""
+        im = Image.open(path)
+        frames = []
+        w, h = im.size
+        for frame in range(getattr(im, 'n_frames', 1)):
+            im.seek(frame)
+            rgb = im.convert('RGB')
+            frames.append((w, h, rgb.tobytes()))
+        return frames
 
     def generate_reels_video(self, post_data: dict, prompt: str = None) -> str:
         """
-        Creates a 1080x1920 (9:16) MP4 video clip for Instagram Reels.
-        Primary: Uses Gemini Omni Flash (gemini-omni-1.1-flash) via Google GenAI Interactions API.
-        Fallback: High-quality ffmpeg dynamic zoompan animation if Gemini API is unavailable or rate-limited.
+        Creates a 1080x1920 (9:16) Reels video with the unified brand overlay.
+
+        Only local AI video (LTX-Video via ComfyUI) or, as an offline fallback,
+        real FPV b-roll / a gentle Ken-Burns motion over the brand template.
+        Gemini is NOT used for video generation.
         """
         post_id = post_data['id']
         reels_dir = os.path.join(BASE_DIR, 'assets', 'instagram', 'reels')
@@ -1294,17 +1986,37 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
         video_filename = f"{post_id}.mp4"
         abs_video_path = os.path.join(reels_dir, video_filename)
+        engine_req = post_data.get('engine', 'ltx')
 
-        # 1. Attempt Gemini Omni Flash Video Generation only if explicitly requested
-        engine_req = post_data.get('engine', 'creative')
-        if engine_req == 'gemini' and getattr(self, 'gemini_api_key', None):
-            gemini_res = self._generate_gemini_omni_video(post_data, prompt=prompt, output_abs_path=abs_video_path)
-            if gemini_res and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 5000:
-                post_data['video_engine'] = 'gemini-omni-1.1-flash'
-                return f"./assets/instagram/reels/{video_filename}"
+        # 1. Local AI video (LTX). This is the only AI video engine for Reels.
+        if engine_req in ('ltx', 'ai', 'comfy', 'ltxv', 'creative', 'gemini'):
+            try:
+                from .flux_generator import FluxGenerator
+                fg = getattr(self, '_flux_gen', None) or FluxGenerator()
+                self._flux_gen = fg
+                if fg.ensure_server(wait_seconds=120):
+                    info = fg.generate_video_for_reel(post_data, post_id)
+                    raw = info.get('path') if info else ''
+                    clips = info.get('clips') or ([raw] if raw else [])
+                    reels_method = info.get('reels_method') or post_data.get('reels_method', 'multi_shot')
+                    post_data['reels_method'] = reels_method
+                    post_data['reels_method_info'] = info.get('reels_method_info', '')
+                    if raw or clips:
+                        post_data['video_prompt'] = info.get('prompt', post_data.get('video_prompt'))
+                        if self._finalize_ai_video(raw, post_data, abs_video_path, clips=clips, reels_method=reels_method):
+                            dur = self._get_video_duration(abs_video_path)
+                            post_data['video_duration'] = round(dur, 2)
+                            post_data['video_engine'] = 'ltx-video-0.9.8 (AI)'
+                            return f"./assets/instagram/reels/{video_filename}"
+            except Exception as e:
+                print(f"[LTXV UYARI] Yerel AI video uretilemedi: {e}")
 
-        # 2. Dynamic multi-slide or FPV B-roll video generator (Randomized 1 & 2)
-        return self._generate_ffmpeg_reels_video(post_data, abs_video_path, video_filename)
+        # 2. Offline fallback: real FPV b-roll or Ken-Burns brand motion.
+        res = self._generate_ffmpeg_reels_video(post_data, abs_video_path, video_filename)
+        if res:
+            dur = self._get_video_duration(abs_video_path)
+            post_data['video_duration'] = round(dur, 2)
+        return res
 
     def _generate_gemini_omni_video(self, post_data: dict, prompt: str = None, output_abs_path: str = None) -> str:
         """
@@ -1558,7 +2270,22 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         photo_box = [(60, 230), (story_w - 60, 960)]
         s1_draw.rounded_rectangle(photo_box, radius=24, fill=(15, 23, 42), outline=(30, 58, 95), width=3)
         inner_box = [(85, 255), (story_w - 85, 935)]
-        s1_draw.rounded_rectangle(inner_box, radius=18, fill=(248, 250, 252))
+        if prod_img:
+            # Product photo available: keep the light backdrop so the product pops.
+            s1_draw.rounded_rectangle(inner_box, radius=18, fill=(248, 250, 252))
+        else:
+            # Themed (non-product) Reels have no product photo. Fill the container with a
+            # dark procedural visual instead of leaving an empty white panel.
+            panel_w = inner_box[1][0] - inner_box[0][0]
+            panel_h = inner_box[1][1] - inner_box[0][1]
+            panel = self._generate_procedural_panel(
+                prod_name, post_data.get('content_type', 'product_spotlight'), panel_w, panel_h
+            )
+            panel_mask = Image.new('L', (panel_w, panel_h), 0)
+            ImageDraw.Draw(panel_mask).rounded_rectangle(
+                [(0, 0), (panel_w - 1, panel_h - 1)], radius=18, fill=255
+            )
+            s1_img.paste(panel, inner_box[0], panel_mask)
 
         # Brand Badge
         s1_draw.rounded_rectangle([(110, 280), (110 + len(brand) * 16 + 45, 335)], radius=10, fill=(15, 23, 42))
@@ -1776,97 +2503,61 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
     def generate_reels_bottom_overlay(self, post_data: dict) -> str:
         """
-        Generates a transparent 1080x1920 RGBA image.
-        The top ~76% (y < 1460) is completely transparent so the background FPV drone video is fully visible.
-        The bottom ~20% (y: 1460 to 1840) contains a sleek, compact lower-third glassmorphic product showcase card.
+        Transparent 1080x1920 RGBA overlay for Reels: the brand logo lockup on top
+        and a calm, human lower-third headline. The frame stays mostly clear so the
+        AI footage is the hero, matching the unified post template.
         """
         post_id = post_data['id']
-        story_w, story_h = 1080, 1920
-        img = Image.new('RGBA', (story_w, story_h), (0, 0, 0, 0))
+        W, H = 1080, 1920
+        img = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+
+        # Bottom scrim (text) + soft top scrim (logo legibility on bright footage).
+        scrim = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+        sd = ImageDraw.Draw(scrim)
+        top = int(H * 0.58)
+        for yy in range(top, H):
+            ratio = (yy - top) / (H - top)
+            sd.line([(0, yy), (W, yy)], fill=(5, 9, 18, int(30 + ratio * 200)))
+        head = int(H * 0.16)
+        for yy in range(head):
+            sd.line([(0, yy), (W, yy)], fill=(5, 9, 18, int(90 * (1 - yy / head))))
+        img.paste(scrim, (0, 0), scrim)
+
+        margin = 72
+        self._draw_logo_lockup(img, margin, 64, chip=88)
+
+        headline, subhead, points = self._template_text(post_data)
+        f_head = get_font(58, bold=True)
         draw = ImageDraw.Draw(img)
+        y = int(H * 0.70)
+        reels_type = post_data.get('reels_type')
+        reels_badges = {
+            'freestyle_acro': '⚡ AKRO FREESTYLE',
+            'hardware_vs': '⚔️ DONANIM DÜELLOSU',
+            'quick_tip_fix': '💡 15S PİLOT İPUCU',
+            'mistake_warning': '⚠️ DİKKAT: HATA ANALİZİ',
+            'secret_spot': '📍 GİZLİ UÇUŞ SPOTU',
+            'product_cinematic': '💎 SİNEMATİK VİTRİN',
+            'flash_deal': '🔥 FLAŞ FIRSAT',
+            'real_fpv_broll': '🎥 GERÇEK FPV UÇUŞU'
+        }
+        badge_text = reels_badges.get(reels_type)
+        if badge_text:
+            f_badge = get_font(24, bold=True)
+            draw.text((margin, y - 62), badge_text, fill=(56, 189, 248), font=f_badge)
 
-        prod = post_data.get('product_data') or {}
-        brand = clean_canvas_text(prod.get('brand', 'Pozitron')).upper()
-        prod_name = clean_canvas_text(prod.get('name_tr') or prod.get('name') or post_data.get('title', 'Pozitron FPV'))
-        price_val = prod.get('price_try')
-        price_str = f"{float(price_val):.2f} TL" if price_val else "En İyi Fiyat"
+        draw.rounded_rectangle([(margin, y - 26), (margin + 96, y - 18)], radius=4, fill=(56, 189, 248))
+        y += 8
+        for line in self._wrap_text(headline, 20)[:2]:
+            draw.text((margin, y), line, fill=(255, 255, 255), font=f_head)
+            y += f_head.size + 16
+        if subhead:
+            for line in self._wrap_text(subhead, 38)[:2]:
+                draw.text((margin, y), line, fill=(226, 232, 240), font=f_sub)
+                y += f_sub.size + 8
 
-        # Compact Bottom Card Box (y: 1460 to 1840 - Height: 380px)
-        card_box = [(40, 1460), (story_w - 40, 1840)]
-        draw.rounded_rectangle(card_box, radius=22, fill=(11, 15, 25, 235), outline=(56, 189, 248, 220), width=2)
-
-        # Product Photo Container (Left Column: 200x200 px)
-        photo_box = [(65, 1480), (265, 1680)]
-        draw.rounded_rectangle(photo_box, radius=14, fill=(248, 250, 252, 245), outline=(30, 58, 95, 180), width=1)
-
-        # Load and paste product image
-        prod_img = None
-        if prod and prod.get('image_url'):
-            local_p = prod.get('image_url', '').lstrip('/')
-            abs_p = os.path.join(BASE_DIR, local_p)
-            prod_img = _load_product_image(abs_p)
-
-        if prod_img:
-            p = prod_img.copy()
-            p.thumbnail((180, 180), Image.Resampling.LANCZOS)
-            px = 65 + (200 - p.width) // 2
-            py = 1480 + (200 - p.height) // 2
-            img.paste(p, (px, py), p if p.mode == 'RGBA' else None)
-
-        # Discount badge if any
-        disc = prod.get('discount_pct', 0)
-        if disc and disc > 0:
-            draw.rounded_rectangle([(70, 1485), (175, 1515)], radius=6, fill=(220, 38, 38, 240))
-            draw.text((78, 1490), f"-%{disc} İNDİRİM", fill=(255, 255, 255), font=get_font(13, bold=True))
-
-        # Product Info (Right Column: x: 285 to 1015)
-        # Row 1: Brand & Pilot Rating
-        draw.text((285, 1482), brand, fill=(56, 189, 248), font=get_font(20, bold=True))
-        draw.text((440, 1484), "TOP RATED  •  Pilot Onaylı", fill=(251, 191, 36), font=get_font(18, bold=True))
-
-        # Row 2: Product Name (Wrapped cleanly)
-        clean_name = clean_canvas_text(prod_name)
-        if len(clean_name) > 34:
-            line1 = clean_name[:34]
-            line2 = clean_name[34:68] + ("..." if len(clean_name) > 68 else "")
-            draw.text((285, 1510), line1, fill=(255, 255, 255), font=get_font(23, bold=True))
-            draw.text((285, 1538), line2, fill=(255, 255, 255), font=get_font(23, bold=True))
-        else:
-            draw.text((285, 1518), clean_name, fill=(255, 255, 255), font=get_font(26, bold=True))
-
-        # Row 3: Badges (Price + Shipping + Warranty)
-        # Price tag
-        draw.rounded_rectangle([(285, 1595), (555, 1665)], radius=12, fill=(22, 101, 52, 240), outline=(74, 222, 128, 220), width=2)
-        draw.text((305, 1612), price_str, fill=(255, 255, 255), font=get_font(26, bold=True))
-
-        # Fast Shipping Badge
-        draw.rounded_rectangle([(570, 1595), (825, 1665)], radius=12, fill=(2, 132, 199, 230), outline=(56, 189, 248, 180), width=1)
-        draw.text((605, 1618), "AYNI GÜN KARGO", fill=(255, 255, 255), font=get_font(18, bold=True))
-
-        # Distributor / Warranty Badge
-        draw.rounded_rectangle([(840, 1595), (1015, 1665)], radius=12, fill=(15, 23, 42, 240), outline=(100, 116, 139, 180), width=1)
-        draw.text((865, 1618), "TR GARANTİ", fill=(148, 163, 184), font=get_font(17, bold=True))
-
-        # Row 4: Compact CTA Button (Full width of the card)
-        draw.rounded_rectangle([(65, 1705), (1015, 1815)], radius=16, fill=(2, 132, 199, 240), outline=(56, 189, 248, 240), width=2)
-        cta_main = "pozitronmarket.com"
-        cta_sub = "Profilden İncele veya Yoruma 'LİNK' Yaz >"
-        font_cta_main = get_font(30, bold=True)
-        font_cta_sub = get_font(18, bold=True)
-
-        try:
-            bb1 = draw.textbbox((0, 0), cta_main, font=font_cta_main)
-            w1 = int(bb1[2] - bb1[0])
-        except Exception:
-            w1 = int(len(cta_main) * 16)
-        draw.text((int((story_w - w1) // 2), 1720), cta_main, fill=(255, 255, 255), font=font_cta_main)
-
-        try:
-            bb2 = draw.textbbox((0, 0), cta_sub, font=font_cta_sub)
-            w2 = int(bb2[2] - bb2[0])
-        except Exception:
-            w2 = int(len(cta_sub) * 10)
-        draw.text((int((story_w - w2) // 2), 1768), cta_sub, fill=(224, 242, 254), font=font_cta_sub)
+        f_foot = get_font(26, bold=False)
+        draw.text((margin, H - 200), "pozitronmarket.com", fill=(148, 163, 184), font=f_foot)
 
         filename = f"{post_id}_reels_overlay.png"
         abs_overlay_path = os.path.join(OUTPUT_DIR, filename)
@@ -1966,46 +2657,41 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
     def _generate_ffmpeg_reels_video(self, post_data: dict, abs_video_path: str, video_filename: str) -> str:
         """
-        Generates video based on user selection or random choice:
-        - mode1: 1. Yol (Dinamik Cok Slaytli Sablon)
-        - mode2: 2. Yol (FPV B-Roll Ucus Klibi Hook + Urun Gecisi)
-        - random: %50 / %50 Rastgele Secim
+        Offline fallback when the AI video engine is unavailable. No slide shows:
+        either real FPV b-roll footage (if enabled by user) or a gentle Ken-Burns motion over
+        the unified brand template still — both get the brand overlay.
         """
-        broll_clip = self._get_broll_clip()
-        req_mode = post_data.get('engine', 'random')
-
-        if req_mode == 'mode1':
-            chosen_mode = 'dynamic_template'
-        elif req_mode == 'mode2':
-            if broll_clip:
-                chosen_mode = 'broll_hook'
-            else:
-                chosen_mode = 'dynamic_template'
-                post_data['fallback_reason'] = (
-                    "2. Yol seçildi ancak assets/instagram/broll klasöründe FPV videosu bulunamadı. "
-                    "Bu nedenle 1. Yol (Dinamik Çok Slaytlı Şablon) kullanıldı. Klasöre dikey FPV videosu ekleyiniz."
-                )
-        else: # 'random' or 'creative'
-            available_modes = ['dynamic_template']
-            if broll_clip:
-                available_modes.append('broll_hook')
-            chosen_mode = random.choice(available_modes)
-            if not broll_clip:
-                post_data['fallback_reason'] = (
-                    "assets/instagram/broll klasöründe FPV videosu olmadığı için 1. Yol (Dinamik Çok Slaytlı Şablon) kullanıldı. "
-                    "Klasöre FPV drone videoları eklediğinizde sistem iki mod arasında rastgele geçiş yapacaktır."
-                )
-
-        post_data['reel_mode'] = chosen_mode
-
-        if chosen_mode == 'broll_hook' and broll_clip:
-            post_data['video_engine'] = 'FFmpeg FPV Drone + Alt Ürün Kartı (2. Yol)'
-            broll_name = os.path.basename(broll_clip)
-            post_data['reel_mode_info'] = f"2. Yol: Tam FPV Drone Uçuşu ({broll_name}) + Alt Ürün Kartı + Orijinal Ses"
-            return self._generate_broll_hook_video(post_data, abs_video_path, video_filename, broll_clip)
+        broll_allowed = True
+        reels_type = post_data.get('reels_type')
+        allowed_types = post_data.get('allowed_reels_types')
+        if allowed_types is not None:
+            broll_allowed = 'real_fpv_broll' in allowed_types
         else:
-            post_data['video_engine'] = 'FFmpeg Dinamik Çok Slaytlı Şablon (1. Yol)'
-            post_data['reel_mode_info'] = '1. Yol: 3 Slaytlı Dinamik Şablon'
-            return self._generate_dynamic_template_video(post_data, abs_video_path, video_filename)
+            try:
+                from instagram_agent.db import get_agent_config
+                cfg = get_agent_config()
+                raw_reels = cfg.get('enabled_reels_types')
+                if raw_reels:
+                    if isinstance(raw_reels, str):
+                        raw_reels = json.loads(raw_reels)
+                    broll_allowed = 'real_fpv_broll' in raw_reels
+            except Exception:
+                pass
+
+        if reels_type and reels_type != 'real_fpv_broll':
+            broll_allowed = False
+
+        broll_clip = self._get_broll_clip() if broll_allowed else ""
+
+        if broll_clip:
+            post_data['reel_mode'] = 'broll_hook'
+            post_data['video_engine'] = 'FPV drone footage + marka katmanı'
+            post_data['reel_mode_info'] = f"Gerçek FPV uçuş klibi + marka katmanı ({os.path.basename(broll_clip)})"
+            return self._generate_broll_hook_video(post_data, abs_video_path, video_filename, broll_clip)
+
+        post_data['reel_mode'] = 'kenburns_template'
+        post_data['video_engine'] = 'Ken-Burns marka şablonu (offline)'
+        post_data['reel_mode_info'] = 'AI video motoru kapalıyken tek görsel üzerinden yumuşak hareket'
+        return self._fallback_single_slide_video(post_data, abs_video_path, video_filename)
 
 

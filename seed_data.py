@@ -646,7 +646,7 @@ def seed_database():
             "usr_furkan_01",
             "furkaniusprimes@gmail.com",
             None,
-            "Eyüp Furkan Peköz",
+            "Mağaza Yöneticisi",
             "https://api.dicebear.com/7.x/bottts/svg?seed=furkaniusprimes",
             "gmail",
             "admin",

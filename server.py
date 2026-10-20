@@ -26,6 +26,8 @@ from database import (
 )
 from seed_data import seed_database
 from export_data import export_static_data
+import coupons as coupon_service
+import product_quality
 
 # ==============================================================================
 # Cyber Security Controls & Cryptographic Authentication
@@ -390,6 +392,14 @@ def start_thread_watchdog():
                 elif not is_subagent_enabled('subagent_7_qa') and qa_scheduler.is_running():
                     qa_scheduler.stop()
 
+                # 1b. Auto-expire time-limited coupons (works even if nobody visits the site)
+                try:
+                    expired = coupon_service.expire_coupons()
+                    if expired:
+                        print(f"[Watchdog] {expired} kupon suresi doldugu icin otomatik devre disi birakildi.")
+                except Exception as coupon_err:
+                    print(f"[Watchdog] Kupon suresi kontrolu hatasi: {coupon_err}")
+
                 # 2. Periodic cloud market inventory sync (git pull --rebase)
                 try:
                     import subprocess
@@ -419,6 +429,12 @@ def start_thread_watchdog():
                 print(f"[Watchdog] Loop notice: {we}")
 
             time.sleep(60)
+
+    # Expire any time-limited coupons left over from before the restart.
+    try:
+        coupon_service.expire_coupons()
+    except Exception:
+        pass
 
     t = threading.Thread(target=watchdog_loop, name="SystemdThreadWatchdog", daemon=True)
     t.start()
@@ -1143,6 +1159,11 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             '    <priority>0.7</priority>',
             '  </url>',
             '  <url>',
+            '    <loc>https://pozitronmarket.com/hakkimizda</loc>',
+            '    <changefreq>monthly</changefreq>',
+            '    <priority>0.8</priority>',
+            '  </url>',
+            '  <url>',
             '    <loc>https://pozitronmarket.com/iletisim</loc>',
             '    <changefreq>monthly</changefreq>',
             '    <priority>0.8</priority>',
@@ -1359,9 +1380,31 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, LAST_EMAIL_STATUS)
             return
 
+        # Public: current limited-time deal (site banner)
+        if path == '/api/coupons/active':
+            try:
+                deal = coupon_service.get_active_deal()
+            except Exception:
+                deal = None
+            if deal:
+                self.send_json(200, {
+                    "active": True,
+                    "code": deal.get('code'),
+                    "discount_type": deal.get('discount_type'),
+                    "discount_value": deal.get('discount_value'),
+                    "min_order_try": deal.get('min_order_try'),
+                    "description_tr": deal.get('description_tr'),
+                    "expires_at": deal.get('expires_at'),
+                })
+            else:
+                self.send_json(200, {"active": False})
+            return
+
         # Settings & Currency Rate Endpoints
         if path == '/api/settings':
-            self.send_json(200, get_all_settings())
+            settings = get_all_settings()
+            settings['bank_owner'] = ''
+            self.send_json(200, settings)
             return
 
         if path in ('/api/currency-rate', '/api/currency'):
@@ -1382,6 +1425,27 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         # Instagram PR: Status
         if path == '/api/instagram/status':
             self.send_json(200, instagram_pr_agent.get_status())
+            return
+
+        # Instagram PR: Template Blueprint Info
+        if path == '/api/instagram/template-info':
+            from instagram_agent.image_generator import ImageGenerator
+            self.send_json(200, {
+                "success": True,
+                "blueprint": ImageGenerator.get_template_blueprint()
+            })
+            return
+
+        # Instagram PR: Post Types List
+        if path == '/api/instagram/post-types':
+            from instagram_agent.content_generator import ALL_POST_TYPES
+            self.send_json(200, {"success": True, "types": ALL_POST_TYPES})
+            return
+
+        # Instagram PR: Reels Types List
+        if path == '/api/instagram/reels-types':
+            from instagram_agent.content_generator import REELS_TYPES_METADATA
+            self.send_json(200, {"success": True, "types": REELS_TYPES_METADATA})
             return
 
         # Instagram PR: Safe Config
@@ -1551,6 +1615,22 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"incidents": qa_agent.get_incidents(limit=limit)})
             return
 
+        # LLM provider status (unified OpenCode/Evren gateway)
+        if path == '/api/llm/status':
+            try:
+                from llm_client import get_llm
+                llm = get_llm()
+                self.send_json(200, {
+                    "provider": "evren (OpenCode gateway)",
+                    "base_url": llm.base_url,
+                    "model": llm.model,
+                    "reasoning_effort": llm.reasoning_effort,
+                    "configured": llm.is_configured(),
+                })
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
         # Subagent 3: Latest Telemetry
         if path == '/api/telemetry/latest':
             self.send_json(200, lead_supervisor_agent.telemetry_agent.get_latest_telemetry())
@@ -1666,8 +1746,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             media_enabled = is_subagent_enabled("subagent_10_media")
 
             graph = {
-                "version": "3.0",
-                "engine": "Antigravity 2.0 Full Ecosystem Architecture",
+                "version": "3.1",
+                "engine": "Antigravity 2.0 Full Ecosystem Architecture (+ Yerel AI: DeepSeek LLM, FLUX Görsel, LTX-Video Reels)",
                 "last_cycle_at": sup_status.get("last_run_at"),
                 "next_cycle_at": sup_status.get("next_run_at"),
                 "columns": [
@@ -1818,20 +1898,85 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     },
                     {
                         "id": "svc_gemini_ai",
-                        "label": "Google Gemini AI Bulutu",
+                        "label": "Google Gemini (Yedek / Legacy)",
                         "tag": "[GEMINI AI]",
                         "column": 3,
                         "type": "ai",
-                        "category": "Bilişsel Zeka & Vizyon",
-                        "status": "active",
-                        "status_text": "gemini-3.8-flash & 2.5-flash",
-                        "description": "Lead Supervisor pazar analizleri, SEO teknik dokümantasyon üretimi, Instagram çok modlu vizyon denetimi ve QA otonom RCA motoru",
+                        "category": "Bilişsel Zeka (Yedek)",
+                        "status": "ready",
+                        "status_text": "gemini-3.8-flash (yalnızca yedek metin)",
+                        "description": "Birincil zeka değil: metin DeepSeek'e, görsel/video denetimi de DeepSeek/LTX'e devredildi. Gemini yalnızca eski yedek metin yolu olarak durur; video üretimi tamamen kaldırıldı",
                         "inputs": ["lead_supervisor", "subagent_1_instagram", "subagent_4_seo"],
                         "triggers": ["lead_supervisor", "subagent_1_instagram", "subagent_4_seo"],
                         "payload_preview": {
                             "primary_model": "gemini-3.8-flash",
                             "fallback_model": "gemini-2.5-flash",
                             "tasks": ["Piyasa Arbitrajı", "Teknik Doküman Sentezi", "Afiş Vizyon Denetimi", "Kök Neden Analizi (RCA)"]
+                        }
+                    },
+
+                    {
+                        "id": "svc_llm_evren",
+                        "label": "DeepSeek V4.1 Flash (Metin LLM)",
+                        "tag": "[LLM]",
+                        "column": 3,
+                        "type": "ai",
+                        "category": "Metin Üretimi & İnsan Dili",
+                        "status": "active",
+                        "status_text": "deepseek-v4.1-flash • reasoning: high",
+                        "description": "OpenCode/Evren OpenAI-uyumlu ağ geçidi üzerinden DeepSeek V4.1 Flash (High): Instagram başlık/metin ve video promptlarını insan gibi yazar, üretilen görsellerin ÇOK MODLU VİZYON DENETİMİNİ de yapar (Gemini denetimi kaldırıldı)",
+                        "inputs": ["subagent_1_instagram", "subagent_2_reddit", "subagent_4_seo"],
+                        "triggers": ["subagent_1_instagram"],
+                        "payload_preview": {
+                            "provider_gateway": "OpenCode / Evren (OpenAI-compatible)",
+                            "primary_model": "deepseek-v4.1-flash",
+                            "reasoning_effort": "high",
+                            "fallback_model": "gemini-3.8-flash (yalnızca yedek metin)",
+                            "tasks": ["İnsan Dili Metin", "Reels Video Promptu", "Görsel Vizyon Denetimi", "Topluluk Yorumu"]
+                        }
+                    },
+                    {
+                        "id": "ai_flux_image",
+                        "label": "FLUX.1 [dev] Görsel AI (Yerel GPU)",
+                        "tag": "[FLUX IMAGE]",
+                        "column": 3,
+                        "type": "ai",
+                        "category": "Görsel Üretimi (Local Diffusion)",
+                        "status": "active",
+                        "status_text": "flux1-dev-Q8_0.gguf • ComfyUI",
+                        "description": "Yerel FLUX.1 [dev] ünitesi (RTX 4060 Ti 16GB): her post için ürün/studio fotoğrafı üretir; ürün postlarında gerçek ürün görseli üzerine kompoze edilir",
+                        "inputs": ["subagent_1_instagram"],
+                        "triggers": ["subagent_1_instagram"],
+                        "payload_preview": {
+                            "engine": "ComfyUI (127.0.0.1:8188)",
+                            "unet": "flux1-dev-Q8_0.gguf (GGUF Q8_0, 12.7GB)",
+                            "unet_alt": "flux1-dev.safetensors (bf16, 23.8GB)",
+                            "text_encoders": ["t5xxl_fp8_e4m3fn", "clip_l"],
+                            "vae": "ae.safetensors",
+                            "resolution": "1024x1024",
+                            "workflow": "flux_dev_gguf_api.json"
+                        }
+                    },
+                    {
+                        "id": "ai_ltx_video",
+                        "label": "LTX-Video 0.9.8 Video AI (Yerel GPU)",
+                        "tag": "[LTX VIDEO]",
+                        "column": 3,
+                        "type": "ai",
+                        "category": "Video Üretimi (Text-to-Video)",
+                        "status": "active",
+                        "status_text": "ltxv-13b-0.9.8-distilled-fp8 • 24fps",
+                        "description": "Reels için TEK AI video motoru: LTXV 0.9.8 dikey 9:16 sahne üretir; marka katmanı bindirilip 1080x1920 H.264 Reels'e dönüştürülür. Gemini ile video üretimi kaldırıldı; slayt video kullanılmaz",
+                        "inputs": ["subagent_1_instagram"],
+                        "triggers": ["subagent_1_instagram"],
+                        "payload_preview": {
+                            "engine": "ComfyUI Core LTXV Nodes",
+                            "checkpoint": "ltxv-13b-0.9.8-distilled-fp8.safetensors",
+                            "checkpoint_alt": "ltxv-2b-0.9.8-distilled-fp8.safetensors",
+                            "text_encoder": "t5xxl_fp8_e4m3fn",
+                            "latent": "576x1024 (9:16) • 97 kare",
+                            "steps": 8,
+                            "workflow": "ltxv_t2v_api.json"
                         }
                     },
 
@@ -1952,9 +2097,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "type": "worker",
                         "category": "İçerik & Topluluk",
                         "status": "running" if ig_status.get("is_autonomous_enabled") else "idle",
-                        "status_text": "8-10 Format • Afiş & Hikaye",
-                        "description": "Gemini 3.8 Flash ile görsel planlama, çok modlu vizyon denetimi ve 8-10 farklı formatta 1080x1080 afiş ve hikaye üretir",
-                        "inputs": ["lead_supervisor", "svc_gemini_ai"],
+                        "status_text": "Tek Şablon • AI Görsel + AI Video Reels",
+                        "description": "DeepSeek V4.1 Flash ile insan dili metin yazar; tek marka şablonunda FLUX AI görseli/ürün fotoğrafı üretir, Reels için LTX-Video ile AI video çeker ve haftalık 24 saatlik indirim kuponu yayınlar",
+                        "inputs": ["lead_supervisor", "svc_llm_evren", "ai_flux_image", "ai_ltx_video", "svc_gemini_ai"],
                         "triggers": ["svc_meta_graph"],
                         "payload_preview": active_dir.get("instagram_directive", {})
                     },
@@ -1994,7 +2139,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "type": "sentinel",
                         "category": "Tanı, QA & Otonom Onarım",
                         "status": "running" if qa_status.get("is_autonomous_enabled") else "idle",
-                        "status_text": f"Sağlık: %{qa_status.get('last_health_score', 100)} • 7 Prob",
+                        "status_text": f"Sağlık: %{qa_status.get('last_health_score', 100)} • 8 Prob",
                         "description": "Kritik pipeline sağlık denetimi, oturum ve token doğrulama ile Gemini 3.8 Flash otonom iyileştirme",
                         "inputs": ["lead_supervisor"],
                         "triggers": ["srv_hetzner_cloud", "srv_github_platform", "svc_meta_graph"],
@@ -2003,26 +2148,28 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                             "health_score": qa_status.get("last_health_score", 100),
                             "last_status": qa_status.get("last_status", "HEALTHY"),
                             "auto_heal_enabled": qa_status.get("auto_heal_enabled", True),
-                            "probes_count": 7
+                            "probes_count": 8
                         }
                     },
 
                     {
                         "id": "subagent_10_media",
-                        "label": "Subagent 10: Medya & Kalite",
-                        "tag": "[QUALITY]",
+                        "label": "Subagent 10: Medya & Otomatik Onarım",
+                        "tag": "[AUTO-REPAIR]",
                         "column": 5,
                         "type": "worker",
-                        "category": "Görsel & İçerik Denetimi",
+                        "category": "Görsel Denetim & Otonom İyileştirme",
                         "status": "ready" if media_enabled else "disabled",
-                        "status_text": f"{media_audit.get('total_products_scanned', 508)} SKU • %{media_audit.get('visual_health_score', 86)} Sağlık",
-                        "description": "508 ürünün görsellerini, pHash mükerrerliklerini ve kategori uyumunu denetler ve stüdyo assetleri ile onarır",
+                        "status_text": f"{media_audit.get('total_products_scanned', 508)} SKU • %{media_audit.get('visual_health_score', 86)} Sağlık (Otonom Onarım Açık)",
+                        "description": "508 ürünün görsellerini denetler; karantinadaki ve hatalı SKU'ları resmi stüdyo DAM assetleri ile otonom olarak onarır",
                         "inputs": ["lead_supervisor"],
                         "triggers": ["output_pozitron_web"],
                         "payload_preview": {
                             "scanned": media_audit.get("total_products_scanned", 508),
                             "score": media_audit.get("visual_health_score", 86),
-                            "quarantine": media_audit.get("quarantine_candidates_count", 0)
+                            "quarantine": media_audit.get("quarantine_candidates_count", 0),
+                            "auto_remediation": "ACTIVE",
+                            "last_auto_fix": media_audit.get("last_auto_fix_at", "Otonom Döngüde")
                         }
                     },
 
@@ -2055,13 +2202,15 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "category": "Sosyal Medya",
                         "status": "connected",
                         "status_text": "Bağlı (ID: 17841430407836914)",
-                        "description": "1080x1080 afiş ve hikaye yayınları ile pilot topluluk etkileşimi",
+                        "description": "1080x1080 afiş, hikaye ve AI video Reels yayınları ile pilot topluluk etkileşimi; haftalık 24 saatlik indirim kuponu paylaşımı",
                         "inputs": ["subagent_1_instagram", "subagent_7_qa"],
                         "triggers": [],
                         "payload_preview": {
-                            "channel": "Instagram Feed & Story",
+                            "channel": "Instagram Feed, Story & AI Reels",
                             "account": "@pozitronmarket",
                             "account_id": "17841430407836914",
+                            "reels_engine": "LTX-Video 0.9.8 (9:16 AI video)",
+                            "weekly_deal": "24 saatlik kupon (haftada 1)",
                             "status": "CONNECTED"
                         }
                     },
@@ -2121,6 +2270,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     {"from": "svc_paytr", "to": "svc_smtp_mail", "label": "Ödeme Başarılı -> Fatura & Dekont", "type": "payment"},
                     {"from": "subagent_9_security", "to": "lead_supervisor", "label": "Siber Güvenlik Denetim Raporu", "type": "probe"},
                     {"from": "svc_gemini_ai", "to": "lead_supervisor", "label": "Gemini 3.8 Flash Karar Yanıtı", "type": "data"},
+                    {"from": "svc_llm_evren", "to": "subagent_1_instagram", "label": "İnsan Dili Metin & Video Promptu (DeepSeek)", "type": "data"},
+                    {"from": "ai_flux_image", "to": "subagent_1_instagram", "label": "AI Görsel Akışı (FLUX 1024²)", "type": "data"},
+                    {"from": "ai_ltx_video", "to": "subagent_1_instagram", "label": "AI Video Akışı (LTX 9:16)", "type": "data"},
 
                     # 4. İstihbarat & Karar Motoru (Column 4 -> Column 4 & 5)
                     {"from": "subagent_5_price", "to": "lead_supervisor", "label": "Fiyat Arbitraj Raporu", "type": "data"},
@@ -2131,7 +2283,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     {"from": "lead_supervisor", "to": "subagent_2_reddit", "label": "reddit_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_4_seo", "label": "seo_directive", "type": "directive"},
                     {"from": "lead_supervisor", "to": "subagent_7_qa", "label": "qa_directive", "type": "directive"},
-                    {"from": "lead_supervisor", "to": "subagent_10_media", "label": "media_quality_directive", "type": "directive"},
+                    {"from": "lead_supervisor", "to": "subagent_10_media", "label": "Otonom Denetim & Otomatik Onarım", "type": "directive"},
 
                     # 5. Uzman Ajanlar -> Kayıt & Dağıtım (Column 5 -> Column 6)
                     {"from": "subagent_8_procurement", "to": "output_pozitron_web", "label": "Tedarik Planı & Stok Girişi", "type": "data"},
@@ -2139,7 +2291,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     {"from": "subagent_1_instagram", "to": "svc_meta_graph", "label": "Afiş & Hikaye Yayını", "type": "publish"},
                     {"from": "subagent_2_reddit", "to": "svc_reddit_platform", "label": "Otonom Yanıt Yayını", "type": "publish"},
                     {"from": "subagent_4_seo", "to": "output_pozitron_web", "label": "İç Linkli Teknik Rehber", "type": "publish"},
-                    {"from": "subagent_10_media", "to": "output_pozitron_web", "label": "Doğrulanmış Ürün Görselleri", "type": "publish"},
+                    {"from": "subagent_10_media", "to": "output_pozitron_web", "label": "Otomatik Onarılmış & Doğrulanmış Stüdyo Kataloğu", "type": "publish"},
 
                     # 6. Dağıtım & Arama Motorları (Column 6 Dahili)
                     {"from": "output_pozitron_web", "to": "svc_google_merchant", "label": "XML/TSV Feed & Sitemap", "type": "publish"}
@@ -2171,15 +2323,51 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     },
                     {
                         "id": "svc_gemini",
-                        "name": "Google Gemini Yapay Zeka Bulutu",
+                        "name": "Google Gemini (Yedek / Legacy)",
                         "category": "Yapay Zeka & Bilişsel",
                         "provider": "Google DeepMind / Google Cloud",
-                        "role": "Bilişsel Karar Motoru, Çok Modlu Vizyon, SEO Rehber Sentezi ve Otonom İyileştirme",
+                        "role": "Yedek Metin Yolu (birincil değil)",
                         "endpoints": ["gemini-3.8-flash", "gemini-2.5-flash"],
                         "protocols": ["HTTPS REST JSON (Google Generative AI)"],
+                        "status": "STANDBY",
+                        "badge": "LEGACY / YEDEK",
+                        "details": "Birincil zeka DeepSeek V4.1 Flash'e, görsel denetim DeepSeek vizyona, video ise LTX-Video'ya devredildi. Gemini artık yalnızca eski yedek metin yolunda durur; Gemini ile video üretimi tamamen kaldırılmıştır."
+                    },
+                    {
+                        "id": "svc_llm_evren",
+                        "name": "DeepSeek V4.1 Flash (OpenCode/Evren Ağ Geçidi)",
+                        "category": "Yapay Zeka & Bilişsel",
+                        "provider": "OpenCode / Evren (OpenAI-uyumlu gateway)",
+                        "role": "Birincil Metin Zekası: İnsan Dili İçerik, Reels Video Promptu ve Topluluk Yanıtları",
+                        "endpoints": ["deepseek-v4.1-flash (reasoning: high)", "OpenAI-compatible /chat/completions"],
+                        "protocols": ["HTTPS REST JSON (OpenAI API)"],
                         "status": "ACTIVE",
-                        "badge": "GEMINI 3.8 FLASH",
-                        "details": "Lead Supervisor için pazar arbitraj analizi yapar; Subagent 4 için deterministik pinout ve FPV rehberleri yazar; Subagent 1 için 1080x1080 afiş kopyalarını ve görsel vizyon denetimini gerçekleştirir; Subagent 7 için kök neden analizi (RCA) üretir."
+                        "badge": "DEEPSEEK V4.1 FLASH",
+                        "details": "Tüm içerik metinleri buradan geçer: Instagram başlık/metin ve video promptları doğal, insan yazmış gibi üretilir; Gemini 3.8 Flash yalnızca yedek ve vizyon denetimi için devrede kalır."
+                    },
+                    {
+                        "id": "ai_flux_image",
+                        "name": "FLUX.1 [dev] Görsel Üretim Motoru (Yerel GPU)",
+                        "category": "Yapay Zeka & Bilişsel",
+                        "provider": "Black Forest Labs FLUX.1 [dev] • ComfyUI + GGUF Q8_0",
+                        "role": "Post Görselleri İçin Fotogerçekçi AI Görsel Üretimi",
+                        "endpoints": ["ComfyUI http://127.0.0.1:8188", "flux1-dev-Q8_0.gguf", "flux_dev_gguf_api.json"],
+                        "protocols": ["Local HTTP API (ComfyUI /prompt & /history)"],
+                        "status": "ACTIVE (GPU)",
+                        "badge": "FLUX.1 [dev] Q8",
+                        "details": "RTX 4060 Ti 16GB üzerinde yerel FLUX.1 [dev] (GGUF Q8_0, T5-XXL fp8 + CLIP-L + ae VAE) çalışır. Her post için 1024x1024 stüdyo görseli üretir; ürün postlarında gerçek ürün fotoğrafı bu AI arka planın üstüne bindirilir."
+                    },
+                    {
+                        "id": "ai_ltx_video",
+                        "name": "LTX-Video 0.9.8 Video Üretim Motoru (Yerel GPU)",
+                        "category": "Yapay Zeka & Bilişsel",
+                        "provider": "Lightricks LTXV 0.9.8 • ComfyUI Core LTXV Nodes",
+                        "role": "Reels İçin Dikey (9:16) Metinden-Videoya AI Video Üretimi",
+                        "endpoints": ["ComfyUI http://127.0.0.1:8188", "ltxv-13b-0.9.8-distilled-fp8.safetensors", "ltxv_t2v_api.json"],
+                        "protocols": ["Local HTTP API (ComfyUI /prompt & /history)"],
+                        "status": "ACTIVE (GPU)",
+                        "badge": "LTX-VIDEO 0.9.8",
+                        "details": "13B distilled FP8 checkpoint ile 576x1024 (9:16) sahneler üretir; 8 adımda ~97 kare. Animasyonlu WebP çıktısı ffmpeg ile marka katmanı bindirilerek 1080x1920 H.264 Reels MP4'e dönüştürülür. Slayt videolar kaldırıldı."
                     },
                     {
                         "id": "svc_paytr",
@@ -2210,12 +2398,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "name": "Meta Graph API (Instagram)",
                         "category": "Sosyal Medya & Topluluk",
                         "provider": "Meta Platforms Inc.",
-                        "role": "Otonom Feed & Story Yayını, FPV Afişleri ve Türk Drone Topluluğu Etkileşimi",
+                        "role": "Otonom Feed, Story & AI Reels Yayını, Haftalık Kupon Kampanyası ve Türk Drone Topluluğu Etkileşimi",
                         "endpoints": ["Graph API v18.0 (@pozitronmarket)", "ID: 17841430407836914"],
                         "protocols": ["HTTPS REST OAuth 2.0"],
                         "status": "OPERATIONAL",
-                        "badge": "GRAPH API & REELS",
-                        "details": "Pozitron'un 8-10 farklı içerik formatındaki (Donanım Kıyaslamaları, Hata Analizleri, Anketler) 1080x1080 afişlerini Instagram hesabında otomatik yayınlar, hikaye rotasyonunu yürütür."
+                        "badge": "GRAPH API & AI REELS",
+                        "details": "Pozitron'un içerik formatındaki 1080x1080 afişlerini ve marka katmanlı AI video Reels'lerini (LTX-Video 9:16) otomatik yayınlar, hikaye rotasyonunu ve haftalık 24 saatlik indirim kuponu duyurularını yürütür."
                     },
                     {
                         "id": "svc_reddit",
@@ -2378,6 +2566,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 p['gallery'] = json.loads(p['gallery_json'] or '[]')
                 p['compatibility'] = json.loads(p['compatibility_json'] or '{}')
                 products.append(p)
+
+            quality = product_quality.states(conn, products)
+            for product in products:
+                product.update(quality[product['id']])
 
             conn.close()
             self.send_json(200, {
@@ -2555,7 +2747,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             prod['compatibility'] = json.loads(prod['compatibility_json'] or '{}')
 
             # Fetch product reviews
-            cursor.execute("SELECT * FROM reviews WHERE product_id = ? ORDER BY created_at DESC", (prod['id'],))
+            cursor.execute("SELECT * FROM reviews WHERE product_id = ? AND deleted_at IS NULL ORDER BY created_at DESC", (prod['id'],))
             reviews = [dict(r) for r in cursor.fetchall()]
             prod['reviews'] = reviews
 
@@ -2767,14 +2959,37 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"orders": orders})
             return
 
+        # Authenticated comment moderation, including recoverable deleted reviews.
+        if path == '/api/admin/reviews':
+            try:
+                page = max(1, int(query.get('page', ['1'])[0]))
+                limit = min(100, max(1, int(query.get('limit', ['20'])[0])))
+                search = query.get('search', [''])[0].strip()
+                deleted = query.get('status', ['active'])[0] == 'deleted'
+                where = ['r.deleted_at IS NOT NULL' if deleted else 'r.deleted_at IS NULL']
+                params = []
+                if search:
+                    where.append('(r.user_name LIKE ? OR r.title LIKE ? OR r.comment LIKE ? OR p.name_tr LIKE ?)')
+                    params.extend(['%' + search + '%'] * 4)
+                clause = ' AND '.join(where)
+                cursor.execute(f'SELECT COUNT(*) FROM reviews r LEFT JOIN products p ON p.id = r.product_id WHERE {clause}', params)
+                total = cursor.fetchone()[0]
+                cursor.execute(f"SELECT r.*, p.name_tr AS product_name FROM reviews r LEFT JOIN products p ON p.id = r.product_id WHERE {clause} ORDER BY r.created_at DESC, r.id DESC LIMIT ? OFFSET ?", params + [limit, (page - 1) * limit])
+                self.send_json(200, {'reviews': [dict(row) for row in cursor.fetchall()], 'total': total, 'page': page, 'limit': limit})
+            except ValueError:
+                self.send_json(400, {'error': 'Geçersiz sayfa bilgisi.'})
+            finally:
+                conn.close()
+            return
+
         # 8. Reviews List: /api/reviews
         if path == '/api/reviews':
             try:
                 prod_id = query.get('product_id', [''])[0].strip()
                 filter_type = query.get('filter', ['all'])[0].strip()
-                limit = min(100, max(1, int(query.get('limit', [50])[0])))
+                limit = min(1000, max(1, int(query.get('limit', [50])[0])))
 
-                where_clauses = ["1=1"]
+                where_clauses = ["deleted_at IS NULL"]
                 params = []
 
                 if prod_id and prod_id != 'general':
@@ -2792,7 +3007,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 stats = None
                 if prod_id and prod_id != 'general':
-                    cursor.execute("SELECT AVG(rating), COUNT(*) FROM reviews WHERE (product_id = ? OR product_id IN (SELECT id FROM products WHERE slug = ?))", (prod_id, prod_id))
+                    cursor.execute("SELECT AVG(rating), COUNT(*) FROM reviews WHERE deleted_at IS NULL AND (product_id = ? OR product_id IN (SELECT id FROM products WHERE slug = ?))", (prod_id, prod_id))
                     avg_r, cnt_r = cursor.fetchone()
                     stats = {
                         "rating": round(avg_r, 1) if avg_r is not None else 0.0,
@@ -2803,6 +3018,45 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
             finally:
                 conn.close()
+
+        # Admin: Coupon management (list, redemptions, logs)
+        if path == '/api/admin/coupons':
+            conn.close()
+            try:
+                coupons = coupon_service.list_coupons()
+                self.send_json(200, {
+                    "coupons": coupons,
+                    "active_deal": coupon_service.get_active_deal(),
+                })
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        if path == '/api/admin/coupons/redemptions':
+            conn.close()
+            code = (query.get('code', [None])[0] or None)
+            try:
+                limit = int(query.get('limit', ['200'])[0])
+            except Exception:
+                limit = 200
+            try:
+                self.send_json(200, {"redemptions": coupon_service.get_redemptions(code, limit)})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        if path == '/api/admin/coupons/logs':
+            conn.close()
+            code = (query.get('code', [None])[0] or None)
+            try:
+                limit = int(query.get('limit', ['300'])[0])
+            except Exception:
+                limit = 300
+            try:
+                self.send_json(200, {"logs": coupon_service.get_logs(code, limit)})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
 
         conn.close()
         self.send_json(404, {"error": "API route not found"})
@@ -2818,6 +3072,99 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             if not self.require_admin():
                 return
 
+        # Admin: Coupon create
+        if path == '/api/admin/coupons/create':
+            try:
+                from datetime import timedelta
+                code = data.get('code', '').strip().upper()
+                discount_type = data.get('discount_type', 'percent')
+                discount_value = data.get('discount_value', 0)
+                min_order_try = data.get('min_order_try', 0) or 0
+                min_order_usd = data.get('min_order_usd', 0) or 0
+                description_tr = data.get('description_tr', '')
+                description_en = data.get('description_en', '')
+                max_uses = data.get('max_uses')
+                per_user_limit = data.get('per_user_limit', 1)
+                valid_hours = data.get('valid_hours')
+                expires_at = data.get('expires_at')
+                starts_at = data.get('starts_at') or datetime.now().isoformat()
+                if not expires_at and valid_hours:
+                    expires_at = (datetime.now() + timedelta(hours=float(valid_hours))).isoformat()
+                created = coupon_service.create_coupon(
+                    code, discount_type, discount_value,
+                    min_order_usd=min_order_usd, min_order_try=min_order_try,
+                    description_tr=description_tr, description_en=description_en,
+                    starts_at=starts_at, expires_at=expires_at,
+                    max_uses=max_uses, per_user_limit=per_user_limit,
+                    source='manual', actor='admin',
+                )
+                self.send_json(200, {"success": True, "code": created,
+                                     "coupon": coupon_service.get_coupon(created)})
+            except ValueError as ve:
+                self.send_json(400, {"success": False, "error": str(ve)})
+            except Exception as e:
+                self.send_json(500, {"success": False, "error": str(e)})
+            return
+
+        # Admin: Coupon update
+        if path == '/api/admin/coupons/update':
+            try:
+                code = data.get('code', '').strip().upper()
+                fields = {}
+                for k in ('discount_type', 'discount_value', 'min_order_usd', 'min_order_try',
+                          'description_tr', 'description_en', 'starts_at', 'expires_at',
+                          'max_uses', 'per_user_limit', 'is_active'):
+                    if k in data:
+                        fields[k] = data.get(k)
+                if data.get('valid_hours') and not fields.get('expires_at'):
+                    from datetime import timedelta
+                    fields['expires_at'] = (datetime.now() + timedelta(hours=float(data['valid_hours']))).isoformat()
+                coupon_service.update_coupon(code, actor='admin', **fields)
+                self.send_json(200, {"success": True, "coupon": coupon_service.get_coupon(code)})
+            except ValueError as ve:
+                self.send_json(400, {"success": False, "error": str(ve)})
+            except Exception as e:
+                self.send_json(500, {"success": False, "error": str(e)})
+            return
+
+        # Admin: Coupon activate/deactivate
+        if path == '/api/admin/coupons/toggle':
+            try:
+                code = data.get('code', '').strip().upper()
+                active = bool(data.get('active', True))
+                coupon_service.set_coupon_active(code, active, actor='admin')
+                self.send_json(200, {"success": True, "code": code, "is_active": 1 if active else 0})
+            except Exception as e:
+                self.send_json(500, {"success": False, "error": str(e)})
+            return
+
+        # Admin: Coupon delete
+        if path == '/api/admin/coupons/delete':
+            try:
+                code = data.get('code', '').strip().upper()
+                coupon_service.delete_coupon(code, actor='admin')
+                self.send_json(200, {"success": True, "code": code})
+            except Exception as e:
+                self.send_json(500, {"success": False, "error": str(e)})
+            return
+
+        # Admin: Create this week's one-day deal (and optionally publish it to Instagram)
+        if path == '/api/admin/coupons/weekly-deal':
+            try:
+                deal = coupon_service.create_weekly_deal(template=data.get('template') or {})
+                publish = bool(data.get('publish', False))
+                result = {"success": True, "deal": deal}
+                if publish and deal:
+                    try:
+                        pr = instagram_pr_agent.generate_and_publish_deal_coupon(deal=deal)
+                        result['instagram'] = pr
+                    except Exception as ie:
+                        result['instagram'] = {"success": False, "error": str(ie)}
+                self.send_json(200, result)
+            except Exception as e:
+                self.send_json(500, {"success": False, "error": str(e)})
+            return
+
         # Instagram PR: Update Config
         if path == '/api/instagram/config':
             try:
@@ -2827,17 +3174,43 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
+        # Instagram PR: Generate Sample / Preview Post (Does NOT Publish)
+        if path == '/api/instagram/preview-post':
+            content_type = data.get('content_type')
+            product_id = data.get('product_id')
+            use_flux = data.get('use_flux')
+            allowed_types = data.get('allowed_types')
+            try:
+                result = instagram_pr_agent.generate_preview_post(
+                    content_type=content_type,
+                    product_id=product_id,
+                    use_flux=use_flux,
+                    allowed_types=allowed_types
+                )
+                status_code = 200 if result.get('success') else 400
+                self.send_json(status_code, result)
+            except Exception as e:
+                self.send_json(500, {"success": False, "error": str(e)})
+            return
+
         # Instagram PR: Direct Generate & Publish (No Drafts)
         if path in ('/api/instagram/direct-publish', '/api/instagram/generate', '/api/instagram/publish'):
             content_type = data.get('content_type')
             product_id = data.get('product_id')
             post_id = data.get('id')
+            use_flux = data.get('use_flux')
+            allowed_types = data.get('allowed_types')
             try:
                 if post_id:
                     result = instagram_pr_agent.publish_post(post_id=post_id)
                 else:
                     # Direct generation and instant publish without leftover draft
-                    result = instagram_pr_agent.generate_and_publish_now(content_type=content_type, product_id=product_id)
+                    result = instagram_pr_agent.generate_and_publish_now(
+                        content_type=content_type,
+                        product_id=product_id,
+                        use_flux=use_flux,
+                        allowed_types=allowed_types
+                    )
                 status_code = 200 if result.get('success') else 400
                 self.send_json(status_code, result)
             except Exception as e:
@@ -2876,28 +3249,70 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
-        # Instagram PR: Generate Reel (Gemini Omni Flash AI Video or ffmpeg fallback, no publish)
+        # Instagram PR: Generate Reel (Local LTX-Video AI Video or ffmpeg fallback, no publish)
         if path == '/api/instagram/generate-reel':
             try:
                 import uuid as _uuid
                 post_id = f"ig_reel_{_uuid.uuid4().hex[:12]}"
                 product_id = data.get('product_id')
-                content_type = data.get('content_type', 'product_spotlight')
+                content_type = data.get('content_type')
+                reels_type = data.get('reels_type')
+                allowed_reels_types = data.get('allowed_reels_types')
 
-                content = instagram_pr_agent.content_gen.generate_content(
-                    content_type=content_type, product_id=product_id
-                )
+                if content_type:
+                    content = instagram_pr_agent.content_gen.generate_content(
+                        content_type=content_type, product_id=product_id
+                    )
+                else:
+                    # Respect reels_type and allowed_reels_types
+                    content = instagram_pr_agent.content_gen.generate_reels_content(
+                        product_id=product_id,
+                        allowed_reels_types=allowed_reels_types,
+                        reels_type=reels_type
+                    )
+
+                if not content:
+                    self.send_json(400, {"success": False, "error": "Reels icerigi uretilemedi."})
+                    return
+
+                content_type = content.get('content_type', 'product_spotlight')
+                chosen_reels_type = content.get('reels_type') or reels_type
+                explicit_engine = data.get('engine')
+                reels_method = data.get('reels_method', 'multi_shot')
+                if chosen_reels_type == 'real_fpv_broll' or explicit_engine == 'mode2':
+                    engine = 'mode2'
+                elif explicit_engine and explicit_engine not in ('random', 'creative', None):
+                    # Gemini video is retired: any AI/legacy request maps to local LTX.
+                    engine = 'ltx' if explicit_engine in ('gemini', 'ai', 'creative', 'random') else explicit_engine
+                else:
+                    # Default Reels engine is the local AI video generator (LTX).
+                    engine = 'ltx'
                 post_data = {
                     'id': post_id,
                     'content_type': content_type,
+                    'reels_type': chosen_reels_type,
+                    'allowed_reels_types': allowed_reels_types,
                     'title': content['title'],
                     'caption': content['caption'],
                     'hashtags': content['hashtags'],
                     'product_data': content.get('product_data'),
                     'visual_summary': content.get('visual_summary'),
+                    'visual_style': content.get('visual_style'),
+                    'video_mode': content.get('video_mode'),
+                    'reel_combo': content.get('reel_combo'),
+                    'hook_tone': content.get('hook_tone'),
                     'media_type': 'REEL',
-                    'engine': data.get('engine', 'random'),
+                    'engine': engine,
+                    'reels_method': reels_method,
                     'created_at': __import__('datetime').datetime.now().isoformat()
+                }
+                post_data['metadata'] = {
+                    'reels_type': chosen_reels_type,
+                    'reel_combo': content.get('reel_combo'),
+                    'visual_style': content.get('visual_style'),
+                    'video_mode': content.get('video_mode'),
+                    'hook_tone': content.get('hook_tone'),
+                    'reels_method': reels_method
                 }
 
                 video_prompt = instagram_pr_agent.content_gen.generate_reels_video_prompt(post_data)
@@ -2917,6 +3332,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "post_id": post_id,
                         "video_path": clean_video_url,
                         "video_engine": post_data.get('video_engine', 'unknown'),
+                        "video_duration": post_data.get('video_duration', 0.0),
+                        "reels_method": post_data.get('reels_method', reels_method),
+                        "reels_method_info": post_data.get('reels_method_info', ''),
                         "reel_mode": post_data.get('reel_mode', ''),
                         "reel_mode_info": post_data.get('reel_mode_info', ''),
                         "fallback_reason": post_data.get('fallback_reason', ''),
@@ -2941,7 +3359,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
-        # Instagram PR: Run Drone Community Engagement (10 Follows & 10 Comments)
+        # Instagram PR: Run Drone Community Engagement (10 Follows, 10 Comments & 10 Likes)
         if path == '/api/instagram/engage':
             try:
                 engine = InstagramEngagementEngine(gemini_api_key=instagram_pr_agent.config.get('gemini_api_key'))
@@ -3344,6 +3762,28 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(500, {"error": str(e)})
             return
 
+        # Subagent 7: Content Duplicate Scan / Fix (Instagram posts + site guides)
+        if path == '/api/qa/duplicates':
+            try:
+                from orchestrator.duplicate_guard import DuplicateGuard
+                guard = DuplicateGuard()
+                report = guard.scan_all()
+                self.send_json(200, {"success": True, "report": report})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
+        if path == '/api/qa/duplicates/fix':
+            try:
+                from orchestrator.duplicate_guard import DuplicateGuard
+                guard = DuplicateGuard()
+                scan = guard.scan_all()
+                result = guard.remediate_all()
+                self.send_json(200, {"success": True, "before": scan, "remediation": result})
+            except Exception as e:
+                self.send_json(500, {"error": str(e)})
+            return
+
         # Subagent 7: Toggle Autonomous Watchdog Mode
         if path == '/api/qa/toggle':
             try:
@@ -3428,6 +3868,27 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         conn = get_db()
         cursor = conn.cursor()
+
+        if path == '/api/admin/products/check':
+            try:
+                if not isinstance(data.get('checked'), bool):
+                    self.send_json(400, {'error': 'checked değeri boolean olmalıdır.'})
+                    return
+                identity = self.get_current_user() or {}
+                result = product_quality.record_check(
+                    conn, str(data.get('id') or ''), 'checked' if data['checked'] else 'pending',
+                    reviewer=identity.get('email') or identity.get('uid') or 'admin',
+                    expected_hash=data.get('content_hash'),
+                    notes='Yönetici panelinden elle işaretlendi.' if data['checked'] else '')
+                conn.commit()
+                self.send_json(200, {'success': True, **result})
+            except LookupError as error:
+                self.send_json(404, {'error': str(error)})
+            except ValueError as error:
+                self.send_json(409 if data.get('content_hash') else 400, {'error': str(error)})
+            finally:
+                conn.close()
+            return
 
         # 1. Manual User Registration
         if path == '/api/auth/register':
@@ -3845,46 +4306,49 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         # 4. Coupon Validation
         if path == '/api/coupons/validate':
             code = data.get('code', '').strip().upper()
-            subtotal_usd = float(data.get('subtotal_usd', 0))
-            subtotal_try = float(data.get('subtotal_try', 0))
+            subtotal_usd = float(data.get('subtotal_usd', 0) or 0)
+            subtotal_try = float(data.get('subtotal_try', 0) or 0)
             if subtotal_usd == 0 and subtotal_try > 0:
                 subtotal_usd = round(subtotal_try / 35.5, 2)
             elif subtotal_try == 0 and subtotal_usd > 0:
                 subtotal_try = round(subtotal_usd * 35.5, 2)
+            user_id = data.get('user_id')
+            email = data.get('email') or data.get('customer_email')
 
-            cursor.execute("SELECT * FROM coupons WHERE code = ? AND is_active = 1", (code,))
-            coupon = cursor.fetchone()
             conn.close()
-
-            if not coupon:
-                self.send_json(400, {"valid": False, "error": "Invalid or expired coupon code."})
+            try:
+                result = coupon_service.validate_coupon(
+                    code, subtotal_usd=subtotal_usd, subtotal_try=subtotal_try,
+                    user_id=user_id, email=email,
+                )
+            except Exception as e:
+                self.send_json(500, {"valid": False, "error": f"Kupon doğrulanamadı: {e}"})
                 return
-
-            c_dict = dict(coupon)
-            if subtotal_usd < c_dict['min_order_usd'] and subtotal_try < c_dict['min_order_try']:
-                self.send_json(400, {
-                    "valid": False,
-                    "error": f"Minimum order amount for this coupon is ${c_dict['min_order_usd']} / {c_dict['min_order_try']}₺."
-                })
-                return
-
-            if c_dict['discount_type'] == 'percent':
-                discount_usd = round(subtotal_usd * (c_dict['discount_value'] / 100.0), 2)
-                discount_try = round(subtotal_try * (c_dict['discount_value'] / 100.0), 2)
+            if result.get('valid'):
+                self.send_json(200, result)
             else:
-                discount_usd = min(subtotal_usd, c_dict['discount_value'])
-                discount_try = min(subtotal_try, c_dict['discount_value'] * 35.5)
+                self.send_json(400, result)
+            return
 
-            self.send_json(200, {
-                "valid": True,
-                "code": code,
-                "discount_type": c_dict['discount_type'],
-                "discount_value": c_dict['discount_value'],
-                "discount_usd": discount_usd,
-                "discount_try": discount_try,
-                "description_en": c_dict['description_en'],
-                "description_tr": c_dict['description_tr']
-            })
+        # 4b. Currently active public deal (for the site banner)
+        if path == '/api/coupons/active':
+            conn.close()
+            try:
+                deal = coupon_service.get_active_deal()
+            except Exception:
+                deal = None
+            if deal:
+                self.send_json(200, {
+                    "active": True,
+                    "code": deal.get('code'),
+                    "discount_type": deal.get('discount_type'),
+                    "discount_value": deal.get('discount_value'),
+                    "min_order_try": deal.get('min_order_try'),
+                    "description_tr": deal.get('description_tr'),
+                    "expires_at": deal.get('expires_at'),
+                })
+            else:
+                self.send_json(200, {"active": False})
             return
 
         # 5. Payment & Checkout Processing
@@ -3906,35 +4370,15 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             coupon_code = data.get('coupon_code', '')
             user_id = data.get('user_id', None)
 
-            # Payment validation
-            card_number = data.get('card_number', '').replace(' ', '')
-            card_holder = data.get('card_holder', '')
-            card_expiry = data.get('card_expiry', '')
-            card_cvv = data.get('card_cvv', '')
-            is_3d_secure = data.get('is_3d_secure', True)
-
-            if payment_method == 'credit_card':
-                if not card_number or not card_expiry or not card_cvv:
-                    conn.close()
-                    self.send_json(400, {"error": "Complete credit card details are required."})
-                    return
-
-                # Luhn algorithm check
-                if not luhn_validate(card_number):
-                    conn.close()
-                    self.send_json(400, {"error": "Invalid credit card number. Please check card digits."})
-                    return
-
-            # Determine Card Brand
-            card_brand = "Visa"
-            if card_number.startswith('4'):
-                card_brand = "Visa"
-            elif card_number.startswith(('51', '52', '53', '54', '55')) or (len(card_number) >= 4 and 2221 <= int(card_number[:4]) <= 2720):
-                card_brand = "MasterCard"
-            elif card_number.startswith('9792'):
-                card_brand = "Troy"
-            elif card_number.startswith(('34', '37')):
-                card_brand = "American Express"
+            # A local OTP or client-provided status is never evidence of a charge.
+            # Card payments stay unavailable until a verified provider flow exists.
+            if payment_method not in ('havale', 'bank'):
+                conn.close()
+                self.send_json(503, {"error": "Kart ödemesi henüz kullanıma açık değildir. Havale/EFT/FAST seçeneğini kullanabilirsiniz.", "code": "PAYMENT_PROVIDER_NOT_CONFIGURED"})
+                return
+            payment_method = 'havale'
+            card_number = ''
+            card_brand = 'Havale / EFT / FAST'
 
             # Calculate Subtotals and verify stock
             subtotal_usd = 0.0
@@ -3973,21 +4417,28 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     "image_url": p_dict['image_url']
                 })
 
-            # Calculate Discount
+            # Calculate Discount — strict validation. An applied coupon that is no
+            # longer valid aborts the order instead of silently charging full price.
             discount_usd = 0.0
             discount_try = 0.0
+            applied_coupon_code = None
             if coupon_code:
-                cursor.execute("SELECT * FROM coupons WHERE code = ? AND is_active = 1", (coupon_code.upper(),))
-                coupon = cursor.fetchone()
-                if coupon:
-                    c = dict(coupon)
-                    if subtotal_usd >= c['min_order_usd'] or subtotal_try >= c['min_order_try']:
-                        if c['discount_type'] == 'percent':
-                            discount_usd = round(subtotal_usd * (c['discount_value'] / 100.0), 2)
-                            discount_try = round(subtotal_try * (c['discount_value'] / 100.0), 2)
-                        else:
-                            discount_usd = min(subtotal_usd, c['discount_value'])
-                            discount_try = min(subtotal_try, c['discount_value'] * 35.5)
+                v = coupon_service.validate_coupon(
+                    coupon_code, subtotal_usd=subtotal_usd, subtotal_try=subtotal_try,
+                    user_id=user_id, email=customer_email, conn=conn, commit=False,
+                )
+                if not v.get('valid'):
+                    conn.rollback()
+                    conn.close()
+                    self.send_json(400, {
+                        "error": v.get('error') or "Kupon geçersiz.",
+                        "coupon_invalid": True,
+                        "reason": v.get('reason'),
+                    })
+                    return
+                discount_usd = v['discount_usd']
+                discount_try = v['discount_try']
+                applied_coupon_code = v['code']
 
             # Shipping fees (Free for orders >= 1500 TRY or >= $35 USD)
             shipping_fee_usd = 0.0 if subtotal_usd >= 35.0 else 2.10
@@ -4025,7 +4476,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     shipping_fee_usd, shipping_fee_try, total_usd, total_try,
                     currency, payment_method, payment_status, card_last4, card_brand,
                     transaction_id, order_status, tracking_number, notes, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PAID', ?, ?, ?, 'CONFIRMED', ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, 'PENDING_PAYMENT', ?, ?, ?)
             ''', (
                 order_id, order_number, user_id, customer_name, customer_email, customer_phone,
                 shipping_address, city, country, shipping_district,
@@ -4037,6 +4488,33 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 currency, payment_method, card_last4, card_brand,
                 transaction_id, tracking_number, order_notes or 'Standard FPV Express Dispatch', now_iso
             ))
+
+            # Atomically claim the coupon for this account. If another concurrent
+            # checkout already used it, the UNIQUE(coupon_code, user_key) constraint
+            # fires here and the whole order (incl. stock) is rolled back.
+            if applied_coupon_code:
+                ok, reason = coupon_service.redeem_coupon(
+                    conn, applied_coupon_code, user_id=user_id, email=customer_email,
+                    order_id=order_id, order_number=order_number,
+                    discount_usd=discount_usd, discount_try=discount_try,
+                )
+                if not ok:
+                    conn.rollback()
+                    conn.close()
+                    reason_map = {
+                        'already_used': "Bu kuponu daha önce kullandınız. Her hesap yalnızca bir kez yararlanabilir.",
+                        'usage_limit': "Bu kupon maksimum kullanım sayısına ulaştı.",
+                        'expired': "Bu kuponun süresi doldu.",
+                        'inactive': "Bu kupon artık geçerli değil.",
+                        'login_required': "Kupon kullanmak için giriş yapmalısınız.",
+                    }
+                    self.send_json(400, {
+                        "error": reason_map.get(reason, "Kupon kullanılamadı."),
+                        "coupon_invalid": True,
+                        "reason": reason,
+                    })
+                    return
+
             conn.commit()
             conn.close()
 
@@ -4046,8 +4524,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "order_id": order_id,
                 "tracking_number": tracking_number,
                 "transaction_id": transaction_id,
-                "status": "CONFIRMED",
-                "payment_status": "PAID",
+                "status": "PENDING_PAYMENT",
+                "payment_status": "PENDING",
                 "card_brand": card_brand,
                 "card_last4": card_last4,
                 "currency": currency,
@@ -4071,6 +4549,30 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "customer_email": customer_email,
                 "created_at": now_iso
             })
+            return
+
+        if path in ('/api/admin/reviews/delete', '/api/admin/reviews/restore'):
+            try:
+                review_id = str(data.get('id') or '').strip()
+                if not review_id:
+                    self.send_json(400, {'error': 'Yorum kimliği gereklidir.'})
+                    return
+                cursor.execute('SELECT product_id FROM reviews WHERE id = ?', (review_id,))
+                review = cursor.fetchone()
+                if review is None:
+                    self.send_json(404, {'error': 'Yorum bulunamadı.'})
+                    return
+                deleted_at = datetime.now().isoformat() if path.endswith('/delete') else None
+                cursor.execute('UPDATE reviews SET deleted_at = ? WHERE id = ?', (deleted_at, review_id))
+                if review['product_id']:
+                    cursor.execute('SELECT AVG(rating), COUNT(*) FROM reviews WHERE product_id = ? AND deleted_at IS NULL', (review['product_id'],))
+                    avg_rating, count = cursor.fetchone()
+                    cursor.execute('UPDATE products SET rating = ?, review_count = ? WHERE id = ?',
+                                   (round(avg_rating, 1) if avg_rating is not None else 0, count, review['product_id']))
+                conn.commit()
+                self.send_json(200, {'success': True, 'id': review_id, 'deleted': deleted_at is not None})
+            finally:
+                conn.close()
             return
 
         # 6. Add Review
@@ -4104,7 +4606,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
                 # Recalculate product rating if review was for a product
                 if real_prod_id:
-                    cursor.execute("SELECT AVG(rating), COUNT(*) FROM reviews WHERE product_id = ?", (real_prod_id,))
+                    cursor.execute("SELECT AVG(rating), COUNT(*) FROM reviews WHERE product_id = ? AND deleted_at IS NULL", (real_prod_id,))
                     avg_r, count_r = cursor.fetchone()
                     if avg_r is not None:
                         cursor.execute("UPDATE products SET rating = ?, review_count = ? WHERE id = ?", (round(avg_r, 1), count_r, real_prod_id))

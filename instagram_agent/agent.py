@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import uuid
 import random
@@ -10,7 +11,7 @@ from .db import (
     get_instagram_post_by_id, delete_instagram_post, init_instagram_tables,
     get_last_post_image_mode, get_recent_posted_content_types_by_media
 )
-from .content_generator import ContentGenerator
+from .content_generator import ContentGenerator, ALL_POST_TYPES, REELS_TYPES_METADATA, ALL_REELS_TYPES
 from .image_generator import ImageGenerator
 from .image_generator import perceptual_hash, hamming_distance, VISUAL_PALETTES
 from .stock_library import get_stock_image, resolve_path as resolve_stock_path, attribution_text as stock_attribution, recent_stock_files
@@ -204,6 +205,34 @@ class InstagramPRAgent:
         target = from_dt + timedelta(hours=freq_hours) + timedelta(minutes=random.randint(-10, 10))
         return target.isoformat()
 
+    def get_effective_enabled_post_types(self) -> list:
+        raw = self.config.get('enabled_post_types')
+        if raw:
+            if isinstance(raw, str):
+                try:
+                    val = json.loads(raw)
+                    if isinstance(val, list) and val:
+                        return val
+                except Exception:
+                    pass
+            elif isinstance(raw, list) and raw:
+                return raw
+        return [t['id'] for t in ALL_POST_TYPES]
+
+    def get_effective_enabled_reels_types(self) -> list:
+        raw = self.config.get('enabled_reels_types')
+        if raw:
+            if isinstance(raw, str):
+                try:
+                    val = json.loads(raw)
+                    if isinstance(val, list) and val:
+                        return val
+                except Exception:
+                    pass
+            elif isinstance(raw, list) and raw:
+                return raw
+        return list(ALL_REELS_TYPES)
+
     def get_safe_config(self) -> dict:
         self.reload_config()
         token = self.config.get('access_token', '')
@@ -234,6 +263,8 @@ class InstagramPRAgent:
             "bilingual_enabled": bool(self.config.get('bilingual_enabled', 0)),
             "content_mix_enabled": bool(self.config.get('content_mix_enabled', 0)),
             "flux_enabled": bool(self.config.get('flux_enabled', 1)),
+            "enabled_post_types": self.get_effective_enabled_post_types(),
+            "enabled_reels_types": self.get_effective_enabled_reels_types(),
             "last_run_at": self.config.get('last_run_at'),
             "next_run_at": self.config.get('next_run_at')
         }
@@ -245,7 +276,7 @@ class InstagramPRAgent:
             'dry_run_mode', 'public_base_url', 'preferred_language', 'default_hashtags',
             'story_enabled', 'carousel_enabled', 'dm_automation_enabled',
             'peak_scheduler_enabled', 'reels_enabled', 'bilingual_enabled', 'content_mix_enabled',
-            'flux_enabled'
+            'flux_enabled', 'enabled_post_types', 'enabled_reels_types'
         ]:
             if k in updates:
                 clean_updates[k] = updates[k]
@@ -336,12 +367,14 @@ class InstagramPRAgent:
             print(f"[UYARI] Medya senkronizasyon uyarisi: {sync_e}")
             return False
 
-    def generate_and_publish_now(self, content_type: str = None, product_id: str = None) -> dict:
+    def generate_and_publish_now(self, content_type: str = None, product_id: str = None, coupon: dict = None, use_flux: bool = None, allowed_types: list = None) -> dict:
         """
         Creates a new post and DIRECTLY publishes it to Instagram (Meta API or dry-run).
         Never leaves a draft behind.
         """
         self.reload_config()
+        if allowed_types is None:
+            allowed_types = self.get_effective_enabled_post_types()
 
         # If carousel_guide requested, route to carousel publisher
         if content_type == 'carousel_guide':
@@ -350,7 +383,7 @@ class InstagramPRAgent:
         post_id = f"ig_post_{uuid.uuid4().hex[:12]}"
         
         # 1. Generate text and metadata
-        content = self.content_gen.generate_content(content_type=content_type, product_id=product_id)
+        content = self.content_gen.generate_content(content_type=content_type, product_id=product_id, allowed_types=allowed_types)
         if not content:
             return {"success": False, "error": "İçerik üretilemedi veya aday ürün bulunamadı."}
 
@@ -359,15 +392,13 @@ class InstagramPRAgent:
 
         print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Yeni gönderi hazırlandı: {content['title']} (Tip: {content['content_type']})")
 
-        # 2. Determine Image Mode (Alternating: canvas vs gemini_image every other post)
-        last_mode = get_last_post_image_mode()
-        target_mode = 'gemini_image' if last_mode != 'gemini_image' else 'canvas'
-
+        # 2. Single unified brand template for every post.
         temp_post_data = {
             'id': post_id,
             'content_type': content['content_type'],
             'media_type': content.get('media_type', 'IMAGE'),
-            'image_mode': target_mode,
+            'image_mode': 'brand_template',
+            'content_form': 'brand_template',
             'visual_palette': self._pick_visual_palette(content.get('visual_style_key')),
             'product_id': content.get('product_id'),
             'title': content['title'],
@@ -379,68 +410,63 @@ class InstagramPRAgent:
             'created_at': datetime.now().isoformat()
         }
 
-        gemini_key = self.config.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY', '')
-
-        # Visual form rotation: local FLUX AI photo, copyright-free stock photo,
-        # bold typographic poster, or the standard product/info card.
-        use_flux = False
-        try:
-            flux_prob = float(os.environ.get('FLUX_PROBABILITY') or self.config.get('flux_probability', 0.25))
-        except Exception:
-            flux_prob = 0.25
-        flux_selected = self.config.get('flux_enabled', 1) and random.random() < flux_prob
-        if flux_selected and self.flux_gen.ensure_server():
-            use_flux = True
-
-        stock_entry = None
-        if not use_flux and random.random() < 0.30:
-            stock_entry = get_stock_image(temp_post_data['content_type'], recent_files=recent_stock_files())
-        use_text_poster = (not use_flux) and (not stock_entry) and (not temp_post_data.get('product_data')) and random.random() < 0.15
-        temp_post_data['content_form'] = (
-            'flux_photo' if use_flux else ('stock_photo' if stock_entry else ('text_poster' if use_text_poster else 'card'))
-        )
-
-        if use_flux:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Yerel FLUX AI ile gorsel uretiliyor (bu 40-90 sn surebilir)...")
+        # Attach a limited-time coupon (weekly deal) to the caption.
+        if coupon and coupon.get('code'):
+            deadline = ''
             try:
-                import os as _os
-                flux_info = self.flux_gen.generate_for_post(temp_post_data, post_id, steps=int(_os.environ.get('FLUX_STEPS', '20')))
+                deadline = datetime.fromisoformat(coupon['expires_at']).strftime('%d.%m.%Y %H:%M')
+            except Exception:
+                deadline = ''
+            desc = coupon.get('description_tr') or ''
+            code_block = (
+                "\n\nBu haftanın fırsatı: " + desc +
+                f"\nKupon kodu: {coupon['code']}" +
+                (f"\nSon kullanım: {deadline}" if deadline else "") +
+                "\nKod tek gün geçerlidir ve her hesap yalnızca bir kez yararlanabilir."
+            )
+            temp_post_data['caption'] = (temp_post_data.get('caption', '') or '').rstrip() + code_block
+            temp_post_data['coupon_code'] = coupon['code']
+            if not isinstance(temp_post_data.get('metadata'), dict):
+                temp_post_data['metadata'] = {}
+            temp_post_data['metadata']['coupon_code'] = coupon['code']
+            # Surface the actual offer + code on the image itself.
+            vs = dict(temp_post_data.get('visual_summary') or {})
+            vs['badge'] = 'Haftanın fırsatı'
+            if desc:
+                vs['headline'] = desc
+                temp_post_data['title'] = desc[:70]
+            kp = [p for p in (vs.get('key_points') or []) if p]
+            vs['key_points'] = ([f"Kupon kodu: {coupon['code']}"] + kp)[:3]
+            vs['cta'] = 'Kodu sepette kullan'
+            temp_post_data['visual_summary'] = vs
+
+        gemini_key = self.config.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY', '')
+        target_mode = 'brand_template'  # kept for _regenerate_if_duplicate signature
+
+        # Hero visual: local FLUX. Product posts additionally composite the real product photo on top inside the template.
+        from instagram_agent.flux_generator import LOGICAL_FLUX_TYPES
+        should_run_flux = (use_flux is True) or (use_flux is None and self.config.get('flux_enabled', 1) and temp_post_data['content_type'] in LOGICAL_FLUX_TYPES)
+        if should_run_flux and os.environ.get('POZITRON_DISABLE_FLUX', '').lower() not in ('1', 'true', 'yes'):
+            try:
+                if self.flux_gen.is_available() or self.flux_gen.ensure_server(wait_seconds=20):
+                    flux_steps = int(os.environ.get('FLUX_STEPS', '15'))
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Yerel AI görsel (FLUX) üretiliyor ({flux_steps} adım)...")
+                    flux_info = self.flux_gen.generate_for_post(
+                        temp_post_data, post_id, steps=flux_steps
+                    )
+                    hero_abs = flux_info.get('path') if flux_info else ''
+                    if hero_abs and os.path.exists(hero_abs):
+                        temp_post_data['hero_image'] = hero_abs
+                        temp_post_data['flux_prompt'] = flux_info.get('prompt')
+                        if not isinstance(temp_post_data.get('metadata'), dict):
+                            temp_post_data['metadata'] = {}
+                        temp_post_data['metadata']['flux_prompt'] = flux_info.get('prompt')
+                    else:
+                        print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] AI görsel üretilemedi, şablon gradyanı kullanılacak.")
             except Exception as fe:
-                flux_info = {"path": "", "prompt": "", "error": str(fe)}
-            if flux_info.get('path') and _os.path.exists(flux_info['path']):
-                img_rel_path = self.image_gen.generate_flux_photo_post(temp_post_data, flux_info['path'])
-                try:
-                    _os.remove(flux_info['path'])  # raw AI render not needed after overlay
-                except Exception:
-                    pass
-                temp_post_data['flux_prompt'] = flux_info.get('prompt')
-                if not isinstance(temp_post_data.get('metadata'), dict):
-                    temp_post_data['metadata'] = {}
-                temp_post_data['metadata']['flux_prompt'] = flux_info.get('prompt')
-                # Meta AI-content disclosure
-                temp_post_data['caption'] = f"{temp_post_data.get('caption', '').rstrip()}\n\n[AI GORSEL] Bu gorsel yapay zeka ile uretilmistir."
-            else:
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] FLUX uretimi basarisiz, standart karta donuluyor.")
-                temp_post_data['content_form'] = 'card'
-                img_rel_path = self.image_gen.generate_post_image(temp_post_data)
-        elif stock_entry:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Telifsiz stok gorsel kullaniliyor ({stock_entry.get('category')}).")
-            img_rel_path = self.image_gen.generate_stock_photo_post(temp_post_data, resolve_stock_path(stock_entry))
-            temp_post_data['stock_file'] = stock_entry.get('file')
-            temp_post_data['stock_license'] = stock_entry.get('license')
-            temp_post_data['stock_source'] = stock_entry.get('source')
-            credit = stock_attribution(stock_entry)
-            if credit:
-                temp_post_data['caption'] = f"{temp_post_data.get('caption', '').rstrip()}\n\n[GORSEL KAYNAK] {credit}"
-        elif use_text_poster:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Tipografik poster formati secildi. Gorsel hazirlaniyor...")
-            img_rel_path = self.image_gen.generate_text_poster(temp_post_data)
-        elif target_mode == 'gemini_image':
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Gemini AI Image modu secildi (Her 2 postta bir). Gorsel uretiliyor...")
-            img_rel_path = self.image_gen.generate_gemini_ai_image(temp_post_data, gemini_api_key=gemini_key)
-        else:
-            print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Canvas Banner modu secildi. Gorsel hazirlaniyor...")
-            img_rel_path = self.image_gen.generate_post_image(temp_post_data)
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] AI görsel hatası: {fe}")
+
+        img_rel_path = self.image_gen.generate_post_image(temp_post_data)
 
         temp_post_data['image_url'] = img_rel_path
         temp_post_data['local_image_path'] = img_rel_path
@@ -454,9 +480,6 @@ class InstagramPRAgent:
         if img_hash:
             temp_post_data['image_hash'] = img_hash
             temp_post_data['metadata']['image_hash'] = img_hash
-        if stock_entry:
-            temp_post_data['metadata']['stock_file'] = stock_entry.get('file')
-            temp_post_data['metadata']['stock_license'] = stock_entry.get('license')
 
         # 2.1 Multimodal Visual Quality & Safety Audit via Gemini 3.8 Flash Vision
         gemini_key = self.config.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY', '')
@@ -465,6 +488,15 @@ class InstagramPRAgent:
         if not temp_post_data.get('metadata'):
             temp_post_data['metadata'] = {}
         temp_post_data['metadata']['visual_audit'] = audit_res
+
+        # The AI hero is now embedded into the final JPG; drop the raw render.
+        if temp_post_data.get('hero_image'):
+            try:
+                os.remove(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                       temp_post_data['hero_image'].lstrip('./').lstrip('/')))
+            except Exception:
+                pass
+            temp_post_data.pop('hero_image', None)
 
         # 2.2 Sync newly generated image to repo so Meta Graph API can download it
         self._sync_assets_to_repo([img_rel_path], f"instagram post image {post_id}")
@@ -617,24 +649,27 @@ class InstagramPRAgent:
             result['post'] = post_data
         return result
 
-    def generate_and_publish_reel(self, post_data: dict = None) -> dict:
+    def generate_and_publish_reel(self, post_data: dict = None, reels_type: str = None, allowed_reels_types: list = None) -> dict:
         """
-        Creates a 9:16 vertical Reels video using Gemini Omni Flash (gemini-omni-1.1-flash) AI video
+        Creates a 9:16 vertical Reels video using LTX-Video / Gemini Omni Flash AI video
         generation with ffmpeg fallback, and publishes it.
 
-        The Reel theme is now ROTATED across many pillars (quiz, battle, tip, build, myth-buster,
-        maintenance, spot guide, weather, deal, etc.) instead of always being product_spotlight.
+        Supports the 8 distinct Reels formats (including toggleable Real FPV flight footage)
+        and respects allowed_reels_types.
         """
         self.reload_config()
         post_id = f"ig_reel_{uuid.uuid4().hex[:12]}"
 
         if not post_data:
-            content = self.content_gen.generate_reels_content()
+            allowed = allowed_reels_types or self.get_effective_enabled_reels_types()
+            content = self.content_gen.generate_reels_content(allowed_reels_types=allowed, reels_type=reels_type)
             if not content:
                 return {"success": False, "error": "Reels icerigi uretilemedi."}
             post_data = {
                 'id': post_id,
                 'content_type': content.get('content_type', 'product_spotlight'),
+                'reels_type': content.get('reels_type'),
+                'allowed_reels_types': allowed,
                 'title': content['title'],
                 'caption': content['caption'],
                 'hashtags': content['hashtags'],
@@ -650,6 +685,10 @@ class InstagramPRAgent:
         else:
             post_data = dict(post_data)
             post_data['id'] = post_id
+            if reels_type and not post_data.get('reels_type'):
+                post_data['reels_type'] = reels_type
+            if allowed_reels_types and not post_data.get('allowed_reels_types'):
+                post_data['allowed_reels_types'] = allowed_reels_types
 
         post_data['media_type'] = 'REEL'
 
@@ -663,14 +702,11 @@ class InstagramPRAgent:
                 ['wipeleft', 'slideleft', 'smoothleft', 'circleopen', 'fade', 'wiperight']
             )
 
-        # Apply the chosen combination's video mode as the generation engine.
-        if not post_data.get('engine'):
-            video_mode = post_data.get('video_mode')
-            if video_mode:
-                post_data['engine'] = video_mode
-            elif not post_data.get('product_data'):
-                # Themed (non-product) Reels have no product card, so use the multi-slide template.
-                post_data['engine'] = 'mode1'
+        # Reels always use the local AI video engine (LTX-Video). The old multi-slide
+        # template is no longer used; if the AI engine is unavailable the generator
+        # falls back gracefully to real b-roll or a soft Ken-Burns brand motion.
+        if post_data.get('engine') not in ('ltx', 'ai', 'comfy', 'ltxv'):
+            post_data['engine'] = 'ltx'
 
         # Persist combination info into metadata for later anti-repeat checks.
         meta = post_data.get('metadata') if isinstance(post_data.get('metadata'), dict) else {}
@@ -685,7 +721,7 @@ class InstagramPRAgent:
 
         video_rel_path = self.image_gen.generate_reels_video(post_data, prompt=video_prompt)
         if not video_rel_path:
-            return {"success": False, "error": "Reels videosu olusturulamadi (Gemini ve ffmpeg bos dondu)."}
+            return {"success": False, "error": "Reels videosu olusturulamadi (AI video ve ffmpeg bos dondu)."}
 
         video_engine = post_data.get('video_engine', 'unknown')
         post_data['video_url'] = video_rel_path
@@ -721,6 +757,118 @@ class InstagramPRAgent:
         """Alias for direct generation & immediate publishing (no drafts)."""
         res = self.generate_and_publish_now(content_type=content_type, product_id=product_id)
         return res.get('post') or {}
+
+    def generate_preview_post(self, content_type: str = None, product_id: str = None, use_flux: bool = None, allowed_types: list = None) -> dict:
+        """
+        Creates a draft/preview post without publishing:
+        - Content generation (caption, hashtags, title) via Flash 3.8
+        - Optional local FLUX.1 [dev] photorealistic background generation on GPU
+        - Visual canvas generation (1080x1080 template with assets/logo.png lockup & product card)
+        - Visual audit & safety evaluation via Flash 3.8 Vision
+        - Stored in SQLite as preview/draft so it can be published with one click
+        """
+        self.reload_config()
+        if content_type:
+            # Explicit Studio choice wins over the autonomous type filter.
+            allowed_types = None
+        elif allowed_types is None:
+            allowed_types = self.get_effective_enabled_post_types()
+
+        post_id = f"ig_preview_{uuid.uuid4().hex[:12]}"
+
+        # 1. Generate text and metadata via Flash 3.8
+        content = self.content_gen.generate_content(content_type=content_type, product_id=product_id, allowed_types=allowed_types)
+        if not content:
+            return {"success": False, "error": "İçerik üretilemedi veya ürün bilgisi bulunamadı."}
+
+        # 2. Template post payload
+        temp_post_data = {
+            'id': post_id,
+            'content_type': content.get('content_type', content_type or 'product_spotlight'),
+            'media_type': content.get('media_type', 'IMAGE'),
+            'image_mode': 'brand_template',
+            'content_form': 'brand_template',
+            'visual_palette': self._pick_visual_palette(content.get('visual_style_key')),
+            'product_id': content.get('product_id'),
+            'title': content.get('title', 'Pozitron FPV'),
+            'caption': content.get('caption', ''),
+            'hashtags': content.get('hashtags', ''),
+            'product_data': content.get('product_data'),
+            'tool_info': content.get('tool_info'),
+            'visual_summary': content.get('visual_summary'),
+            'created_at': datetime.now().isoformat(),
+            'status': 'preview'
+        }
+
+        # 2.5 Local FLUX.1 [dev] hero visual generation if requested or logical
+        from instagram_agent.flux_generator import LOGICAL_FLUX_TYPES
+        used_flux = False
+        flux_prompt = None
+        should_run_flux = (use_flux is True) or (use_flux is None and self.config.get('flux_enabled', 1) and temp_post_data['content_type'] in LOGICAL_FLUX_TYPES)
+        if should_run_flux and os.environ.get('POZITRON_DISABLE_FLUX', '').lower() not in ('1', 'true', 'yes'):
+            try:
+                if self.flux_gen.is_available() or self.flux_gen.ensure_server(wait_seconds=20):
+                    flux_steps = int(os.environ.get('FLUX_STEPS', '15'))
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] [INSTAGRAM AJANI] Önizleme için yerel FLUX görseli üretiliyor ({flux_steps} adım)...")
+                    flux_info = self.flux_gen.generate_for_post(
+                        temp_post_data, post_id, steps=flux_steps
+                    )
+                    hero_abs = flux_info.get('path') if flux_info else ''
+                    if hero_abs and os.path.exists(hero_abs):
+                        temp_post_data['hero_image'] = hero_abs
+                        flux_prompt = flux_info.get('prompt')
+                        temp_post_data['flux_prompt'] = flux_prompt
+                        used_flux = True
+                        if not isinstance(temp_post_data.get('metadata'), dict):
+                            temp_post_data['metadata'] = {}
+                        temp_post_data['metadata']['flux_prompt'] = flux_prompt
+            except Exception as fe:
+                print(f"[INSTAGRAM AJANI] FLUX önizleme görsel üretim hatası: {fe}")
+
+        # 3. Render 1080x1080 Brand Template with logo.png
+        img_rel_path = self.image_gen.generate_post_image(temp_post_data)
+        temp_post_data['image_url'] = img_rel_path
+        temp_post_data['local_image_path'] = img_rel_path
+
+        # 4. Multimodal Visual Quality & Safety Audit via Flash 3.8 Vision
+        gemini_key = self.config.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY', '')
+        audit_res = self.image_gen.audit_generated_image(img_rel_path, gemini_api_key=gemini_key, context=temp_post_data)
+        temp_post_data['visual_audit'] = audit_res
+        if not isinstance(temp_post_data.get('metadata'), dict):
+            temp_post_data['metadata'] = {}
+        temp_post_data['metadata']['visual_audit'] = audit_res
+
+        # Save to DB so user can publish later if they wish
+        save_instagram_post(temp_post_data)
+
+        # Normalize relative path to web-accessible URL
+        web_image_url = img_rel_path
+        if web_image_url.startswith('./'):
+            web_image_url = '/' + web_image_url[2:]
+        elif not web_image_url.startswith('/'):
+            web_image_url = '/' + web_image_url
+
+        prod_dict = temp_post_data.get('product_data') or {}
+        prod_name = prod_dict.get('name_tr') or prod_dict.get('name_en') or prod_dict.get('name')
+
+        return {
+            "success": True,
+            "post_id": post_id,
+            "content_type": temp_post_data['content_type'],
+            "title": temp_post_data['title'],
+            "caption": temp_post_data['caption'],
+            "hashtags": temp_post_data['hashtags'],
+            "image_url": web_image_url,
+            "local_image_path": img_rel_path,
+            "visual_audit": audit_res,
+            "visual_summary": temp_post_data.get('visual_summary') or {},
+            "product_id": temp_post_data.get('product_id'),
+            "product_name": prod_name,
+            "used_flux": used_flux,
+            "flux_prompt": flux_prompt,
+            "post": temp_post_data
+        }
+
 
     def publish_post(self, post_id: str = None) -> dict:
         """
@@ -761,6 +909,21 @@ class InstagramPRAgent:
         result['post'] = get_instagram_post_by_id(post['id'])
         return result
 
+    def generate_and_publish_deal_coupon(self, deal: dict = None) -> dict:
+        """
+        Creates (or reuses) this week's one-day coupon and publishes it as a feed
+        post. The coupon is auto-disabled when its 24h window ends.
+        """
+        import coupons as coupon_service
+        self.reload_config()
+        if not deal:
+            deal = coupon_service.get_active_deal() or coupon_service.create_weekly_deal()
+        if not deal:
+            return {"success": False, "error": "Kupon olusturulamadi."}
+        res = self.generate_and_publish_now(content_type='deal_drop', coupon=deal)
+        res['coupon'] = deal
+        return res
+
     def run_autonomous_cycle(self, run_engagement: bool = True) -> dict:
         """
         Executes a complete autonomous cycle:
@@ -772,13 +935,39 @@ class InstagramPRAgent:
         """
         self.reload_config()
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INSTAGRAM AJANI] Instagram PR Ajani otonom dongu baslatiyor...")
-        
-        # 1. Post & Publish (with carousel support)
+
+        # 0. Weekly limited-time deal (once every 7 days). When due, this replaces
+        #    the regular feed post for the cycle and mints a fresh 24h coupon.
+        weekly_deal_res = {}
+        post_res = {}
+        try:
+            from database import get_setting, set_setting
+            import coupons as coupon_service
+            last_deal = get_setting('last_weekly_deal_at')
+            deal_due = True
+            if last_deal:
+                try:
+                    deal_due = (datetime.now() - datetime.fromisoformat(last_deal)).total_seconds() >= 7 * 24 * 3600
+                except Exception:
+                    deal_due = True
+            if deal_due:
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HAFTALIK FIRSAT] Bu haftanin 1 gunluk kuponu olusturuluyor ve paylasiliyor...")
+                deal = coupon_service.create_weekly_deal()
+                post_res = self.generate_and_publish_now(content_type='deal_drop', coupon=deal)
+                weekly_deal_res = {"success": bool(post_res.get('success')), "coupon": deal}
+                if post_res.get('success'):
+                    set_setting('last_weekly_deal_at', datetime.now().isoformat())
+        except Exception as we:
+            weekly_deal_res = {"success": False, "error": str(we)}
+
+        # 1. Post & Publish (with carousel support) — skipped if the weekly deal posted.
         import random
-        if self.config.get('carousel_enabled', 1) and random.random() < 0.30:
-            post_res = self.generate_and_publish_carousel()
-        else:
-            post_res = self.generate_and_publish_now()
+        if not post_res:
+            allowed_posts = self.get_effective_enabled_post_types()
+            if self.config.get('carousel_enabled', 1) and 'carousel_guide' in allowed_posts and random.random() < 0.30:
+                post_res = self.generate_and_publish_carousel()
+            else:
+                post_res = self.generate_and_publish_now(allowed_types=allowed_posts)
 
         # Optional content-mix mode: stagger Story/Reel instead of always posting all three,
         # so the account does not look like a repetitive trio-drop.
@@ -798,7 +987,8 @@ class InstagramPRAgent:
         post_reel = self.config.get('reels_enabled', 1) and (not mix_enabled or random.random() < 0.85)
         if post_reel:
             try:
-                reel_res = self.generate_and_publish_reel()
+                allowed_reels = self.get_effective_enabled_reels_types()
+                reel_res = self.generate_and_publish_reel(allowed_reels_types=allowed_reels)
             except Exception as re:
                 reel_res = {"success": False, "error": str(re)}
 
@@ -814,7 +1004,7 @@ class InstagramPRAgent:
         engagement_res = {}
         if run_engagement:
             try:
-                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TOPLULUK ETKİLEŞİMİ] Drone toplulugu etkilesim dongusu baslatiliyor (Hedef: 10 takip & 10 yorum)...")
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TOPLULUK ETKİLEŞİMİ] Drone toplulugu etkilesim dongusu baslatiliyor (Hedef: 10 takip, 10 yorum & 10 begeni)...")
                 engine = InstagramEngagementEngine(gemini_api_key=self.config.get('gemini_api_key'))
                 engagement_res = engine.run_daily_drone_engagement(target_count=10)
             except Exception as e:
@@ -836,7 +1026,8 @@ class InstagramPRAgent:
             "story_result": story_res,
             "reel_result": reel_res,
             "dm_result": dm_res,
-            "engagement_result": engagement_res
+            "engagement_result": engagement_res,
+            "weekly_deal_result": weekly_deal_res
         }
 
     def get_posts(self, limit: int = 50, offset: int = 0, status: str = None) -> list:

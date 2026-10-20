@@ -222,7 +222,7 @@
         <div class="policy-section">
           <h1 class="policy-title">İletişim &amp; Kurumsal Bilgiler</h1>
           <div class="policy-meta">
-            <span>Pozitron Market FPV Donanım ve Robotik Sistemleri</span> • <span>Google Merchant Center ve ETBİS Standartlarına Uygundur</span>
+            <span>Pozitron Market FPV Donanım ve Robotik Sistemleri</span> • <span>Şirket ve müşteri iletişim bilgileri</span>
           </div>
           <p class="policy-p">
             Pozitron Market müşteri deneyimini en üst düzeyde tutmak amacıyla haftanın 6 günü kesintisiz teknik destek ve müşteri hizmetleri sağlamaktadır. Tüm soru, teknik danışmanlık, sipariş takibi ve kurumsal işbirlikleriniz için aşağıdaki resmi kanallardan bize ulaşabilirsiniz.
@@ -252,20 +252,16 @@
             </div>
 
             <div class="contact-card-box">
-              <div class="contact-card-title">📍 Fiziksel Depo &amp; Ar-Ge</div>
+              <div class="contact-card-title">📍 Kayıtlı Merkez Adresi</div>
               <div class="contact-card-text">
-                <strong>Teknopark İstanbul</strong><br>
-                Sanayi Mah. Teknopark Bulvarı No:1/1C<br>
-                Pendik / İstanbul / Türkiye
+                Kızılırmak Mah. Dumlupınar Blv. No: 9 A D: 158 Çankaya / Ankara
               </div>
             </div>
 
             <div class="contact-card-box">
               <div class="contact-card-title">📦 İade ve Değişim Adresi</div>
               <div class="contact-card-text">
-                Pozitron Market Lojistik Merkezi<br>
-                Sanayi Mah. Teknopark Bulvarı No:1/1C<br>
-                34906 Pendik / İstanbul
+                Kızılırmak Mah. Dumlupınar Blv. No: 9 A D: 158 Çankaya / Ankara<br>Gönderim öncesinde iade talebinizi müşteri hizmetlerine iletiniz.
               </div>
             </div>
           </div>
@@ -276,40 +272,29 @@
           <table class="legal-table">
             <tbody>
               <tr>
-                <td>Ticari Ünvan</td>
-                <td>Pozitron Market FPV Donanım ve Havacılık Teknolojileri Ltd. Şti.</td>
+                <td>İşletme Adı</td>
+                <td>Pozitron Market</td>
               </tr>
               <tr>
                 <td>Kayıtlı Merkez Adresi</td>
-                <td>Sanayi Mah. Teknopark Bulvarı No:1/1C Pendik / İstanbul</td>
+                <td>Kızılırmak Mah. Dumlupınar Blv. No: 9 A D: 158 Çankaya / Ankara</td>
               </tr>
               <tr>
                 <td>Vergi Dairesi</td>
-                <td>Pendik Vergi Dairesi</td>
+                <td>Çankaya Vergi Dairesi Müdürlüğü</td>
               </tr>
               <tr>
                 <td>Vergi Kimlik No (VKN)</td>
-                <td>7320984512</td>
+                <td>7270468879</td>
               </tr>
-              <tr>
-                <td>MERSİS Numarası</td>
-                <td>0732098451200001</td>
-              </tr>
-              <tr>
-                <td>Ticaret Sicil No</td>
-                <td>412890-5</td>
-              </tr>
-              <tr>
-                <td>Kep Adresi</td>
-                <td>pozitronmarket@hs01.kep.tr</td>
-              </tr>
+            <tr><td>İşletme Türü</td><td>Şahıs işletmesi</td></tr>
             </tbody>
           </table>
         </div>
 
         <div class="policy-section">
           <h2 class="policy-h2">3. Bize Mesaj Gönderin</h2>
-          <form class="contact-form" onsubmit="event.preventDefault(); alert('Mesajınız başarıyla iletildi. Müşteri temsilcimiz en kısa sürede sizinle iletişime geçecektir.'); this.reset();">
+          <form class="contact-form" onsubmit="event.preventDefault(); openContactEmail();">
             <div class="form-group">
               <label class="form-label" for="contact-name">Adınız Soyadınız *</label>
               <input type="text" id="contact-name" class="form-input" required placeholder="Örn: Ahmet Yılmaz">
@@ -330,7 +315,7 @@
               <label class="form-label" for="contact-msg">Mesajınız *</label>
               <textarea id="contact-msg" class="form-textarea" rows="4" required placeholder="Mesajınızı buraya yazınız..."></textarea>
             </div>
-            <button type="submit" class="btn-submit-contact">Mesajı Gönder</button>
+            <button type="submit" class="btn-submit-contact">E-Posta Uygulamasında Aç</button>
           </form>
         </div>
 
@@ -341,9 +326,16 @@
   <!-- Footer -->
   <footer style="background:#0f172a; color:#94a3b8; padding:24px 0; text-align:center; font-size:0.85rem; border-top:1px solid #1e293b;">
     <div class="container">
-      <p>© 2026 Pozitron Market FPV Donanım Ltd. Şti. Tüm hakları saklıdır. • <a href="/" style="color:#38bdf8; text-decoration:none;">Ana Sayfa</a> • <a href="/iade-politikasi" style="color:#38bdf8; text-decoration:none;">İade Politikası</a> • <a href="/kargo-ve-teslimat" style="color:#38bdf8; text-decoration:none;">Kargo &amp; Teslimat</a></p>
+      <p>© 2026 Pozitron Market. Tüm hakları saklıdır. • <a href="/" style="color:#38bdf8; text-decoration:none;">Ana Sayfa</a> • <a href="/iade-politikasi" style="color:#38bdf8; text-decoration:none;">İade Politikası</a> • <a href="/kargo-ve-teslimat" style="color:#38bdf8; text-decoration:none;">Kargo &amp; Teslimat</a></p>
     </div>
   </footer>
 
+<script>
+function openContactEmail() {
+  const value = id => document.getElementById(id).value.trim();
+  const body = `${value('contact-msg')}\n\nGönderen: ${value('contact-name')}\nE-posta: ${value('contact-email')}\nTelefon: ${value('contact-phone')}`;
+  window.location.href = 'mailto:destek@pozitronmarket.com?subject=' + encodeURIComponent(value('contact-subject')) + '&body=' + encodeURIComponent(body);
+}
+</script>
 </body>
 </html>

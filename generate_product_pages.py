@@ -52,7 +52,7 @@ def get_db_review_stats():
         try:
             conn = sqlite3.connect(db_path)
             c = conn.cursor()
-            c.execute("SELECT product_id, AVG(rating), COUNT(*) FROM reviews WHERE product_id IS NOT NULL AND product_id != '' GROUP BY product_id")
+            c.execute("SELECT product_id, AVG(rating), COUNT(*) FROM reviews WHERE deleted_at IS NULL AND product_id IS NOT NULL AND product_id != '' GROUP BY product_id")
             for pid, avg_r, cnt_r in c.fetchall():
                 if pid:
                     stats[str(pid)] = {
@@ -893,7 +893,7 @@ def generate_product_page(product, category, related_products, all_products, by_
         <div class="footer-contacts">
           <div class="contact-line">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            <span>Teknopark İstanbul &amp; Ankara ODTÜ Teknokent</span>
+            <span>Kızılırmak Mah. Dumlupınar Blv. No: 9 A D: 158 Çankaya / Ankara</span>
           </div>
           <div class="contact-line">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
@@ -928,6 +928,7 @@ def generate_product_page(product, category, related_products, all_products, by_
           <li><a href="../kargo-ve-teslimat">Kargo ve Teslimat Politikası</a></li>
           <li><a href="../mesafeli-satis-sozlesmesi">Mesafeli Satış Sözleşmesi</a></li>
           <li><a href="../gizlilik-politikasi">KVKK &amp; Gizlilik Politikası</a></li>
+          <li><a href="../hakkimizda">Hakkımızda</a></li>
           <li><a href="../iletisim">İletişim &amp; Şirket Bilgileri</a></li>
         </ul>
       </div>
@@ -936,8 +937,10 @@ def generate_product_page(product, category, related_products, all_products, by_
       <div class="footer-col">
         <div class="footer-col-title">Güvenli Alışveriş</div>
         <p class="footer-desc" style="font-size:0.82rem; margin-bottom:12px;">
-          Tüm ödemeleriniz 256-bit SSL ve 3D Secure banka onaylı ödeme altyapısı ile güvence altındadır.
+          Havale / EFT / FAST ile ödeme yapabilirsiniz. iyzico ve PayTR ile kart ödemesi yakında hizmetinizde.
         </p>
+        <img src="../assets/payments/payment-logos.svg" alt="iyzico ile Öde, Visa ve Mastercard" style="display:block; max-width:100%; width:260px; height:auto; background:#fff; padding:12px; border-radius:8px; margin-bottom:12px;">
+        <a href="https://www.paytr.com/" target="_blank" rel="noopener" aria-label="PayTR"><img src="../assets/payments/paytr.png" alt="PayTR" style="display:block; width:120px; max-width:100%; height:auto; margin-top:12px; background:#fff; padding:12px; border-radius:8px;"></a>
         <div class="footer-badges">
           <span class="footer-badge">3D Secure</span>
           <span class="footer-badge">256-Bit SSL</span>
@@ -1179,7 +1182,7 @@ def generate_product_page(product, category, related_products, all_products, by_
       }});
     }}
 
-    function submitProductReview(e) {{
+    async function submitProductReview(e) {{
       e.preventDefault();
       const name = (document.getElementById('pdp-rev-name').value || '').trim();
       const rating = parseInt(document.getElementById('pdp-rev-rating').value || '5', 10);
@@ -1199,12 +1202,7 @@ def generate_product_page(product, category, related_products, all_products, by_
       }};
 
       try {{
-        const stored = JSON.parse(localStorage.getItem('pozitron_community_reviews') || '[]');
-        stored.unshift(newRev);
-        localStorage.setItem('pozitron_community_reviews', JSON.stringify(stored));
-      }} catch(e) {{}}
-
-      fetch('/api/reviews', {{
+      const response = await fetch('/api/reviews', {{
         method: 'POST',
         headers: {{ 'Content-Type': 'application/json' }},
         body: JSON.stringify({{
@@ -1214,7 +1212,12 @@ def generate_product_page(product, category, related_products, all_products, by_
           title: {json.dumps(name_tr)},
           comment: comment
         }})
-      }}).catch(() => {{}});
+      }});
+      if (!response.ok) throw new Error('Yorum kaydedilemedi.');
+      }} catch (error) {{
+        showToast('Yorum kaydedilemedi. Lütfen tekrar deneyin.');
+        return;
+      }}
 
       closeProductReviewModal();
       document.getElementById('pdp-review-form').reset();
@@ -1222,6 +1225,8 @@ def generate_product_page(product, category, related_products, all_products, by_
       showToast("Yorumunuz başarıyla paylaşıldı. Teşekkür ederiz!");
       renderPdpReviews();
     }}
+
+    const safeReviewText = value => String(value || '').replace(/[&<>"']/g, char => ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[char]));
 
     async function renderPdpReviews() {{
       const listEl = document.getElementById('pdp-reviews-list');
@@ -1244,12 +1249,7 @@ def generate_product_page(product, category, related_products, all_products, by_
         }}
       }} catch(e) {{}}
 
-      if (reviews.length === 0) {{
-        try {{
-          const stored = JSON.parse(localStorage.getItem('pozitron_community_reviews') || '[]');
-          reviews = stored.filter(r => r && (r.productId === {json.dumps(p_id)}));
-        }} catch(e) {{}}
-      }}
+
 
       const ratingRow = document.getElementById('pdp-rating-row');
       const summaryWrapper = document.getElementById('pdp-rating-summary-wrapper');
@@ -1337,18 +1337,18 @@ def generate_product_page(product, category, related_products, all_products, by_
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
             <div style="display:flex; align-items:center; gap:10px;">
               <div style="width:36px; height:36px; border-radius:50%; background:#e0f2fe; color:#0284c7; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:0.9rem;">
-                ${{r.userName ? r.userName.charAt(0).toUpperCase() : 'M'}}
+                ${{safeReviewText(r.userName ? r.userName.charAt(0).toUpperCase() : 'M')}}
               </div>
               <div>
-                <strong style="font-size:0.92rem; color:#0f172a; display:block;">${{r.userName || 'Müşteri'}}</strong>
+                <strong style="font-size:0.92rem; color:#0f172a; display:block;">${{safeReviewText(r.userName || 'Müşteri')}}</strong>
               </div>
             </div>
             <div style="text-align:right;">
               <div style="color:#f59e0b; font-size:0.95rem; letter-spacing:1px;">${{'★'.repeat(r.rating || 5)}}</div>
-              <span style="font-size:0.75rem; color:#94a3b8;">${{r.date || 'Bugün'}}</span>
+              <span style="font-size:0.75rem; color:#94a3b8;">${{safeReviewText(r.date || 'Bugün')}}</span>
             </div>
           </div>
-          <p style="margin:0; font-size:0.88rem; color:#334155; line-height:1.6;">"${{r.comment}}"</p>
+          <p style="margin:0; font-size:0.88rem; color:#334155; line-height:1.6;">"${{safeReviewText(r.comment)}}"</p>
         </div>
       `).join('');
     }}
@@ -1489,6 +1489,11 @@ def main():
         f'    <lastmod>{today_str}</lastmod>',
         '    <changefreq>monthly</changefreq>',
         '    <priority>0.7</priority>',
+        '  </url>',
+        '  <url>',
+        f'    <loc>{BASE_URL}/hakkimizda</loc>',
+        '    <changefreq>monthly</changefreq>',
+        '    <priority>0.8</priority>',
         '  </url>',
         '  <url>',
         f'    <loc>{BASE_URL}/iletisim</loc>',

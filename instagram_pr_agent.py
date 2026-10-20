@@ -126,13 +126,26 @@ def cmd_direct_publish(agent: InstagramPRAgent, content_type: str = None, produc
 
 def cmd_engage():
     from instagram_agent.engagement import InstagramEngagementEngine
-    print("[BILGI] Drone Toplulugu Etkilesim Motoru Baslatiliyor (Hedef: 10 Takip & 10 Yorum)...")
+    print("[BILGI] Drone Toplulugu Etkilesim Motoru Baslatiliyor (Hedef: 10 Takip, 10 Yorum & 10 Begeni)...")
     engine = InstagramEngagementEngine()
     res = engine.run_daily_drone_engagement(target_count=10)
     print("\n" + "=" * 60)
     print("ETKİLESİM RAPORU:")
     print(f"[-] Yeni Takip Edilen Pilot: +{res.get('new_follows', 0)} (Bugun Toplam: {res.get('today_follows', 0)}/10)")
     print(f"[-] Yapilan Yeni Yorum:       +{res.get('new_comments', 0)} (Bugun Toplam: {res.get('today_comments', 0)}/10)")
+    print(f"[-] Begenilen Yeni Gonderi:   +{res.get('new_likes', 0)} (Bugun Toplam: {res.get('today_likes', 0)}/10)")
+    if res.get('like_failed'):
+        print(f"[-] [UYARI] {res.get('like_failed')} begeni denemesi basarisiz oldu. "
+              f"Hata: {res.get('like_last_error')} - {res.get('like_message')}")
+    if res.get('like_blocked'):
+        print("[-] [KISITLAMA] Instagram begeni aksiyonunu gecici olarak engelledi "
+              "(feedback_required / 'Try Again Later'). Kota kullanilamadi.")
+    if res.get('follow_failed'):
+        print(f"[-] [UYARI] {res.get('follow_failed')} takip denemesi basarisiz oldu. "
+              f"Hata: {res.get('follow_last_error')} - {res.get('follow_message')}")
+    if res.get('follow_blocked'):
+        print("[-] [KISITLAMA] Instagram takip aksiyonunu gecici olarak engelledi "
+              "(feedback_required / 'Try Again Later'). Kota kullanilamadi.")
     if res.get('interacted_pilots'):
         print("\nEtkilesime Gecilen Pilotlar:")
         for p in res['interacted_pilots']:
@@ -212,7 +225,7 @@ def main():
     parser.add_argument('--auto-cycle', action='store_true', help="Tek adimda gorsel ve icerik uretip paylasir ve etkilesime gecer")
     parser.add_argument('--export-cookies', action='store_true', help="GitHub Actions Secrets icin Instagram oturum cerezlerini JSON olarak disa aktarir")
     parser.add_argument('--id', type=str, help="Yayinlanacak gonderi ID'si")
-    parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight'], help="Icerik sutunu/tipi")
+    parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight', 'drone_build_showcase', 'carousel_guide', 'flight_weather_radar', 'spot_guide', 'seo_article', 'hardware_battle', 'mistake_breakdown', 'community_quiz', 'myth_buster', 'maintenance_checklist', 'beginner_roadmap'], help="Icerik sutunu/tipi")
     parser.add_argument('--product', type=str, help="One cikarilacak urun ID'si veya slug")
     parser.add_argument('--list', action='store_true', help="Kayitli yayinlanan gonderileri listeler")
     parser.add_argument('--limit', type=int, default=15, help="Listelenecek gonderi sayisi")

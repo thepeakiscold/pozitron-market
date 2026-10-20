@@ -41,7 +41,7 @@ class LeadSupervisorAgent:
     - Subagent 10 (Product Media & Content Inspector) gorsel ve aciklama kalitesini kontrol eder.
     """
     def __init__(self):
-        self.model_code = "gemini-3.8-flash"
+        self.model_code = "deepseek-v4.1-flash-high"
         self.fallback_models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
         self.price_agent = PriceIntelligenceAgent()
         self.telemetry_agent = TelemetryAgent()
@@ -255,14 +255,25 @@ class LeadSupervisorAgent:
             except Exception as e:
                 print(f"[Lead Supervisor] Security audit notice: {e}")
 
-        # Step 11: Trigger Subagent 10 Product Media & Copy Inspection
+        # Step 11: Trigger Subagent 10 Product Media & Copy Inspection with Auto-Remediation
         media_summary = {}
         if is_subagent_enabled("subagent_10_media"):
             try:
                 media_audit = self.media_agent.scan_all_products(limit=50)
+                quar_count = media_audit.get("quarantine_candidates_count", 0)
+                auto_fixed_count = 0
+
+                # Otonom Karantina İyileştirme Akışı (Auto-Fix Quarantined Products)
+                if quar_count > 0:
+                    fix_report = self.media_agent.auto_fix_quarantined_products(dry_run=False)
+                    auto_fixed_count = fix_report.get("applied_fixes_count", 0)
+                    print(f"[Lead Supervisor] Subagent 10 Otonom Onarim: {auto_fixed_count} karantina urunu resmi stüdyo assetiyle duzeltildi.")
+
                 media_summary = {
                     "visual_health_score": media_audit.get("visual_health_score", 100),
-                    "quarantine_candidates": media_audit.get("quarantine_candidates_count", 0),
+                    "quarantine_candidates": max(0, quar_count - auto_fixed_count),
+                    "auto_fixed_count": auto_fixed_count,
+                    "auto_remediation": "ACTIVE",
                     "issues": media_audit.get("issues_summary", {})
                 }
             except Exception as e:
@@ -431,6 +442,36 @@ class LeadSupervisorAgent:
             "approved_new_trend_products": len(auto_approved_products)
         }
 
+        # Rule D: Autonomous content duplicate detection & remediation (Instagram + site guides)
+        duplicate_summary = {}
+        try:
+            from orchestrator.duplicate_guard import DuplicateGuard
+            guard = DuplicateGuard()
+            scan = guard.scan_all()
+            metrics_summary["duplicate_groups_detected"] = scan.get("total_duplicate_groups", 0)
+            if scan.get("total_duplicate_groups", 0) > 0:
+                rem = guard.remediate_all()
+                ig_deleted = rem.get("instagram", {}).get("deleted", 0)
+                seo_deleted = rem.get("seo", {}).get("deleted_duplicate_count", 0)
+                duplicate_summary = {
+                    "duplicate_groups_before": scan.get("total_duplicate_groups"),
+                    "instagram_redundant_posts": scan.get("instagram", {}).get("redundant_posts", 0),
+                    "instagram_deleted": ig_deleted,
+                    "flagged_caption_duplicates": rem.get("instagram", {}).get("flagged_caption_duplicates", 0),
+                    "seo_deleted": seo_deleted,
+                }
+                bottlenecks.append("Instagram gonderilerinde ve site rehberlerinde icerik tekrarlari tespit edildi; algoritma erisimi ve SEO kalitesi risk altinda.")
+                adjustments.append(
+                    f"Otonom tekrar temizligi calistirildi: {ig_deleted} Instagram kopya gonderisi ve "
+                    f"{seo_deleted} sayac-ekli/kopya rehber kaldirildi. Icerik uretim motorunda tekrar-onleme "
+                    f"(kombinasyon rotasyonu, pHash gorsel kontrolu, rehber konu normalizasyonu) sertlestirildi."
+                )
+                applied_changes["content_deduplication"] = duplicate_summary
+            else:
+                applied_changes["content_deduplication"] = {"total_duplicate_groups": 0}
+        except Exception as de:
+            print(f"[Lead Supervisor] Tekrar denetimi/onarimi hatasi: {de}")
+
         # 3. AI Strategic Reasoning (Antigravity 2.0 with gemini-3.8-flash)
         api_key = self._get_api_key()
         ai_reasoning = self._generate_ai_reasoning(api_key, metrics_summary, bottlenecks, adjustments)
@@ -487,9 +528,8 @@ class LeadSupervisorAgent:
 
     def _generate_ai_reasoning(self, api_key: str, metrics: Dict, bottlenecks: List[str], adjustments: List[str]) -> str:
         """Calls Gemini 3.8 Flash to synthesize deep strategic rationale."""
-        if api_key:
-            prompt = f"""Sen Pozitron Market (https://pozitronmarket.com) e-ticaret platformunu Turkiye'nin en buyuk FPV drone ve robotik donanim sitesi yapmaktan sorumlu Bas Orkestrasyon Ajanisin (Lead Supervisor Agent).
-Sistem mimarisi Antigravity 2.0 uzerinde calismaktadir ve su anda 12 saatlik otonom evrim/strateji optimizasyon dongusundesin.
+        prompt = f"""Sen Pozitron Market (https://pozitronmarket.com) e-ticaret platformunu Turkiye'nin en buyuk FPV drone ve robotik donanim sitesi yapmaktan sorumlu Bas Orkestrasyon Ajanisin (Lead Supervisor Agent).
+Sistem mimarisi DeepSeek V4.1 Flash High uzerinde calismaktadir ve su anda 12 saatlik otonom evrim/strateji optimizasyon dongusundesin.
 
 TELEMETRI VE PERFORMANS METRIKLERI:
 {json.dumps(metrics, indent=2, ensure_ascii=False)}
@@ -507,6 +547,20 @@ Kurallar:
 2. Net, profesyonel, veri odakli bir muhendislik ve pazar genisleme vizyonu yaz (3-4 kisa paragraf).
 3. Instagram PR, Reddit topluluk destegi, teknik SEO icerikleri ve Subagent 6 kuresel trend urunlerinin sinerjisini acikla.
 """
+
+        # 1. Unified LLM (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                text = llm.generate_text(prompt, max_tokens=4096, temperature=0.3)
+                if text and len(text.strip()) > 40:
+                    return re.sub(r'[\U00010000-\U0010ffff\u2600-\u26ff\u2700-\u27bf]', '', text).strip()
+        except Exception:
+            pass
+
+        # 2. Legacy Gemini fallback
+        if api_key:
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
@@ -593,7 +647,7 @@ Kurallar:
             "cycle_interval_hours": cfg.get("cycle_interval_hours", 2),
             "is_autonomous_enabled": bool(cfg.get("is_autonomous_enabled", 1)),
             "active_growth_mode": cfg.get("active_growth_mode", "AGGRESSIVE_EXPANSION"),
-            "model_code": cfg.get("model_code", "gemini-3.8-flash"),
+            "model_code": cfg.get("model_code", "deepseek-v4.1-flash-high"),
             "last_run_at": cfg.get("last_run_at"),
             "next_run_at": cfg.get("next_run_at"),
             "last_evolution_at": cfg.get("last_evolution_at"),

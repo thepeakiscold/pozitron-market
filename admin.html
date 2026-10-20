@@ -240,6 +240,9 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
           <span>Siparişler</span>
         </button>
+        <button type="button" class="admin-tab-btn" data-tab="tab-reviews" onclick="switchAdminTab('tab-reviews')">
+          <span>Yorumlar</span>
+        </button>
         <button type="button" class="admin-tab-btn" data-tab="tab-users" onclick="switchAdminTab('tab-users')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
           <span>Kullanıcılar</span>
@@ -319,6 +322,7 @@
               <tr>
                 <th style="width:40px; text-align:center;"><input type="checkbox" id="chk-select-all" onchange="toggleSelectAll(this)"></th>
                 <th>Ürün Bilgisi & SKU</th>
+                <th style="min-width:150px;">Kontrol Edildi</th>
                 <th>Kategori / Marka</th>
                 <th style="min-width:180px;">Stok Adedi & Durum</th>
                 <th style="min-width:130px;">Fiyat (USD $)</th>
@@ -329,7 +333,7 @@
             </thead>
             <tbody id="inventory-tbody">
               <tr>
-                <td colspan="8" style="text-align:center; padding:40px; color:#64748b;">
+                <td colspan="9" style="text-align:center; padding:40px; color:#64748b;">
                   Envanter verileri yükleniyor...
                 </td>
               </tr>
@@ -569,6 +573,26 @@
             </button>
           </div>
         </form>
+      </div>
+    </section>
+
+    <section id="tab-reviews" class="tab-content" style="display:none;">
+      <div class="admin-card">
+        <h2>Yorum Yönetimi</h2>
+        <p style="color:var(--text-muted); margin:12px 0;">Mağaza ve ürün yorumlarını inceleyin. Sildiğiniz yorumlar yayından kaldırılır; Silinenler bölümünden geri alabilirsiniz.</p>
+        <form id="review-search-form" style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <input id="review-search" class="admin-input" aria-label="Yorumlarda ara" placeholder="Yazar, ürün veya yorum içeriğinde ara" style="flex:1; min-width:180px;">
+          <select id="review-status" class="admin-select" aria-label="Yorum durumu" onchange="loadAdminReviews(1)"><option value="active">Yayındaki yorumlar</option><option value="deleted">Silinenler</option></select>
+          <button class="admin-btn-primary" type="submit">Ara</button>
+          <button class="admin-btn-primary" type="button" onclick="loadAdminReviews(1)">Yenile</button>
+        </form>
+        <p id="review-feedback" role="status" aria-live="polite"></p>
+        <div id="admin-review-list" style="display:grid; gap:14px; margin:16px 0;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <button type="button" id="review-prev" class="admin-btn-primary" disabled>Önceki</button>
+          <span id="review-page-info"></span>
+          <button type="button" id="review-next" class="admin-btn-primary" disabled>Sonraki</button>
+        </div>
       </div>
     </section>
 
@@ -847,7 +871,7 @@
         <!-- Header -->
         <div style="margin-bottom:24px; border-bottom:1px solid var(--border-subtle); padding-bottom:16px;">
           <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); margin-bottom:4px;">💳 Ödeme Gateway &amp; Banka Hesap Ayarları</h2>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Havale/EFT IBAN bilgilerinizi yönetin ve İyzico &amp; PayTR başvurularınız onaylandığında API anahtarlarınızı bağlayın.</p>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Havale/EFT IBAN bilgilerinizi yönetin. Kart ödemesi için sunucu entegrasyonu ve iyzico başvuru onayı gereklidir; tarayıcıya anahtar girilmesi ödeme sistemini etkinleştirmez.</p>
         </div>
 
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:20px;">
@@ -867,18 +891,18 @@
             </p>
 
             <div class="admin-form-group">
-              <label for="cfg-bank-owner" style="font-weight:700; font-size:0.85rem;">Hesap Sahibi (Alıcı Ad Soyad)</label>
-              <input type="text" id="cfg-bank-owner" class="admin-input" value="Burak Peköz" placeholder="Ad Soyad">
+              <label for="cfg-bank-owner" style="font-weight:700; font-size:0.85rem;">Hesap Sahibi (Ziyaretçilere gösterilmez)</label>
+              <input type="text" id="cfg-bank-owner" class="admin-input" value="" disabled placeholder="Ad Soyad">
             </div>
 
             <div class="admin-form-group">
               <label for="cfg-bank-iban" style="font-weight:700; font-size:0.85rem;">IBAN Numarası</label>
-              <input type="text" id="cfg-bank-iban" class="admin-input" value="TR41 0020 5000 0908 0479 3000 01" placeholder="TR00 0000 0000 0000 0000 0000 00" style="font-family:monospace; font-weight:700;">
+              <input type="text" id="cfg-bank-iban" class="admin-input" value="TR69 0004 6001 9188 8000 3245 80" placeholder="TR00 0000 0000 0000 0000 0000 00" style="font-family:monospace; font-weight:700;">
             </div>
 
             <div class="admin-form-group">
               <label for="cfg-bank-name" style="font-weight:700; font-size:0.85rem;">Banka &amp; Şube Adı</label>
-              <input type="text" id="cfg-bank-name" class="admin-input" value="Kuveyt Türk Katılım Bankası (7/24 FAST)" placeholder="Banka Adı">
+              <input type="text" id="cfg-bank-name" class="admin-input" value="Akbank / Havale / EFT / FAST" placeholder="Banka Adı">
             </div>
 
             <button type="button" class="admin-btn-primary" onclick="saveBankSettings()" style="margin-top:auto; background:#16a34a; border-color:#16a34a;">
@@ -886,75 +910,14 @@
             </button>
           </div>
 
-          <!-- 2. IYZICO 3D SECURE ENTEGRASYONU -->
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:1.4rem;">💳</span>
-                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#1a56db;">İyzico 3D Secure API</h3>
-              </div>
-              <span id="badge-iyzico-status" style="font-size:0.75rem; font-weight:700; background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:12px;">⏳ Başvuru İnceleniyor</span>
-            </div>
-
-            <p style="font-size:0.8rem; color:#64748b; margin:0; line-height:1.4;">
-              İyzico başvurunuz onaylandığında <strong>İyzico Satıcı Paneli &gt; Ayarlar &gt; API Anahtarları</strong> sayfasından alacağınız kodları buraya giriniz.
-            </p>
-
-            <div class="admin-form-group">
-              <label for="cfg-iyzico-apikey" style="font-weight:700; font-size:0.85rem;">API Key (Genel Anahtar)</label>
-              <input type="text" id="cfg-iyzico-apikey" class="admin-input" placeholder="iyzico_api_key_..." style="font-family:monospace;">
-            </div>
-
-            <div class="admin-form-group">
-              <label for="cfg-iyzico-secret" style="font-weight:700; font-size:0.85rem;">Secret Key (Gizli Anahtar)</label>
-              <input type="password" id="cfg-iyzico-secret" class="admin-input" placeholder="••••••••••••••••••••••••" style="font-family:monospace;">
-            </div>
-
-            <div class="admin-form-group">
-              <label for="cfg-iyzico-env" style="font-weight:700; font-size:0.85rem;">Çalışma Modu</label>
-              <select id="cfg-iyzico-env" class="admin-select">
-                <option value="production">Canlı Mod (Production API)</option>
-                <option value="sandbox" selected>Sandbox (Test Modu)</option>
-              </select>
-            </div>
-
-            <button type="button" class="admin-btn-primary" onclick="saveIyzicoSettings()" style="margin-top:auto; background:#1a56db; border-color:#1a56db;">
-              ✓ İyzico Anahtarlarını Kaydet
-            </button>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+            <h3>iyzico</h3><p>Kart ödemesi henüz etkin değildir. Başvuru onayı ve güvenli sunucu entegrasyonu gereklidir. API anahtarlarını tarayıcıya veya herkese açık ayarlara kaydetmeyin.</p>
+            <p><a href="https://merchant.iyzipay.com/" target="_blank" rel="noopener">iyzico İşyeri Paneli</a></p>
           </div>
 
-          <!-- 3. PAYTR SANAL POS ENTEGRASYONU -->
-          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:1.4rem;">⚡</span>
-                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#0891b2;">PayTR Sanal POS API</h3>
-              </div>
-              <span id="badge-paytr-status" style="font-size:0.75rem; font-weight:700; background:#fef3c7; color:#92400e; padding:3px 10px; border-radius:12px;">⏳ Başvuru İnceleniyor</span>
-            </div>
-
-            <p style="font-size:0.8rem; color:#64748b; margin:0; line-height:1.4;">
-              PayTR başvurunuz onaylandığında <strong>PayTR Mağaza Paneli &gt; Entegrasyon Bilgileri</strong> sayfasından alacağınız parametreleri buraya giriniz.
-            </p>
-
-            <div class="admin-form-group">
-              <label for="cfg-paytr-merchantid" style="font-weight:700; font-size:0.85rem;">Mağaza No (Merchant ID)</label>
-              <input type="text" id="cfg-paytr-merchantid" class="admin-input" placeholder="Örn: 123456" style="font-family:monospace;">
-            </div>
-
-            <div class="admin-form-group">
-              <label for="cfg-paytr-key" style="font-weight:700; font-size:0.85rem;">Mağaza Parolası (Merchant Key)</label>
-              <input type="password" id="cfg-paytr-key" class="admin-input" placeholder="••••••••••••••••" style="font-family:monospace;">
-            </div>
-
-            <div class="admin-form-group">
-              <label for="cfg-paytr-salt" style="font-weight:700; font-size:0.85rem;">Mağaza Gizli Anahtar (Merchant Salt)</label>
-              <input type="password" id="cfg-paytr-salt" class="admin-input" placeholder="••••••••••••••••" style="font-family:monospace;">
-            </div>
-
-            <button type="button" class="admin-btn-primary" onclick="savePayTRSettings()" style="margin-top:auto; background:#0891b2; border-color:#0891b2;">
-              ✓ PayTR Anahtarlarını Kaydet
-            </button>
+          <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
+            <h3>PayTR</h3><p>Kart ödemesi henüz etkin değildir. Başvuru onayı ve sunucuda iFrame API entegrasyonu gerekir. Merchant Key ve Merchant Salt tarayıcıya kaydedilmez.</p>
+            <p><a href="https://www.paytr.com/" target="_blank" rel="noopener">PayTR</a> · <a href="https://www.paytr.com/destek-merkezi/basvuru" target="_blank" rel="noopener">Başvuru koşulları</a></p>
           </div>
 
           <!-- 4. GOOGLE SHEETS & CRM WEBHOOK -->
@@ -1639,7 +1602,7 @@
 
       // Auto-authenticate for local development
       if ((!user || !isUserAdmin(user)) && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-        user = { email: 'furkaniusprimes@gmail.com', full_name: 'Eyüp Furkan Peköz (Admin)', role: 'admin', provider: 'gmail' };
+        user = { email: 'furkaniusprimes@gmail.com', full_name: 'Mağaza Yöneticisi', role: 'admin', provider: 'gmail' };
         localStorage.setItem('pozitron_user', JSON.stringify(user));
       }
 
@@ -2121,6 +2084,8 @@
         loadAdminProducts(currentPage);
       } else if (tabId === 'tab-orders') {
         loadAdminOrders();
+      } else if (tabId === 'tab-reviews') {
+        loadAdminReviews(1);
       } else if (tabId === 'tab-users') {
         loadAdminUsers();
       } else if (tabId === 'tab-3d-print') {
@@ -2324,7 +2289,7 @@
 
     async function loadPaymentSettings() {
       const bankCfg = JSON.parse(localStorage.getItem('pozitron_cfg_bank') || '{}');
-      if (bankCfg.owner) document.getElementById('cfg-bank-owner').value = bankCfg.owner;
+      document.getElementById('cfg-bank-owner').value = '';
       if (bankCfg.iban) document.getElementById('cfg-bank-iban').value = bankCfg.iban;
       if (bankCfg.name) document.getElementById('cfg-bank-name').value = bankCfg.name;
 
@@ -2338,40 +2303,19 @@
         }
       } catch(e) {}
 
-      const iyzicoCfg = JSON.parse(localStorage.getItem('pozitron_cfg_iyzico') || '{}');
-      if (iyzicoCfg.apiKey) {
-        document.getElementById('cfg-iyzico-apikey').value = iyzicoCfg.apiKey;
-        document.getElementById('cfg-iyzico-secret').value = iyzicoCfg.secretKey || '';
-        document.getElementById('cfg-iyzico-env').value = iyzicoCfg.env || 'production';
-        const badge = document.getElementById('badge-iyzico-status');
-        if (badge) {
-          badge.textContent = '🟢 Aktif & Bağlı';
-          badge.style.background = '#dcfce7';
-          badge.style.color = '#166534';
-        }
-      }
+      localStorage.removeItem('pozitron_cfg_iyzico');
 
-      const paytrCfg = JSON.parse(localStorage.getItem('pozitron_cfg_paytr') || '{}');
-      if (paytrCfg.merchantId) {
-        document.getElementById('cfg-paytr-merchantid').value = paytrCfg.merchantId;
-        document.getElementById('cfg-paytr-key').value = paytrCfg.merchantKey || '';
-        document.getElementById('cfg-paytr-salt').value = paytrCfg.merchantSalt || '';
-        const badge = document.getElementById('badge-paytr-status');
-        if (badge) {
-          badge.textContent = '🟢 Aktif & Bağlı';
-          badge.style.background = '#dcfce7';
-          badge.style.color = '#166534';
-        }
-      }
+      localStorage.removeItem('pozitron_cfg_paytr');
+
     }
 
     async function saveBankSettings() {
-      const owner = document.getElementById('cfg-bank-owner').value.trim();
+      const owner = ''; // Personal account holder names are not published.
       const iban = document.getElementById('cfg-bank-iban').value.trim();
       const name = document.getElementById('cfg-bank-name').value.trim();
 
-      if (!owner || !iban) {
-        showToast('Lütfen alıcı ismi ve IBAN bilgisini eksiksiz girin.', 'error');
+      if (!iban) {
+        showToast('Lütfen IBAN bilgisini eksiksiz girin.', 'error');
         return;
       }
 
@@ -2392,49 +2336,8 @@
       showToast('Banka ve FAST IBAN bilgileri başarıyla güncellendi! 🏦', 'success');
     }
 
-    function saveIyzicoSettings() {
-      const apiKey = document.getElementById('cfg-iyzico-apikey').value.trim();
-      const secretKey = document.getElementById('cfg-iyzico-secret').value.trim();
-      const env = document.getElementById('cfg-iyzico-env').value;
 
-      if (!apiKey || !secretKey) {
-        showToast('Lütfen API Key ve Secret Key alanlarını doldurun.', 'error');
-        return;
-      }
 
-      localStorage.setItem('pozitron_cfg_iyzico', JSON.stringify({ apiKey, secretKey, env }));
-      const badge = document.getElementById('badge-iyzico-status');
-      if (badge) {
-        badge.textContent = '🟢 Aktif & Bağlı';
-        badge.style.background = '#dcfce7';
-        badge.style.color = '#166534';
-      }
-      showToast('İyzico API anahtarları kaydedildi ve sisteme bağlandı! 💳', 'success');
-    }
-
-    function savePayTRSettings() {
-      const merchantId = document.getElementById('cfg-paytr-merchantid').value.trim();
-      const merchantKey = document.getElementById('cfg-paytr-key').value.trim();
-      const merchantSalt = document.getElementById('cfg-paytr-salt').value.trim();
-
-      if (!merchantId || !merchantKey || !merchantSalt) {
-        showToast('Lütfen PayTR Merchant ID, Key ve Salt alanlarını doldurun.', 'error');
-        return;
-      }
-
-      localStorage.setItem('pozitron_cfg_paytr', JSON.stringify({ merchantId, merchantKey, merchantSalt }));
-      const badge = document.getElementById('badge-paytr-status');
-      if (badge) {
-        badge.textContent = '🟢 Aktif & Bağlı';
-        badge.style.background = '#dcfce7';
-        badge.style.color = '#166534';
-      }
-      showToast('PayTR Sanal POS anahtarları kaydedildi ve bağlandı! ⚡', 'success');
-    }
-
-    // -------------------------------------------------------------
-    // Load Categories & Brands (API + Fallback)
-    // -------------------------------------------------------------
     async function loadCategoriesAndBrands() {
       try {
         const catRes = await fetch('/api/categories');
@@ -2569,9 +2472,10 @@
       const limit = parseInt(document.getElementById('page-limit-select').value) || 25;
 
       const tbody = document.getElementById('inventory-tbody');
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#64748b;">Yükleniyor...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#64748b;">Yükleniyor...</td></tr>`;
 
       let products = [];
+      let hasLiveProducts = false;
       let total = 0;
 
       // 1. Try Backend API
@@ -2586,7 +2490,8 @@
         const ct = res.headers.get('content-type') || '';
         if (res.ok && ct.includes('application/json')) {
           const data = await res.json();
-          if (data && Array.isArray(data.products) && data.products.length > 0) {
+          if (data && Array.isArray(data.products)) {
+            hasLiveProducts = true;
             products = data.products;
             total = data.total;
             totalPages = data.total_pages || 1;
@@ -2595,7 +2500,7 @@
       } catch (err) {}
 
       // 2. Fallback to Local Product Database (GitHub Pages Mode)
-      if (products.length === 0 && total === 0) {
+      if (!hasLiveProducts) {
         let all = await getLocalAdminProducts();
         
         if (q) {
@@ -2641,7 +2546,7 @@
       document.getElementById('btn-next-page').disabled = currentPage >= totalPages;
 
       if (products.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:#64748b;">Kriterlere uygun ürün bulunamadı.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px; color:#64748b;">Kriterlere uygun ürün bulunamadı.</td></tr>`;
         return;
       }
 
@@ -2673,6 +2578,12 @@
                   <div class="product-meta-sub"><code style="background:#e2e8f0; padding:1px 5px; border-radius:4px;">${p.sku || p.id}</code></div>
                 </div>
               </div>
+            </td>
+            <td>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;" title="${escapeHtml(p.quality_notes || 'Ürün bilgileri incelendiğinde işaretleyin. İçerik değişirse yeniden kontrol gerekir.')}">
+                <input type="checkbox" class="product-quality-checkbox" data-id="${escapeHtml(p.id)}" data-hash="${escapeHtml(p.quality_hash || '')}" aria-label="${escapeHtml(title)} kontrol edildi" ${p.quality_checked ? 'checked' : ''} ${hasLiveProducts ? '' : 'disabled'} onchange="setProductChecked(this)" style="width:18px; height:18px; accent-color:#16a34a;">
+                <span>${!hasLiveProducts ? 'Bağlantı gerekli' : p.quality_checked ? 'Kontrol edildi' : p.quality_status === 'issues' ? 'Sorun var' : 'Bekliyor'}</span>
+              </label>
             </td>
             <td>
               <div style="font-weight:600; color:var(--text-primary); font-size:0.88rem;">${p.brand || '-'}</div>
@@ -2726,6 +2637,7 @@
         `;
       }).join('');
     }
+
 
     function changeAdminPage(delta) {
       const newPage = currentPage + delta;
@@ -4311,5 +4223,148 @@
       }, 200);
     }
   </script>
+  <script src="./admin-reviews.js"></script>
+  <script src="./admin-product-checks.js"></script>
 </body>
 </html>
+
+<!-- ============================= COUPON & DEAL MANAGEMENT ============================= -->
+<section id="coupon-admin" style="max-width:1200px;margin:40px auto;padding:0 20px 60px;">
+  <div style="background:#0a1228;border:1px solid #1e293b;border-radius:14px;padding:22px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+      <h2 style="margin:0;font-size:1.3rem;color:#fff;">Kupon &amp; Fırsat Yönetimi</h2>
+      <button type="button" onclick="createWeeklyDeal(true)" style="background:#0284c7;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;">
+        Bu Haftanın Fırsatını Oluştur &amp; Instagram'da Paylaş
+      </button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;">
+      <input id="cp-code" placeholder="Kupon Kodu (ör. FIRSAT500)" style="padding:9px;border-radius:8px;border:1px solid #1e293b;background:#070b14;color:#fff;">
+      <select id="cp-type" style="padding:9px;border-radius:8px;border:1px solid #1e293b;background:#070b14;color:#fff;">
+        <option value="percent">Yüzde (%)</option>
+        <option value="fixed">Sabit Tutar (₺)</option>
+      </select>
+      <input id="cp-value" type="number" placeholder="İndirim Değeri (10 veya 500)" style="padding:9px;border-radius:8px;border:1px solid #1e293b;background:#070b14;color:#fff;">
+      <input id="cp-min" type="number" placeholder="Min. Sepet ₺ (ör. 5000)" style="padding:9px;border-radius:8px;border:1px solid #1e293b;background:#070b14;color:#fff;">
+      <input id="cp-hours" type="number" placeholder="Süre (saat, ör. 24)" value="24" style="padding:9px;border-radius:8px;border:1px solid #1e293b;background:#070b14;color:#fff;">
+      <input id="cp-peruser" type="number" placeholder="Hesap başına limit" value="1" style="padding:9px;border-radius:8px;border:1px solid #1e293b;background:#070b14;color:#fff;">
+      <input id="cp-desc" placeholder="Açıklama (ör. 5000₺ üzeri 500₺ indirim)" style="padding:9px;border-radius:8px;border:1px solid #1e293b;background:#070b14;color:#fff;grid-column:span 2;">
+      <button type="button" onclick="createCoupon()" style="background:#16a34a;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;">Kupon Oluştur</button>
+    </div>
+
+    <div id="coupon-feedback" style="margin-bottom:12px;font-size:0.85rem;"></div>
+
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+        <thead>
+          <tr style="text-align:left;color:#94a3b8;border-bottom:1px solid #1e293b;">
+            <th style="padding:8px;">Kod</th><th style="padding:8px;">İndirim</th><th>Min ₺</th>
+            <th>Kaynak</th><th>Kullanım</th><th>Bitiş</th><th>Durum</th><th>İşlem</th>
+          </tr>
+        </thead>
+        <tbody id="coupon-rows"></tbody>
+      </table>
+    </div>
+
+    <h3 style="color:#cbd5e1;margin:22px 0 8px;font-size:1rem;">Kupon Kullanım &amp; Olay Kayıtları (Log)</h3>
+    <div id="coupon-logs" style="max-height:320px;overflow:auto;background:#070b14;border:1px solid #1e293b;border-radius:8px;padding:10px;font-size:0.78rem;color:#cbd5e1;"></div>
+  </div>
+</section>
+
+<script>
+  function cpHeaders(extra) {
+    var h = { 'Content-Type': 'application/json' };
+    var k = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+    if (k) h['X-Admin-Key'] = k;
+    return Object.assign(h, extra || {});
+  }
+  function cpFmt(dt) { try { return new Date(dt).toLocaleString('tr-TR'); } catch (e) { return dt || '-'; } }
+  function cpFeedback(msg, ok) {
+    var el = document.getElementById('coupon-feedback');
+    if (el) { el.textContent = msg; el.style.color = ok ? '#4ade80' : '#f87171'; }
+  }
+
+  async function loadCoupons() {
+    try {
+      const res = await fetch('/api/admin/coupons', { headers: cpHeaders(), cache: 'no-store' });
+      const data = await res.json();
+      const rows = document.getElementById('coupon-rows');
+      if (!rows) return;
+      const list = data.coupons || [];
+      rows.innerHTML = list.map(function (c) {
+        var disc = c.discount_type === 'percent' ? ('%' + c.discount_value) : (Number(c.discount_value).toLocaleString('tr-TR') + '₺');
+        var state = c.is_active ? '<span style="color:#4ade80;">Aktif</span>' : '<span style="color:#f87171;">Pasif</span>';
+        return '<tr style="border-bottom:1px solid #111a2e;">' +
+          '<td style="padding:8px;font-weight:700;color:#fff;">' + c.code + '</td>' +
+          '<td style="padding:8px;color:#38bdf8;">' + disc + (c.discount_type === 'percent' ? '' : '') + '</td>' +
+          '<td style="padding:8px;color:#cbd5e1;">' + (c.min_order_try || 0) + '</td>' +
+          '<td style="padding:8px;color:#94a3b8;">' + (c.source || '-') + '</td>' +
+          '<td style="padding:8px;color:#cbd5e1;">' + (c.used_count || 0) + (c.max_uses ? (' / ' + c.max_uses) : '') + '</td>' +
+          '<td style="padding:8px;color:#94a3b8;">' + cpFmt(c.expires_at) + '</td>' +
+          '<td style="padding:8px;">' + state + '</td>' +
+          '<td style="padding:8px;white-space:nowrap;">' +
+            '<button onclick="toggleCoupon(\'' + c.code + '\',' + (c.is_active ? 'false' : 'true') + ')" style="background:#334155;color:#fff;border:0;border-radius:6px;padding:4px 8px;cursor:pointer;margin-right:4px;">' + (c.is_active ? 'Kapat' : 'Aç') + '</button>' +
+            '<button onclick="deleteCoupon(\'' + c.code + '\')" style="background:#7f1d1d;color:#fff;border:0;border-radius:6px;padding:4px 8px;cursor:pointer;">Sil</button>' +
+          '</td></tr>';
+      }).join('') || '<tr><td colspan="8" style="padding:12px;color:#64748b;">Kupon yok.</td></tr>';
+      await loadCouponLogs();
+    } catch (e) { cpFeedback('Liste alınamadı: ' + e.message, false); }
+  }
+
+  async function loadCouponLogs() {
+    try {
+      const res = await fetch('/api/admin/coupons/logs?limit=200', { headers: cpHeaders(), cache: 'no-store' });
+      const data = await res.json();
+      const box = document.getElementById('coupon-logs');
+      if (!box) return;
+      var act = { created: 'Oluşturuldu', redeemed: 'Kullanıldı', expired: 'Süre doldu', updated: 'Güncellendi', deleted: 'Silindi' };
+      box.innerHTML = (data.logs || []).map(function (l) {
+        return '<div style="padding:3px 0;border-bottom:1px solid #0d1526;">' +
+          '<span style="color:#38bdf8;font-weight:700;">' + l.coupon_code + '</span> — ' +
+          '<span style="color:#e2e8f0;">' + (act[l.action] || l.action) + '</span> ' +
+          '<span style="color:#64748b;">' + (l.detail || '') + ' • ' + cpFmt(l.created_at) + '</span></div>';
+      }).join('') || '<div style="color:#64748b;">Kayıt yok.</div>';
+    } catch (e) {}
+  }
+
+  async function createCoupon() {
+    var body = {
+      code: document.getElementById('cp-code').value.trim(),
+      discount_type: document.getElementById('cp-type').value,
+      discount_value: parseFloat(document.getElementById('cp-value').value || '0'),
+      min_order_try: parseFloat(document.getElementById('cp-min').value || '0'),
+      valid_hours: parseFloat(document.getElementById('cp-hours').value || '24'),
+      per_user_limit: parseInt(document.getElementById('cp-peruser').value || '1', 10),
+      description_tr: document.getElementById('cp-desc').value.trim()
+    };
+    try {
+      const res = await fetch('/api/admin/coupons/create', { method: 'POST', headers: cpHeaders(), body: JSON.stringify(body) });
+      const data = await res.json();
+      cpFeedback(data.success ? ('Kupon oluşturuldu: ' + data.code) : ('Hata: ' + (data.error || '')), !!data.success);
+      if (data.success) loadCoupons();
+    } catch (e) { cpFeedback('Hata: ' + e.message, false); }
+  }
+
+  async function toggleCoupon(code, active) {
+    await fetch('/api/admin/coupons/toggle', { method: 'POST', headers: cpHeaders(), body: JSON.stringify({ code: code, active: active }) });
+    loadCoupons();
+  }
+  async function deleteCoupon(code) {
+    if (!confirm(code + ' kuponu silinsin mi?')) return;
+    await fetch('/api/admin/coupons/delete', { method: 'POST', headers: cpHeaders(), body: JSON.stringify({ code: code }) });
+    loadCoupons();
+  }
+  async function createWeeklyDeal(publish) {
+    try {
+      const res = await fetch('/api/admin/coupons/weekly-deal', { method: 'POST', headers: cpHeaders(), body: JSON.stringify({ publish: !!publish }) });
+      const data = await res.json();
+      var code = data.deal ? data.deal.code : '';
+      cpFeedback(data.success ? ('Haftalık fırsat: ' + code + (publish ? ' (Instagram paylaşımı denendi)' : '')) : ('Hata: ' + (data.error || '')), !!data.success);
+      loadCoupons();
+    } catch (e) { cpFeedback('Hata: ' + e.message, false); }
+  }
+
+  window.addEventListener('DOMContentLoaded', function () {
+    if (document.getElementById('coupon-rows')) loadCoupons();
+  });
+</script>

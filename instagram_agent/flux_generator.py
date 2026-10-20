@@ -20,8 +20,43 @@ import urllib.error
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-DEFAULT_FLUX_DIR = os.environ.get("FLUX_DIR", "/home/eyup/Desktop/FLUX")
+FLUX_DIR_CANDIDATES = [
+    os.environ.get("FLUX_DIR", ""),
+    "/home/FLUX",
+    os.path.expanduser("~/FLUX"),
+    "/home/eyup/FLUX",
+    "/home/eyup/Desktop/FLUX",
+    os.path.expanduser("~/Desktop/FLUX"),
+]
+
+def find_flux_dir() -> str:
+    for candidate in FLUX_DIR_CANDIDATES:
+        if candidate and os.path.exists(candidate):
+            return candidate
+    return "/home/eyup/Desktop/FLUX"
+
+DEFAULT_FLUX_DIR = find_flux_dir()
 DEFAULT_SERVER = os.environ.get("COMFYUI_SERVER", "http://127.0.0.1:8188")
+
+# Post types where an AI-generated photorealistic hero background is logical and impactful
+LOGICAL_FLUX_TYPES = [
+    "product_spotlight",
+    "deal_drop",
+    "drone_build_showcase",
+    "hardware_battle",
+    "pilot_tip",
+    "mistake_breakdown",
+    "community_quiz",
+    "myth_buster",
+    "maintenance_checklist",
+    "beginner_roadmap",
+    "flight_weather_radar",
+    "spot_guide",
+    "tool_showcase",
+    "review_highlight",
+    "carousel_guide",
+    "seo_article",
+]
 
 _last_start_attempt = 0.0
 
@@ -66,9 +101,17 @@ class FluxGenerator:
         self.workflow_path = workflow_path or os.environ.get(
             "COMFY_WORKFLOW", os.path.join(self.flux_dir, "flux_dev_gguf_api.json")
         )
+        self.video_workflow_path = os.environ.get(
+            "COMFY_VIDEO_WORKFLOW", os.path.join(self.flux_dir, "ltxv_t2v_api.json")
+        )
+        self.video_ckpt = os.environ.get(
+            "LTX_CKPT", "ltxv-13b-0.9.8-distilled-fp8.safetensors"
+        )
         self.timeout = timeout
         self.output_dir = os.path.join(BASE_DIR, "assets", "instagram", "posts")
+        self.video_dir = os.path.join(BASE_DIR, "assets", "instagram", "reels")
         os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(self.video_dir, exist_ok=True)
 
     # ------------------------------------------------------------------
     def is_available(self) -> bool:
@@ -257,3 +300,226 @@ class FluxGenerator:
         save_path = os.path.join(self.output_dir, f"{post_id}_flux_raw.png")
         path = self.generate(prompt, width=width, height=height, steps=steps, save_path=save_path)
         return {"path": path, "prompt": prompt}
+
+    # ==================================================================
+    # LTX-Video (ComfyUI core LTXV nodes) — AI video for Reels
+    # ==================================================================
+
+    def build_video_prompt(self, post_data: dict, shot: str = 'montage') -> str:
+        """Cinematic, motion-first prompt so Reels look like real FPV footage."""
+        content_type = (post_data or {}).get("content_type", "product_spotlight")
+        visual = (post_data or {}).get("visual_summary") or {}
+        prod = (post_data or {}).get("product_data") or {}
+        prod_name = prod.get("name_tr") or prod.get("name")
+        subject = FLUX_SUBJECTS.get(content_type, FLUX_SUBJECTS["product_spotlight"])
+        if prod_name and content_type in ("product_spotlight", "deal_drop", "review_highlight", "hardware_battle"):
+            subject = f"{subject} featuring {prod_name}"
+        headline = visual.get("headline") or ""
+        topic = f" Subject: {headline}." if headline else ""
+
+        if shot == 'hardware':
+            return (
+                f"Extreme macro cinematic close-up of FPV drone engineering components, {subject}.{topic} "
+                "Carbon fiber weave texture, gold-plated contacts, glowing telemetry status LED, slow smooth panning macro lens, "
+                "shallow depth of field, realistic studio lighting, 8k photorealistic product commercial, no text, no watermark."
+            )
+        elif shot == 'action':
+            return (
+                f"Dynamic high-speed FPV racing drone freestyle flight, {subject}.{topic} "
+                "Sweeping cinematic dive, roll through atmospheric sunbeams, high speed motion blur background, "
+                "ultra smooth gimbal stabilization, cinematic lighting, photorealistic 8k, no text, no watermark."
+            )
+        elif shot == 'continuous':
+            return (
+                f"Cinematic vertical 9:16 continuous take, {subject}.{topic} "
+                "Smooth continuous camera motion, slow orbit revealing detailed hardware, accelerating into a forward cinematic flight sweep, "
+                "shallow depth of field, realistic cinematic lighting, subtle particle atmosphere, photorealistic, 8k, no text, no watermark, no cuts."
+            )
+        return (
+            f"Cinematic vertical 9:16 footage, {subject}.{topic} "
+            "Smooth continuous camera motion, slow orbit and push-in, shallow depth of field, "
+            "realistic lighting, subtle particle atmosphere, photorealistic, 8k, no text, no watermark, no cuts."
+        )
+
+    def generate_video(self, prompt: str, width: int = 576, height: int = 1024,
+                       frames: int = 97, steps: int = 8, seed: int = None,
+                       ckpt: str = None, save_path: str = None, timeout: int = None) -> str:
+        """
+        Runs one LTXV text-to-video generation and returns the absolute path to the
+        saved animated .webp (empty string on failure).
+        """
+        timeout = timeout or max(self.timeout, 600)
+        try:
+            with open(self.video_workflow_path, "r", encoding="utf-8") as f:
+                wf = json.load(f)
+        except Exception as e:
+            print(f"[LTXV] Video workflow okunamadi ({self.video_workflow_path}): {e}")
+            return ""
+
+        seed = int(seed if seed is not None else (time.time_ns() % 2_147_483_647))
+        try:
+            wf["3"]["inputs"]["text"] = prompt
+            wf["9"]["inputs"]["noise_seed"] = seed
+            wf["7"]["inputs"]["steps"] = int(steps)
+            wf["6"]["inputs"]["width"] = int(width)
+            wf["6"]["inputs"]["height"] = int(height)
+            wf["6"]["inputs"]["length"] = int(frames)
+            wf["2"]["inputs"]["ckpt_name"] = ckpt or self.video_ckpt
+        except Exception as e:
+            print(f"[LTXV] Video workflow parametreleri uygulanamadi: {e}")
+            return ""
+
+        client_id = "pozitron-vid-" + uuid.uuid4().hex[:8]
+        try:
+            resp = self._api("/prompt", {"prompt": wf, "client_id": client_id}, timeout=30)
+            pid = resp.get("prompt_id")
+            if not pid:
+                print(f"[LTXV] prompt_id alinamadi: {str(resp)[:200]}")
+                return ""
+        except Exception as e:
+            print(f"[LTXV] Kuyruga eklenemedi: {e}")
+            return ""
+
+        deadline = time.time() + timeout
+        video_info = None
+        while time.time() < deadline:
+            try:
+                hist = self._api(f"/history/{pid}", timeout=20)
+            except Exception:
+                time.sleep(3)
+                continue
+            if pid in hist:
+                entry = hist[pid]
+                status = entry.get("status", {}) or {}
+                if status.get("status_str") == "error":
+                    print(f"[LTXV] Uretim hatasi: {json.dumps(status)[:300]}")
+                    return ""
+                for node_out in (entry.get("outputs", {}) or {}).values():
+                    imgs = (node_out or {}).get("images") or (node_out or {}).get("gifs") or []
+                    if imgs:
+                        video_info = imgs[0]
+                        break
+                if video_info is not None:
+                    break
+            time.sleep(3)
+
+        if not video_info:
+            print("[LTXV] Zaman asimi / video cikti bulunamadi.")
+            return ""
+
+        try:
+            q = urllib.parse.urlencode({
+                "filename": video_info.get("filename", ""),
+                "subfolder": video_info.get("subfolder", ""),
+                "type": video_info.get("type", "output"),
+            })
+            with urllib.request.urlopen(self.server + "/view?" + q, timeout=120) as r:
+                raw = r.read()
+            if len(raw) < 5000:
+                print("[LTXV] Video verisi cok kucuk, iptal edildi.")
+                return ""
+        except Exception as e:
+            print(f"[LTXV] Video indirilemedi: {e}")
+            return ""
+
+        if not save_path:
+            save_path = os.path.join(self.video_dir, f"{uuid.uuid4().hex[:10]}_ltx.webp")
+        try:
+            with open(save_path, "wb") as f:
+                f.write(raw)
+        except Exception as e:
+            print(f"[LTXV] Video kaydedilemedi: {e}")
+            return ""
+
+        print(f"[LTXV] AI video uretildi: {os.path.basename(save_path)} ({len(raw)//1024} KB, seed={seed})")
+        return save_path
+
+    def generate_video_for_reel(self, post_data: dict, post_id: str,
+                                width: int = None, height: int = None,
+                                frames: int = None, steps: int = None,
+                                reels_method: str = None) -> dict:
+        """
+        Generates AI video for Instagram Reels based on the selected duration/composition method:
+        - 'multi_shot': 2x 113-frame AI clips (hardware + flight action) + 2s outro card (>=10s)
+        - 'direct_257': Single continuous 257-frame take (10.3s)
+        - 'slow_motion': 129 frames with 0.5x slow-motion playback (10.3s)
+        - 'fast_97': Fast prototype 97-frame clip (~3.9s)
+        """
+        width = int(width or os.environ.get("LTX_WIDTH", "576"))
+        height = int(height or os.environ.get("LTX_HEIGHT", "1024"))
+        steps = int(steps or os.environ.get("LTX_STEPS", "8"))
+        method = reels_method or post_data.get("reels_method") or os.environ.get("REELS_METHOD", "multi_shot")
+
+        if method == "direct_257":
+            target_frames = int(frames or os.environ.get("LTX_FRAMES_LONG", "257"))
+            prompt = self.build_video_prompt(post_data, shot="continuous")
+            save_path = os.path.join(self.video_dir, f"{post_id}_ltx_257.webp")
+            path = self.generate_video(prompt, width=width, height=height, frames=target_frames,
+                                       steps=steps, save_path=save_path)
+            return {
+                "path": path,
+                "clips": [path] if path else [],
+                "reels_method": "direct_257",
+                "reels_method_info": "Doğrudan 257 Kare Tek Plan Çekim (10.3 sn)",
+                "prompt": prompt,
+            }
+
+        elif method == "slow_motion":
+            target_frames = int(frames or os.environ.get("LTX_FRAMES_SLOWMO", "129"))
+            prompt = self.build_video_prompt(post_data, shot="hardware")
+            save_path = os.path.join(self.video_dir, f"{post_id}_ltx_129.webp")
+            path = self.generate_video(prompt, width=width, height=height, frames=target_frames,
+                                       steps=steps, save_path=save_path)
+            return {
+                "path": path,
+                "clips": [path] if path else [],
+                "reels_method": "slow_motion",
+                "reels_method_info": "Sinematik Ağır Çekim (129 Kare 0.5x · 10.3 sn)",
+                "prompt": prompt,
+            }
+
+        elif method == "fast_97":
+            target_frames = int(frames or os.environ.get("LTX_FRAMES", "97"))
+            prompt = self.build_video_prompt(post_data, shot="montage")
+            save_path = os.path.join(self.video_dir, f"{post_id}_ltx_97.webp")
+            path = self.generate_video(prompt, width=width, height=height, frames=target_frames,
+                                       steps=steps, save_path=save_path)
+            return {
+                "path": path,
+                "clips": [path] if path else [],
+                "reels_method": "fast_97",
+                "reels_method_info": "Hızlı Test Modu (97 Kare · 3.9 sn)",
+                "prompt": prompt,
+            }
+
+        else:
+            # Default / Recommended: 'multi_shot' (2x 113 frames + Outro Card = >=10s)
+            shot1_frames = int(os.environ.get("LTX_FRAMES_SHOT1", "113"))
+            shot2_frames = int(os.environ.get("LTX_FRAMES_SHOT2", "113"))
+
+            prompt1 = self.build_video_prompt(post_data, shot="hardware")
+            save_path1 = os.path.join(self.video_dir, f"{post_id}_ltx_shot1.webp")
+            path1 = self.generate_video(prompt1, width=width, height=height, frames=shot1_frames,
+                                        steps=steps, save_path=save_path1)
+
+            prompt2 = self.build_video_prompt(post_data, shot="action")
+            save_path2 = os.path.join(self.video_dir, f"{post_id}_ltx_shot2.webp")
+            path2 = self.generate_video(prompt2, width=width, height=height, frames=shot2_frames,
+                                        steps=steps, save_path=save_path2)
+
+            clips = [p for p in (path1, path2) if p and os.path.exists(p)]
+            primary_path = clips[0] if clips else ""
+            prompts = []
+            if path1:
+                prompts.append(f"Sahne 1 (Donanım): {prompt1}")
+            if path2:
+                prompts.append(f"Sahne 2 (Uçuş): {prompt2}")
+
+            return {
+                "path": primary_path,
+                "clips": clips,
+                "reels_method": "multi_shot",
+                "reels_method_info": "Çoklu Sahne Kurgusu (2x 113 Kare AI + Kurumsal CTA)",
+                "prompt": " | ".join(prompts) if prompts else prompt1,
+            }
+

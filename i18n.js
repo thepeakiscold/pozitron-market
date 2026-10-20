@@ -64,7 +64,7 @@ const i18nData = {
     
     hero_badge: "Profesyonel FPV & Drone Ekipmanları",
     hero_title: "Türkiye'nin En Kapsamlı <span class=\"highlight-text\">Drone Donanım</span> Pazarı",
-    hero_desc: "Fırçasız motorlar, ESC sürücüler, uçuş kontrol kartları, dijital HD FPV kameralar, pervaneler ve yüksek C bataryalar. Hızlı teslimat ve 3D Secure güvenli ödeme ile kapınızda.",
+    hero_desc: "Fırçasız motorlar, ESC sürücüler, uçuş kontrol kartları, dijital HD FPV kameralar, pervaneler ve yüksek C bataryalar. Hızlı teslimat ve havale/EFT/FAST ile ödeme kolaylığıyla kapınızda.",
     hero_cta: "Tüm Parçaları İncele",
     hero_builder_cta: "Bütçene Göre Drone Topla",
     
@@ -72,8 +72,8 @@ const i18nData = {
     trust_1_sub: "Doğrudan Üreticiden",
     trust_2_title: "Aynı Gün Kargo",
     trust_2_sub: "1500 TL Üzeri Ücretsiz",
-    trust_3_title: "3D Secure Ödeme",
-    trust_3_sub: "256-Bit SSL Koruması",
+    trust_3_title: "Havale / EFT / FAST",
+    trust_3_sub: "Banka Transferi",
     trust_4_title: "Teknik Destek",
     trust_4_sub: "Uzman FPV Pilotları",
     
@@ -132,7 +132,7 @@ const i18nData = {
     btn_login_submit: "Giriş Yap",
     btn_reg_submit: "Hesap Oluştur",
     
-    checkout_title: "3D Secure Güvenli Ödeme & Sipariş",
+    checkout_title: "Sipariş ve Ödeme Bilgileri",
     checkout_sub: "Lütfen teslimat ve sipariş bilgilerinizi giriniz.",
     shipping_info_title: "1. Teslimat & Fatura Bilgileri",
     payment_info_title: "2. Kredi / Banka Kartı",
@@ -144,7 +144,7 @@ const i18nData = {
     pay_securely_btn: "Tutarını Güvenle Öde",
     
     order_success_title: "Siparişiniz Başarıyla Alındı!",
-    order_success_desc: "Ödemeniz 3D Secure ile güvenle tamamlandı. Siparişiniz kargo için hazırlanıyor.",
+    order_success_desc: "Havale bildiriminiz alındı. Siparişiniz, tahsilat kontrolünden sonra hazırlanır.",
     continue_shopping: "Alışverişe Devam Et",
     
     builder_modal_title: "Pozitron Akıllı & Bütçeye Göre Drone Toplama Sihirbazı",
@@ -215,7 +215,7 @@ const i18nData = {
     footer_cat_heading: "Drone Donanımları",
     footer_support_heading: "Müşteri & Güvenlik",
     footer_payment_heading: "Güvenli Ödeme",
-    footer_payment_desc: "Tüm işlemler 256-Bit SSL sertifikası ve 3D Secure banka güvenlik protokolüyle korunmaktadır.",
+    footer_payment_desc: "Havale / EFT / FAST ile ödeme yapabilirsiniz. iyzico ve PayTR ile kart ödemesi yakında hizmetinizde.",
     footer_shipping: "Teslimat & Aynı Gün Kargo",
     footer_returns: "Kolay İade ve Değişim",
     footer_faq: "Sıkça Sorulan Sorular (SSS)",
@@ -323,7 +323,7 @@ const i18nData = {
     
     hero_badge: "Professional FPV & Drone Equipment",
     hero_title: "Premier <span class=\"highlight-text\">Drone Hardware</span> Marketplace",
-    hero_desc: "Brushless motors, ESCs, flight controllers, digital HD FPV cameras, propellers, and high-C batteries. Fast delivery and 3D Secure checkout.",
+    hero_desc: "Brushless motors, ESCs, flight controllers, digital HD FPV cameras, propellers, and high-C batteries. Fast delivery and payment by bank transfer.",
     hero_cta: "Explore All Parts",
     hero_builder_cta: "Build Drone by Budget",
     
@@ -331,8 +331,8 @@ const i18nData = {
     trust_1_sub: "Direct From Manufacturers",
     trust_2_title: "Same Day Dispatch",
     trust_2_sub: "Free Shipping Over $50",
-    trust_3_title: "3D Secure Checkout",
-    trust_3_sub: "256-Bit SSL Protected",
+    trust_3_title: "Bank Transfer",
+    trust_3_sub: "Wire / EFT / FAST",
     trust_4_title: "Technical Support",
     trust_4_sub: "Expert FPV Pilots",
     
@@ -391,7 +391,7 @@ const i18nData = {
     btn_login_submit: "Sign In",
     btn_reg_submit: "Create Account",
     
-    checkout_title: "3D Secure Checkout & Payment",
+    checkout_title: "Order and Payment Details",
     checkout_sub: "Please enter your delivery and order details.",
     shipping_info_title: "1. Delivery & Contact Details",
     payment_info_title: "2. Credit / Debit Card",
@@ -403,7 +403,7 @@ const i18nData = {
     pay_securely_btn: "Pay Total Securely",
     
     order_success_title: "Order Confirmed!",
-    order_success_desc: "Your 3D Secure payment was approved. Your drone components are being packed for shipping.",
+    order_success_desc: "Your bank transfer notice was received. Your order will be prepared after payment is verified.",
     continue_shopping: "Continue Shopping",
     
     builder_modal_title: "Pozitron Smart Budget Drone Builder & Compatibility Wizard",
@@ -437,7 +437,7 @@ const i18nData = {
     footer_cat_heading: "Drone Hardware",
     footer_support_heading: "Customer Care",
     footer_payment_heading: "Secure Payment",
-    footer_payment_desc: "All transactions are protected with 256-Bit SSL encryption and 3D Secure banking protocols.",
+    footer_payment_desc: "Pay by bank transfer. Card payments with iyzico and PayTR are coming soon.",
     footer_shipping: "Delivery & Express Dispatch",
     footer_returns: "Easy Returns & Exchanges",
     footer_faq: "Frequently Asked Questions (FAQ)",

@@ -1,6 +1,7 @@
 import os
 import unittest
 from datetime import datetime, timedelta
+from PIL import Image
 from instagram_agent.db import (
     init_instagram_tables, get_agent_config, update_agent_config,
     save_instagram_post, get_instagram_post_by_id,
@@ -309,7 +310,7 @@ class TestInstagramAdvancedPR(unittest.TestCase):
         # 2. Flight Weather Radar
         weather_content = self.content_gen.generate_content(content_type='flight_weather_radar')
         self.assertEqual(weather_content['content_type'], 'flight_weather_radar')
-        self.assertIn('RADARI', weather_content['title'])
+        self.assertIn('hava', weather_content['title'].lower())
         self.assertIn('visual_summary', weather_content)
         weather_post = {
             'id': f"test_weather_{int(datetime.now().timestamp())}",
@@ -346,6 +347,53 @@ class TestInstagramAdvancedPR(unittest.TestCase):
         self.assertTrue(ai_fallback_path.endswith('.jpg'))
         abs_fallback_p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ai_fallback_path.lstrip('./').lstrip('/'))
         self.assertTrue(os.path.exists(abs_fallback_p))
+
+    def test_14_daily_like_quota_and_state(self):
+        """Verify daily-like tracking fields, like_media diagnostics and no-session handling."""
+        data = self.engagement_engine.load_interactions_data()
+        self.assertIn('today_likes_count', data)
+        self.assertIn('liked_media_ids', data)
+
+        # like_media must fail gracefully (no network) without a session cookie
+        eng = InstagramEngagementEngine()
+        eng.session_cookies = {}
+        res = eng.like_media('123456789', 'ABCdef')
+        self.assertFalse(res['success'])
+        self.assertEqual(res['error'], 'no_session')
+
+        # run_daily_drone_engagement must abort cleanly when no session is available
+        eng2 = InstagramEngagementEngine()
+        eng2._load_session_if_needed = lambda: None
+        eng2.session_cookies = {}
+        out = eng2.run_daily_drone_engagement(target_count=10)
+        self.assertFalse(out['success'])
+        self.assertIn('error', out)
+
+    def test_15_reels_slide_panel_never_white(self):
+        """Themed (non-product) Reels slides must not render an empty white photo panel."""
+        from instagram_agent.image_generator import ImageGenerator
+        gen = ImageGenerator(width=1080, height=1080)
+        pd = {
+            'id': f"test_reel_panel_{int(datetime.now().timestamp())}",
+            'content_type': 'tool_showcase',
+            'title': '[FREKANS] Panel Test',
+            'visual_summary': {'key_points': ['a', 'b', 'c']},
+            'visual_palette': 'electric_blue',
+        }
+        slides = gen.generate_reels_slides(pd)
+        self.assertEqual(len(slides), 3)
+        try:
+            with Image.open(slides[0]) as im:
+                # Centre of the old white inner_box (85,255)-(995,935)
+                r, g, b = im.convert('RGB').getpixel((540, 600))[:3]
+                # Must be a dark procedural pixel, not the old (248,250,252) white panel
+                self.assertLess(r + g + b, 200, f"Panel still bright: {(r, g, b)}")
+        finally:
+            for s in slides:
+                try:
+                    os.remove(s)
+                except Exception:
+                    pass
 
 if __name__ == '__main__':
     unittest.main()

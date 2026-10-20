@@ -49,42 +49,38 @@ class TestInstagramGeminiImage(unittest.TestCase):
         except Exception:
             pass
 
-    def test_02_alternating_image_modes(self):
+    def test_02_unified_brand_template(self):
         """
-        Verifies that every other post strictly alternates between gemini_image and canvas.
-        (Her iki postta bir, gemini image ile uretilmis gorselli post atsin.)
+        Every post now uses the single unified brand template (real logo + hero image
+        + human text). No more alternating gemini_image/canvas forms.
         """
-        # Generate 4 consecutive posts
         modes_sequence = []
         created_post_ids = []
 
-        for i in range(4):
+        for i in range(3):
             res = self.agent.generate_and_publish_now(content_type='product_spotlight')
             self.assertTrue(res.get('success'), f"Post {i+1} generation failed: {res.get('error')}")
             post = res.get('post')
             self.assertIsNotNone(post)
             created_post_ids.append(post['id'])
-            mode = post.get('image_mode')
-            modes_sequence.append(mode)
+            modes_sequence.append(post.get('image_mode'))
 
-            # Verify image file exists and is 1080x1080
+            # Verify image file exists and is 1080x1080 JPEG
             img_path = os.path.join(BASE_DIR, post['local_image_path'].lstrip('./').lstrip('/'))
             self.assertTrue(os.path.exists(img_path))
             with Image.open(img_path) as im:
                 self.assertEqual(im.size, (1080, 1080))
+                self.assertEqual(im.format, 'JPEG')
 
-        # Check alternation: adjacent modes MUST be different
-        self.assertEqual(len(modes_sequence), 4)
-        for i in range(len(modes_sequence) - 1):
-            self.assertNotEqual(
-                modes_sequence[i],
-                modes_sequence[i+1],
-                f"Consecutive posts {i} and {i+1} did not alternate: {modes_sequence}"
-            )
+        # Every post uses the same template.
+        self.assertEqual(set(modes_sequence), {'brand_template'})
 
-        # Check that both modes are represented equally
-        self.assertEqual(modes_sequence.count('gemini_image'), 2)
-        self.assertEqual(modes_sequence.count('canvas'), 2)
+        # Clean up generated test posts + images.
+        for pid in created_post_ids:
+            try:
+                self.agent.delete_post(pid)
+            except Exception:
+                pass
 
 if __name__ == '__main__':
     unittest.main()

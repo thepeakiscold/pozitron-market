@@ -6328,3 +6328,24 @@ img {
 #reset-code:focus::placeholder {
   opacity: 0.4;
 }
+
+/* Active weekly deal banner (coupon box) */
+.active-deal-banner {
+  background: linear-gradient(90deg, rgba(2,132,199,0.18), rgba(56,189,248,0.10));
+  border: 1px solid rgba(56,189,248,0.45);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+  color: #e0f2fe;
+  line-height: 1.35;
+}
+.active-deal-banner strong { color: #38bdf8; }
+.active-deal-banner .deal-code {
+  display: inline-block; margin-top: 4px; padding: 2px 8px;
+  background: rgba(2,132,199,0.35); border: 1px dashed #38bdf8;
+  border-radius: 6px; font-family: var(--font-mono, monospace); font-weight: 700; color: #fff;
+}
+
+/* Official payment artwork retains its original proportions and white clear space. */
+.payment-provider-logos { display:block; width:280px; max-width:100%; height:auto; box-sizing:border-box; background:#fff; padding:12px; border-radius:8px; }

@@ -1881,12 +1881,26 @@ class PozitronApp {
 
     let data = null;
     try {
+      const u = this.user || {};
       const res = await fetch(`${this.apiBase}/coupons/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, subtotal_usd: subtotalUSD, subtotal_try: subtotalTRY })
+        body: JSON.stringify({
+          code,
+          subtotal_usd: subtotalUSD,
+          subtotal_try: subtotalTRY,
+          user_id: u.id || '',
+          email: u.email || ''
+        })
       });
-      if (res.ok) data = await res.json();
+      data = await res.json().catch(() => null);
+      if (!res.ok && data) {
+        // Server rejected (expired / already used / min order / login required).
+        feedback.innerHTML = `<span class="text-danger">${data.error || 'Geçersiz kupon kodu.'}</span>`;
+        this.appliedCoupon = null;
+        this.updateCartUI();
+        return;
+      }
     } catch (e) {
       // static fallback
     }
@@ -1906,7 +1920,16 @@ class PozitronApp {
 
     if (data.valid) {
       this.appliedCoupon = data;
-      feedback.innerHTML = `<span class="text-success">✓ %${data.discount_value || 10} İndirim uygulandı!</span>`;
+      let label = data.discount_type === 'percent'
+        ? `%${data.discount_value} indirim`
+        : `${Number(data.discount_value).toLocaleString('tr-TR')}₺ indirim`;
+      let extra = '';
+      if (data.expires_at) {
+        try {
+          extra = ` <small>(son: ${new Date(data.expires_at).toLocaleString('tr-TR')})</small>`;
+        } catch (e) {}
+      }
+      feedback.innerHTML = `<span class="text-success">✓ ${label} uygulandı!${extra}</span>`;
       this.updateCartUI();
     } else {
       feedback.innerHTML = `<span class="text-danger">${data.error || 'Geçersiz kupon kodu.'}</span>`;
@@ -3129,7 +3152,8 @@ class PozitronApp {
     const modal = document.getElementById('checkout-modal-backdrop');
     if (!modal) return;
 
-    this.activePaymentMethod = this.activePaymentMethod || 'iyzico';
+    this.activePaymentMethod = 'havale';
+    this.loadBankSettings();
     this.populateTurkishCities();
 
     // Pre-fill user data if logged in
@@ -3194,9 +3218,10 @@ class PozitronApp {
     });
 
     if (this.appliedCoupon) {
-      const discount = (subTRY * this.appliedCoupon.discount_percentage) / 100;
-      subTRY -= discount;
-      subUSD -= (subUSD * this.appliedCoupon.discount_percentage) / 100;
+      subTRY -= (this.appliedCoupon.discount_try || 0);
+      subUSD -= (this.appliedCoupon.discount_usd || 0);
+      if (subTRY < 0) subTRY = 0;
+      if (subUSD < 0) subUSD = 0;
     }
 
     const isFree = subTRY >= 1500;
@@ -3361,6 +3386,10 @@ class PozitronApp {
       if (panel) panel.style.display = (m === method) ? 'block' : 'none';
     });
 
+    // Unconnected providers cannot submit a payment.
+    const paymentSubmit = document.getElementById('submit-order-btn');
+    if (paymentSubmit) paymentSubmit.disabled = method !== 'havale';
+
     // Update Submit Button Text & Icon
     const btnText = document.getElementById('pay-submit-btn-text');
     const btnIcon = document.getElementById('pay-submit-btn-icon');
@@ -3368,14 +3397,14 @@ class PozitronApp {
 
     if (method === 'iyzico') {
       if (btnIcon) btnIcon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
-      if (btnText) btnText.textContent = 'İyzico ile Güvenli Öde';
+      if (btnText) btnText.textContent = 'iyzico — Yakında';
       if (submitBtn) {
         submitBtn.style.background = '#1a56db';
         submitBtn.style.borderColor = '#1a56db';
       }
     } else if (method === 'paytr') {
       if (btnIcon) btnIcon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>';
-      if (btnText) btnText.textContent = 'PayTR ile Güvenli Öde';
+      if (btnText) btnText.textContent = 'PayTR — Yakında';
       if (submitBtn) {
         submitBtn.style.background = '#0891b2';
         submitBtn.style.borderColor = '#0891b2';
@@ -3391,22 +3420,26 @@ class PozitronApp {
   }
 
   updateBankInfo(bankKey) {
-    const banks = {
-      main: { name: 'Kuveyt Türk / 7/24 FAST', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' },
-      ziraat: { name: 'Ziraat Bankası (7/24 FAST)', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' },
-      garanti: { name: 'Garanti BBVA', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' },
-      isbank: { name: 'Türkiye İş Bankası', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' },
-      enpara: { name: 'QNB Enpara / FAST', iban: 'TR41 0020 5000 0908 0479 3000 01', owner: 'Burak Peköz', phone: '0552 128 0617' }
-    };
-    const b = banks[bankKey] || banks.main;
+    const b = this.bankSettings || { name: 'Akbank / Havale / EFT / FAST', iban: 'TR69 0004 6001 9188 8000 3245 80' };
     const nameEl = document.getElementById('bank-box-name');
     const ibanEl = document.getElementById('bank-box-iban');
-    const ownerEl = document.getElementById('bank-box-owner');
-    const phoneEl = document.getElementById('bank-box-phone');
     if (nameEl) nameEl.textContent = b.name;
     if (ibanEl) ibanEl.textContent = b.iban;
-    if (ownerEl) ownerEl.textContent = b.owner;
-    if (phoneEl) phoneEl.textContent = b.phone || '0552 128 0617';
+  }
+
+  async loadBankSettings() {
+    for (const url of [`${this.apiBase}/settings`, '/data/settings.json']) {
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) continue;
+        const settings = await res.json();
+        if (!settings.bank_iban) continue;
+        this.bankSettings = { name: settings.bank_name || 'Havale / EFT / FAST', iban: settings.bank_iban };
+        this.updateBankInfo('main');
+        return;
+      } catch (e) { /* Use the next authoritative source, then the embedded default. */ }
+    }
+    this.updateBankInfo('main');
   }
 
   copyIban() {
@@ -3519,7 +3552,14 @@ class PozitronApp {
 
     if (err) err.style.display = 'none';
 
-    const method = this.activePaymentMethod || 'iyzico';
+    const method = this.activePaymentMethod || 'havale';
+    if (method !== 'havale') {
+      if (err) {
+        err.textContent = 'Kart ödemesi henüz kullanıma açık değildir. Havale/EFT/FAST seçeneğini kullanabilirsiniz.';
+        err.style.display = 'block';
+      }
+      return;
+    }
     const orderNum = 'PZTR-' + (method.toUpperCase()) + '-' + Math.floor(10000 + Math.random() * 90000);
     const orderItemsStr = this.cart.map(i => `${i.quantity}x ${i.name_tr || i.title || 'Ürün'}`).join(', ');
 
@@ -3561,7 +3601,8 @@ class PozitronApp {
       tax_office: taxOffice,
       company_name: companyName,
       order_notes: orderNotes,
-      payment_method: method
+      payment_method: method,
+      coupon_code: this.appliedCoupon ? this.appliedCoupon.code : undefined
     };
 
     if (method === 'havale') {
@@ -3581,42 +3622,6 @@ class PozitronApp {
       return;
     }
 
-    // Credit Card validation for Iyzico & PayTR
-    const cardNum = document.getElementById(`${method}-card-number`)?.value.replace(/\D/g, '') || '';
-    const cardName = document.getElementById(`${method}-card-name`)?.value.trim() || '';
-    const cardExp = document.getElementById(`${method}-card-expiry`)?.value.trim() || '';
-    const cardCvv = document.getElementById(`${method}-card-cvv`)?.value.trim() || '';
-    const installmentVal = document.getElementById(`${method}-installments`)?.value || '1';
-
-    if (cardNum.length < 15 || !cardName || cardExp.length < 4 || cardCvv.length < 3) {
-      if (err) {
-        err.textContent = "Lütfen kredi kartı numaranızı, son kullanma tarihini ve CVV kodunu eksiksiz giriniz.";
-        err.style.display = 'block';
-      }
-      return;
-    }
-
-    let brand = 'Kredi Kartı';
-    if (/^4/.test(cardNum)) brand = 'VISA';
-    else if (/^(5[1-5]|2[2-7])/.test(cardNum)) brand = 'Mastercard';
-    else if (/^9792/.test(cardNum)) brand = 'TROY';
-
-    const gatewayTitle = method === 'iyzico' ? 'iyzico 3D Secure' : 'PayTR 3D Secure';
-
-    this.pendingOrder = {
-      ...baseOrderPayload,
-      card_number: cardNum,
-      card_holder: cardName,
-      card_expiry: cardExp,
-      card_cvv: cardCvv,
-      tracking_number: 'PZTR-TR-' + Date.now().toString(36).toUpperCase(),
-      transaction_id: `${gatewayTitle} (#TXN-${Date.now().toString(36)}) - ${installmentVal === '1' ? 'Tek Çekim' : installmentVal + ' Taksit'}`,
-      card_brand: `${brand} (${gatewayTitle})`,
-      card_last4: cardNum.slice(-4)
-    };
-
-    this.closeCheckoutModal();
-    this.open3DSecureModal(gatewayTitle, phone);
   }
 
   open3DSecureModal(gatewayName, phone) {
@@ -3663,25 +3668,15 @@ class PozitronApp {
   }
 
   verify3DSecureOtp() {
-    const inputEl = document.getElementById('otp-code-input');
-    const errEl = document.getElementById('otp-error-msg');
-    const code = inputEl ? inputEl.value.trim() : '';
-
-    if (!code || code.length < 4) {
-      if (errEl) {
-        errEl.textContent = 'Lütfen SMS ile gelen 6 haneli doğrulama kodunu eksiksiz giriniz.';
-        errEl.style.display = 'block';
-      }
-      return;
-    }
-
-    if (this._otpInterval) clearInterval(this._otpInterval);
+    this.pendingOrder = null;
     this.close3DSecureModal();
-    this.finalizeOrder(this.pendingOrder);
+    this.showToast('Kart ödemesi henüz kullanıma açık değildir.', 'error');
   }
 
   finalizeOrder(order) {
-    if (!order) return;
+    if (!order || order.payment_method !== 'havale') return;
+    order.payment_status = 'PENDING';
+    order.order_status = 'PENDING_PAYMENT';
 
     if (!order.items_detail && this.cart && this.cart.length > 0) {
       order.items_detail = this.cart.map(i => ({
@@ -3817,6 +3812,10 @@ class PozitronApp {
       <div class="receipt-row">
         <span>Kargo Takip No:</span>
         <strong>${order.tracking_number}</strong>
+      </div>
+      <div class="receipt-row">
+        <span>Ödeme Durumu:</span>
+        <strong>Havale onayı bekleniyor</strong>
       </div>
       <div class="receipt-row">
         <span>Ödeme Yöntemi:</span>
@@ -6573,36 +6572,21 @@ class PozitronApp {
 
   async syncReviewsFromBackend() {
     try {
-      const res = await fetch(`${this.apiBase}/reviews`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.reviews && data.reviews.length > 0) {
-          const local = this.getCommunityReviews();
-          const localIds = new Set(local.map(r => r.id));
-          let hasNew = false;
-          data.reviews.forEach(srvRev => {
-            if (!localIds.has(srvRev.id)) {
-              local.push({
-                id: srvRev.id,
-                userName: srvRev.user_name,
-                userAvatar: srvRev.user_avatar,
-                rating: srvRev.rating,
-                productName: srvRev.title || 'Genel Mağaza Deneyimi',
-                productId: srvRev.product_id || '',
-                comment: srvRev.comment,
-                verified: !!srvRev.verified_purchase,
-                date: srvRev.created_at ? srvRev.created_at.split('T')[0] : 'Yakın zamanda'
-              });
-              hasNew = true;
-            }
-          });
-          if (hasNew) {
-            localStorage.setItem('pozitron_community_reviews', JSON.stringify(local));
-            this.renderCommunityReviews(this.currentCommentFilter);
-          }
-        }
-      }
-    } catch(e) {}
+      const res = await fetch(`${this.apiBase}/reviews?limit=1000`, { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data.reviews)) return;
+      // The server is authoritative: deleted reviews must also leave browser caches.
+      const reviews = data.reviews.map(review => ({
+        id: review.id, userName: review.user_name, userAvatar: review.user_avatar,
+        rating: review.rating, productName: review.title || 'Genel Mağaza Deneyimi',
+        productId: review.product_id || '', comment: review.comment,
+        verified: !!review.verified_purchase,
+        date: review.created_at ? review.created_at.split('T')[0] : ''
+      }));
+      localStorage.setItem('pozitron_community_reviews', JSON.stringify(reviews));
+      this.renderCommunityReviews(this.currentCommentFilter);
+    } catch (e) { /* Preserve the cache only while the server is unreachable. */ }
   }
 
   getCommunityReviews() {
@@ -6917,27 +6901,21 @@ class PozitronApp {
       date: 'Az önce'
     };
 
-    const reviews = this.getCommunityReviews();
-    reviews.unshift(newComment);
+    // Save first so every displayed comment has the server's moderation ID.
     try {
-      localStorage.setItem('pozitron_community_reviews', JSON.stringify(reviews));
-    } catch(err) {}
-
-    // Send to backend API
-    try {
-      fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product_id: productId || 'general',
-          user_name: authorName,
-          user_avatar: newComment.userAvatar,
-          rating: ratingVal,
-          title: productName || 'Değerlendirme',
-          comment: commentBody
-        })
-      }).catch(() => {});
-    } catch(err) {}
+      const response = await fetch(`${this.apiBase}/reviews`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId || 'general', user_name: authorName,
+          user_avatar: newComment.userAvatar, rating: ratingVal,
+          title: productName || 'Değerlendirme', comment: commentBody })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.review) throw new Error(result.error || 'Yorum kaydedilemedi.');
+      await this.syncReviewsFromBackend();
+    } catch (error) {
+      this.showToast('Yorum kaydedilemedi. Lütfen tekrar deneyin.', 'error');
+      return;
+    }
 
     this.closeCommentModal();
     this.showToast(window.i18n ? window.i18n.t('comments_success_toast') : 'Yorumunuz başarıyla paylaşıldı!', 'success');

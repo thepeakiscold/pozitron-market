@@ -202,6 +202,30 @@ SADECE asagidaki JSON formatinda gecerli bir JSON ciktisi uret:
 }}
 """
 
+        # 1. Unified LLM (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                parsed = llm.generate_json(prompt, max_tokens=8192, temperature=0.4)
+                if parsed and 'reply_text' in parsed:
+                    if not bool(parsed.get('is_drone_question', True)):
+                        return {
+                            "is_drone_question": False,
+                            "confidence_score": 0,
+                            "question_summary": parsed.get('question_summary', title[:100]),
+                            "reply_text": ""
+                        }
+                    return {
+                        "is_drone_question": True,
+                        "confidence_score": int(parsed.get('confidence_score', 85)),
+                        "question_summary": parsed.get('question_summary', title[:100]),
+                        "reply_text": format_human_reddit_reply(parsed.get('reply_text', ''))
+                    }
+        except Exception:
+            pass
+
+        # 2. Legacy Gemini fallback
         payload = {
             "contents": [{
                 "parts": [{"text": prompt}]

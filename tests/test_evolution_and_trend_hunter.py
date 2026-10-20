@@ -32,7 +32,7 @@ class TestEvolutionAndTrendHunter(unittest.TestCase):
         evo = self.supervisor.evolve_strategy_cycle()
         self.assertIn("evolution_cycle_id", evo)
         self.assertEqual(evo["growth_mode"], "AGGRESSIVE_EXPANSION")
-        self.assertEqual(evo["model_used"], "gemini-3.8-flash")
+        self.assertEqual(evo["model_used"], "deepseek-v4.1-flash-high")
         self.assertIn("diagnosed_bottlenecks", evo)
         self.assertIn("strategic_adjustments", evo)
         self.assertIn("ai_reasoning", evo)

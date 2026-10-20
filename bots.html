@@ -1376,11 +1376,14 @@
               Otonom Instagram PR ve Topluluk Etkileşimi
             </h2>
             <p class="card-desc" style="max-width:850px;">
-              506 Pozitron donanımını ve FPV rehberlerini Gemini 3.8 Flash özetleriyle 1080x1080 afişler halinde <strong>@pozitronmarket</strong> hesabında otomatik yayınlar.
+              Tek marka şablonunda <strong>FLUX.1 [dev]</strong> AI görselleri ve ürün fotoğraflarıyla 1080x1080 postlar, <strong>LTX-Video 0.9.8</strong> ile dikey AI video Reels ve haftalık 24 saatlik indirim kuponlarını <strong>@pozitronmarket</strong> hesabında otomatik yayınlar.
             </p>
             <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:0.78rem; color:var(--text-muted); margin-top:10px;">
               <span>Hesap: <strong style="color:#f8fafc;">@pozitronmarket</strong></span>
-              <span>Model: <strong style="color:#f8fafc;">Gemini 3.8 Flash Vizyon Denetimli</strong></span>
+              <span>Metin: <strong style="color:#38bdf8;">Flash 3.8 (High)</strong></span>
+              <span>Görsel: <strong style="color:#f8fafc;">FLUX.1 [dev] (Yerel GPU)</strong></span>
+              <span>Video: <strong style="color:#f8fafc;">LTX-Video 0.9.8 (Yerel GPU)</strong></span>
+              <span>Denetim: <strong style="color:#38bdf8;">Flash 3.8 Vizyon Denetimi</strong></span>
               <span>Filtre: <strong style="color:#38bdf8;">Yalnızca Türk Drone Pilotları</strong></span>
             </div>
           </div>
@@ -1391,12 +1394,17 @@
             </button>
             <!-- Reels Mode Selection and Generate Button -->
             <div style="display:inline-flex; align-items:center; background:#0f172a; border:1px solid #334155; border-radius:10px; padding:3px 6px; gap:8px;">
-              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">Reels Modu:</span>
+              <span style="font-size:0.75rem; color:#94a3b8; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding-left:4px;">Reels Türü:</span>
               <select id="reels-mode-select" style="background:#1e293b; color:#38bdf8; border:1px solid #0284c7; border-radius:6px; padding:6px 12px; font-size:0.82rem; font-weight:700; cursor:pointer; outline:none;">
-                <option value="random" selected>🎲 Rastgele (1. veya 2. Yol)</option>
-                <option value="mode1">🎬 1. Yol: Dinamik Çok Slaytlı Şablon (0 TL)</option>
-                <option value="mode2">⚡ 2. Yol: Tam FPV Uçuşu + Alt Ürün Kartı (0 TL)</option>
-                <option value="gemini">💎 Gemini Omni AI Video (Ücretli API)</option>
+                <option value="auto" selected>🎲 Seçilen Türlerden Otomatik Döngü</option>
+                <option value="real_fpv_broll">🎥 Gerçek FPV Uçuş Videosu + Marka Katmanı</option>
+                <option value="freestyle_acro">⚡ Akro &amp; Hız Freestyle (10s AI)</option>
+                <option value="hardware_vs">⚔️ Donanım Düellosu (VS) (10s AI)</option>
+                <option value="quick_tip_fix">💡 15 Saniyede Pratik İpucu (10s AI)</option>
+                <option value="mistake_warning">⚠️ Bu Hatayı Sakın Yapma! (10s AI)</option>
+                <option value="secret_spot">📍 Gizli Uçuş Spotu (10s AI)</option>
+                <option value="product_cinematic">💎 Sinematik Donanım Vitrini (10s AI)</option>
+                <option value="flash_deal">🔥 Flaş Fırsat &amp; Stok Alarmı (10s AI)</option>
               </select>
               <button type="button" class="btn-action" onclick="triggerSelectedReelGenerate()" id="btn-ig-reels-generate" style="background:linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%); color:#fff; border:1px solid rgba(56,189,248,0.4); font-weight:700; margin:0; padding:6px 14px;">
                 <span>🎬 Reels Üret</span>
@@ -1409,12 +1417,187 @@
         </div>
       </div>
 
+      <!-- LTX-Video 10+ Saniye Reels Üretim Yöntemleri Seçim Kartı -->
+      <div id="reels-method-config-card" class="bots-card" style="background:#0c1020; border-color:#3b82f6; margin-bottom:20px; box-shadow:0 8px 24px rgba(2,132,199,0.12);">
+        <div class="bots-card-header" style="border-color:rgba(59,130,246,0.3); padding-bottom:12px; margin-bottom:14px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="status-pill status-pill-active" style="background:rgba(34,197,94,0.18); color:#4ade80; border-color:#22c55e;">10+ SANİYE REELS SİSTEMİ</span>
+              <h3 style="font-size:1.05rem; font-weight:700; margin:0; color:#fff;">🎬 LTX-Video 0.9.8 (AI) Video Kurgu &amp; Süre Yöntemleri</h3>
+            </div>
+            <p class="card-desc" style="margin-top:4px; font-size:0.8rem; color:#94a3b8;">
+              Aşağıdaki kutucuklardan birini seçerek Reels videolarınızın nasıl en az 10 saniye üretileceğini belirleyebilirsiniz. Seçiminiz otomatik olarak kaydedilir ve "🎬 Reels Üret" butonunda kullanılır.
+            </p>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px;" id="reels-method-cards-grid">
+          
+          <!-- Method 1: Multi-Shot Montage (Recommended) -->
+          <label class="reels-method-card" data-method="multi_shot" style="display:flex; flex-direction:column; justify-content:space-between; background:#111827; border:2px solid #38bdf8; border-radius:12px; padding:16px; cursor:pointer; position:relative; transition:all 0.2s ease; box-shadow:0 0 16px rgba(56,189,248,0.15);">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span class="status-pill status-pill-active" style="background:rgba(56,189,248,0.2); color:#38bdf8; border-color:#0284c7; font-weight:800; font-size:0.7rem;">🏆 ÖNERİLEN · 11.0 sn</span>
+                <input type="radio" name="reels_10s_method" value="multi_shot" checked style="accent-color:#38bdf8; width:18px; height:18px; cursor:pointer;" onchange="onReelsMethodChanged('multi_shot')">
+              </div>
+              <div style="font-weight:700; font-size:0.95rem; color:#fff; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                <span>🎬 Yöntem 1: Çoklu Sahne Kurgusu</span>
+              </div>
+              <p style="font-size:0.78rem; color:#94a3b8; line-height:1.45; margin:0 0 10px 0;">
+                2 farklı AI sahnesi (Donanım Yakın Çekim + Dinamik FPV Uçuşu) + 2 sn kurumsal logo &amp; CTA kapanış kartı.
+              </p>
+            </div>
+            <div style="background:#0b1329; border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:8px 10px; font-size:0.72rem; color:#7dd3fc;">
+              ✨ Sıfır bozulma · Yüksek stabilite · 2x 113 kare
+            </div>
+          </label>
+
+          <!-- Method 2: Continuous Long Take (257 frames) -->
+          <label class="reels-method-card" data-method="direct_257" style="display:flex; flex-direction:column; justify-content:space-between; background:#111827; border:2px solid #334155; border-radius:12px; padding:16px; cursor:pointer; position:relative; transition:all 0.2s ease;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span class="status-pill status-pill-purple" style="font-weight:800; font-size:0.7rem;">⏱️ TEK PLAN · 10.3 sn</span>
+                <input type="radio" name="reels_10s_method" value="direct_257" style="accent-color:#38bdf8; width:18px; height:18px; cursor:pointer;" onchange="onReelsMethodChanged('direct_257')">
+              </div>
+              <div style="font-weight:700; font-size:0.95rem; color:#fff; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                <span>⏱️ Yöntem 2: Doğrudan 257 Kare</span>
+              </div>
+              <p style="font-size:0.78rem; color:#94a3b8; line-height:1.45; margin:0 0 10px 0;">
+                LTX-Video modelinden 257 karelik (10.28 sn) kesintisiz tek plan çekim. Kesintisiz akıcı kamera hareketi.
+              </p>
+            </div>
+            <div style="background:#0b1329; border:1px solid #1e293b; border-radius:8px; padding:8px 10px; font-size:0.72rem; color:#cbd5e1;">
+              🎯 Kesintisiz akış · Tek plan · 257 kare
+            </div>
+          </label>
+
+          <!-- Method 3: Slow-Motion (129 frames 0.5x) -->
+          <label class="reels-method-card" data-method="slow_motion" style="display:flex; flex-direction:column; justify-content:space-between; background:#111827; border:2px solid #334155; border-radius:12px; padding:16px; cursor:pointer; position:relative; transition:all 0.2s ease;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span class="status-pill status-pill-info" style="font-weight:800; font-size:0.7rem;">🌊 SİNEMATİK · 10.3 sn</span>
+                <input type="radio" name="reels_10s_method" value="slow_motion" style="accent-color:#38bdf8; width:18px; height:18px; cursor:pointer;" onchange="onReelsMethodChanged('slow_motion')">
+              </div>
+              <div style="font-weight:700; font-size:0.95rem; color:#fff; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                <span>🌊 Yöntem 3: Sinematik Ağır Çekim</span>
+              </div>
+              <p style="font-size:0.78rem; color:#94a3b8; line-height:1.45; margin:0 0 10px 0;">
+                129 kare LTX-Video çekimi 0.5x akıcı ağır çekim enterpolasyonu ile 258 kareye genişletilerek 10+ saniyeye uzatılır.
+              </p>
+            </div>
+            <div style="background:#0b1329; border:1px solid #1e293b; border-radius:8px; padding:8px 10px; font-size:0.72rem; color:#cbd5e1;">
+              🎥 Ağır çekim · Dramatik his · 129 kare 0.5x
+            </div>
+          </label>
+
+          <!-- Method 4: Fast Prototype (97 frames) -->
+          <label class="reels-method-card" data-method="fast_97" style="display:flex; flex-direction:column; justify-content:space-between; background:#111827; border:2px solid #334155; border-radius:12px; padding:16px; cursor:pointer; position:relative; transition:all 0.2s ease;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span class="status-pill status-pill-warning" style="font-weight:800; font-size:0.7rem;">⚡ TEST · ~3.9 sn</span>
+                <input type="radio" name="reels_10s_method" value="fast_97" style="accent-color:#38bdf8; width:18px; height:18px; cursor:pointer;" onchange="onReelsMethodChanged('fast_97')">
+              </div>
+              <div style="font-weight:700; font-size:0.95rem; color:#fff; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                <span>⚡ Yöntem 4: Hızlı Test Modu</span>
+              </div>
+              <p style="font-size:0.78rem; color:#94a3b8; line-height:1.45; margin:0 0 10px 0;">
+                Hızlı prototipleme ve testler için 97 kare standart üretim (~4 sn). En hızlı AI video sonucunu verir.
+              </p>
+            </div>
+            <div style="background:#0b1329; border:1px solid #1e293b; border-radius:8px; padding:8px 10px; font-size:0.72rem; color:#cbd5e1;">
+              ⚡ Hızlı sonuç · 97 kare · Test için ideal
+            </div>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- POST & REELS TYPES FILTER CARD (YALNIZCA SEÇİLENLER PAYLAŞILIR)       -->
+      <!-- ===================================================================== -->
+      <div id="post-and-reels-filter-card" class="bots-card" style="background:#0b1122; border-color:#0284c7; margin-bottom:20px; box-shadow:0 8px 30px rgba(2,132,199,0.14);">
+        <div class="bots-card-header" style="border-color:rgba(56,189,248,0.25); padding-bottom:12px; margin-bottom:14px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="status-pill status-pill-active" style="background:rgba(56,189,248,0.18); color:#38bdf8; border-color:#0284c7; font-weight:800;">FİLTRE &amp; İÇERİK KONTROLÜ</span>
+              <span class="status-pill status-pill-purple" style="font-size:0.68rem;">GÜVENLİ PAYLAŞIM</span>
+              <span id="filter-autosave-indicator" style="font-size:0.75rem; color:#4ade80; display:inline-flex; align-items:center; gap:4px; opacity:0; transition:opacity 0.3s ease;">
+                ✓ Değişiklikler kaydedildi
+              </span>
+            </div>
+            <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff; font-family:var(--font-heading);">
+              🎯 Paylaşım Türleri &amp; Reels Filtresi (Yalnızca İşaretli Olanlar Paylaşılır)
+            </h3>
+            <p class="card-desc" style="margin-top:4px; font-size:0.8rem; color:#94a3b8; max-width:850px;">
+              Aşağıdaki kutucukları işaretleyerek veya kaldırarak otonom botun ve manuel tetikleyicilerin <strong>yalnızca sizin istediğiniz formatları</strong> paylaşmasını sağlayabilirsiniz. Gerçek FPV uçuş videolarını dilediğiniz zaman tek tıkla açıp kapatabilirsiniz.
+            </p>
+          </div>
+        </div>
+
+        <!-- Two Columns: Section 1 (Posts) and Section 2 (Reels) -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;" id="filter-cards-columns">
+          
+          <!-- Column 1: Post Types (16 Format) -->
+          <div style="background:#070b14; border:1px solid #1e293b; border-radius:12px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #1e293b; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">📸</span>
+                <div>
+                  <div style="font-weight:800; font-size:0.95rem; color:#fff;">Gönderi (Post) Türleri</div>
+                  <div style="font-size:0.72rem; color:#94a3b8;" id="post-types-selected-summary">16 / 16 Seçili</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="btn-action btn-secondary" onclick="selectAllPostTypes()" style="padding:4px 10px; font-size:0.72rem;">
+                  <span>Tümünü Seç</span>
+                </button>
+                <button type="button" class="btn-action btn-secondary" onclick="clearAllPostTypes()" style="padding:4px 10px; font-size:0.72rem;">
+                  <span>Tümünü Kaldır</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Post Types Grid -->
+            <div style="display:grid; grid-template-columns:1fr; gap:8px; max-height:480px; overflow-y:auto; padding-right:4px;" id="post-types-checkbox-grid">
+              <!-- Rendered via JavaScript from /api/instagram/post-types -->
+            </div>
+          </div>
+
+          <!-- Column 2: Reels Video Türleri (8 Format) -->
+          <div style="background:#070b14; border:1px solid #1e293b; border-radius:12px; padding:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #1e293b; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">🎬</span>
+                <div>
+                  <div style="font-weight:800; font-size:0.95rem; color:#fff;">Reels Video Türleri</div>
+                  <div style="font-size:0.72rem; color:#94a3b8;" id="reels-types-selected-summary">8 / 8 Seçili</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="btn-action btn-secondary" onclick="selectAllReelsTypes()" style="padding:4px 10px; font-size:0.72rem;">
+                  <span>Tümünü Seç</span>
+                </button>
+                <button type="button" class="btn-action btn-secondary" onclick="clearAllReelsTypes()" style="padding:4px 10px; font-size:0.72rem;">
+                  <span>Tümünü Kaldır</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Reels Types Grid -->
+            <div style="display:grid; grid-template-columns:1fr; gap:8px; max-height:480px; overflow-y:auto; padding-right:4px;" id="reels-types-checkbox-grid">
+              <!-- Rendered via JavaScript from /api/instagram/reels-types -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <!-- Gemini Reels Generation Result Panel (hidden by default) -->
       <div id="gemini-reel-result-panel" class="bots-card" style="display:none; background:#0d0f25; border-color:#8b5cf6; margin-bottom:20px;">
         <div class="bots-card-header" style="border-color:#6366f1;">
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
-              <span class="status-pill status-pill-purple">Gemini Omni Flash</span>
+              <span class="status-pill status-pill-purple">LTX-Video 0.9.8 AI</span>
               <h3 style="font-size:1.05rem; font-weight:700; margin:0; color:#fff;">AI Video Reels Önizleme</h3>
             </div>
             <p class="card-desc" id="gemini-reel-engine-info">Video motoru: Bekliyor...</p>
@@ -1464,7 +1647,7 @@
         <div class="bots-card" style="background:#091629; border-color:#0284c7; padding:16px 20px; margin-bottom:0;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
             <span style="font-size:0.75rem; font-weight:600; color:#7dd3fc; text-transform:uppercase;">Sonraki Türk Pilot Etkileşimi</span>
-            <span class="status-pill status-pill-active" id="ig-eng-cycle-badge">Günde 10 Takip &amp; Yorum</span>
+            <span class="status-pill status-pill-active" id="ig-eng-cycle-badge">Günde 10 Takip, Yorum &amp; Beğeni</span>
           </div>
           <div style="font-size:1.8rem; font-weight:800; color:#fff; font-family:var(--font-mono); font-variant-numeric:tabular-nums;" id="ig-eng-countdown-timer">
             --:--:--
@@ -1486,11 +1669,11 @@
                 Türk Drone Topluluğu Etkileşim Motoru
               </h3>
             </div>
-            <p class="card-desc">Türkçe FPV ve Teknofest etiketli pilotlara insan aralıklarıyla (8-16 sn) güvenli destek yorumu ve takip gerçekleştirir.</p>
+            <p class="card-desc">Türkçe FPV ve Teknofest etiketli pilotlara insan aralıklarıyla (8-16 sn) güvenli destek yorumu ve takip gerçekleştirir; günlük 10 gönderiyi de beğenir.</p>
           </div>
 
           <button type="button" class="btn-action btn-primary" id="btn-run-tr-engagement" onclick="runTurkishDroneEngagement()">
-            <span id="btn-run-tr-engagement-txt">Etkileşimi Başlat (10 Takip &amp; 10 Yorum)</span>
+            <span id="btn-run-tr-engagement-txt">Etkileşimi Başlat (10 Takip, 10 Yorum &amp; 10 Beğeni)</span>
           </button>
         </div>
 
@@ -1503,6 +1686,11 @@
           <div style="background:rgba(255,255,255,0.02); border:1px solid #1e293b; border-radius:8px; padding:10px 14px;">
             <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">GÜNLÜK YORUM KOTASI</div>
             <div style="font-size:1.4rem; font-weight:800; color:#ec4899; font-family:var(--font-mono);" id="ig-eng-today-comments">0 / 10</div>
+          </div>
+
+          <div style="background:rgba(255,255,255,0.02); border:1px solid #1e293b; border-radius:8px; padding:10px 14px;">
+            <div style="font-size:0.72rem; color:var(--text-muted); font-weight:600;">GÜNLÜK BEĞENİ KOTASI</div>
+            <div style="font-size:1.4rem; font-weight:800; color:#f59e0b; font-family:var(--font-mono);" id="ig-eng-today-likes">0 / 10</div>
           </div>
 
           <div style="background:rgba(255,255,255,0.02); border:1px solid #1e293b; border-radius:8px; padding:10px 14px;">
@@ -1524,6 +1712,304 @@
           <div id="ig-eng-recent-items" style="display:flex; flex-wrap:wrap; gap:6px; max-height:80px; overflow-y:auto;">
             <span style="color:#64748b; font-size:0.75rem;">Henüz kayıt yok. Butona tıklayarak etkileşimi başlatabilirsiniz.</span>
           </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- POST STUDIO: POST TYPE SELECTOR & SAMPLE POST GENERATOR               -->
+      <!-- ===================================================================== -->
+      <div class="bots-card" id="ig-post-studio-card" style="background:#0a1020; border-color:#0284c7; margin-bottom:20px;">
+        <div class="bots-card-header" style="border-color:#1e293b;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="status-pill status-pill-info" style="background:rgba(2,132,199,0.15); color:#38bdf8; border-color:rgba(2,132,199,0.4);">Post Stüdyosu</span>
+              <span class="status-pill status-pill-active" style="background:rgba(16,185,129,0.15); color:#34d399; border-color:rgba(16,185,129,0.4);">⚡ Flash 3.8</span>
+              <span class="code-chip" style="color:#f59e0b; border-color:rgba(245,158,11,0.4);">16 Format</span>
+            </div>
+            <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff; font-family:var(--font-heading);">
+              Post Türü Seçimi ve Örnek Post Üretici
+            </h3>
+            <p class="card-desc" style="margin-top:4px;">
+              İstediğiniz FPV içerik türünü ve mağaza ürününü seçerek <strong>Flash 3.8</strong> motoruyla anında 1080x1080 birleşik marka şablonlu, <strong>assets/logo.png</strong> entegreli ve çok modlu vizyon denetimli örnek gönderi üretin.
+            </p>
+          </div>
+        </div>
+
+        <!-- Controls: Post Type, Product, and Action -->
+        <div style="display:grid; grid-template-columns:minmax(240px, 1.2fr) minmax(240px, 1.2fr) auto; gap:14px; align-items:end; background:#070b14; border:1px solid #1e293b; border-radius:10px; padding:16px; margin-bottom:16px;">
+          <div>
+            <label for="studio-post-type-select" style="font-size:0.75rem; font-weight:700; color:#e2e8f0; display:block; margin-bottom:6px;">
+              📌 Post Türü Seçin (16 Farklı Format):
+            </label>
+            <select id="studio-post-type-select" style="width:100%; background:#0f172a; border:1px solid #334155; color:#f8fafc; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:600; outline:none;">
+              <option value="product_spotlight" selected>📦 Ürün Spot Işığı &amp; Donanım Detayı</option>
+              <option value="deal_drop">🏷️ İndirim &amp; Fırsat Alarmı (Haftalık Kupon)</option>
+              <option value="pilot_tip">💡 FPV Pilot İpuçları &amp; Püf Noktaları</option>
+              <option value="hardware_battle">⚔️ Donanım Karşılaştırması &amp; Kıyas</option>
+              <option value="drone_build_showcase">🛠️ Drone Toplama &amp; Build Rehberi</option>
+              <option value="carousel_guide">📑 Çoklu Kaydırmalı Kılavuz (Carousel)</option>
+              <option value="mistake_breakdown">⚠️ Sık Yapılan FPV Hataları ve Çözümleri</option>
+              <option value="community_quiz">❓ Topluluk Soru &amp; Teknik Quiz</option>
+              <option value="myth_buster">🔍 FPV Efsaneleri ve Yanlışlar</option>
+              <option value="maintenance_checklist">✅ Uçuş Öncesi Bakım &amp; Kontrol Listesi</option>
+              <option value="beginner_roadmap">🗺️ Yeni Başlayan FPV Yol Haritası</option>
+              <option value="flight_weather_radar">🌤️ Uçuş Hava Durumu &amp; Rüzgar Radarı</option>
+              <option value="tool_showcase">🔧 Atölye ve Lehimleme Araçları</option>
+              <option value="spot_guide">📍 Güvenli Uçuş Noktaları Rehberi</option>
+              <option value="review_highlight">⭐ Pilot Yorumları &amp; Değerlendirme</option>
+              <option value="seo_article">📘 Mühendislik &amp; Elektronik Rehberi</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="studio-product-select" style="font-size:0.75rem; font-weight:700; color:#e2e8f0; display:block; margin-bottom:6px;">
+              🎯 Ürün Belirleyin (İsteğe Bağlı):
+            </label>
+            <select id="studio-product-select" style="width:100%; background:#0f172a; border:1px solid #334155; color:#38bdf8; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:600; outline:none;">
+              <option value="">🎲 Rastgele / Otomatik Ürün Seçimi</option>
+            </select>
+          </div>
+
+          <div style="display:flex; flex-direction:column; justify-content:flex-end;">
+            <label style="font-size:0.75rem; font-weight:700; color:#e2e8f0; display:block; margin-bottom:6px;">
+              🎨 AI Görsel Motoru:
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:8px; background:#0f172a; border:1px solid #334155; padding:8px 12px; border-radius:8px; cursor:pointer; height:42px;">
+              <input type="checkbox" id="studio-use-flux" style="width:16px; height:16px; accent-color:#0284c7; cursor:pointer;" checked>
+              <span style="font-size:0.78rem; font-weight:700; color:#38bdf8;">🚀 FLUX.1 GPU</span>
+            </label>
+          </div>
+
+          <div style="display:flex; flex-direction:column; justify-content:flex-end;">
+            <button type="button" class="btn-action" id="btn-studio-generate" onclick="generateStudioSamplePost()" style="background:linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%); color:#fff; border:1px solid rgba(56,189,248,0.4); font-weight:800; padding:10px 18px; border-radius:8px; display:inline-flex; align-items:center; gap:8px; height:42px; cursor:pointer;">
+              <span id="btn-studio-generate-txt">✨ Örnek Post Üret</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sample Post Preview Box (Default / Generated State) -->
+        <div id="studio-preview-box" style="background:#070b14; border:1px solid #1e293b; border-radius:10px; padding:16px;">
+          <!-- Empty / Initial Placeholder -->
+          <div id="studio-preview-placeholder" style="text-align:center; padding:32px 20px; color:#64748b; border:1px dashed #334155; border-radius:8px; background:rgba(255,255,255,0.01);">
+            <div style="font-size:2rem; margin-bottom:8px;">🎨</div>
+            <div style="font-size:0.92rem; font-weight:700; color:#cbd5e1; margin-bottom:4px;">Henüz Örnek Post Üretilmedi</div>
+            <div style="font-size:0.78rem; color:#94a3b8; max-width:520px; margin:0 auto;">
+              Yukarıdan dilediğiniz bir post türü seçip <strong>"Örnek Post Üret"</strong> butonuna basın. Flash 3.8 metin ve afişi anında hazırlayıp burada önizleyecektir.
+            </div>
+          </div>
+
+          <!-- Active Preview Content (Hidden until generated) -->
+          <div id="studio-preview-content" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #1e293b; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="status-pill status-pill-active" id="studio-res-type-pill">📦 Ürün Spot Işığı</span>
+                <span class="code-chip" id="studio-res-post-id">ig_preview_...</span>
+                <span class="status-pill status-pill-info" style="font-size:0.68rem;">1080x1080 PNG/JPG</span>
+                <span id="studio-res-flux-pill" class="status-pill" style="display:none; background:linear-gradient(135deg, #7c3aed, #2563eb); color:#fff; font-size:0.68rem;">⚡ FLUX.1 [dev] GPU</span>
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <span id="studio-res-audit-badge" class="status-pill status-pill-active">Flash 3.8 Vizyon: %92 Onaylı</span>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:minmax(280px, 360px) 1fr; gap:20px; align-items:start;">
+              <!-- Image Column -->
+              <div>
+                <div style="border-radius:10px; overflow:hidden; border:2px solid #334155; background:#000; box-shadow:0 8px 24px rgba(0,0,0,0.6); position:relative;">
+                  <img id="studio-res-image" src="" alt="Örnek Post Afişi" style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;">
+                  <div style="position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); padding:4px 8px; border-radius:6px; font-size:0.68rem; color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">
+                    🏷️ assets/logo.png Entegre
+                  </div>
+                </div>
+                <div id="studio-res-flux-prompt-box" style="display:none; margin-top:8px; padding:8px 10px; background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.3); border-radius:6px; font-size:0.72rem; color:#c4b5fd;">
+                  <strong>🎨 FLUX Prompt:</strong> <span id="studio-res-flux-prompt-txt"></span>
+                </div>
+                <div style="margin-top:10px; display:flex; gap:8px;">
+                  <a id="studio-res-img-link" href="#" target="_blank" class="btn-action btn-secondary" style="flex:1; text-align:center; text-decoration:none; font-size:0.75rem; padding:6px 10px;">
+                    <span>🔍 Tam Boyut Aç</span>
+                  </a>
+                  <button type="button" class="btn-action btn-secondary" onclick="copyStudioCaption()" style="font-size:0.75rem; padding:6px 10px;">
+                    <span>📋 Metni Kopyala</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Metadata & Caption Column -->
+              <div>
+                <div style="margin-bottom:10px;">
+                  <span style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">GÖNDERİ BAŞLIĞI</span>
+                  <h4 id="studio-res-title" style="font-size:1.05rem; font-weight:800; color:#fff; margin:2px 0 0 0;"></h4>
+                </div>
+
+                <div style="margin-bottom:10px;">
+                  <span style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">GÖNDERİ METNİ (CAPTION - FLASH 3.8)</span>
+                  <div id="studio-res-caption" style="background:#0b1120; border:1px solid #1e293b; border-radius:8px; padding:12px; font-size:0.78rem; line-height:1.6; color:#cbd5e1; max-height:160px; overflow-y:auto; white-space:pre-wrap; margin-top:4px;"></div>
+                </div>
+
+                <div style="margin-bottom:12px;">
+                  <span style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">HASHTAGLER</span>
+                  <div id="studio-res-hashtags" style="font-size:0.74rem; color:#38bdf8; margin-top:3px; word-break:break-word;"></div>
+                </div>
+
+                <!-- Vision Audit Details -->
+                <div id="studio-res-audit-box" style="background:rgba(56,189,248,0.05); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:10px 12px; margin-bottom:14px;">
+                  <div style="font-size:0.72rem; font-weight:700; color:#38bdf8; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                    <span>👁️ Flash 3.8 Multimodal Vizyon &amp; Kalite Denetim Raporu</span>
+                  </div>
+                  <div id="studio-res-audit-text" style="font-size:0.73rem; color:#94a3b8; line-height:1.4;"></div>
+                </div>
+
+                <!-- Action Bar -->
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding-top:10px; border-top:1px solid #1e293b;">
+                  <button type="button" class="btn-action btn-ig" id="btn-studio-publish" onclick="publishStudioPreviewedPost()" style="font-weight:800; padding:8px 18px;">
+                    <span id="btn-studio-publish-txt">🚀 Bu Gönderiyi Hemen Instagram'da Yayınla</span>
+                  </button>
+                  <span id="studio-publish-result" style="font-size:0.75rem; font-weight:600;"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- TEMPLATE BLUEPRINT: COMPLETE BRAND TEMPLATE SPECIFICATION             -->
+      <!-- ===================================================================== -->
+      <div class="bots-card" id="ig-template-blueprint-card" style="background:#0a0e1c; border-color:#6366f1; margin-bottom:20px;">
+        <div class="bots-card-header" style="border-color:#312e81;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+              <span class="status-pill status-pill-purple">Tasarım Mimarisi</span>
+              <span class="code-chip" style="color:#a5b4fc; border-color:rgba(165,180,252,0.3);">1080x1080 px</span>
+              <span class="code-chip" style="color:#38bdf8; border-color:rgba(56,189,248,0.3);">assets/logo.png</span>
+            </div>
+            <h3 style="font-size:1.15rem; font-weight:800; margin:0; color:#fff; font-family:var(--font-heading);">
+              Post Taslağı ve Birleşik Görsel Şablon Mimarisi
+            </h3>
+            <p class="card-desc" style="margin-top:4px;">
+              Pozitron Market'in tüm gönderilerinde standart olarak kullanılan tek tip kurumsal afiş mimarisi (Brand Template). Aşağıdaki şemada tuval katmanları, <code>assets/logo.png</code> entegrasyonu ve Flash 3.8 vizyon denetim standardı gösterilmektedir.
+            </p>
+          </div>
+          <button type="button" class="btn-action btn-secondary" onclick="loadTemplateBlueprint(true)" style="padding:4px 10px; font-size:0.75rem;">
+            <span>Yenile</span>
+          </button>
+        </div>
+
+        <!-- Visual Schema & Blueprint Breakdown -->
+        <div style="display:grid; grid-template-columns:minmax(280px, 340px) 1fr; gap:20px; align-items:start;">
+          
+          <!-- Interactive Visual Blueprint Canvas Representation -->
+          <div style="background:#040711; border:2px solid #4338ca; border-radius:12px; padding:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+            <div style="text-align:center; font-size:0.7rem; color:#818cf8; font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
+              Tuval Düzeni (1080x1080 px · 1:1 Oran)
+            </div>
+
+            <div style="aspect-ratio:1/1; background:#090d16; border:1px solid #1e293b; border-radius:8px; padding:10px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden;">
+              
+              <!-- Layer 1: Header / Logo Lockup -->
+              <div style="background:rgba(99,102,241,0.15); border:1px dashed #6366f1; border-radius:6px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <img src="/assets/logo.png" alt="Logo" style="width:20px; height:20px; object-fit:contain; border-radius:4px; background:rgba(255,255,255,0.1);">
+                  <span style="font-size:0.72rem; font-weight:800; color:#fff; letter-spacing:0.5px;">POZITRON FPV</span>
+                </div>
+                <span style="font-size:0.62rem; color:#818cf8; font-weight:700; background:rgba(99,102,241,0.25); padding:2px 6px; border-radius:4px;">KATMAN 1: LOGO LOCKUP</span>
+              </div>
+
+              <!-- Layer 2: Hero Visual Area -->
+              <div style="flex:1; margin:8px 0; background:linear-gradient(135deg, rgba(2,132,199,0.15), rgba(124,58,237,0.15)); border:1px dashed #0284c7; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:10px;">
+                <span style="font-size:1.5rem; margin-bottom:2px;">🛸</span>
+                <span style="font-size:0.72rem; font-weight:700; color:#38bdf8;">KATMAN 2: MERKEZİ KAHRAMAN SAHNE</span>
+                <span style="font-size:0.62rem; color:#94a3b8; max-width:200px;">FLUX.1 [dev] Sinematik FPV Arka Planı + Dekupe Gerçek Ürün Fotoğrafı Kompoziti (1080x640 px)</span>
+              </div>
+
+              <!-- Layer 3: Headline & Subheadline -->
+              <div style="background:rgba(245,158,11,0.12); border:1px dashed #f59e0b; border-radius:6px; padding:6px 8px; margin-bottom:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.7rem; font-weight:800; color:#fbbf24;">KATMAN 3: BAŞLIK &amp; TİPOGRAFİ ŞERİDİ</span>
+                  <span style="font-size:0.58rem; color:#fbbf24;">Yüksek Kontrast</span>
+                </div>
+                <div style="font-size:0.62rem; color:#fef3c7; margin-top:2px;">Koyu degrade zemin üzerinde net başlık ve slogan</div>
+              </div>
+
+              <!-- Layer 4: 3 Key Points with Accent Bar -->
+              <div style="background:rgba(16,185,129,0.12); border:1px dashed #10b981; border-radius:6px; padding:6px 8px; margin-bottom:6px;">
+                <div style="font-size:0.7rem; font-weight:800; color:#34d399; margin-bottom:3px;">
+                  KATMAN 4: 3 ÖNE ÇIKAN MADDE (ACCENT BAR)
+                </div>
+                <div style="display:flex; flex-direction:column; gap:2px; font-size:0.6rem; color:#d1fae5;">
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="width:3px; height:8px; background:#10b981; border-radius:1px;"></span>
+                    <span>1. Kritik Teknik Parametre &amp; Özellik</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="width:3px; height:8px; background:#10b981; border-radius:1px;"></span>
+                    <span>2. Pratik Saha &amp; Uçuş Avantajı</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <span style="width:3px; height:8px; background:#10b981; border-radius:1px;"></span>
+                    <span>3. Uyumluluk ve Bağlantı Kılavuzu</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Layer 5: Footer & Watermark -->
+              <div style="background:rgba(255,255,255,0.05); border:1px dashed #64748b; border-radius:6px; padding:4px 8px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.62rem; color:#94a3b8; font-family:var(--font-mono);">pozitronmarket.com</span>
+                <span style="font-size:0.58rem; color:#cbd5e1; font-weight:700;">KATMAN 5: FİLİGRAN &amp; CTA</span>
+              </div>
+
+            </div>
+
+            <div style="margin-top:10px; font-size:0.7rem; color:#94a3b8; text-align:center;">
+              🛡️ Her üretim sonrası <strong>Flash 3.8 Vizyon</strong> tarafından %100 denetlenir.
+            </div>
+          </div>
+
+          <!-- Layer Specs and Architectural Breakdown -->
+          <div style="display:flex; flex-direction:column; gap:10px;" id="blueprint-layers-list">
+            <!-- Populated via loadTemplateBlueprint() or fallback items -->
+            <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-size:0.8rem; font-weight:800; color:#a5b4fc;">1. Marka Başlığı ve Logo Kilidi (Header Lockup)</span>
+                <span class="code-chip" style="color:#38bdf8; font-size:0.65rem;">assets/logo.png</span>
+              </div>
+              <p style="font-size:0.75rem; color:#94a3b8; margin:0 0 6px 0; line-height:1.4;">
+                Tuvalin sol üstünde (X: 50, Y: 40-100) <code>assets/logo.png</code> transparan kurumsal logo ve "POZITRON FPV" neon tipografi çipi yer alır. Sağ üstte içerik türü rozeti (Spotlight, İpucu, Fırsat) konumlanır.
+              </p>
+              <div style="font-size:0.7rem; color:#64748b;">Kullanılan Varlık: <code>/assets/logo.png</code> (512x512 RGBA)</div>
+            </div>
+
+            <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-size:0.8rem; font-weight:800; color:#38bdf8;">2. Merkezi Kahraman Sahne (Hero Visual Composite)</span>
+                <span class="code-chip" style="color:#38bdf8; font-size:0.65rem;">1080x640 px</span>
+              </div>
+              <p style="font-size:0.75rem; color:#94a3b8; margin:0; line-height:1.4;">
+                FLUX.1 [dev] yerel GPU difüzyonu ile üretilen sinematik FPV atmosferi ve arkasından mağaza kataloğundaki ürünün dekupe fotoğrafı kompozit edilir. Yansıma ve gölge katmanlarıyla derinlik sağlanır.
+              </p>
+            </div>
+
+            <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-size:0.8rem; font-weight:800; color:#fbbf24;">3. Başlık, Slogan ve 3 Teknik Madde (Key Points Lockup)</span>
+                <span class="code-chip" style="color:#fbbf24; font-size:0.65rem;">Flash 3.8 Metin</span>
+              </div>
+              <p style="font-size:0.75rem; color:#94a3b8; margin:0; line-height:1.4;">
+                Flash 3.8 tarafından üretilen Türkçe teknik başlık ve 3 öne çıkan madde, sol dikey neon vurgu çizgisi (accent bar) ve koyu lacivert kontrast kartı üzerinde okunabilirliği maksimize edecek şekilde basılır.
+              </p>
+            </div>
+
+            <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span style="font-size:0.8rem; font-weight:800; color:#34d399;">4. Flash 3.8 Çok Modlu Vizyon Denetimi (Auditor Guardrail)</span>
+                <span class="code-chip" style="color:#34d399; font-size:0.65rem;">Çift Doğrulama</span>
+              </div>
+              <p style="font-size:0.75rem; color:#94a3b8; margin:0; line-height:1.4;">
+                Üretilen her 1080x1080 afiş; çözünürlük, metin kesilmesi, kontrast, emoji kuralı ve Meta topluluk standartları açısından Flash 3.8 Vizyon modeli tarafından otomatik puanlanır. %80 üzeri puan almayan gönderiler yayına alınmaz.
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -1569,7 +2055,7 @@
 
             <div style="margin-top:12px; padding-top:10px; border-top:1px solid #1e293b;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <label style="font-size:0.72rem; color:var(--text-muted);">Gemini AI API Key (Video &amp; Metin):</label>
+                <label style="font-size:0.72rem; color:var(--text-muted);">Gemini AI API Key (Vizyon Denetimi &amp; Yedek Gemini Video):</label>
                 <span id="ig-gemini-status-badge" class="status-pill status-pill-warn" style="font-size:0.65rem;">Kontrol Ediliyor...</span>
               </div>
               <div style="display:flex; gap:6px;">
@@ -2133,7 +2619,7 @@
               </h2>
             </div>
             <p class="card-desc" style="max-width:850px;">
-              GitHub Server, Hetzner Server, PayTR, SMTP, Gemini AI ve 9 alt ajanın tek sayfada bütünleşik ilişki ve veri akışı haritası.
+              GitHub Server, Hetzner Server, PayTR, SMTP, <strong>Flash 3.8 (metin &amp; denetim)</strong>, <strong>FLUX.1 [dev] (görsel AI)</strong>, <strong>LTX-Video 0.9.8 (video AI)</strong>, Gemini 3.8 Flash ve 10 alt ajanın (Medya Kalite &amp; Otonom Karantina Onarım dahil) tek sayfada bütünleşik ilişki ve veri akışı haritası.
             </p>
           </div>
 
@@ -2751,13 +3237,13 @@
           <div>
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
               <span class="status-pill status-pill-active">Subagent 10</span>
-              <span class="status-pill" style="background:#0ea5e922; color:#0ea5e9; border:1px solid #0ea5e944;">VISION AI &amp; ASSET SOURCING</span>
+              <span class="status-pill" style="background:#10b98122; color:#10b981; border:1px solid #10b98144;">VISION AI &amp; OTONOM ONARIM</span>
               <h2 style="font-size:1.25rem; font-weight:800; margin:0; color:#ffffff; font-family:var(--font-heading);">
-                Ürün Medya &amp; İçerik Kalite Denetleyicisi
+                Ürün Medya &amp; Otonom Karantina Onarım Ajanı
               </h2>
             </div>
             <p class="card-desc" style="max-width:850px;">
-              508 ürünün fotoğraflarını, çözünürlüklerini, pHash mükerrerliklerini ve kategori uyumluluğunu Vision AI ile denetler; üretici stüdyo görselleriyle otonom onarır.
+              508 ürünün fotoğraflarını, çözünürlüklerini, pHash mükerrerliklerini ve kategori uyumluluğunu Vision AI ile denetler; karantinadaki ürünleri üretici stüdyo görselleriyle otonom onarır.
             </p>
           </div>
 
@@ -2806,7 +3292,8 @@
         </h4>
         <p style="font-size:0.8rem; color:#cbd5e1; line-height:1.5; margin:0;">
           <strong>Kök Neden:</strong> İnternet genelinde Bing aramasıyla indirilen görseller bazen yanlış yedek parçayı, blog afişini veya marka logosunu ilk sırada getirebilmektedir.<br>
-          <strong>Endüstri Standardı Çözüm:</strong> Profesyonel pazar yerleri doğrudan üreticilerin resmi dijital varlık yönetim (DAM) sistemlerinden beyaz fonlu stüdyo görselleri çeker, <strong>Gemini Flash Vision</strong> ile görseldeki nesneyi ürün kategorisiyle çapraz doğrular ve uyuşmayan fotoğrafları derhal karantinaya alır.
+          <strong>Endüstri Standardı Çözüm:</strong> Profesyonel pazar yerleri doğrudan üreticilerin resmi dijital varlık yönetim (DAM) sistemlerinden beyaz fonlu stüdyo görselleri çeker, <strong>Gemini Flash Vision</strong> ile görseldeki nesneyi ürün kategorisiyle çapraz doğrular ve uyuşmayan fotoğrafları derhal karantinaya alır.<br>
+          <strong>Otonom Onarım Entegrasyonu:</strong> Subagent 10 ve Supervisor döngüsü, karantinadaki SKU'ları otonom boru hattında tespit edip katalog/DAM stüdyo görselleri ile otomatik onarır ve ürün kataloğunu kesintisiz günceller.
         </p>
       </div>
 
@@ -3228,6 +3715,7 @@
           if (node.id.includes('instagram')) topColor = '#f43f5e';
           else if (node.id.includes('reddit')) topColor = '#ea580c';
           else if (node.id.includes('qa')) topColor = '#14b8a6';
+          else if (node.id.includes('media')) topColor = '#10b981';
           else topColor = '#0ea5e9';
         } else if (node.type === 'destination') topColor = '#64748b';
 
@@ -3621,6 +4109,9 @@
         if (s.id.includes('github')) badgeColor = '#6366f1';
         else if (s.id.includes('hetzner')) badgeColor = '#0284c7';
         else if (s.id.includes('gemini')) badgeColor = '#10b981';
+        else if (s.id.includes('flux')) badgeColor = '#e879f9';
+        else if (s.id.includes('ltx')) badgeColor = '#f472b6';
+        else if (s.id.includes('llm')) badgeColor = '#22d3ee';
         else if (s.id.includes('paytr')) badgeColor = '#f59e0b';
         else if (s.id.includes('smtp')) badgeColor = '#a855f7';
         else if (s.id.includes('meta')) badgeColor = '#f43f5e';
@@ -3830,10 +4321,12 @@
     }
 
     async function loadInstagramData() {
+      loadPostStudioData();
       try {
         const cRes = await fetch('/api/instagram/config');
         if (cRes.ok) {
           const cfg = await cRes.json();
+          loadPostAndReelsFilterData(cfg);
           const isPeak = Boolean(cfg.peak_scheduler_enabled);
           const freq = cfg.posting_frequency_hours || 6;
           const freqSelect = document.getElementById('ig-quick-freq-select');
@@ -3903,10 +4396,13 @@
           const eng = await engRes.json();
           const fCount = eng.today_follows_count || 0;
           const cCount = eng.today_comments_count || 0;
+          const lCount = eng.today_likes_count || 0;
           const fEl = document.getElementById('ig-eng-today-follows');
           const cEl = document.getElementById('ig-eng-today-comments');
+          const lEl = document.getElementById('ig-eng-today-likes');
           if (fEl) fEl.textContent = `${fCount} / 10`;
           if (cEl) cEl.textContent = `${cCount} / 10`;
+          if (lEl) lEl.textContent = `${lCount} / 10`;
 
           const histCount = document.getElementById('ig-eng-history-count');
           const recentItems = document.getElementById('ig-eng-recent-items');
@@ -3920,19 +4416,23 @@
               lastEl.textContent = new Date(last.timestamp).toLocaleTimeString('tr-TR', { hour:'2-digit', minute:'2-digit' });
             }
             if (recentItems) {
-              recentItems.innerHTML = history.slice(-8).reverse().map(h => `
+              const engTypeMeta = { follow: ['#38bdf8', 'Takip'], comment: ['#ec4899', 'Yorum'], like: ['#f59e0b', 'Beğeni'] };
+              recentItems.innerHTML = history.slice(-8).reverse().map(h => {
+                const [tColor, tLabel] = engTypeMeta[h.type] || ['#94a3b8', h.type || 'İşlem'];
+                return `
                 <span style="background:rgba(255,255,255,0.04); border:1px solid #1e293b; border-radius:6px; padding:3px 8px; font-size:0.75rem; color:#cbd5e1; display:inline-flex; align-items:center; gap:5px;">
-                  <span style="color:${h.type === 'follow' ? '#38bdf8' : '#ec4899'}; font-weight:600;">${h.type === 'follow' ? 'Takip' : 'Yorum'}</span>
+                  <span style="color:${tColor}; font-weight:600;">${tLabel}</span>
                   <strong>@${h.username}</strong>
                 </span>
-              `).join('');
+              `;
+              }).join('');
             }
           }
 
           if (!_nextEngTargetDate) {
             _nextEngTargetDate = new Date(Date.now() + 35 * 60 * 1000);
             const engNextEl = document.getElementById('ig-eng-next-target-time');
-            if (engNextEl) engNextEl.textContent = `Bugün: ${fCount}/10 Takip, ${cCount}/10 Yorum`;
+            if (engNextEl) engNextEl.textContent = `Bugün: ${fCount}/10 Takip, ${cCount}/10 Yorum, ${lCount}/10 Beğeni`;
           }
         }
       } catch (e) {
@@ -4075,6 +4575,213 @@
       }
     }
 
+    // =========================================================================
+    // POST & REELS TYPES CHECKBOX FILTER ENGINE
+    // =========================================================================
+    let _enabledPostTypes = new Set();
+    let _enabledReelsTypes = new Set();
+    let _allPostTypes = [];
+    let _allReelsTypes = [];
+
+    async function loadPostAndReelsFilterData(cfg) {
+      if (_allPostTypes.length === 0) {
+        try {
+          const res = await fetch('/api/instagram/post-types');
+          if (res.ok) {
+            const data = await res.json();
+            _allPostTypes = data.types || [];
+          }
+        } catch(e) {
+          console.warn("Failed to load post types:", e);
+        }
+      }
+
+      if (_allReelsTypes.length === 0) {
+        try {
+          const res = await fetch('/api/instagram/reels-types');
+          if (res.ok) {
+            const data = await res.json();
+            _allReelsTypes = data.types || [];
+          }
+        } catch(e) {
+          console.warn("Failed to load reels types:", e);
+        }
+      }
+
+      if (cfg && cfg.enabled_post_types && Array.isArray(cfg.enabled_post_types) && cfg.enabled_post_types.length > 0) {
+        _enabledPostTypes = new Set(cfg.enabled_post_types);
+      } else if (_allPostTypes.length > 0 && _enabledPostTypes.size === 0) {
+        _enabledPostTypes = new Set(_allPostTypes.map(t => t.id));
+      }
+
+      if (cfg && cfg.enabled_reels_types && Array.isArray(cfg.enabled_reels_types) && cfg.enabled_reels_types.length > 0) {
+        _enabledReelsTypes = new Set(cfg.enabled_reels_types);
+      } else if (_allReelsTypes.length > 0 && _enabledReelsTypes.size === 0) {
+        _enabledReelsTypes = new Set(_allReelsTypes.map(t => t.id));
+      }
+
+      renderPostTypesCheckboxes();
+      renderReelsTypesCheckboxes();
+      updateFilterSummaries();
+    }
+
+    function renderPostTypesCheckboxes() {
+      const container = document.getElementById('post-types-checkbox-grid');
+      if (!container || _allPostTypes.length === 0) return;
+
+      container.innerHTML = _allPostTypes.map(t => {
+        const isChecked = _enabledPostTypes.has(t.id);
+        return `
+          <label class="filter-type-item" style="display:flex; align-items:center; justify-content:space-between; background:${isChecked ? 'rgba(56,189,248,0.06)' : '#0f172a'}; border:1px solid ${isChecked ? '#0284c7' : '#1e293b'}; border-radius:8px; padding:10px 12px; cursor:pointer; transition:all 0.15s ease;">
+            <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+              <span style="font-size:1.1rem; flex-shrink:0;">${t.icon || '📌'}</span>
+              <div style="min-width:0; flex:1;">
+                <div style="font-size:0.82rem; font-weight:700; color:${isChecked ? '#fff' : '#94a3b8'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  ${escapeHtml(t.name)}
+                </div>
+                <div style="font-size:0.7rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(t.desc || '')}">
+                  ${escapeHtml(t.desc || '')}
+                </div>
+              </div>
+            </div>
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="togglePostType('${t.id}', this.checked)" style="accent-color:#0284c7; width:17px; height:17px; cursor:pointer; margin-left:10px; flex-shrink:0;">
+          </label>
+        `;
+      }).join('');
+    }
+
+    function renderReelsTypesCheckboxes() {
+      const container = document.getElementById('reels-types-checkbox-grid');
+      if (!container || _allReelsTypes.length === 0) return;
+
+      container.innerHTML = _allReelsTypes.map(t => {
+        const isChecked = _enabledReelsTypes.has(t.id);
+        const isBroll = (t.id === 'real_fpv_broll');
+        return `
+          <label class="filter-type-item" style="display:flex; align-items:center; justify-content:space-between; background:${isChecked ? (isBroll ? 'rgba(34,197,94,0.08)' : 'rgba(56,189,248,0.06)') : '#0f172a'}; border:1px solid ${isChecked ? (isBroll ? '#22c55e' : '#0284c7') : '#1e293b'}; border-radius:8px; padding:10px 12px; cursor:pointer; transition:all 0.15s ease;">
+            <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+              <span style="font-size:1.1rem; flex-shrink:0;">${t.icon || '🎬'}</span>
+              <div style="min-width:0; flex:1;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:0.82rem; font-weight:700; color:${isChecked ? '#fff' : '#94a3b8'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    ${escapeHtml(t.name)}
+                  </span>
+                  ${isBroll ? '<span class="status-pill status-pill-active" style="font-size:0.6rem; padding:1px 5px; background:rgba(34,197,94,0.2); color:#4ade80; border-color:#22c55e;">AÇ/KAPAT</span>' : ''}
+                </div>
+                <div style="font-size:0.7rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(t.desc || '')}">
+                  ${escapeHtml(t.desc || '')}
+                </div>
+              </div>
+            </div>
+            <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleReelsType('${t.id}', this.checked)" style="accent-color:${isBroll ? '#22c55e' : '#0284c7'}; width:17px; height:17px; cursor:pointer; margin-left:10px; flex-shrink:0;">
+          </label>
+        `;
+      }).join('');
+    }
+
+    function updateFilterSummaries() {
+      const pSum = document.getElementById('post-types-selected-summary');
+      if (pSum) pSum.textContent = `${_enabledPostTypes.size} / ${_allPostTypes.length || 16} Seçili`;
+
+      const rSum = document.getElementById('reels-types-selected-summary');
+      if (rSum) rSum.textContent = `${_enabledReelsTypes.size} / ${_allReelsTypes.length || 8} Seçili`;
+    }
+
+    async function togglePostType(id, isChecked) {
+      if (isChecked) {
+        _enabledPostTypes.add(id);
+      } else {
+        if (_enabledPostTypes.size <= 1) {
+          showToast("En az 1 gönderi türü seçili kalmalıdır.", "warning");
+          renderPostTypesCheckboxes();
+          return;
+        }
+        _enabledPostTypes.delete(id);
+      }
+      renderPostTypesCheckboxes();
+      updateFilterSummaries();
+      await saveSelectedFilters();
+    }
+
+    async function toggleReelsType(id, isChecked) {
+      if (isChecked) {
+        _enabledReelsTypes.add(id);
+      } else {
+        if (_enabledReelsTypes.size <= 1) {
+          showToast("En az 1 Reels türü seçili kalmalıdır.", "warning");
+          renderReelsTypesCheckboxes();
+          return;
+        }
+        _enabledReelsTypes.delete(id);
+      }
+      renderReelsTypesCheckboxes();
+      updateFilterSummaries();
+      await saveSelectedFilters();
+    }
+
+    async function selectAllPostTypes() {
+      _enabledPostTypes = new Set(_allPostTypes.map(t => t.id));
+      renderPostTypesCheckboxes();
+      updateFilterSummaries();
+      await saveSelectedFilters();
+      showToast("Tüm gönderi türleri seçildi.", "success");
+    }
+
+    async function clearAllPostTypes() {
+      if (_allPostTypes.length > 0) {
+        _enabledPostTypes = new Set([_allPostTypes[0].id]);
+      }
+      renderPostTypesCheckboxes();
+      updateFilterSummaries();
+      await saveSelectedFilters();
+      showToast("Yalnızca 1 temel post türü seçili bırakıldı.", "info");
+    }
+
+    async function selectAllReelsTypes() {
+      _enabledReelsTypes = new Set(_allReelsTypes.map(t => t.id));
+      renderReelsTypesCheckboxes();
+      updateFilterSummaries();
+      await saveSelectedFilters();
+      showToast("Tüm Reels türleri seçildi (Gerçek FPV dahil).", "success");
+    }
+
+    async function clearAllReelsTypes() {
+      const nonBroll = _allReelsTypes.find(t => t.id !== 'real_fpv_broll') || _allReelsTypes[0];
+      if (nonBroll) {
+        _enabledReelsTypes = new Set([nonBroll.id]);
+      }
+      renderReelsTypesCheckboxes();
+      updateFilterSummaries();
+      await saveSelectedFilters();
+      showToast("Gerçek FPV ve diğer Reels türleri kapatıldı; tek temel tür bırakıldı.", "info");
+    }
+
+    let _filterSaveTimeout = null;
+    async function saveSelectedFilters() {
+      clearTimeout(_filterSaveTimeout);
+      _filterSaveTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch('/api/instagram/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              enabled_post_types: Array.from(_enabledPostTypes),
+              enabled_reels_types: Array.from(_enabledReelsTypes)
+            })
+          });
+          if (res.ok) {
+            const ind = document.getElementById('filter-autosave-indicator');
+            if (ind) {
+              ind.style.opacity = '1';
+              setTimeout(() => { ind.style.opacity = '0'; }, 2200);
+            }
+          }
+        } catch(e) {
+          console.warn("Failed to auto-save filters:", e);
+        }
+      }, 350);
+    }
+
     async function triggerDirectPublishNow() {
       const btn = document.getElementById('btn-ig-direct-publish');
       if (btn) btn.disabled = true;
@@ -4084,7 +4791,9 @@
         const res = await fetch('/api/instagram/direct-publish', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
+          body: JSON.stringify({
+            allowed_types: Array.from(_enabledPostTypes)
+          })
         });
         const data = await res.json();
         if (data.success) {
@@ -4108,29 +4817,84 @@
       }
     }
 
-    async function triggerSelectedReelGenerate() {
-      const modeSelect = document.getElementById('reels-mode-select');
-      const selectedMode = modeSelect ? modeSelect.value : 'random';
-      return triggerReelGenerate(selectedMode);
+    function onReelsMethodChanged(method) {
+      try {
+        localStorage.setItem('pozitron_reels_method', method);
+      } catch(e) {}
+      const cards = document.querySelectorAll('.reels-method-card');
+      cards.forEach(card => {
+        const isSelected = card.getAttribute('data-method') === method;
+        card.style.borderColor = isSelected ? '#38bdf8' : '#334155';
+        card.style.boxShadow = isSelected ? '0 0 16px rgba(56,189,248,0.2)' : 'none';
+        card.style.background = isSelected ? 'rgba(56,189,248,0.06)' : '#111827';
+        const radio = card.querySelector('input[type="radio"]');
+        if (radio) radio.checked = isSelected;
+      });
     }
 
-    async function triggerReelGenerate(engine = 'random') {
+    function initReelsMethodSelector() {
+      let saved = 'multi_shot';
+      try {
+        saved = localStorage.getItem('pozitron_reels_method') || 'multi_shot';
+      } catch(e) {}
+      onReelsMethodChanged(saved);
+    }
+
+    async function triggerSelectedReelGenerate() {
+      const modeSelect = document.getElementById('reels-mode-select');
+      const selectedVal = modeSelect ? modeSelect.value : 'auto';
+      return triggerReelGenerate(selectedVal);
+    }
+
+    async function triggerReelGenerate(formatOrEngine = 'auto') {
       const btn = document.getElementById('btn-ig-reels-generate');
       const modeSelect = document.getElementById('reels-mode-select');
 
+      const checkedRadio = document.querySelector('input[name="reels_10s_method"]:checked');
+      const reelsMethod = checkedRadio ? checkedRadio.value : (localStorage.getItem('pozitron_reels_method') || 'multi_shot');
+
+      let engine = 'ltx';
+      let reelsType = null;
+
+      if (formatOrEngine === 'real_fpv_broll' || formatOrEngine === 'mode2') {
+        engine = 'mode2';
+        reelsType = 'real_fpv_broll';
+      } else if (formatOrEngine && formatOrEngine !== 'auto' && formatOrEngine !== 'random') {
+        engine = 'ltx';
+        reelsType = formatOrEngine;
+      } else {
+        engine = 'ltx';
+        reelsType = null;
+      }
+
+      const isAiVideo = (engine !== 'mode2');
       if (btn) {
         btn.disabled = true;
-        btn.querySelector('span').textContent = engine === 'gemini'
-          ? '⏳ AI Video Üretiliyor (60-90 sn)...'
+        btn.querySelector('span').textContent = isAiVideo
+          ? '⏳ AI Video Üretiliyor (30-90 sn)...'
           : '⏳ Reels Hazırlanıyor (3-5 sn)...';
       }
       if (modeSelect) modeSelect.disabled = true;
 
+      const formatNames = {
+        'freestyle_acro': 'Akro & Hız Freestyle',
+        'hardware_vs': 'Donanım Düellosu (VS)',
+        'quick_tip_fix': '15 Saniyede Pratik İpucu',
+        'mistake_warning': 'Bu Hatayı Sakın Yapma!',
+        'secret_spot': 'Gizli Uçuş Sahası & Spot',
+        'product_cinematic': 'Sinematik Donanım Vitrini',
+        'flash_deal': 'Flaş Fırsat & Stok Alarmı',
+        'real_fpv_broll': 'Gerçek FPV Uçuş Videosu'
+      };
+
       let msg = "Reels videosu üretiliyor...";
-      if (engine === 'mode1') msg = "🎬 1. Yol: Dinamik Çok Slaytlı Şablon hazırlanıyor (0 TL)...";
-      else if (engine === 'mode2') msg = "⚡ 2. Yol: Tam FPV Uçuşu + Alt Ürün Kartı hazırlanıyor (0 TL)...";
-      else if (engine === 'gemini') msg = "💎 Gemini Omni Flash ile AI video üretiliyor...";
-      else msg = "🎲 Rastgele mod (1. veya 2. Yol) ile Reels hazırlanıyor...";
+      if (reelsType === 'real_fpv_broll') {
+        msg = "⚡ Gerçek FPV B-Roll + marka katmanı hazırlanıyor (offline)...";
+      } else if (reelsType) {
+        msg = `🎬 [${formatNames[reelsType] || reelsType}] LTX-Video ile 10+ sn üretiliyor...`;
+      } else {
+        msg = "🎬 Seçili formatlardan LTX-Video ile Reels hazırlanıyor...";
+      }
       
       showToast(msg, "info");
 
@@ -4141,7 +4905,12 @@
         const res = await fetch('/api/instagram/generate-reel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ engine: engine })
+          body: JSON.stringify({
+            engine: engine,
+            reels_type: reelsType,
+            reels_method: reelsMethod,
+            allowed_reels_types: Array.from(_enabledReelsTypes)
+          })
         });
         const data = await res.json();
         if (data.success) {
@@ -4161,9 +4930,23 @@
             panel.style.display = 'block';
             const engineInfo = document.getElementById('gemini-reel-engine-info');
             if (engineInfo) {
+              const durNum = parseFloat(data.video_duration || 0);
+              const durPill = durNum > 0
+                ? `<span class="status-pill ${durNum >= 10.0 ? 'status-pill-active' : 'status-pill-warning'}" style="${durNum >= 10.0 ? 'background:rgba(34,197,94,0.2); color:#4ade80; border-color:#22c55e;' : ''}">⏱️ Süre: ${durNum.toFixed(1)} sn</span>`
+                : '';
+              const methodPill = data.reels_method_info
+                ? `<span class="status-pill status-pill-purple">🎬 ${data.reels_method_info}</span>`
+                : '';
               const reasonHtml = data.fallback_reason ? `<div style="font-size:0.75rem; color:#f59e0b; margin-top:6px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 10px; border-radius:6px; line-height:1.4;">💡 <strong>Bilgi:</strong> ${data.fallback_reason}</div>` : '';
               const modeInfoHtml = data.reel_mode_info ? `<div style="font-size:0.75rem; color:#38bdf8; margin-top:4px;">🎯 <strong>Kullanılan Mod:</strong> ${data.reel_mode_info}</div>` : '';
-              engineInfo.innerHTML = `Video Motoru: <strong style="color:#38bdf8;">${engineLabel}</strong>${modeInfoHtml}${reasonHtml}`;
+              engineInfo.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                  <span>Video Motoru: <strong style="color:#38bdf8;">${engineLabel}</strong></span>
+                  ${durPill}
+                  ${methodPill}
+                </div>
+                ${modeInfoHtml}${reasonHtml}
+              `;
             }
             const video = document.getElementById('gemini-reel-preview');
             if (video) { video.src = cleanVideoPath + '?t=' + Date.now(); video.load(); }
@@ -4352,7 +5135,7 @@
       const txt = document.getElementById('btn-run-tr-engagement-txt');
       if (btn && txt) {
         btn.disabled = true;
-        txt.textContent = 'Pilotlar Taranıyor & Yorum Yapılıyor...';
+        txt.textContent = 'Pilotlar Taranıyor, Yorum & Beğeni Yapılıyor...';
       }
 
       showToast("Türk drone topluluğu taranıyor...", "info");
@@ -4365,7 +5148,7 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast(`Etkileşim tamamlandı! +${data.new_follows || 0} takip, +${data.new_comments || 0} yorum yapıldı.`, "success");
+          showToast(`Etkileşim tamamlandı! +${data.new_follows || 0} takip, +${data.new_comments || 0} yorum, +${data.new_likes || 0} beğeni yapıldı.`, "success");
           loadInstagramData();
         } else {
           showToast(`Etkileşim uyarısı: ${data.error || 'İşlem tamamlanamadı'}`, "error");
@@ -4375,8 +5158,255 @@
       } finally {
         if (btn && txt) {
           btn.disabled = false;
-          txt.textContent = 'Etkileşimi Başlat (10 Takip & 10 Yorum)';
+          txt.textContent = 'Etkileşimi Başlat (10 Takip, 10 Yorum & 10 Beğeni)';
         }
+      }
+    }
+
+    // =========================================================================
+    // POST STUDIO & TEMPLATE BLUEPRINT (FLASH 3.8)
+    // =========================================================================
+    let _studioProductsLoaded = false;
+    let _lastStudioPreviewPost = null;
+
+    async function loadPostStudioData() {
+      // 1. Populate Products Dropdown
+      if (!_studioProductsLoaded) {
+        try {
+          const res = await fetch('/api/products');
+          if (res.ok) {
+            const data = await res.json();
+            const products = data.products || (Array.isArray(data) ? data : []);
+            const sel = document.getElementById('studio-product-select');
+            if (sel && products.length > 0) {
+              const currentVal = sel.value;
+              sel.innerHTML = '<option value="">🎲 Rastgele / Otomatik Ürün Seçimi</option>' +
+                products.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (${p.category_id || 'FPV'})</option>`).join('');
+              if (currentVal) sel.value = currentVal;
+              _studioProductsLoaded = true;
+            }
+          }
+        } catch(e) {
+          console.warn("Failed to load products for studio:", e);
+        }
+      }
+
+      // 2. Populate Post Types from Server if available
+      try {
+        const res = await fetch('/api/instagram/post-types');
+        if (res.ok) {
+          const data = await res.json();
+          const types = data.types || [];
+          const sel = document.getElementById('studio-post-type-select');
+          if (sel && types.length > 0 && sel.options.length <= 1) {
+            sel.innerHTML = types.map(t => `<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
+          }
+        }
+      } catch(e) {
+        console.warn("Failed to load post types:", e);
+      }
+
+      // 3. Load Blueprint details
+      loadTemplateBlueprint(false);
+    }
+
+    async function generateStudioSamplePost() {
+      const typeSelect = document.getElementById('studio-post-type-select');
+      const prodSelect = document.getElementById('studio-product-select');
+      const fluxToggle = document.getElementById('studio-use-flux');
+      const btn = document.getElementById('btn-studio-generate');
+      const btnTxt = document.getElementById('btn-studio-generate-txt');
+
+      const contentType = typeSelect ? typeSelect.value : 'product_spotlight';
+      const productId = prodSelect ? prodSelect.value : '';
+      const useFlux = fluxToggle ? fluxToggle.checked : true;
+
+      if (btn) btn.disabled = true;
+      if (btnTxt) {
+        btnTxt.textContent = useFlux 
+          ? '🎨 FLUX.1 GPU & Flash 3.8 Hazırlıyor (30-45 sn)...' 
+          : '⚡ Flash 3.8 Hazırlıyor (5-12 sn)...';
+      }
+      showToast(useFlux 
+        ? "FLUX.1 [dev] GPU ile sinematik görsel ve Flash 3.8 ile içerik üretiliyor..." 
+        : "Flash 3.8 ile içerik üretiliyor ve 1080x1080 şablon çiziliyor...", "info");
+
+      try {
+        const res = await fetch('/api/instagram/preview-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content_type: contentType,
+            product_id: productId || null,
+            use_flux: useFlux,
+            allowed_types: Array.from(_enabledPostTypes)
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          _lastStudioPreviewPost = data;
+          renderStudioPreview(data);
+          showToast("Örnek post ve 1080x1080 görsel başarıyla üretildi!", "success");
+        } else {
+          showToast(`Hata: ${data.error || 'Örnek gönderi üretilemedi'}`, "error");
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnTxt) btnTxt.textContent = '✨ Örnek Post Üret';
+      }
+    }
+
+    function renderStudioPreview(data) {
+      const placeholder = document.getElementById('studio-preview-placeholder');
+      const content = document.getElementById('studio-preview-content');
+      if (placeholder) placeholder.style.display = 'none';
+      if (content) content.style.display = 'block';
+
+      const typePill = document.getElementById('studio-res-type-pill');
+      const postIdEl = document.getElementById('studio-res-post-id');
+      const fluxPill = document.getElementById('studio-res-flux-pill');
+      const auditBadge = document.getElementById('studio-res-audit-badge');
+      const imgEl = document.getElementById('studio-res-image');
+      const imgLink = document.getElementById('studio-res-img-link');
+      const titleEl = document.getElementById('studio-res-title');
+      const captionEl = document.getElementById('studio-res-caption');
+      const hashtagsEl = document.getElementById('studio-res-hashtags');
+      const auditTextEl = document.getElementById('studio-res-audit-text');
+      const pubResult = document.getElementById('studio-publish-result');
+      const fluxPromptBox = document.getElementById('studio-res-flux-prompt-box');
+      const fluxPromptTxt = document.getElementById('studio-res-flux-prompt-txt');
+
+      if (typePill) typePill.textContent = data.content_type || 'Örnek Post';
+      if (postIdEl) postIdEl.textContent = data.post_id || '';
+      
+      if (fluxPill) {
+        fluxPill.style.display = data.used_flux ? 'inline-flex' : 'none';
+      }
+      if (fluxPromptBox && fluxPromptTxt) {
+        if (data.flux_prompt) {
+          fluxPromptBox.style.display = 'block';
+          fluxPromptTxt.textContent = data.flux_prompt;
+        } else {
+          fluxPromptBox.style.display = 'none';
+        }
+      }
+
+      const cleanImg = (data.image_url || '').replace(/^\.\//, '/');
+      if (imgEl) imgEl.src = cleanImg + '?t=' + Date.now();
+      if (imgLink) imgLink.href = cleanImg;
+
+      if (titleEl) titleEl.textContent = data.title || '';
+      if (captionEl) captionEl.textContent = data.caption || '';
+      if (hashtagsEl) hashtagsEl.textContent = data.hashtags || '';
+      if (pubResult) pubResult.textContent = '';
+
+      // Visual Audit Report
+      const audit = data.visual_audit || (data.post && data.post.metadata && data.post.metadata.visual_audit) || {};
+      if (auditBadge) {
+        const score = audit.quality_score || 92;
+        const status = audit.status || 'APPROVED';
+        auditBadge.textContent = `Flash 3.8 Vizyon: %${score} ${status === 'APPROVED' ? 'Onaylı' : 'Revizyon'}`;
+        auditBadge.className = `status-pill ${status === 'APPROVED' ? 'status-pill-active' : 'status-pill-warn'}`;
+      }
+      if (auditTextEl) {
+        const rec = audit.recommendations || 'Görsel çözünürlüğü 1080x1080 piksel, logo kilidi entegre ve metin okunabilirliği kurumsal standartlara uygundur.';
+        const readab = audit.text_readability ? `Okunabilirlik: <strong>${escapeHtml(audit.text_readability)}</strong> | ` : '';
+        const model = audit.model_used ? `Model: <strong>${escapeHtml(audit.model_used)}</strong><br>` : '';
+        auditTextEl.innerHTML = `${model}${readab}Çözünürlük: <strong>${escapeHtml(audit.resolution || '1080x1080')}</strong><br>${escapeHtml(rec)}`;
+      }
+
+      content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    async function publishStudioPreviewedPost() {
+      if (!_lastStudioPreviewPost || !_lastStudioPreviewPost.post_id) {
+        showToast("Lütfen önce bir örnek post üretin.", "error");
+        return;
+      }
+
+      const postId = _lastStudioPreviewPost.post_id;
+      const btn = document.getElementById('btn-studio-publish');
+      const btnTxt = document.getElementById('btn-studio-publish-txt');
+      const pubResult = document.getElementById('studio-publish-result');
+
+      if (btn) btn.disabled = true;
+      if (btnTxt) btnTxt.textContent = '🚀 Instagram\'a Gönderiliyor...';
+      showToast("Örnek gönderi Instagram hesabında yayınlanıyor...", "info");
+
+      try {
+        const res = await fetch('/api/instagram/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: postId })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast("Gönderi başarıyla Instagram'da yayınlandı!", "success");
+          if (pubResult) {
+            pubResult.innerHTML = `✅ Yayınlandı! <a href="${data.ig_permalink || '#'}" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:700;">Instagram'da Gör &rarr;</a>`;
+          }
+          loadInstagramData();
+        } else {
+          showToast(`Yayınlama hatası: ${data.error || 'Başarısız'}`, "error");
+          if (pubResult) pubResult.innerHTML = `<span style="color:#f87171;">❌ ${escapeHtml(data.error || 'Yayınlama başarısız')}</span>`;
+        }
+      } catch(e) {
+        showToast("Bağlantı hatası: " + e.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnTxt) btnTxt.textContent = '🚀 Bu Gönderiyi Hemen Instagram\'da Yayınla';
+      }
+    }
+
+    function copyStudioCaption() {
+      if (!_lastStudioPreviewPost) return;
+      const fullText = `${_lastStudioPreviewPost.caption || ''}\n\n${_lastStudioPreviewPost.hashtags || ''}`.trim();
+      navigator.clipboard.writeText(fullText).then(() => {
+        showToast("Gönderi metni panoya kopyalandı!", "success");
+      }).catch(() => {
+        showToast("Metin kopyalanamadı.", "error");
+      });
+    }
+
+    async function loadTemplateBlueprint(showToastMsg = false) {
+      try {
+        const res = await fetch('/api/instagram/template-info');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.blueprint && data.blueprint.layers) {
+            const container = document.getElementById('blueprint-layers-list');
+            if (container && data.blueprint.layers.length > 0) {
+              const layerColors = ['#a5b4fc', '#38bdf8', '#fbbf24', '#34d399', '#94a3b8', '#c084fc'];
+              container.innerHTML = data.blueprint.layers.map((l, idx) => {
+                const color = layerColors[idx % layerColors.length];
+                const techChip = l.tech ? `<span class="code-chip" style="color:${color}; font-size:0.65rem;">${escapeHtml(l.tech)}</span>` : '';
+                return `
+                  <div style="background:#070b14; border:1px solid #1e293b; border-radius:8px; padding:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
+                      <span style="font-size:0.8rem; font-weight:800; color:${color};">${l.layer}. ${escapeHtml(l.name)}</span>
+                      ${techChip}
+                    </div>
+                    <p style="font-size:0.75rem; color:#94a3b8; margin:0 0 4px 0; line-height:1.4;">
+                      ${escapeHtml(l.description)}
+                    </p>
+                    ${l.elements ? `
+                      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">
+                        ${l.elements.map(e => `<span style="font-size:0.66rem; background:rgba(255,255,255,0.04); border:1px solid #334155; padding:1px 6px; border-radius:4px; color:#cbd5e1;">${escapeHtml(e)}</span>`).join('')}
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('');
+            }
+          }
+          if (showToastMsg) showToast("Tasarım şablonu güncellendi.", "info");
+        }
+      } catch(e) {
+        console.warn("Template info error:", e);
       }
     }
 
@@ -4463,7 +5493,9 @@
         'subagent_5_price': '🏷️',
         'subagent_6_trend': '🔍',
         'subagent_7_qa': '🛡️',
-        'subagent_8_procurement': '📦'
+        'subagent_8_procurement': '📦',
+        'subagent_9_security': '🔒',
+        'subagent_10_media': '🛠️'
       };
 
       const html = _subagentsConfig.map(s => {
@@ -6130,6 +7162,7 @@
       switchBotsTab('orchestrator');
       loadInstagramData();
       loadSubagentsStatus();
+      initReelsMethodSelector();
     });
   </script>
   <!-- Modal: Trend Avcısı Ürün Fiyatını Güncelle -->

@@ -50,7 +50,16 @@ def normalize_topic_keywords(text: str) -> Set[str]:
         'rehber', 'nasil', 'nedir', 'ayari', 'ayar', 'nelerdir', 'adim', 'adimlari',
         'kilavuzu', 'kilavuz', 'pozitron', 'market'
     }
-    return {w for w in words if w not in stop_words}
+    # Pure numbers are never semantic keywords (they only come from counter clones).
+    return {w for w in words if w not in stop_words and not w.isdigit()}
+
+_COUNTER_SUFFIX_RE = re.compile(r'\s*(?:\(|\[)?#?\d{2,6}(?:\)|\])?\s*$')
+
+def strip_counter_suffix(text: str) -> str:
+    """Removes a trailing counter like ' (9265)' or ' #12' from a title/focus."""
+    if not text:
+        return ''
+    return _COUNTER_SUFFIX_RE.sub('', str(text).strip()).strip()
 
 # COMPREHENSIVE FPV & DRONE TECHNICAL TOPIC REPOSITORY (KAPSAMLI REHBER HAVUZU)
 TOPIC_REPOSITORY: List[Dict] = [
@@ -784,20 +793,29 @@ class TechnicalSeoAgent:
         if not covered:
             return False
 
+        component_focus = strip_counter_suffix(component_focus)
+        title = strip_counter_suffix(title)
         candidate_slug = turkish_to_slug(component_focus)
         candidate_keywords = normalize_topic_keywords(f"{component_focus} {title}")
+        candidate_base = normalize_topic_keywords(component_focus)
 
         for art in covered:
-            exist_slug = turkish_to_slug(art.get("component_focus") or "")
+            exist_focus = strip_counter_suffix(art.get("component_focus") or "")
+            exist_slug = turkish_to_slug(exist_focus)
             if candidate_slug == exist_slug:
                 return True
 
-            exist_title = art.get("title", "").lower()
+            exist_title = strip_counter_suffix(art.get("title", "")).lower()
             if component_focus.lower() in exist_title or exist_title in component_focus.lower():
                 return True
 
+            # Same base concept regardless of trailing counters
+            exist_base = normalize_topic_keywords(exist_focus)
+            if candidate_base and exist_base and candidate_base == exist_base:
+                return True
+
             # Semantic keyword overlap
-            exist_keywords = normalize_topic_keywords(f"{art.get('title', '')} {art.get('component_focus', '')}")
+            exist_keywords = normalize_topic_keywords(f"{art.get('title', '')} {exist_focus}")
             if candidate_keywords and exist_keywords:
                 overlap = candidate_keywords.intersection(exist_keywords)
                 total_min = min(len(candidate_keywords), len(exist_keywords))
@@ -918,23 +936,85 @@ class TechnicalSeoAgent:
                     "content_markdown": None
                 }
 
-        # Guaranteed fallback with unique timestamp to avoid any duplication
-        ts_id = int(datetime.now().timestamp()) % 10000
-        unique_focus = f"İleri Mühendislik Analizi — FPV Aviyonik Sistemleri {ts_id}"
+        # Combinatorial distinct-topic generation (no counter-suffix clones).
+        combo_topic = self._generate_combinatorial_topic()
+        if combo_topic:
+            return combo_topic
+
+        # Absolute last resort: a distinctly-scoped advanced-angle topic.
+        fallback_angles = [
+            ("FPV Sistem Bütünlüğü ve Elektromanyetik Uyumluluk (EMC) Analizi", "Sistem EMC Analizi", "Uçuş", ["EMC", "elektromanyetik uyumluluk", "parazit"]),
+            ("Drone Veri Kaydı ve Uçuş Sonrası Kök Neden Analizi", "Uçuş Verisi Analizi", "Uçuş", ["uçuş verisi", "kök neden", "telemetri"]),
+            ("FPV Donanım Tedarik Zinciri ve Orijinallik Doğrulama", "Donanım Orijinallik", "Bakım", ["orijinallik", "tedarik zinciri", "donanım doğrulama"]),
+            ("Modüler FPV Sistem Mimarisi ve Yedeklilik Tasarımı", "Yedeklilik Mimarisi", "Uçuş", ["modüler mimari", "yedeklilik", "fault tolerance"]),
+        ]
+        for title, focus, cat, kws in fallback_angles:
+            if not self.is_topic_covered(focus, title):
+                return {
+                    "id_code": turkish_to_slug(focus),
+                    "title": f"{title}",
+                    "component_focus": focus,
+                    "category_search": cat,
+                    "target_keywords": kws + ["Pozitron Market FPV"],
+                    "content_markdown": None,
+                }
+        # Everything is covered; return the least-covered fallback rather than a numeric clone.
+        title, focus, cat, kws = fallback_angles[0]
         return {
-            "id_code": f"aviyonik_analiz_{ts_id}",
-            "title": f"İleri Düzey FPV Aviyonik Sistemleri ve Donanım Entegrasyonu ({ts_id})",
-            "component_focus": unique_focus,
-            "category_search": "Uçuş",
-            "target_keywords": ["FPV aviyonik", "sistem entegrasyonu", "Pozitron Market"],
-            "content_markdown": None
+            "id_code": turkish_to_slug(focus),
+            "title": title,
+            "component_focus": focus,
+            "category_search": cat,
+            "target_keywords": kws + ["Pozitron Market FPV"],
+            "content_markdown": None,
         }
+
+    def _generate_combinatorial_topic(self) -> Optional[Dict]:
+        """Builds a genuinely distinct topic from subsystem x facet combinations."""
+        subsystems = [
+            ("Uçuş Kontrolcüsü", "Uçuş", ["FC", "uçuş kartı"]),
+            ("ESC Sürücü", "ESC", ["ESC", "motor sürücü"]),
+            ("FPV Video Sistemi", "VTX", ["VTX", "görüntü iletimi"]),
+            ("Radyo Bağlantısı", "Alıcı", ["alıcı", "RF bağlantı"]),
+            ("Güç Dağıtımı", "Batarya", ["güç dağıtımı", "BEC"]),
+            ("Navigasyon Sistemleri", "Uçuş", ["GPS", "navigasyon"]),
+            ("Kamera Sistemi", "Kamera", ["kamera", "görüntü sensörü"]),
+            ("Anten ve RF", "Alıcı", ["anten", "RF"]),
+            ("Gövde ve Mekanik", "Gövde", ["gövde", "mekanik"]),
+            ("Uçuş Yazılımı", "Uçuş", ["firmware", "uçuş yazılımı"]),
+        ]
+        subjects = [
+            "Betaflight 4.5", "STM32H743", "Bluejay firmware", "ExpressLRS 3.x",
+            "Walksnail Avatar", "HDZero", "Li-Ion 21700 paket", "M10 GPS",
+            "ICM42688 jiroskop", "DShot600", "AM32 ESC", "TPU titreşim yalıtımı",
+            "karbon fiber şasi", "RPM filtre", "feedforward ayarı", "GPS Rescue",
+            "akım sensörü kalibrasyonu", "BEC gürültü filtresi", "kamera WDR ayarı",
+            "anten polarizasyonu",
+        ]
+        facets = [
+            "kurulum ve kalibrasyon", "hata giderme", "performans optimizasyonu",
+            "seçim kriterleri", "ölçüm ve test yöntemleri", "termal yönetim",
+            "güvenlik ve koruma", "bakım prosedürleri", "karşılaştırmalı analiz",
+            "ileri seviye ince ayar",
+        ]
+        for sub_name, cat, sub_kws in subsystems:
+            for subject in subjects:
+                for facet in facets:
+                    focus = f"{subject} {sub_name} {facet}"
+                    if not self.is_topic_covered(focus):
+                        return {
+                            "id_code": turkish_to_slug(focus),
+                            "title": f"{subject} {sub_name}: {facet.title()} Rehberi",
+                            "component_focus": focus,
+                            "category_search": cat,
+                            "target_keywords": [subject] + sub_kws + [facet, "Pozitron Market FPV"],
+                            "content_markdown": None,
+                        }
+        return None
 
     def _generate_with_gemini(self, topic: Dict, internal_links: List[Dict]) -> Optional[Dict]:
         """Calls Gemini to generate a fresh, engineering-grade technical guide with 100% Turkish characters."""
         self._ensure_api_key()
-        if not self.gemini_api_key:
-            return None
 
         links_context = "\n".join([f"- [{item['name']}](https://pozitronmarket.com/products/{item['slug']})" for item in internal_links])
 
@@ -973,6 +1053,21 @@ KRİTİK KURALLAR:
   "content_markdown": "# Başlık\\n\\nİçerik..."
 }}
 """
+
+        # 1. Unified LLM (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                parsed = llm.generate_json(prompt, max_tokens=8192, temperature=0.4)
+                if isinstance(parsed, dict) and parsed.get("content_markdown") and len(parsed["content_markdown"]) > 400:
+                    return parsed
+        except Exception as e:
+            print(f"[SEO Agent] DeepSeek LLM notice: {e}")
+
+        # 2. Legacy Gemini fallback
+        if not self.gemini_api_key:
+            return None
 
         payload = {
             "contents": [{

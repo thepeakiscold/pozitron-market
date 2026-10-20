@@ -54,6 +54,46 @@ class TestQAFullPipeline(unittest.TestCase):
         self.assertGreaterEqual(probes["health_score"], 0)
         self.assertLessEqual(probes["health_score"], 100)
         self.assertIn("subagent_pipeline", probes["probes"])
+        self.assertIn("instagram_engagement", probes["probes"])
+
+    def test_analyze_engagement_detects_unused_follow_quota(self):
+        """Detects the silent follow-quota failure (0 follows while comments flow)."""
+        history = []
+        for day in ("2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11"):
+            for i in range(10):
+                history.append({
+                    "type": "comment", "status": "success",
+                    "timestamp": f"{day}T02:0{i}:00", "user_id": str(i)
+                })
+        data = {
+            "today_date": "2026-10-12",
+            "today_follows_count": 0,
+            "today_comments_count": 10,
+            "history": history,
+            "follow_diagnostics": {}
+        }
+        analysis = self.agent._analyze_engagement_data(data)
+        self.assertEqual(analysis["today_follows"], 0)
+        self.assertEqual(analysis["today_comments"], 10)
+        self.assertGreaterEqual(analysis["trailing_zero_follow_days"], 4)
+
+    def test_analyze_engagement_detects_feedback_required_block(self):
+        """Surfaces the recorded Instagram follow action-block reason."""
+        data = {
+            "today_date": "2026-10-12",
+            "today_follows_count": 0,
+            "today_comments_count": 10,
+            "history": [],
+            "follow_diagnostics": {
+                "last_follow_error": "feedback_required",
+                "last_follow_message": "We limit how often you can do certain things on Instagram",
+                "follow_blocked": True,
+                "follow_blocked_until": "2099-01-01T00:00:00"
+            }
+        }
+        analysis = self.agent._analyze_engagement_data(data)
+        self.assertTrue(analysis["follow_blocked"])
+        self.assertEqual(analysis["last_follow_error"], "feedback_required")
 
 if __name__ == "__main__":
     unittest.main()

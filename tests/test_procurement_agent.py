@@ -10,7 +10,7 @@ class TestProcurementOrderAgent(unittest.TestCase):
         self.agent = ProcurementOrderAgent()
 
     def test_agent_initialization(self):
-        self.assertEqual(self.agent.model_code, "gemini-3.8-flash")
+        self.assertEqual(self.agent.model_code, "deepseek-v4.1-flash-high")
         self.assertGreater(self.agent.usd_try_rate, 30.0)
 
     def test_analyze_and_generate_order_plan(self):

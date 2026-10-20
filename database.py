@@ -65,6 +65,18 @@ def init_db():
         )
     ''')
 
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS product_quality_checks (
+            product_id TEXT PRIMARY KEY REFERENCES products(id) ON DELETE CASCADE,
+            status TEXT NOT NULL CHECK(status IN ('pending', 'checked', 'issues')),
+            content_hash TEXT NOT NULL,
+            reviewer TEXT NOT NULL,
+            notes TEXT NOT NULL DEFAULT '',
+            sources_json TEXT NOT NULL DEFAULT '[]',
+            reviewed_at TEXT NOT NULL
+        )
+    ''')
+
     # Users Table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -200,6 +212,11 @@ def init_db():
         )
     ''')
 
+    cursor.execute("PRAGMA table_info(reviews)")
+    if 'deleted_at' not in {row[1] for row in cursor.fetchall()}:
+        cursor.execute("ALTER TABLE reviews ADD COLUMN deleted_at TEXT")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_reviews_deleted_created ON reviews(deleted_at, created_at)")
+
     # Coupons Table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS coupons (
@@ -210,23 +227,91 @@ def init_db():
             min_order_try REAL DEFAULT 0,
             description_en TEXT,
             description_tr TEXT,
-            is_active INTEGER DEFAULT 1
+            is_active INTEGER DEFAULT 1,
+            starts_at TEXT,
+            expires_at TEXT,
+            max_uses INTEGER,
+            per_user_limit INTEGER DEFAULT 1,
+            used_count INTEGER DEFAULT 0,
+            created_at TEXT,
+            source TEXT DEFAULT 'manual',
+            campaign_id TEXT
         )
     ''')
+
+    # Coupon redemptions: one row per (coupon, user, order). UNIQUE(coupon_code, user_key, order_id)
+    # allows multi-use coupons (per_user_limit > 1) across different orders while blocking double-spend per order.
+    cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='coupon_redemptions'")
+    table_sql = cursor.fetchone()
+    if table_sql and "UNIQUE (coupon_code, user_key)" in table_sql[0]:
+        cursor.execute("ALTER TABLE coupon_redemptions RENAME TO coupon_redemptions_old")
+        cursor.execute('''
+            CREATE TABLE coupon_redemptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                coupon_code TEXT NOT NULL,
+                user_key TEXT NOT NULL,
+                user_id TEXT,
+                customer_email TEXT,
+                order_id TEXT,
+                order_number TEXT,
+                discount_try REAL DEFAULT 0,
+                discount_usd REAL DEFAULT 0,
+                redeemed_at TEXT NOT NULL,
+                UNIQUE (coupon_code, user_key, order_id)
+            )
+        ''')
+        cursor.execute('''
+            INSERT INTO coupon_redemptions (id, coupon_code, user_key, user_id, customer_email, order_id, order_number, discount_try, discount_usd, redeemed_at)
+            SELECT id, coupon_code, user_key, user_id, customer_email, order_id, order_number, discount_try, discount_usd, redeemed_at
+            FROM coupon_redemptions_old
+        ''')
+        cursor.execute("DROP TABLE coupon_redemptions_old")
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS coupon_redemptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                coupon_code TEXT NOT NULL,
+                user_key TEXT NOT NULL,
+                user_id TEXT,
+                customer_email TEXT,
+                order_id TEXT,
+                order_number TEXT,
+                discount_try REAL DEFAULT 0,
+                discount_usd REAL DEFAULT 0,
+                redeemed_at TEXT NOT NULL,
+                UNIQUE (coupon_code, user_key, order_id)
+            )
+        ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_code ON coupon_redemptions (coupon_code)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_user ON coupon_redemptions (user_key)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_coupon_redemptions_email ON coupon_redemptions (customer_email)")
+
+    # Coupon audit log: every lifecycle event (created/validated/redeemed/expired/deactivated).
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS coupon_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            coupon_code TEXT NOT NULL,
+            action TEXT NOT NULL,
+            detail TEXT,
+            actor TEXT,
+            created_at TEXT NOT NULL
+        )
+    ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_coupon_logs_code ON coupon_logs (coupon_code)")
 
     # Seed default coupons
     cursor.execute("SELECT count(*) FROM coupons")
     if cursor.fetchone()[0] == 0:
         default_coupons = [
             ('POZITRON10', 'percent', 10, 50, 1500, '10% discount on all orders above $50', '50$ ve üzeri tüm siparişlerde %10 indirim'),
-            ('DRONE20', 'fixed', 20, 100, 3000, '$20 off on orders over $100', '100$ ve üzeri siparişlerde 20$ / 700₺ indirim'),
+            ('DRONE700', 'fixed', 700, 100, 3000, '700₺ off on orders over 3000₺', '3000₺ ve üzeri siparişlerde 700₺ indirim'),
             ('WELCOME15', 'percent', 15, 30, 900, '15% welcome discount for new pilots', 'Yeni pilotlar için %15 hoş geldin indirimi'),
             ('FPVRACE', 'percent', 12, 40, 1200, '12% FPV racing component discount', 'FPV yarış bileşenlerinde %12 indirim')
         ]
         cursor.executemany('''
-            INSERT INTO coupons (code, discount_type, discount_value, min_order_usd, min_order_try, description_en, description_tr, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 1)
-        ''', default_coupons)
+            INSERT INTO coupons (code, discount_type, discount_value, min_order_usd, min_order_try, description_en, description_tr, is_active, per_user_limit, used_count, created_at, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, 0, ?, 'seed')
+        ''', [(c[0], c[1], c[2], c[3], c[4], c[5], c[6], datetime.now().isoformat()) for c in default_coupons])
 
     # Seed default users
     cursor.execute("SELECT count(*) FROM users")
@@ -251,7 +336,7 @@ def init_db():
             last_evolution_at TEXT,
             next_evolution_at TEXT,
             active_growth_mode TEXT DEFAULT 'AGGRESSIVE_EXPANSION',
-            model_code TEXT DEFAULT 'gemini-3.8-flash',
+            model_code TEXT DEFAULT 'deepseek-v4.1-flash-high',
             updated_at TEXT
         )
     ''')
@@ -259,7 +344,7 @@ def init_db():
     if cursor.fetchone()[0] == 0:
         cursor.execute('''
             INSERT INTO lead_supervisor_config (id, cycle_interval_hours, is_autonomous_enabled, active_growth_mode, model_code, updated_at)
-            VALUES (1, 2, 1, 'AGGRESSIVE_EXPANSION', 'gemini-3.8-flash', ?)
+            VALUES (1, 2, 1, 'AGGRESSIVE_EXPANSION', 'deepseek-v4.1-flash-high', ?)
         ''', (datetime.now().isoformat(),))
 
     # Migration: Ensure evolution columns exist on lead_supervisor_config
@@ -272,7 +357,7 @@ def init_db():
     if 'active_growth_mode' not in existing_cols:
         cursor.execute("ALTER TABLE lead_supervisor_config ADD COLUMN active_growth_mode TEXT DEFAULT 'AGGRESSIVE_EXPANSION'")
     if 'model_code' not in existing_cols:
-        cursor.execute("ALTER TABLE lead_supervisor_config ADD COLUMN model_code TEXT DEFAULT 'gemini-3.8-flash'")
+        cursor.execute("ALTER TABLE lead_supervisor_config ADD COLUMN model_code TEXT DEFAULT 'deepseek-v4.1-flash-high'")
 
     # Lead Supervisor Directives Table
     cursor.execute('''
@@ -407,9 +492,9 @@ def init_db():
         ('usd_rate', '50.0'),
         ('site_name', 'Pozitron Market'),
         ('support_email', 'destek@pozitronmarket.com'),
-        ('bank_owner', 'Burak Peköz'),
-        ('bank_iban', 'TR41 0020 5000 0908 0479 3000 01'),
-        ('bank_name', 'Kuveyt Türk Katılım Bankası (7/24 FAST)'),
+        ('bank_owner', ''),
+        ('bank_iban', 'TR69 0004 6001 9188 8000 3245 80'),
+        ('bank_name', 'Akbank / Havale / EFT / FAST'),
         ('3d_setup_fee', '50.0'),
         ('3d_price_pla', '1.50'),
         ('3d_price_petg', '2.00'),
@@ -421,6 +506,18 @@ def init_db():
     for k, v in default_settings:
         cursor.execute("INSERT OR IGNORE INTO settings (key, value, updated_at) VALUES (?, ?, ?)",
                        (k, v, datetime.now().isoformat()))
+
+    # One-time business account update; later administrator changes are preserved.
+    cursor.execute("SELECT value FROM settings WHERE key = 'business_account_revision'")
+    if cursor.fetchone() is None:
+        for key, value in (
+            ('bank_owner', ''),
+            ('bank_iban', 'TR69 0004 6001 9188 8000 3245 80'),
+            ('bank_name', 'Akbank / Havale / EFT / FAST'),
+            ('business_account_revision', '2026-10-20'),
+        ):
+            cursor.execute("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)",
+                           (key, value, datetime.now().isoformat()))
 
     # Migration: Ensure image_mode column exists on instagram_posts
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='instagram_posts'")
@@ -453,6 +550,28 @@ def init_db():
                     cursor.execute(sql)
                 except Exception as ex:
                     print(f"[Migration Warning] {col_name}: {ex}")
+
+    # Migration: Ensure coupons table has lifecycle / usage columns
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='coupons'")
+    if cursor.fetchone():
+        cursor.execute("PRAGMA table_info(coupons)")
+        coupon_cols = [c[1] for c in cursor.fetchall()]
+        coupon_migrations = [
+            ('starts_at', "ALTER TABLE coupons ADD COLUMN starts_at TEXT"),
+            ('expires_at', "ALTER TABLE coupons ADD COLUMN expires_at TEXT"),
+            ('max_uses', "ALTER TABLE coupons ADD COLUMN max_uses INTEGER"),
+            ('per_user_limit', "ALTER TABLE coupons ADD COLUMN per_user_limit INTEGER DEFAULT 1"),
+            ('used_count', "ALTER TABLE coupons ADD COLUMN used_count INTEGER DEFAULT 0"),
+            ('created_at', "ALTER TABLE coupons ADD COLUMN created_at TEXT"),
+            ('source', "ALTER TABLE coupons ADD COLUMN source TEXT DEFAULT 'manual'"),
+            ('campaign_id', "ALTER TABLE coupons ADD COLUMN campaign_id TEXT"),
+        ]
+        for col_name, sql in coupon_migrations:
+            if col_name not in coupon_cols:
+                try:
+                    cursor.execute(sql)
+                except Exception as ex:
+                    print(f"[Migration Warning] coupons.{col_name}: {ex}")
 
     # Subagents Enable/Disable Configuration Table
     cursor.execute('''

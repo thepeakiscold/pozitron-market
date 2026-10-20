@@ -86,6 +86,7 @@ class ProductMediaInspectorAgent:
     def __init__(self, db_path: str = DB_PATH):
         self.db_path = db_path
         self.agent_id = "subagent_10_media"
+        self.audit_json_path = AUDIT_JSON_PATH
 
     def scan_all_products(self, limit: Optional[int] = None) -> Dict[str, Any]:
         """Tüm ürün kataloğunu tarar; görsel ve açıklama anomalilerini raporlar."""
@@ -312,30 +313,36 @@ class ProductMediaInspectorAgent:
             now_str
         ))
 
-    def auto_fix_quarantined_products(self, dry_run: bool = True) -> Dict[str, Any]:
-        """Karantinadaki veya hatalı ürünleri doğrulanmış stüdyo görselleriyle onarır."""
+    def auto_fix_quarantined_products(self, dry_run: bool = True, sku: str = None) -> Dict[str, Any]:
+        """Karantinadaki veya hatalı ürünleri doğrulanmış stüdyo görselleriyle onarır ve denetim raporunu günceller."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
 
-        c.execute("SELECT * FROM product_media_audits WHERE status != 'VERIFIED' AND suggested_image_url IS NOT NULL")
+        if sku:
+            c.execute("SELECT * FROM product_media_audits WHERE status != 'VERIFIED' AND suggested_image_url IS NOT NULL AND sku = ?", (sku,))
+        else:
+            c.execute("SELECT * FROM product_media_audits WHERE status != 'VERIFIED' AND suggested_image_url IS NOT NULL")
         candidates = [dict(r) for r in c.fetchall()]
 
         fixed_count = 0
         fixes = []
+        fixed_skus = set()
 
         for row in candidates:
             p_id = row["product_id"]
+            p_sku = row["sku"]
             suggested_url = row["suggested_image_url"]
 
             if not dry_run and suggested_url:
                 c.execute("UPDATE products SET image_url = ? WHERE id = ?", (suggested_url, p_id))
                 c.execute("UPDATE product_media_audits SET resolution_status = 'AUTO_FIXED', status = 'VERIFIED' WHERE product_id = ?", (p_id,))
                 fixed_count += 1
+                fixed_skus.add(p_sku)
 
             fixes.append({
                 "product_id": p_id,
-                "sku": row["sku"],
+                "sku": p_sku,
                 "name": row["name_tr"],
                 "old_image": row["image_url"],
                 "new_image": suggested_url,
@@ -346,6 +353,27 @@ class ProductMediaInspectorAgent:
             conn.commit()
 
         conn.close()
+
+        # Denetim JSON dosyasını anlık senkronize et
+        if not dry_run and fixed_count > 0 and os.path.exists(AUDIT_JSON_PATH):
+            try:
+                with open(AUDIT_JSON_PATH, "r", encoding="utf-8") as f_in:
+                    audit = json.load(f_in)
+                current_quarantine = max(0, audit.get("quarantine_candidates_count", 0) - fixed_count)
+                current_verified = audit.get("verified_clean_count", 0) + fixed_count
+                total_scanned = audit.get("total_products_scanned", 508)
+                audit["quarantine_candidates_count"] = current_quarantine
+                audit["verified_clean_count"] = current_verified
+                audit["visual_health_score"] = int((current_verified / max(1, total_scanned)) * 100)
+                audit["last_auto_fix_at"] = datetime.now().isoformat()
+                # Karantina adayları listesinden onarılanları çıkar
+                if "findings" in audit and isinstance(audit["findings"], list):
+                    audit["findings"] = [f for f in audit["findings"] if f.get("sku") not in fixed_skus]
+
+                with open(AUDIT_JSON_PATH, "w", encoding="utf-8") as f_out:
+                    json.dump(audit, f_out, ensure_ascii=False, indent=2)
+            except Exception as e:
+                print(f"[ProductMediaInspectorAgent] Auto-fix JSON update notice: {e}")
 
         return {
             "dry_run": dry_run,

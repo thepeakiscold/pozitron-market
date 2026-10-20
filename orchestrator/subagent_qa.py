@@ -71,7 +71,8 @@ class QASentinelAgent:
     SUBAGENT 7: SISTEM SAGLIK, TANI VE HATA DENETIM AJANI (QA SENTINEL AGENT)
     - Birincil Model: gemini-3.8-flash (Yedekler: gemini-2.5-flash, gemini-1.5-flash)
     - Otonom gorev: Tum PR ve bot boru hattini (Subagents 1-6) 30 dakikada bir tarar.
-    - Problar: Meta token gecerliligi, Reddit oturum ve sifir yorum hareketsizligi,
+    - Problar: Meta token gecerliligi, Instagram takip kotasi/kisitlamasi
+      (feedback_required action-block), Reddit oturum ve sifir yorum hareketsizligi,
       zamanlayici is parcaciklari ve SQLite/JSON veri paritesi.
     - Otonom Iyilestirme (Auto-Heal): Tespit edilen arizalari kullanici mudahalesine
       gerek kalmaksizin otomatik olarak onarir ve olay kaydina (qa_incident_log) isler.
@@ -79,7 +80,7 @@ class QASentinelAgent:
     """
     def __init__(self, check_interval_minutes: int = 30):
         init_qa_tables()
-        self.model_code = "gemini-3.8-flash"
+        self.model_code = "deepseek-v4.1-flash-high"
         self.fallback_models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
         self.check_interval_minutes = check_interval_minutes
         self.latest_audit_result: Optional[Dict] = None
@@ -220,6 +221,259 @@ class QASentinelAgent:
         except Exception as e:
             result["status"] = "DEGRADED"
             result["issues"].append(f"Instagram probu calistirilirken hata olustu: {str(e)}")
+
+        return result
+
+    def _load_instagram_interactions(self) -> Dict:
+        """Loads the Instagram engagement ledger (data/instagram_interactions.json)."""
+        path = os.path.join(PROJECT_ROOT, "data", "instagram_interactions.json")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def _analyze_engagement_data(self, data: Dict) -> Dict:
+        """
+        Pure, side-effect free analysis of the Instagram engagement ledger.
+
+        Detects the silent failure mode where the daily follow quota is never
+        consumed (follows stay at 0) while comments keep flowing, and surfaces any
+        recorded Instagram follow action-block ("feedback_required").
+        """
+        analysis = {
+            "today_date": data.get("today_date"),
+            "today_follows": int(data.get("today_follows_count", 0) or 0),
+            "today_comments": int(data.get("today_comments_count", 0) or 0),
+            "today_likes": int(data.get("today_likes_count", 0) or 0),
+            "trailing_zero_follow_days": 0,
+            "trailing_comment_days": 0,
+            "follow_blocked": False,
+            "follow_blocked_until": None,
+            "last_follow_error": None,
+            "last_follow_message": None,
+        }
+
+        diag = data.get("follow_diagnostics") or {}
+        analysis["last_follow_error"] = diag.get("last_follow_error")
+        analysis["last_follow_message"] = diag.get("last_follow_message")
+        blocked_until = diag.get("follow_blocked_until")
+        if blocked_until:
+            analysis["follow_blocked_until"] = blocked_until
+            try:
+                if datetime.now() < datetime.fromisoformat(blocked_until):
+                    analysis["follow_blocked"] = True
+            except Exception:
+                pass
+
+        # Rebuild per-day success counts from history
+        days = {}
+        for ev in data.get("history", []):
+            ts = str(ev.get("timestamp") or "")
+            if len(ts) < 10 or ev.get("status") != "success":
+                continue
+            day = ts[:10]
+            bucket = days.setdefault(day, {"follows": 0, "comments": 0, "likes": 0})
+            if ev.get("type") == "follow":
+                bucket["follows"] += 1
+            elif ev.get("type") == "comment":
+                bucket["comments"] += 1
+            elif ev.get("type") == "like":
+                bucket["likes"] += 1
+
+        today = data.get("today_date")
+        if today:
+            bucket = days.setdefault(today, {"follows": 0, "comments": 0, "likes": 0})
+            bucket["follows"] = max(bucket["follows"], analysis["today_follows"])
+            bucket["comments"] = max(bucket["comments"], analysis["today_comments"])
+            bucket["likes"] = max(bucket.get("likes", 0), analysis["today_likes"])
+
+        # Trailing consecutive days that produced comments but zero follows
+        streak = 0
+        comment_streak = 0
+        for day in sorted(days.keys(), reverse=True):
+            bucket = days[day]
+            if bucket["comments"] == 0 and bucket["follows"] == 0:
+                continue
+            if bucket["comments"] > 0:
+                comment_streak += 1
+            if bucket["comments"] > 0 and bucket["follows"] == 0:
+                streak += 1
+            elif bucket["follows"] > 0:
+                break
+        analysis["trailing_zero_follow_days"] = streak
+        analysis["trailing_comment_days"] = comment_streak
+        return analysis
+
+    def _analyze_follow_rate_limit(self, data: Dict, analysis: Dict) -> Dict:
+        """
+        Root-cause analysis of Instagram follow action-blocks ("feedback_required").
+
+        Instagram's anti-automation flags follow bursts: too many follows in one
+        session and/or too little time between them. This reconstructs follow
+        velocity from the interaction ledger and produces explicit root causes
+        plus mitigation recommendations for the health audit.
+        """
+        from collections import defaultdict
+        out = {
+            "rate_limit_risk": "LOW",
+            "max_follows_per_hour": 0,
+            "min_follow_gap_seconds": None,
+            "feedback_required_events": 0,
+            "rate_limit_root_causes": [],
+            "rate_limit_recommendations": [],
+        }
+        try:
+            events = [e for e in (data.get("history") or []) if e.get("type") == "follow"]
+            times = []
+            for e in events:
+                ts = str(e.get("timestamp") or "")
+                if len(ts) >= 19:
+                    try:
+                        times.append(datetime.fromisoformat(ts))
+                    except Exception:
+                        pass
+            times.sort()
+
+            hour_counts = defaultdict(int)
+            for t in times:
+                hour_counts[t.strftime("%Y-%m-%dT%H")] += 1
+            max_per_hour = max(hour_counts.values()) if hour_counts else 0
+            out["max_follows_per_hour"] = max_per_hour
+
+            min_gap = None
+            for a, b in zip(times, times[1:]):
+                gap = (b - a).total_seconds()
+                if 0 <= gap < 21600:
+                    min_gap = gap if min_gap is None else min(min_gap, gap)
+            out["min_follow_gap_seconds"] = round(min_gap, 1) if min_gap is not None else None
+
+            block_events = [
+                e for e in events
+                if e.get("status") == "failed" and (
+                    (e.get("error") == "feedback_required") or e.get("blocked")
+                )
+            ]
+            out["feedback_required_events"] = len(block_events)
+
+            causes = []
+            recs = []
+
+            if analysis.get("follow_blocked"):
+                causes.append("Instagram son takip denemesinde feedback_required (action-block) dondurdu; ajan bu sinyali hesap otomasyon hizini astigi yonunde yorumluyor.")
+            if out["feedback_required_events"] > 0:
+                causes.append(f"Kayitli gecmiste {out['feedback_required_events']} kez takip action-block yaniti alinmis; desen tekrarliyor.")
+            if max_per_hour >= 5:
+                causes.append(f"En yogun saatte {max_per_hour} takip yapilmis. Instagram bot tespiti icin yuksek hacim esigidir.")
+            elif max_per_hour > 0:
+                causes.append(f"En yogun saatte {max_per_hour} takip yapilmis; tek oturumda toplu aksiyon dagilimi var.")
+            if min_gap is not None and min_gap < 30:
+                causes.append(f"Ardisik takipler arasindaki minimum aralik yalnizca {round(min_gap,1)} sn; insan davranisindan cok daha hizli.")
+            elif min_gap is not None and min_gap < 60:
+                causes.append(f"Ardisik takip araligi {round(min_gap,1)} sn; hala otomasyon esigine yakin.")
+            if int(analysis.get("today_follows", 0) or 0) >= 8:
+                causes.append(f"Gunluk {analysis.get('today_follows')} takip neredeyse tek seferde tuketiliyor; kademeli (drip) dagitim yok.")
+            if int(analysis.get("today_comments", 0) or 0) >= 8:
+                causes.append("Ayni oturumda 10 yorum + 10 takip + 10 begeni gibi yuksek mutasyon hacmi spam sinyali uretiyor.")
+            if int(analysis.get("today_likes", 0) or 0) >= 8:
+                causes.append("Gunluk begeni kotasi tek oturumda tuketiliyor; begeniler de 5-12 sn insan araliklariyla kademeli dagitilmali.")
+            causes.append("Chrome cerezleri ve X-IG-App-ID ile web GraphQL mutasyonu kullaniliyor; datacenter IP + otomasyon parmak izi riski tasiyor.")
+
+            recs.append("Takip araligini 45-120 saniyeye cikar ve oturum basina takibi 3-4 ile sinirla.")
+            recs.append("Gunluk 10 takibi 4-6 saate yay; drip-feed ile saat basina 1-2 takip yap.")
+            recs.append("Kilit suresi (follow_blocked_until) dolmadan hicbir takip denemesi yapma.")
+            recs.append("Warm-up uygula: ilk gun 2-3 takip, her gun 1 artirarak 10'a kademeli cik.")
+            recs.append("Takip ve yorum aksiyonlarini ayri oturumlara bol.")
+            recs.append("Mumkunse resmi Meta Graph API veya mobil/konut IP ile ilerle.")
+
+            risk = "LOW"
+            if analysis.get("follow_blocked") or out["feedback_required_events"] > 0 or max_per_hour >= 5 or (min_gap is not None and min_gap < 30):
+                risk = "HIGH"
+            elif max_per_hour >= 3 or (min_gap is not None and min_gap < 90) or int(analysis.get("today_follows", 0) or 0) >= 5:
+                risk = "MEDIUM"
+            out["rate_limit_risk"] = risk
+            out["rate_limit_root_causes"] = causes
+            out["rate_limit_recommendations"] = recs
+        except Exception as e:
+            out["rate_limit_root_causes"] = [f"Rate-limit analizi hesaplanamadi: {e}"]
+        return out
+
+    def probe_instagram_engagement(self) -> Dict:
+        """
+        Detects an unused Instagram follow quota / follow action-block.
+
+        Instagram silently rate-limits or rejects follow mutations while comments
+        keep succeeding; the bot then records 0 follows every day. Historically this
+        failure was swallowed, so this probe reports it as a system health incident.
+        """
+        result = {
+            "channel": "instagram_engagement",
+            "status": "HEALTHY",
+            "today_follows": 0,
+            "today_comments": 0,
+            "trailing_zero_follow_days": 0,
+            "trailing_comment_days": 0,
+            "follow_blocked": False,
+            "follow_blocked_until": None,
+            "last_follow_error": None,
+            "last_follow_message": None,
+            "quota_unused": False,
+            "rate_limit_risk": "LOW",
+            "max_follows_per_hour": 0,
+            "min_follow_gap_seconds": None,
+            "feedback_required_events": 0,
+            "rate_limit_root_causes": [],
+            "rate_limit_recommendations": [],
+            "issues": []
+        }
+
+        if not is_subagent_enabled("subagent_1_instagram"):
+            result["status"] = "DISABLED"
+            return result
+
+        try:
+            data = self._load_instagram_interactions()
+            analysis = self._analyze_engagement_data(data)
+            result.update(analysis)
+
+            # Root-cause analysis of follow rate-limits ("feedback_required")
+            result.update(self._analyze_follow_rate_limit(data, analysis))
+
+            if analysis["follow_blocked"]:
+                result["status"] = "DEGRADED"
+                result["quota_unused"] = True
+                msg = (f"Instagram takip aksiyonu kisitli (feedback_required / 'Try Again Later'). "
+                       f"Kilit bitis zamani: {analysis['follow_blocked_until']}. "
+                       f"Son kayitli hata: {analysis['last_follow_error']} - {analysis['last_follow_message']}")
+                result["issues"].append(msg)
+            elif analysis["trailing_zero_follow_days"] >= 2 and analysis["trailing_comment_days"] >= 2:
+                result["status"] = "DEGRADED"
+                result["quota_unused"] = True
+                msg = (f"Instagram takip kotasi {analysis['trailing_zero_follow_days']} gundur hic kullanilmiyor "
+                       f"(yorumlar aktif, bugun {analysis['today_comments']} yorum). "
+                       f"Takip istekleri sessizce basarisiz oluyor olabilir.")
+                if analysis["last_follow_error"]:
+                    msg += f" Son kayitli hata: {analysis['last_follow_error']} - {analysis['last_follow_message']}"
+                result["issues"].append(msg)
+            elif analysis["last_follow_error"] and analysis["trailing_zero_follow_days"] >= 1:
+                result["status"] = "DEGRADED"
+                result["quota_unused"] = True
+                msg = (f"Son takip denemesi basarisiz oldu: {analysis['last_follow_error']} - "
+                       f"{analysis['last_follow_message']}")
+                result["issues"].append(msg)
+
+            # Surface the rate-limit root-cause verdict as its own health issue.
+            if result.get("rate_limit_risk") in ("HIGH", "MEDIUM"):
+                cause_txt = "; ".join((result.get("rate_limit_root_causes") or [])[:3])
+                result["issues"].append(
+                    f"Instagram takip rate-limit riski {result['rate_limit_risk']} "
+                    f"(saatlik max takip: {result.get('max_follows_per_hour')}, "
+                    f"min aralik: {result.get('min_follow_gap_seconds')} sn). Kok nedenler: {cause_txt}"
+                )
+
+        except Exception as e:
+            result["status"] = "DEGRADED"
+            result["issues"].append(f"Instagram etkilesim probu calistirilirken hata: {str(e)}")
 
         return result
 
@@ -529,6 +783,58 @@ class QASentinelAgent:
 
         except Exception as e:
             result["issues"].append(f"Katalog varlik probu calistirilirken hata: {str(e)}")
+
+        return result
+
+    def probe_duplicate_content(self) -> Dict:
+        """
+        Otonom tekrar (duplicate) denetimi: Instagram gonderileri (baslik, metin,
+        gorsel pHash) ve site rehberleri (SEO makaleleri) icindeki tekrarlari tespit eder.
+        """
+        result = {
+            "channel": "duplicate_content",
+            "status": "HEALTHY",
+            "instagram_duplicate_groups": 0,
+            "instagram_redundant_posts": 0,
+            "instagram_duplicate_titles": 0,
+            "instagram_duplicate_captions": 0,
+            "instagram_duplicate_images": 0,
+            "seo_duplicate_groups": 0,
+            "seo_redundant_articles": 0,
+            "seo_counter_clones": 0,
+            "issues": []
+        }
+        try:
+            from orchestrator.duplicate_guard import DuplicateGuard
+            guard = DuplicateGuard()
+            ig = guard.scan_instagram()
+            seo = guard.scan_seo()
+
+            result["instagram_duplicate_groups"] = ig.get("duplicate_groups", 0)
+            result["instagram_redundant_posts"] = ig.get("redundant_posts", 0)
+            result["instagram_duplicate_titles"] = ig.get("duplicate_title_groups", 0)
+            result["instagram_duplicate_captions"] = ig.get("duplicate_caption_groups", 0)
+            result["instagram_duplicate_images"] = ig.get("duplicate_image_groups", 0)
+            result["seo_duplicate_groups"] = seo.get("duplicate_groups", 0)
+            result["seo_redundant_articles"] = seo.get("redundant_articles", 0)
+            result["seo_counter_clones"] = seo.get("counter_clone_count", 0)
+
+            if result["instagram_duplicate_groups"]:
+                result["issues"].append(
+                    f"Instagram'da {result['instagram_duplicate_groups']} tekrar grubu tespit edildi "
+                    f"({result['instagram_duplicate_titles']} baslik, {result['instagram_duplicate_captions']} metin, "
+                    f"{result['instagram_duplicate_images']} gorsel)."
+                )
+            if result["seo_duplicate_groups"] or result["seo_counter_clones"]:
+                result["issues"].append(
+                    f"Site rehberlerinde {result['seo_duplicate_groups']} tekrar grubu ve "
+                    f"{result['seo_counter_clones']} sayac-ekli kopya rehber tespit edildi."
+                )
+
+            if result["issues"]:
+                result["status"] = "DEGRADED"
+        except Exception as e:
+            result["issues"].append(f"Tekrar (duplicate) denetim probu hatasi: {str(e)}")
 
         return result
 
@@ -950,18 +1256,23 @@ class QASentinelAgent:
         return result
 
     def run_probes(self) -> Dict:
-        """Executes all 7 diagnostic probes across the entire organization."""
+        """Executes all 8 diagnostic probes across the entire organization."""
         ig = self.probe_instagram()
+        eng = self.probe_instagram_engagement()
         red = self.probe_reddit()
         pipe = self.probe_subagent_pipeline_outputs()
         db = self.probe_database_and_cache()
         sched = self.probe_schedulers_and_threads()
         assets = self.probe_assets_and_catalog()
         prod_links = self.probe_product_links()
+        dupes = self.probe_duplicate_content()
 
-        all_issues = ig["issues"] + red["issues"] + pipe["issues"] + db["issues"] + sched["issues"] + assets["issues"] + prod_links["issues"]
+        all_issues = (ig["issues"] + eng["issues"] + red["issues"] + pipe["issues"] +
+                      db["issues"] + sched["issues"] + assets["issues"] + prod_links["issues"] +
+                      dupes["issues"])
 
-        statuses = [ig["status"], red["status"], pipe["status"], db["status"], sched["status"], assets["status"], prod_links["status"]]
+        statuses = [ig["status"], eng["status"], red["status"], pipe["status"], db["status"],
+                    sched["status"], assets["status"], prod_links["status"], dupes["status"]]
         if "CRITICAL" in statuses:
             overall = "CRITICAL"
             score = 50
@@ -983,12 +1294,14 @@ class QASentinelAgent:
             "all_issues": all_issues,
             "probes": {
                 "instagram": ig,
+                "instagram_engagement": eng,
                 "reddit": red,
                 "subagent_pipeline": pipe,
                 "database_and_cache": db,
                 "schedulers_and_threads": sched,
                 "catalog_assets": assets,
-                "product_links": prod_links
+                "product_links": prod_links,
+                "duplicate_content": dupes
             }
         }
 
@@ -1000,9 +1313,8 @@ class QASentinelAgent:
         api_key = self._get_api_key()
         all_issues = probe_results.get("all_issues", [])
 
-        if api_key:
-            prompt = f"""Sen Pozitron Market (https://pozitronmarket.com) e-ticaret ve FPV robotik platformunun Otonom Kalite ve Hata Denetim Ajanisin (Subagent 7: QA Sentinel Agent).
-Modelin: Google Antigravity 2.0 uzerinde calisan gemini-3.8-flash.
+        prompt = f"""Sen Pozitron Market (https://pozitronmarket.com) e-ticaret ve FPV robotik platformunun Otonom Kalite ve Hata Denetim Ajanisin (Subagent 7: QA Sentinel Agent).
+Modelin: DeepSeek V4.1 Flash High (OpenCode/Evren gateway).
 
 ASAGIDAKI SISTEM TANI VE SAGLIK PROBU CIKTILARINI INCELE:
 - Genel Saglik Durumu: {probe_results.get('overall_status')} (Skor: {probe_results.get('health_score')}/100)
@@ -1011,12 +1323,15 @@ ASAGIDAKI SISTEM TANI VE SAGLIK PROBU CIKTILARINI INCELE:
 
 PROB DETAYLARI:
 - Instagram: Token Gecerli Mi: {probe_results['probes']['instagram']['token_valid']}, Mod: {probe_results['probes']['instagram']['token_mode']}
+- Instagram Etkilesim/Takip Kotasi: Kullanilmiyor Mu: {probe_results['probes'].get('instagram_engagement', {}).get('quota_unused')}, Takip Kisitli Mi: {probe_results['probes'].get('instagram_engagement', {}).get('follow_blocked')}, Ardisik Takipsiz Gun: {probe_results['probes'].get('instagram_engagement', {}).get('trailing_zero_follow_days')}, Son Takip Hatasi: {probe_results['probes'].get('instagram_engagement', {}).get('last_follow_error')} - {probe_results['probes'].get('instagram_engagement', {}).get('last_follow_message')}
 - Reddit: Oturum: {probe_results['probes']['reddit']['session_valid']}, Sifir Yorum Uyarisi: {probe_results['probes']['reddit']['inactivity_alert']}, Toplam Yayinlanan: {probe_results['probes']['reddit']['published_count']}
 - Subagent Boru Hatti Durumu: {json.dumps(probe_results['probes']['subagent_pipeline']['subagents'], indent=2, ensure_ascii=False)}
 - Veritabani ve Onbellek: Senkron Mu: {probe_results['probes']['database_and_cache']['cache_files_in_sync']}
 - Zamanlayicilar: Calismayan: {probe_results['probes']['schedulers_and_threads']['dead_schedulers']}
 - Urun Gorselleri: Eksik Sayisi: {probe_results['probes']['catalog_assets']['missing_images_count']}
 - Urun Linkleri ve Sayfalari: Toplam: {probe_results['probes']['product_links']['total_products_checked']}, Gecerli: {probe_results['probes']['product_links']['valid_links_count']}, Kirik/Eksik: {probe_results['probes']['product_links']['broken_links_count']}
+- Icerik Tekrarlari (Duplicate): Instagram tekrar grubu: {probe_results['probes'].get('duplicate_content', {}).get('instagram_duplicate_groups')}, Instagram fazla gonderi: {probe_results['probes'].get('duplicate_content', {}).get('instagram_redundant_posts')}, Rehber tekrar grubu: {probe_results['probes'].get('duplicate_content', {}).get('seo_duplicate_groups')}, Rehber sayac-kopya: {probe_results['probes'].get('duplicate_content', {}).get('seo_counter_clones')}
+- Instagram Takip Rate-Limit Analizi: Risk: {probe_results['probes'].get('instagram_engagement', {}).get('rate_limit_risk')}, Kok Nedenler: {probe_results['probes'].get('instagram_engagement', {}).get('rate_limit_root_causes')}, Oneriler: {probe_results['probes'].get('instagram_engagement', {}).get('rate_limit_recommendations')}
 
 GOREVIN:
 Muhendislik standartlarinda net bir Kok Neden Analizi (Root Cause Analysis - RCA) ve otonom iyilestirme (Self-Healing) direktifi hazirla.
@@ -1030,6 +1345,20 @@ KURALLAR:
   "user_action_required": "Kullanici manuel mudahalesi gerekiyorsa belirt, gerekmiyorsa 'Manuel mudahale gerekmiyor, sistem otonom onarildi' yaz."
 }}
 """
+
+        # 1. Unified LLM (DeepSeek V4.1 Flash High via OpenCode/Evren)
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                parsed = llm.generate_json(prompt, max_tokens=4096, temperature=0.2)
+                if isinstance(parsed, dict) and parsed.get('executive_summary'):
+                    return parsed
+        except Exception:
+            pass
+
+        # 2. Legacy Gemini fallback
+        if api_key:
             payload = {
                 "contents": [{"parts": [{"text": prompt}]}],
                 "generationConfig": {
@@ -1086,6 +1415,23 @@ KURALLAR:
             broken_c = probe_results['probes']['product_links']['broken_links_count']
             root_causes.append(f"{broken_c} adet urun linki veya statik HTML sayfasi eksik/bozuk.")
             actions.append("generate_product_pages.py calistirilarak eksik urun sayfalari otonom derlendi ve sitemap.xml guncellendi.")
+
+        eng = probe_results['probes'].get('instagram_engagement', {})
+        if eng.get('quota_unused') and eng.get('status') != 'DISABLED':
+            if eng.get('follow_blocked'):
+                root_causes.append(
+                    f"Instagram takip aksiyonu rate-limit/action-block nedeniyle reddediliyor "
+                    f"(feedback_required). Kilit bitisi: {eng.get('follow_blocked_until')}."
+                )
+                actions.append("Takip denemelerini kilit suresi boyunca askiya al; sure dolunca canli tani ile yeniden dene.")
+            else:
+                root_causes.append(
+                    f"Instagram takip kotasi {eng.get('trailing_zero_follow_days')} gundur kullanilmiyor; "
+                    f"takip istekleri sessizce basarisiz oldu (son hata: {eng.get('last_follow_error')})."
+                )
+                actions.append("Takip mutation basliklarini/isteğini guncelle ve canli tani ile gercek nedeni kaydet.")
+            if eng.get('last_follow_message'):
+                root_causes.append(f"Instagram takip yaniti: {eng.get('last_follow_message')}")
 
         return {
             "executive_summary": "Sistem bilesenleri denetlendi. Kritik darbogazlar otonom iyilestirme kapsamina alindi.",
@@ -1475,6 +1821,93 @@ KURALLAR:
                     )
             except Exception:
                 pass
+
+        # Remedy 8: Instagram follow quota / action-block detection & live diagnosis
+        eng = probe_results.get('probes', {}).get('instagram_engagement', {})
+        if eng and eng.get('quota_unused') and eng.get('status') != 'DISABLED':
+            diagnosed_error = eng.get('last_follow_error')
+            diagnosed_message = eng.get('last_follow_message')
+            # Refresh the live diagnostic (idempotent, throttled) so the real Instagram
+            # reason is captured even if the historical runs left no trace.
+            if not eng.get('follow_blocked') or not diagnosed_error:
+                try:
+                    from instagram_agent.engagement import InstagramEngagementEngine
+                    diag = InstagramEngagementEngine().diagnose_follow_capability()
+                    diagnosed_error = diag.get('last_follow_error')
+                    diagnosed_message = diag.get('last_follow_message')
+                except Exception:
+                    pass
+
+            if eng.get('follow_blocked') or diagnosed_error == 'feedback_required':
+                severity = "WARNING"
+                action_desc = (f"Instagram takip aksiyonu rate-limit/action-block altinda "
+                               f"(feedback_required). Kilit bitisi: {eng.get('follow_blocked_until')}.")
+                auto_healed = False
+            else:
+                severity = "CRITICAL"
+                action_desc = (f"Instagram takip kotasi {eng.get('trailing_zero_follow_days')} gundur kullanilmiyor. "
+                               f"Son hata: {diagnosed_error} - {diagnosed_message}")
+                auto_healed = False
+
+            act = {
+                "channel": "instagram_engagement",
+                "action": action_desc,
+                "status": "WARNING" if severity == "WARNING" else "ERROR",
+                "diagnosed_error": diagnosed_error,
+                "diagnosed_message": diagnosed_message
+            }
+            healed_actions.append(act)
+            self.log_incident(
+                incident_type="INSTAGRAM_FOLLOW_QUOTA_UNUSED",
+                channel="instagram_engagement",
+                severity=severity,
+                description=action_desc,
+                auto_healed=auto_healed,
+                heal_action="Takip denemeleri kilit suresi boyunca askiya alindi; kota tekrar kullanilabilir hale gelince otomatik devam edecek."
+            )
+
+        # Remedy: Content duplicates (Instagram posts + site guides)
+        dupes = probe_results.get('probes', {}).get('duplicate_content', {})
+        if dupes and (dupes.get('instagram_duplicate_titles', 0) > 0
+                      or dupes.get('instagram_duplicate_images', 0) > 0
+                      or dupes.get('seo_duplicate_groups', 0) > 0
+                      or dupes.get('seo_counter_clones', 0) > 0):
+            try:
+                from orchestrator.duplicate_guard import DuplicateGuard
+                guard = DuplicateGuard()
+                ig_res = guard.remediate_instagram(max_delete=100)
+                seo_res = guard.remediate_seo()
+                total_removed = ig_res.get('deleted', 0) + seo_res.get('deleted_duplicate_count', 0)
+                if total_removed > 0:
+                    action_desc = (
+                        f"Icerik tekrar temizligi yapildi: Instagram'dan {ig_res.get('deleted', 0)} kopya gonderi kaldirildi "
+                        f"({ig_res.get('flagged_caption_duplicates', 0)} metin tekrari isaretlendi); site rehberlerinden "
+                        f"{seo_res.get('deleted_duplicate_count', 0)} kopya rehber silindi."
+                    )
+                    act = {
+                        "channel": "duplicate_content",
+                        "action": action_desc,
+                        "status": "SUCCESS"
+                    }
+                    healed_actions.append(act)
+                    self.log_incident(
+                        incident_type="CONTENT_DUPLICATES_HEALED",
+                        channel="duplicate_content",
+                        severity="WARNING",
+                        description=(
+                            f"Instagram'da {dupes.get('instagram_duplicate_titles', 0)} baslik ve "
+                            f"{dupes.get('instagram_duplicate_images', 0)} gorsel tekrari, rehberlerde "
+                            f"{dupes.get('seo_duplicate_groups', 0)} tekrar grubu / {dupes.get('seo_counter_clones', 0)} sayac-ekli kopya tespit edildi."
+                        ),
+                        auto_healed=True,
+                        heal_action=action_desc
+                    )
+            except Exception as de:
+                healed_actions.append({
+                    "channel": "duplicate_content",
+                    "action": f"Tekrar temizligi calistirilamadi: {de}",
+                    "status": "FAILED"
+                })
 
         conn.close()
         return healed_actions

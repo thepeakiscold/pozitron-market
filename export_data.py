@@ -42,7 +42,7 @@ def export_static_data():
     brands = sorted(list(brands_set))
 
     # 3. Reviews
-    cursor.execute("SELECT * FROM reviews ORDER BY created_at DESC")
+    cursor.execute("SELECT * FROM reviews WHERE deleted_at IS NULL ORDER BY created_at DESC")
     reviews = [dict(row) for row in cursor.fetchall()]
 
     # 4. Instagram Posts
@@ -74,6 +74,8 @@ def export_static_data():
             settings[r['key']] = val
     except Exception:
         pass
+
+    settings['bank_owner'] = ''  # Account holder names are not public.
 
     if 'usd_rate' not in settings:
         settings['usd_rate'] = 50.0

@@ -46,13 +46,46 @@ class MetaPublisher:
         except Exception as ex:
             return False, str(ex)
 
+    def _upload_to_cloud(self, local_rel_path: str) -> str:
+        """Uploads a local media asset to https://api.pozitronmarket.com/api/upload so Meta Graph API can download it."""
+        try:
+            repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            clean = str(local_rel_path).lstrip('./').lstrip('/')
+            abs_path = os.path.join(repo_root, clean)
+            if not os.path.exists(abs_path):
+                return ""
+            filename = os.path.basename(abs_path)
+            ext = os.path.splitext(filename)[1].lower()
+            mime = 'image/jpeg' if ext in ('.jpg', '.jpeg') else ('image/png' if ext == '.png' else ('video/mp4' if ext == '.mp4' else 'application/octet-stream'))
+            with open(abs_path, 'rb') as f:
+                data = f.read()
+            upload_url = "https://api.pozitronmarket.com/api/upload"
+            req = urllib.request.Request(
+                upload_url,
+                data=data,
+                headers={'Content-Type': mime, 'X-Filename': filename},
+                method='POST'
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                res = json.loads(resp.read().decode('utf-8'))
+                if res.get('success') and res.get('url'):
+                    return f"https://api.pozitronmarket.com{res['url']}"
+        except Exception as e:
+            print(f"[UYARI] Cloud upload hatasi ({local_rel_path}): {e}")
+        return ""
+
     def _get_public_url(self, url: str) -> str:
         if not url:
             return ""
-        if url.startswith('http://') or url.startswith('https://'):
+        if (url.startswith('http://') or url.startswith('https://')) and 'raw.githubusercontent.com' not in url:
             return url
+        # If it's a local file path, upload to cloud to guarantee Meta can fetch it
+        cloud_url = self._upload_to_cloud(url)
+        if cloud_url:
+            return cloud_url
         clean_path = url.lstrip('./').lstrip('/')
-        return f"{self.public_base_url}/{clean_path}"
+        base = self.public_base_url if ('raw.githubusercontent.com' not in self.public_base_url) else 'https://api.pozitronmarket.com'
+        return f"{base.rstrip('/')}/{clean_path}"
 
     def publish_post(self, post_data: dict) -> dict:
         """

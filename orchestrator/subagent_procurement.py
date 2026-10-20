@@ -22,7 +22,7 @@ class ProcurementOrderAgent:
     """
 
     def __init__(self):
-        self.model_code = "gemini-3.8-flash"
+        self.model_code = "deepseek-v4.1-flash-high"
         self.usd_rate = CURRENT_USD_RATE
         self.usd_try_rate = CURRENT_USD_RATE
 

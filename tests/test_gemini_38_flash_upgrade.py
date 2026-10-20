@@ -105,5 +105,32 @@ class TestGemini38FlashUpgrade(unittest.TestCase):
         self.assertEqual(found['visual_audit']['quality_score'], 98)
         self.assertEqual(found['visual_audit']['model_used'], 'gemini-3.8-flash')
 
+    def test_template_blueprint_structure(self):
+        bp = ImageGenerator.get_template_blueprint()
+        self.assertIn("canvas", bp)
+        self.assertEqual(bp["canvas"]["dimensions"], "1080x1080 px")
+        self.assertIn("layers", bp)
+        self.assertGreaterEqual(len(bp["layers"]), 5)
+        # Check logo and vision audit layers
+        logo_layer = next((l for l in bp["layers"] if "logo" in l["name"].lower()), None)
+        self.assertIsNotNone(logo_layer)
+        self.assertIn("assets/logo.png", logo_layer["description"])
+        self.assertEqual(bp.get("logo_file"), "assets/logo.png")
+
+    def test_logo_png_asset_exists_and_drawn(self):
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'logo.png')
+        self.assertTrue(os.path.exists(logo_path))
+        with Image.open(logo_path) as img:
+            self.assertEqual(img.size, (512, 512))
+            self.assertEqual(img.mode, 'RGBA')
+
+        # Test _logo_image helper in ImageGenerator
+        image_gen = ImageGenerator()
+        logo_img = image_gen._logo_image()
+        self.assertIsNotNone(logo_img)
+        self.assertEqual(logo_img.mode, 'RGBA')
+        self.assertGreater(logo_img.size[0], 0)
+
 if __name__ == '__main__':
     unittest.main()
+

@@ -141,7 +141,9 @@ def init_instagram_tables():
         ('reels_enabled', 'INTEGER', '1'),
         ('bilingual_enabled', 'INTEGER', '0'),
         ('content_mix_enabled', 'INTEGER', '0'),
-        ('flux_enabled', 'INTEGER', '1')
+        ('flux_enabled', 'INTEGER', '1'),
+        ('enabled_post_types', 'TEXT', 'NULL'),
+        ('enabled_reels_types', 'TEXT', 'NULL')
     ]:
         if col_name not in cfg_cols:
             cursor.execute(f"ALTER TABLE instagram_agent_config ADD COLUMN {col_name} {col_type} DEFAULT {default_val}")
@@ -189,8 +191,14 @@ def get_agent_config():
     cfg.update(db_cfg)
     return cfg
 
-def update_agent_config(updates: dict):
+def update_agent_config(updates: dict = None, **kwargs):
     init_instagram_tables()
+    merged = {}
+    if updates and isinstance(updates, dict):
+        merged.update(updates)
+    if kwargs:
+        merged.update(kwargs)
+
     allowed_fields = [
         'access_token', 'instagram_account_id', 'gemini_api_key',
         'is_autonomous_enabled', 'posting_frequency_hours', 'dry_run_mode',
@@ -198,12 +206,14 @@ def update_agent_config(updates: dict):
         'last_run_at', 'next_run_at',
         'story_enabled', 'carousel_enabled', 'dm_automation_enabled',
         'peak_scheduler_enabled', 'reels_enabled', 'bilingual_enabled', 'content_mix_enabled',
-        'flux_enabled'
+        'flux_enabled', 'enabled_post_types', 'enabled_reels_types'
     ]
     fields = []
     params = []
-    for k, v in updates.items():
+    for k, v in merged.items():
         if k in allowed_fields:
+            if k in ('enabled_post_types', 'enabled_reels_types') and isinstance(v, (list, tuple, dict)):
+                v = json.dumps(v, ensure_ascii=False)
             fields.append(f"{k} = ?")
             params.append(v)
 
