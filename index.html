@@ -659,7 +659,7 @@
       <div class="footer-col">
         <h3 class="footer-heading" data-i18n="footer_payment_heading">Güvenli Ödeme</h3>
         <p class="footer-text" data-i18n="footer_payment_desc">
-          Havale / EFT / FAST ile ödeme yapabilirsiniz. iyzico ve PayTR ile kart ödemesi yakında hizmetinizde.
+          Havale / EFT / FAST veya iyzico güvenli ödeme sayfasıyla ödeme yapabilirsiniz. PayTR yakında hizmetinizde.
         </p>
         <div class="payment-badges-row">
           <img src="./assets/payments/payment-logos.svg" alt="iyzico ile Öde, Visa ve Mastercard" class="payment-provider-logos">
@@ -1262,11 +1262,14 @@
 
             <div class="pay-panel" id="pay-panel-iyzico" style="display:none;">
               <img src="./assets/payments/payment-logos.svg" alt="iyzico ile Öde, Visa ve Mastercard" class="payment-provider-logos">
-        <a href="https://www.paytr.com/" target="_blank" rel="noopener" aria-label="PayTR"><img src="./assets/payments/paytr.png" alt="PayTR" style="display:block; width:120px; max-width:100%; height:auto; margin-top:12px; background:#fff; padding:12px; border-radius:8px;"></a>
-              <p class="policy-p" role="status">iyzico ve PayTR ile kart ödemesi yakında hizmetinizde. Şu anda havale/EFT/FAST ile sipariş oluşturabilirsiniz.</p>
+
+              <p class="policy-p">Kart bilgilerinizi iyzico'nun güvenli ödeme sayfasında gireceksiniz. Tahsilat Türk lirası ile yapılır; kesin tutar yönlendirmeden önce gösterilir. Sipariş, ödeme sonucu doğrulandığında işleme alınır.</p>
+              <label for="iyzico-buyer-identity">Alıcının T.C. Kimlik Numarası</label>
+              <input id="iyzico-buyer-identity" type="text" inputmode="numeric" pattern="[1-9][0-9]{10}" maxlength="11" autocomplete="off" class="form-input" aria-describedby="iyzico-identity-note">
+              <p id="iyzico-identity-note" class="policy-p">Bu bilgi ödeme işlemi için iyzico'ya iletilir; bu alandan girilen kimlik numarası sitemizde saklanmaz. <a href="/gizlilik-politikasi">Gizlilik politikası</a></p>
             </div>
             <div class="pay-panel" id="pay-panel-paytr" style="display:none;">
-              <p role="status">PayTR ile kart ödemesi yakında hizmetinizde. Şu anda havale/EFT/FAST ile sipariş oluşturabilirsiniz. <a href="https://www.paytr.com/" target="_blank" rel="noopener">PayTR hakkında</a></p>
+              <p role="status">PayTR ile kart ödemesi yakında hizmetinizde. Şu anda iyzico veya havale/EFT/FAST ile ödeme yapabilirsiniz. <a href="https://www.paytr.com/" target="_blank" rel="noopener">PayTR hakkında</a></p>
             </div>
 
             <!-- TAB PANEL 3: HAVALE / EFT / FAST -->
@@ -1629,9 +1632,9 @@
 
   <!-- Client Application Scripts -->
   <script src="./data/pozitron_data.js?v=20260920_v50"></script>
-  <script src="./i18n.js?v=20260920_v50"></script>
+  <script src="./i18n.js?v=20261020_iyzico1"></script>
   <script src="./api.js?v=20260920_v50"></script>
-  <script src="./app.js?v=20260920_v50"></script>
+  <script src="./app.js?v=20261020_iyzico1"></script>
 
   <!-- Load Dynamic FPV Guides for Showcase -->
   <script>

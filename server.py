@@ -28,6 +28,7 @@ from seed_data import seed_database
 from export_data import export_static_data
 import coupons as coupon_service
 import product_quality
+import iyzico_checkout
 
 # ==============================================================================
 # Cyber Security Controls & Cryptographic Authentication
@@ -1225,6 +1226,27 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
 
+        if path == '/api/iyzico/callback':
+            length = int(self.headers.get('Content-Length', 0))
+            if length < 1 or length > 8192:
+                self.send_json(400, {'error': 'Geçersiz ödeme bildirimi.'})
+                return
+            body = self.rfile.read(length).decode('utf-8')
+            try:
+                if 'application/json' in self.headers.get('Content-Type', ''):
+                    token = json.loads(body).get('token')
+                else:
+                    token = urllib.parse.parse_qs(body).get('token', [''])[0]
+                receipt = iyzico_checkout.callback(token)
+            except (iyzico_checkout.PaymentError, ValueError, TypeError):
+                self.send_json(400, {'error': 'Ödeme henüz doğrulanamadı. Tekrar ödeme yapmadan destek ile iletişime geçin.'})
+                return
+            self.send_response(303)
+            self.send_header('Location', 'https://pozitronmarket.com/payment-result.html?r=' + receipt)
+            self.send_header('Cache-Control', 'no-store')
+            self.end_headers()
+            return
+
         # Telemetry ingestion endpoint (Subagent 3: http://localhost:8000/bots)
         if path in ('/bots', '/bots.html', '/api/telemetry'):
             content_length = int(self.headers.get('Content-Length', 0))
@@ -1365,6 +1387,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         })
 
     def handle_api_get(self, path, query):
+        if path == '/api/iyzico/status':
+            try:
+                self.send_json(200, iyzico_checkout.status(query.get('r', [''])[0]))
+            except iyzico_checkout.PaymentError as exc:
+                self.send_json(404, {'error': str(exc)})
+            return
+
         # Health Check Endpoint (Cloud / Render / Railway)
         if path == '/api/health':
             self.send_json(200, {
@@ -3062,6 +3091,19 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_json(404, {"error": "API route not found"})
 
     def handle_api_post(self, path, data):
+        if path == '/api/iyzico/initialize':
+            try:
+                identity = self.get_current_user()
+                ip = self.headers.get('X-Real-IP') or self.client_address[0]
+                if not iyzico_checkout.allow_attempt(ip):
+                    self.send_json(429, {'error': 'Çok fazla ödeme denemesi. Bir dakika sonra tekrar deneyin.'})
+                    return
+                result = iyzico_checkout.initialize(data, ip, identity)
+                self.send_json(200, result)
+            except iyzico_checkout.PaymentError as exc:
+                self.send_json(400, {'error': str(exc)})
+            return
+
         # Security: Protected Admin & Autonomous Agent endpoints require verified admin credentials
         if (path.startswith('/api/admin/') or 
             path.startswith('/api/instagram/') or 
@@ -5238,6 +5280,7 @@ def run_server():
     print(f" Languages: Turkish (TR) & English (EN)")
     print(f"==================================================")
     start_all_schedulers()
+    iyzico_checkout.start_reconciler()
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

@@ -139,6 +139,22 @@ def init_db():
         )
     ''')
 
+    # Hosted payment tokens and opaque receipt IDs; never card details or API keys.
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS iyzico_sessions (
+            token TEXT PRIMARY KEY,
+            order_id TEXT UNIQUE NOT NULL REFERENCES orders(id),
+            receipt TEXT UNIQUE NOT NULL,
+            coupon_code TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL,
+            last_checked REAL NOT NULL DEFAULT 0
+        )
+    ''')
+
+    # Additive migration for previously initialized checkout sessions.
+    if 'last_checked' not in {row[1] for row in cursor.execute('PRAGMA table_info(iyzico_sessions)')}:
+        cursor.execute('ALTER TABLE iyzico_sessions ADD COLUMN last_checked REAL NOT NULL DEFAULT 0')
+
     # User Addresses Table (Adres Defteri)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_addresses (

@@ -3386,9 +3386,9 @@ class PozitronApp {
       if (panel) panel.style.display = (m === method) ? 'block' : 'none';
     });
 
-    // Unconnected providers cannot submit a payment.
+    // iyzico uses a server-created hosted checkout; PayTR remains unavailable.
     const paymentSubmit = document.getElementById('submit-order-btn');
-    if (paymentSubmit) paymentSubmit.disabled = method !== 'havale';
+    if (paymentSubmit) paymentSubmit.disabled = !['havale', 'iyzico'].includes(method);
 
     // Update Submit Button Text & Icon
     const btnText = document.getElementById('pay-submit-btn-text');
@@ -3397,7 +3397,7 @@ class PozitronApp {
 
     if (method === 'iyzico') {
       if (btnIcon) btnIcon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
-      if (btnText) btnText.textContent = 'iyzico — Yakında';
+      if (btnText) btnText.textContent = 'iyzico Güvenli Ödemeye Geç';
       if (submitBtn) {
         submitBtn.style.background = '#1a56db';
         submitBtn.style.borderColor = '#1a56db';
@@ -3466,7 +3466,8 @@ class PozitronApp {
     }
   }
 
-  handleCheckoutSubmit() {
+  async handleCheckoutSubmit() {
+    if (this._checkoutSubmitting) return;
     const name = (document.getElementById('chk-name')?.value || '').trim();
     const email = (document.getElementById('chk-email')?.value || '').trim();
     const phone = (document.getElementById('chk-phone')?.value || '').trim();
@@ -3553,7 +3554,7 @@ class PozitronApp {
     if (err) err.style.display = 'none';
 
     const method = this.activePaymentMethod || 'havale';
-    if (method !== 'havale') {
+    if (!['havale', 'iyzico'].includes(method)) {
       if (err) {
         err.textContent = 'Kart ödemesi henüz kullanıma açık değildir. Havale/EFT/FAST seçeneğini kullanabilirsiniz.';
         err.style.display = 'block';
@@ -3604,6 +3605,47 @@ class PozitronApp {
       payment_method: method,
       coupon_code: this.appliedCoupon ? this.appliedCoupon.code : undefined
     };
+
+    if (method === 'iyzico') {
+      const buyerIdentity = (document.getElementById('iyzico-buyer-identity')?.value || '').trim();
+      if (!/^[1-9]\d{10}$/.test(buyerIdentity)) {
+        if (err) {
+          err.textContent = 'iyzico ödemesi için alıcının 11 haneli T.C. kimlik numarasını girin.';
+          err.style.display = 'block';
+        }
+        return;
+      }
+      this._checkoutSubmitting = true;
+      const button = document.getElementById('submit-order-btn');
+      if (button) button.disabled = true;
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (u?.token) headers.Authorization = `Bearer ${u.token}`;
+        const response = await fetch(`${this.apiBase}/iyzico/initialize`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ ...baseOrderPayload, items: structuredItems,
+            buyer_identity_number: buyerIdentity, terms_accepted: true })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Ödeme sayfası açılamadı.');
+        const target = new URL(result.payment_url);
+        if (target.protocol !== 'https:' || !['cpp.iyzipay.com', 'api.iyzipay.com'].includes(target.hostname)) {
+          throw new Error('Ödeme adresi doğrulanamadı.');
+        }
+        // Keep only a receipt ID; never persist the buyer identity or card data.
+        localStorage.setItem('pozitron_iyzico_receipt', result.receipt);
+        const total = Number(result.total_try).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+        if (window.confirm(`Sipariş: ${result.order_number}\nÖdenecek tutar: ${total}\nKart bilgilerinizi iyzico'nun güvenli sayfasında gireceksiniz. Devam edilsin mi?`)) {
+          window.location.assign(target.href);
+        }
+      } catch (error) {
+        if (err) { err.textContent = error.message; err.style.display = 'block'; }
+      } finally {
+        this._checkoutSubmitting = false;
+        if (button) button.disabled = this.activePaymentMethod === 'paytr';
+      }
+      return;
+    }
 
     if (method === 'havale') {
       const refCode = document.getElementById('bank-box-ref')?.textContent || orderNum;

@@ -648,6 +648,10 @@
           <div class="admin-filters-group">
             <select class="admin-select" id="orders-status-filter" onchange="filterAdminOrders()">
               <option value="all">Tüm Durumlar</option>
+              <option value="PENDING_PAYMENT">Ödeme Bekleniyor</option>
+              <option value="PROCESSING">Ödendi / Hazırlanıyor</option>
+              <option value="PAYMENT_REVIEW">Ödeme / Sipariş İncelemesi</option>
+              <option value="PAYMENT_FAILED">Ödeme Başarısız</option>
               <option value="CONFIRMED">Onaylandı</option>
               <option value="SHIPPED">Kargoya Verildi</option>
               <option value="DELIVERED">Teslim Edildi</option>
@@ -871,7 +875,7 @@
         <!-- Header -->
         <div style="margin-bottom:24px; border-bottom:1px solid var(--border-subtle); padding-bottom:16px;">
           <h2 style="font-size:1.35rem; font-weight:800; color:var(--text-primary); margin-bottom:4px;">💳 Ödeme Gateway &amp; Banka Hesap Ayarları</h2>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Havale/EFT IBAN bilgilerinizi yönetin. Kart ödemesi için sunucu entegrasyonu ve iyzico başvuru onayı gereklidir; tarayıcıya anahtar girilmesi ödeme sistemini etkinleştirmez.</p>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0;">Havale/EFT IBAN bilgilerinizi yönetin. iyzico kart ödemeleri sunucuda yönetilir. PayTR henüz etkin değildir; tarayıcıya anahtar girmeyin.</p>
         </div>
 
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:20px;">
@@ -911,7 +915,7 @@
           </div>
 
           <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px;">
-            <h3>iyzico</h3><p>Kart ödemesi henüz etkin değildir. Başvuru onayı ve güvenli sunucu entegrasyonu gereklidir. API anahtarlarını tarayıcıya veya herkese açık ayarlara kaydetmeyin.</p>
+            <h3>iyzico</h3><p>iyzico kart ödemesi, sunucuda saklanan anahtarlarla güvenli ortak ödeme sayfası üzerinden çalışır. Ödemeler API ve yanıt imzasıyla doğrulanır. API anahtarlarını tarayıcıya veya herkese açık ayarlara kaydetmeyin.</p>
             <p><a href="https://merchant.iyzipay.com/" target="_blank" rel="noopener">iyzico İşyeri Paneli</a></p>
           </div>
 
@@ -3300,6 +3304,11 @@
             if (status === 'SHIPPED' || status === 'KARGODA') statusBadge = '<span style="background:#ffedd5; color:#c2410c; padding:3px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">🚚 Kargoya Verildi</span>';
             else if (status === 'DELIVERED' || status === 'TESLİM EDİLDİ') statusBadge = '<span style="background:#dcfce7; color:#15803d; padding:3px 8px; border-radius:6px; font-size:0.78rem; font-weight:700;">✅ Teslim Edildi</span>';
             else if (status === 'CANCELLED' || status === 'İPTAL') statusBadge = '<span class="badge-stock badge-stock-out">✕ İptal Edildi</span>';
+            else if (status === 'PENDING_PAYMENT') statusBadge = '<span class="badge-stock">Ödeme Bekleniyor</span>';
+            else if (status === 'PAYMENT_REVIEW') statusBadge = '<span class="badge-stock badge-stock-out">Manuel İnceleme Gerekli</span>';
+            else if (status === 'PAYMENT_FAILED') statusBadge = '<span class="badge-stock badge-stock-out">Ödeme Başarısız</span>';
+            else if (status === 'PROCESSING') statusBadge = '<span class="badge-stock badge-stock-in">Ödendi / Hazırlanıyor</span>';
+            const paymentLabel = od.payment_status === 'PAID' ? 'Ödeme alındı' : od.payment_status === 'FAILED' ? 'Ödeme başarısız' : 'Tahsilat doğrulanmadı';
 
             let itemsList = od.items || od.items_json;
             if (typeof itemsList === 'string') {
@@ -3360,7 +3369,7 @@
                   <div style="font-weight:800; font-size:0.95rem; color:var(--text-primary);">${priceFormatted}</div>
                   <div style="margin-top:2px;">${methodBadge}</div>
                 </td>
-                <td>${statusBadge}</td>
+                <td>${statusBadge}<div style="font-size:0.75rem;margin-top:4px;">${paymentLabel}</div></td>
                 <td style="max-width:260px;">
                   <div style="font-size:0.82rem; color:#334155; line-height:1.4; white-space:normal;">${addressSafe}</div>
                   ${notesHtml}
@@ -3368,6 +3377,7 @@
                 </td>
                 <td style="white-space:nowrap;">
                   <select class="admin-select" style="padding:4px 8px; font-size:0.78rem;" onchange="updateAdminOrderStatus('${orderIdSafe}', this.value)">
+                    ${['PENDING_PAYMENT', 'PROCESSING', 'PAYMENT_REVIEW', 'PAYMENT_FAILED'].includes(status) ? `<option value="${status}" selected>Mevcut Durum</option>` : ''}
                     <option value="CONFIRMED" ${status === 'CONFIRMED' ? 'selected' : ''}>Onaylandı</option>
                     <option value="SHIPPED" ${status === 'SHIPPED' || status === 'KARGODA' ? 'selected' : ''}>Kargoya Verildi</option>
                     <option value="DELIVERED" ${status === 'DELIVERED' ? 'selected' : ''}>Teslim Edildi</option>
@@ -3409,6 +3419,7 @@
           else if (statusFilter === 'SHIPPED') matchStatus = (st === 'SHIPPED' || st === 'KARGODA');
           else if (statusFilter === 'DELIVERED') matchStatus = (st === 'DELIVERED' || st === 'TESLİM EDİLDİ');
           else if (statusFilter === 'CANCELLED') matchStatus = (st === 'CANCELLED' || st === 'İPTAL');
+          else matchStatus = st === statusFilter;
         }
 
         const method = String(od.payment_method || 'iyzico').toLowerCase();

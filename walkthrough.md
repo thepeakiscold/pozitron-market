@@ -15,3 +15,8 @@ The release checks include coupon security, coupon endpoints, payment readiness,
 ## Deployment
 
 GitHub Pages serves the public storefront/admin assets. The Hetzner service uses `/var/www/pozitron` and `pozitron.service`. Back up the live database before deploying and preserve runtime data and secrets. A Git push alone does not deploy the Python API. Record the actual deployed revision and post-deployment checks in the delivery report.
+
+
+## iyzico hosted checkout (20 October 2026)
+
+Added TRY CheckoutForm initialization, environment-only credentials, verified callback retrieval and HMAC signatures, opaque customer result pages, and background recovery of missed callbacks. Unpaid sessions leave stock and coupons unchanged; successful payment consumes them atomically once. Paid orders with fulfillment conflicts require manual review. PayTR stays disabled. Updated privacy disclosure and admin payment states. Verification uses mocked provider contracts and a no-charge credential check; no live card charge was performed.
