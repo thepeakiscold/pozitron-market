@@ -33,3 +33,6 @@ node_modules/
 # Local Backups
 backups/
 
+
+# Generated social-media archives (existing tracked assets remain published)
+/assets/instagram/
