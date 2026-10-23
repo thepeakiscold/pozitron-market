@@ -507,6 +507,8 @@ class PozitronApp {
     // In Stock / Bestseller Checkboxes
     const inStockChk = document.getElementById('filter-in-stock');
     if (inStockChk) {
+      // Force the default state on every load (browsers may restore checkbox state)
+      inStockChk.checked = this.filters.in_stock === '1';
       inStockChk.addEventListener('change', (e) => {
         this.filters.in_stock = e.target.checked ? '1' : '0';
         this.filters.page = 1;
