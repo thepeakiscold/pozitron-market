@@ -3104,6 +3104,53 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json(400, {'error': str(exc)})
             return
 
+        # Public: "Notify me when back in stock" subscriptions
+        if path == '/api/stock-alerts':
+            product_ref = str(data.get('product_id') or data.get('prod_id') or '').strip()
+            email = str(data.get('email') or '').strip().lower()
+            phone = str(data.get('phone') or '').strip()
+            whatsapp = 1 if data.get('whatsapp') else 0
+
+            if not product_ref:
+                self.send_json(400, {'success': False, 'error': 'Ürün bilgisi eksik.'})
+                return
+            if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+                self.send_json(400, {'success': False, 'error': 'Geçerli bir e-posta adresi giriniz.'})
+                return
+            if len(email) > 254 or len(phone) > 40:
+                self.send_json(400, {'success': False, 'error': 'Girilen bilgiler çok uzun.'})
+                return
+
+            conn = get_db()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT id FROM products WHERE id = ? OR slug = ?", (product_ref, product_ref))
+                row = cursor.fetchone()
+                if not row:
+                    self.send_json(404, {'success': False, 'error': 'Ürün bulunamadı.'})
+                    return
+                product_id = row['id']
+                cursor.execute(
+                    "SELECT id FROM stock_alerts WHERE product_id = ? AND email = ?",
+                    (product_id, email)
+                )
+                if cursor.fetchone():
+                    self.send_json(200, {'success': True, 'already_subscribed': True})
+                    return
+                cursor.execute(
+                    """INSERT INTO stock_alerts (id, product_id, email, phone, whatsapp, status, created_at)
+                       VALUES (?, ?, ?, ?, ?, 'active', ?)""",
+                    ('sal_' + uuid.uuid4().hex[:16], product_id, email, phone or None, whatsapp, datetime.now().isoformat())
+                )
+                conn.commit()
+                self.send_json(200, {'success': True, 'already_subscribed': False})
+            except sqlite3.IntegrityError:
+                conn.rollback()
+                self.send_json(200, {'success': True, 'already_subscribed': True})
+            finally:
+                conn.close()
+            return
+
         # Security: Protected Admin & Autonomous Agent endpoints require verified admin credentials
         if (path.startswith('/api/admin/') or 
             path.startswith('/api/instagram/') or 

@@ -65,7 +65,7 @@ class PozitronApp {
       category: 'all',
       brand: 'all',
       voltage: 'all',
-      in_stock: '1',
+      in_stock: '0',
       bestseller: '0',
       min_price: '',
       max_price: '',
@@ -328,7 +328,7 @@ class PozitronApp {
       category: 'all',
       brand: 'all',
       voltage: 'all',
-      in_stock: '1',
+      in_stock: '0',
       bestseller: '0',
       min_price: '',
       max_price: '',
@@ -341,7 +341,7 @@ class PozitronApp {
     if (searchInput) searchInput.value = '';
     if (searchClear) searchClear.style.display = 'none';
     const inStockChk = document.getElementById('filter-in-stock');
-    if (inStockChk) inStockChk.checked = true;
+    if (inStockChk) inStockChk.checked = false;
     const bestChk = document.getElementById('filter-bestseller');
     if (bestChk) bestChk.checked = false;
     const minP = document.getElementById('min-price-input');
@@ -3996,6 +3996,18 @@ class PozitronApp {
 
     alerts.push(newAlert);
     localStorage.setItem('pozitron_stock_alerts', JSON.stringify(alerts));
+
+    // Persist the alert on the backend so it survives cache/storage clears
+    fetch(`${this.apiBase}/stock-alerts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: prodId,
+        email: email,
+        phone: phone,
+        whatsapp: waOpt
+      })
+    }).catch(err => console.log('Stock alert API unavailable:', err));
 
     // Send Webhook to Google Sheets CRM (Stock Alerts)
     const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";

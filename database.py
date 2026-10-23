@@ -77,6 +77,23 @@ def init_db():
         )
     ''')
 
+    # Stock alert subscriptions ("notify me when back in stock")
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS stock_alerts (
+            id TEXT PRIMARY KEY,
+            product_id TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT,
+            whatsapp INTEGER DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'notified', 'cancelled')),
+            created_at TEXT NOT NULL,
+            notified_at TEXT,
+            UNIQUE(product_id, email),
+            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        )
+    ''')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_alerts_product ON stock_alerts(product_id, status)')
+
     # Users Table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (

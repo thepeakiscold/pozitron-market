@@ -5082,6 +5082,54 @@ img {
   background: #1e293b;
 }
 
+/* Out-of-stock: "notify me when back in stock" form */
+.pdp-stock-alert-box {
+  background: #f8fafc;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+.pdp-stock-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.pdp-stock-alert-title svg {
+  color: var(--brand-primary);
+  flex-shrink: 0;
+}
+.pdp-stock-alert-sub {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  margin: 0 0 12px 0;
+}
+.pdp-stock-alert-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pdp-stock-alert-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pdp-stock-alert-input:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
 .pdp-btn-wa {
   height: 44px;
   display: flex;

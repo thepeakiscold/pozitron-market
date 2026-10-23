@@ -265,6 +265,10 @@ def generate_product_page(product, category, related_products, all_products, by_
     </div>
     """
 
+    # Bundling is not offered while the main product itself is unavailable
+    if not is_in_stock:
+        bundle_section_html = ""
+
     # 2. Compare Similar Items Matrix
     compare_candidates = [rp for rp in related_products[:3]]
     compare_cols = [product] + compare_candidates
@@ -338,22 +342,35 @@ def generate_product_page(product, category, related_products, all_products, by_
                 elif row_type == "voltage":
                     cell_content = f'<span style="font-size:0.82rem;">{escape_str(c_volt)}</span>'
                 elif row_type == "stock":
-                    cell_content = '<span style="color:#10b981; font-weight:600; font-size:0.82rem;">Stokta Var</span>'
+                    if int(c_prod.get("stock") or 0) > 0:
+                        cell_content = '<span style="color:#10b981; font-weight:600; font-size:0.82rem;">Stokta Var</span>'
+                    else:
+                        cell_content = '<span style="color:#ef4444; font-weight:600; font-size:0.82rem;">Tükendi</span>'
                 elif row_type == "action":
-                    if is_curr:
+                    c_in_stock = int(c_prod.get("stock") or 0) > 0
+                    if is_curr and not c_in_stock:
+                        cell_content = """
+                          <button type="button" class="pdp-btn-compare-cart" onclick="document.getElementById('pdp-stock-alert-email').focus()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            <span>Haber Ver</span>
+                          </button>
+                        """
+                    elif is_curr:
                         cell_content = f"""
                           <button type="button" class="pdp-btn-compare-cart" onclick="handleAddToCart(false)">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
                             <span>Sepete Ekle</span>
                           </button>
                         """
-                    else:
+                    elif c_in_stock:
                         cell_content = f"""
                           <button type="button" class="pdp-btn-compare-cart" onclick="addSingleCompareToCart('{escape_str(c_id)}', '{escape_str(c_sku)}', '{escape_str(c_name)}', {float(c_price)}, '{escape_str(c_img)}')">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
                             <span>Sepete Ekle</span>
                           </button>
                         """
+                    else:
+                        cell_content = '<span style="font-size:0.82rem; color:var(--text-muted);">Stokta Yok</span>'
                 else:
                     cell_content = ""
 
@@ -559,6 +576,117 @@ def generate_product_page(product, category, related_products, all_products, by_
         </button>
       </div>'''
 
+    # Purchase actions: in-stock products keep the classic cart flow, while
+    # out-of-stock products offer a "notify me when back in stock" form instead
+    # of a disabled cart button.
+    if is_in_stock:
+        purchase_actions_html = f"""        <!-- Purchase Actions Box -->
+        <div class="pdp-purchase-actions">
+          <div class="pdp-qty-row">
+            <div class="pdp-qty-picker">
+              <button type="button" class="pdp-qty-btn" onclick="changeQty(-1)" aria-label="Adeti Azalt">−</button>
+              <input type="number" id="product-qty" class="pdp-qty-input" value="1" min="1" max="99" readonly aria-label="Ürün Adedi">
+              <button type="button" class="pdp-qty-btn" onclick="changeQty(1)" aria-label="Adeti Arttır">+</button>
+            </div>
+            <button type="button" onclick="handleAddToCart(false)" class="pdp-btn-cart">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              <span>Sepete Ekle</span>
+            </button>
+          </div>
+
+          <!-- Amazon Feature 3: 1-Click Fast "Buy Now" Checkout -->
+          <button type="button" onclick="handleAddToCart(true)" class="pdp-btn-buy-now">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <span>Hemen Satın Al</span>
+          </button>"""
+    else:
+        purchase_actions_html = f"""        <!-- Purchase Actions Box: out of stock, notify me -->
+        <div class="pdp-purchase-actions">
+          <div class="pdp-stock-alert-box">
+            <div class="pdp-stock-alert-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+              <span>Stoğa Girince Haber Ver</span>
+            </div>
+            <p class="pdp-stock-alert-sub">Bu ürün şu anda stokta yok. Envanterimize yeniden girdiğinde e-posta ve WhatsApp ile ilk siz haberdar olun.</p>
+            <form class="pdp-stock-alert-form" onsubmit="handleStockAlert(event)">
+              <input type="email" id="pdp-stock-alert-email" class="pdp-stock-alert-input" placeholder="E-posta adresiniz *" required autocomplete="email">
+              <input type="tel" id="pdp-stock-alert-phone" class="pdp-stock-alert-input" placeholder="Telefon / WhatsApp (opsiyonel)" autocomplete="tel">
+              <button type="submit" class="pdp-btn-cart" style="height:46px; flex:none;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                <span>Bildirim Oluştur</span>
+              </button>
+            </form>
+          </div>"""
+
+    purchase_actions_html += f"""
+
+          <a href="{wa_url}" id="product-wa-link" target="_blank" rel="noopener" class="pdp-btn-wa">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.311.045-.698.055-2.062-.511-1.615-.668-2.673-2.316-2.753-2.424-.08-.108-.66-88-.66-1.678 0-.798.42-1.19.568-1.341.144-.15.314-.189.42-.189.105 0 .21.002.302.006.096.004.226-.036.353.27.13.314.444 1.082.483 1.161.039.08.065.173.013.277-.052.105-.078.17-.156.26-.078.092-.163.205-.233.276-.079.079-.161.165-.069.324.092.158.408.673.875 1.089.601.535 1.107.701 1.265.78.158.079.25.069.344-.04.095-.108.405-.471.513-.633.107-.162.217-.135.363-.081.147.054.929.438 1.088.517.159.08.264.12.303.186.039.066.039.384-.105.789z"></path></svg>
+            <span>WhatsApp ile Sipariş &amp; Destek</span>
+          </a>
+
+          <a href="../drone-toplama-sihirbazi" class="pdp-btn-wizard">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+            <span>Bu Parçayı Drone Sihirbazında Test Et</span>
+          </a>
+        </div>"""
+
+    css_version = "20260912_amazon_suite" if is_in_stock else "20261023_stock_alert"
+
+    stock_alert_script_html = "" if is_in_stock else f"""    // "Notify me when back in stock" for out-of-stock products
+    function handleStockAlert(event) {{
+      event.preventDefault();
+      const emailInput = document.getElementById('pdp-stock-alert-email');
+      const phoneInput = document.getElementById('pdp-stock-alert-phone');
+      const email = (emailInput.value || '').trim();
+      const phone = (phoneInput ? phoneInput.value || '' : '').trim();
+
+      if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {{
+        showToast('Lütfen geçerli bir e-posta adresi giriniz.');
+        return;
+      }}
+
+      const alerts = JSON.parse(localStorage.getItem('pozitron_stock_alerts') || '[]');
+      const existing = alerts.find(a => a.prod_id === {json.dumps(p_id)} && (a.email || '').toLowerCase() === email.toLowerCase());
+      if (existing) {{
+        showToast('Bu ürün için stok bildiriminiz zaten aktif.');
+        return;
+      }}
+
+      const newAlert = {{
+        id: 'alt_' + Date.now().toString(36),
+        prod_id: {json.dumps(p_id)},
+        prod_name: {json.dumps(name_tr)},
+        email: email,
+        phone: phone,
+        whatsapp: !!phone,
+        created_at: new Date().toISOString()
+      }};
+      alerts.push(newAlert);
+      localStorage.setItem('pozitron_stock_alerts', JSON.stringify(alerts));
+
+      // Send alert to the same Google Sheets CRM webhook used by the main site
+      const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
+      fetch(WEBHOOK_URL, {{
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {{ 'Content-Type': 'application/json' }},
+        body: JSON.stringify({{
+          type: 'stock_alert',
+          prod_id: {json.dumps(p_id)},
+          prod_name: {json.dumps(name_tr)},
+          email: email,
+          phone: phone,
+          created_at: newAlert.created_at
+        }})
+      }}).catch(err => console.log('Alert webhook error:', err));
+
+      showToast('Talebiniz alındı! Ürün stoğa girdiğinde e-posta ve WhatsApp ile bilgilendirileceksiniz.');
+      event.target.reset();
+    }}
+
+"""
+
     html_content = f"""<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -597,7 +725,7 @@ def generate_product_page(product, category, related_products, all_products, by_
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../styles.css?v=20260912_amazon_suite">
+  <link rel="stylesheet" href="../styles.css?v={css_version}">
   <script>
     if (window.location.pathname.endsWith('.html')) {{
       window.history.replaceState(null, '', window.location.pathname.slice(0, -5) + window.location.search + window.location.hash);
@@ -740,36 +868,7 @@ def generate_product_page(product, category, related_products, all_products, by_
           {f'<span>Stokta Son <strong>{real_stock}</strong> Adet Kaldı!</span> <span class="stock-badge-low">Tükeniyor</span>' if is_low_stock else (f'<span>Stokta Var</span>' if is_in_stock else '<span>Tükendi / Stokta Yok</span>')}
         </div>
 
-        <!-- Purchase Actions Box -->
-        <div class="pdp-purchase-actions">
-          <div class="pdp-qty-row">
-            <div class="pdp-qty-picker">
-              <button type="button" class="pdp-qty-btn" onclick="changeQty(-1)" aria-label="Adeti Azalt">−</button>
-              <input type="number" id="product-qty" class="pdp-qty-input" value="1" min="1" max="99" readonly aria-label="Ürün Adedi">
-              <button type="button" class="pdp-qty-btn" onclick="changeQty(1)" aria-label="Adeti Arttır">+</button>
-            </div>
-            <button type="button" onclick="handleAddToCart(false)" class="pdp-btn-cart">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-              <span>Sepete Ekle</span>
-            </button>
-          </div>
-
-          <!-- Amazon Feature 3: 1-Click Fast "Buy Now" Checkout -->
-          <button type="button" onclick="handleAddToCart(true)" class="pdp-btn-buy-now">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-            <span>Hemen Satın Al</span>
-          </button>
-
-          <a href="{wa_url}" id="product-wa-link" target="_blank" rel="noopener" class="pdp-btn-wa">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.311.045-.698.055-2.062-.511-1.615-.668-2.673-2.316-2.753-2.424-.08-.108-.66-88-.66-1.678 0-.798.42-1.19.568-1.341.144-.15.314-.189.42-.189.105 0 .21.002.302.006.096.004.226-.036.353.27.13.314.444 1.082.483 1.161.039.08.065.173.013.277-.052.105-.078.17-.156.26-.078.092-.163.205-.233.276-.079.079-.161.165-.069.324.092.158.408.673.875 1.089.601.535 1.107.701 1.265.78.158.079.25.069.344-.04.095-.108.405-.471.513-.633.107-.162.217-.135.363-.081.147.054.929.438 1.088.517.159.08.264.12.303.186.039.066.039.384-.105.789z"></path></svg>
-            <span>WhatsApp ile Sipariş &amp; Destek</span>
-          </a>
-
-          <a href="../drone-toplama-sihirbazi" class="pdp-btn-wizard">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
-            <span>Bu Parçayı Drone Sihirbazında Test Et</span>
-          </a>
-        </div>
+{purchase_actions_html}
 
         <!-- Clean Professional Perks (SVG Icons, Zero Emojis) -->
         <div class="pdp-perks-grid">
@@ -1353,7 +1452,7 @@ def generate_product_page(product, category, related_products, all_products, by_
       `).join('');
     }}
 
-    window.addEventListener('DOMContentLoaded', () => {{
+{stock_alert_script_html}    window.addEventListener('DOMContentLoaded', () => {{
       updateHeaderCart();
       initDeliveryCountdown();
       renderPdpReviews();
