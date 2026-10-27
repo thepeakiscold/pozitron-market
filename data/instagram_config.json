@@ -18,12 +18,41 @@
     "fpvfreestyle",
     "fpvracing"
   ],
-  "updated_at": "2026-10-04T06:32:56.232721",
-  "last_run_at": "2026-10-04T06:32:56.223011",
-  "next_run_at": "2026-10-04T08:32:56.223015",
+  "updated_at": "2026-10-26T20:09:32.126257",
+  "last_run_at": "2026-10-26T20:09:31.984880",
+  "next_run_at": "2026-10-27T20:11:00",
   "story_enabled": 1,
   "carousel_enabled": 0,
   "dm_automation_enabled": 0,
-  "peak_scheduler_enabled": 0,
-  "reels_enabled": 1
+  "peak_scheduler_enabled": 1,
+  "reels_enabled": 1,
+  "flux_enabled": 1,
+  "enabled_post_types": [
+    "product_spotlight",
+    "deal_drop",
+    "pilot_tip",
+    "hardware_battle",
+    "drone_build_showcase",
+    "carousel_guide",
+    "mistake_breakdown",
+    "community_quiz",
+    "myth_buster",
+    "maintenance_checklist",
+    "beginner_roadmap",
+    "flight_weather_radar",
+    "tool_showcase",
+    "spot_guide",
+    "review_highlight",
+    "seo_article"
+  ],
+  "enabled_reels_types": [
+    "real_fpv_broll",
+    "freestyle_acro",
+    "hardware_vs",
+    "quick_tip_fix",
+    "mistake_warning",
+    "secret_spot",
+    "product_cinematic",
+    "flash_deal"
+  ]
 }
