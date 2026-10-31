@@ -245,7 +245,7 @@
       <g:link>https://pozitronmarket.com/products/dalprop-cinewhoop-d90s-ducted-v2-11</g:link>
       <g:image_link>https://pozitronmarket.com/assets/products/PZTR-PRO-0111.jpg</g:image_link>
       <g:availability>in_stock</g:availability>
-      <g:price>282.39 TRY</g:price>
+      <g:price>282.50 TRY</g:price>
       <g:brand>Dalprop</g:brand>
       <g:condition>new</g:condition>
       <g:google_product_category>5433</g:google_product_category>
@@ -299,7 +299,7 @@
       <g:link>https://pozitronmarket.com/products/axisflyer-c2807-pro-9</g:link>
       <g:image_link>https://pozitronmarket.com/assets/products/PZTR-MOT-0009.jpg</g:image_link>
       <g:availability>in_stock</g:availability>
-      <g:price>2037.13 TRY</g:price>
+      <g:price>2037.00 TRY</g:price>
       <g:brand>AxisFlyer</g:brand>
       <g:condition>new</g:condition>
       <g:google_product_category>5433</g:google_product_category>
@@ -3199,6 +3199,24 @@
       <g:availability>in_stock</g:availability>
       <g:price>800.00 TRY</g:price>
       <g:brand>iFlight</g:brand>
+      <g:condition>new</g:condition>
+      <g:google_product_category>5433</g:google_product_category>
+      <g:identifier_exists>no</g:identifier_exists>
+      <g:shipping>
+        <g:country>TR</g:country>
+        <g:service>Standart Kargo (Yurtiçi Kargo)</g:service>
+        <g:price>99.00 TRY</g:price>
+      </g:shipping>
+    </item>
+    <item>
+      <g:id>PZTR-PRO-0151</g:id>
+      <g:title>Gemfan Hurricane 4525-3 3 Kanatlı Dayanıklı FPV Drone Pervanesi (Clear Gray - 4'lü Set)</g:title>
+      <g:description>Gemfan Hurricane 4525-3 3 kanatlı FPV drone pervanesi, klasik 4 inç pervanelerin yetersiz kaldığı ve standart 5 inç pervanelerin fazla ağır geldiği hafif ve ultralight FPV yarış/freestyle platformları arasındaki boşluğu kusursuz bir şekilde doldurmak için tasarlanmıştır. Yüksek mukavemetli havacılık sınıfı polikarbonat (PC) malzemeden üretilen Hurricane 4525-3, 4.5 inç çapı ve 2.5 inç adımı (pitch) sayesinde anlık gaz tepkisi, olağanüstü viraj tutuşu ve sarsıntısız yüksek verimlilik sunar. 2004, 1505 ve 1606 serisi hafif motorlarla donatılmış Sub-250g hafif yarış ve freestyle quadcopter yapıları için optimize edilmiştir. Standart M5 mil ve 1.5mm/2mm T-Mount çift montaj desteğiyle tüm popüler motorlarla tam uyumludur. Paket içeriği 4 adet pervaneden oluşmaktadır (2 CW, 2 CCW).</g:description>
+      <g:link>https://pozitronmarket.com/products/gemfan-hurricane-4525-3</g:link>
+      <g:image_link>https://pozitronmarket.com/assets/products/PZTR-PRO-0151.jpg</g:image_link>
+      <g:availability>in_stock</g:availability>
+      <g:price>209.50 TRY</g:price>
+      <g:brand>Gemfan</g:brand>
       <g:condition>new</g:condition>
       <g:google_product_category>5433</g:google_product_category>
       <g:identifier_exists>no</g:identifier_exists>

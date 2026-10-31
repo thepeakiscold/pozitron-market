@@ -1,5 +1,5 @@
 {
-  "today_date": "2026-10-27",
+  "today_date": "2026-10-31",
   "today_follows_count": 0,
   "today_comments_count": 0,
   "max_daily_limit": 10,
@@ -4943,29 +4943,80 @@
       "status": "failed",
       "error": "non_json_response",
       "message": "Instagram JSON yerine HTML uygulama kabugu dondurdu (istek API olarak kabul edilmedi)."
+    },
+    {
+      "type": "like",
+      "username": "istekafyonokullari",
+      "user_id": "3238542446",
+      "media_id": "2892938643799625322_3238542446",
+      "media_code": "CglyF58rU5q",
+      "timestamp": "2026-10-27T20:18:11.296924",
+      "status": "failed",
+      "error": "non_json_response",
+      "message": "Instagram JSON yerine HTML uygulama kabugu dondurdu (istek API olarak kabul edilmedi)."
+    },
+    {
+      "type": "follow",
+      "username": "siriustekno",
+      "user_id": "55972485244",
+      "timestamp": "2026-10-27T20:18:20.073820",
+      "status": "failed",
+      "error": "feedback_required",
+      "message": "We limit how often you can do certain things on Instagram to protect our community. Tell us if you think we made a mistake."
+    },
+    {
+      "type": "like",
+      "username": "kanal_urfa",
+      "user_id": "2006037956",
+      "media_id": "3998933136752856712_2006037956",
+      "media_code": "Dd_EIAosU6I",
+      "timestamp": "2026-10-28T20:22:09.635004",
+      "status": "failed",
+      "error": "non_json_response",
+      "message": "Instagram JSON yerine HTML uygulama kabugu dondurdu (istek API olarak kabul edilmedi)."
+    },
+    {
+      "type": "follow",
+      "username": "siu_rekreasyon",
+      "user_id": "74245220635",
+      "timestamp": "2026-10-28T20:22:19.435573",
+      "status": "failed",
+      "error": "feedback_required",
+      "message": "We limit how often you can do certain things on Instagram to protect our community. Tell us if you think we made a mistake."
+    },
+    {
+      "type": "like",
+      "username": "istekafyonokullari",
+      "user_id": "3238542446",
+      "media_id": "2892938643799625322_3238542446",
+      "media_code": "CglyF58rU5q",
+      "timestamp": "2026-10-29T19:49:56.571479",
+      "status": "failed",
+      "error": "non_json_response",
+      "message": "Instagram JSON yerine HTML uygulama kabugu dondurdu (istek API olarak kabul edilmedi)."
     }
   ],
   "follow_diagnostics": {
-    "last_follow_probe_at": "2026-10-27T20:02:57.379333",
-    "last_follow_attempt_at": "2026-10-27T20:02:57.379333",
+    "last_follow_probe_at": "2026-10-31T21:24:28.845585",
+    "last_follow_attempt_at": "2026-10-31T21:24:28.845585",
     "last_follow_error": "feedback_required",
     "last_follow_message": "We limit how often you can do certain things on Instagram to protect our community. Tell us if you think we made a mistake.",
     "last_follow_status_code": 400,
     "follow_blocked": true,
-    "follow_blocked_until": "2026-10-27T19:44:52.193059",
-    "follow_diagnostics_updated_at": "2026-10-26T20:09:31.981241",
-    "follow_failure_streak": 2
+    "follow_blocked_until": "2026-10-29T20:22:19.435576",
+    "follow_diagnostics_updated_at": "2026-10-31T20:30:47.214255",
+    "follow_failure_streak": 4
   },
   "today_likes_count": 0,
   "liked_media_ids": [],
   "like_diagnostics": {
-    "last_like_attempt_at": "2026-10-26T19:46:00.061888",
+    "last_like_attempt_at": "2026-10-29T19:49:56.571475",
     "last_like_error": "non_json_response",
     "last_like_message": "Instagram JSON yerine HTML uygulama kabugu dondurdu (istek API olarak kabul edilmedi).",
     "last_like_status_code": 404,
-    "like_failure_streak": 6,
+    "like_failure_streak": 9,
     "like_blocked": true,
-    "like_blocked_until": "2026-10-27T01:46:00.061896",
-    "like_diagnostics_updated_at": "2026-10-26T20:09:31.981253"
+    "like_blocked_until": "2026-10-30T01:49:56.571482",
+    "like_diagnostics_updated_at": "2026-10-31T20:30:47.214264"
   }
 }
