@@ -2662,7 +2662,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             headers = [
                 'Sıra No', 'Ürün ID', 'SKU', 'Ürün Adı (TR)', 'Ürün Adı (EN)',
-                'Kategori', 'Marka', 'Fiyat (TRY)', 'Fiyat (USD)', 'Orijinal Fiyat (TRY)',
+                'Kategori', 'Marka', 'Maliyet (USD)', 'Kâr Marjı (%)', 'Fiyat (TRY)', 'Fiyat (USD)', 'Orijinal Fiyat (TRY)',
                 'Orijinal Fiyat (USD)', 'İndirim (%)', 'Stok Adedi', 'Stok Durumu',
                 'Rozet', 'Puan', 'Yorum Sayısı', 'Öne Çıkan', 'Çok Satan',
                 'Ürün Linki', 'Görsel URL', 'Eklenme Tarihi'
@@ -2689,6 +2689,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(p.get("name_en") or p.get("name_tr") or "")}</Data></Cell>')
                 xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(cat_name)}</Data></Cell>')
                 xml_lines.append(f'    <Cell><Data ss:Type="String">{html.escape(p.get("brand") or "Pozitron")}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{float(p.get("landed_cost_usd") or 0):.2f}</Data></Cell>')
+                xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{float(p.get("profit_margin_pct") or 25.0):.1f}</Data></Cell>')
                 xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{float(p.get("price_try") or 0):.2f}</Data></Cell>')
                 xml_lines.append(f'    <Cell ss:StyleID="Number"><Data ss:Type="Number">{float(p.get("price_usd") or 0):.2f}</Data></Cell>')
                 orig_try = f'{float(p["original_price_try"]):.2f}' if p.get("original_price_try") else ''
@@ -4797,10 +4799,36 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             stock = int(data.get('stock', curr['stock']))
             stock = max(0, stock)
 
-            price_usd = float(data.get('price_usd', curr['price_usd']))
-            price_try = float(data.get('price_try', curr['price_try']))
-            if 'price_usd' in data and 'price_try' not in data:
-                price_try = round(price_usd * get_setting('usd_rate', 50.0), 2)
+            active_rate = get_setting('usd_rate', 50.0)
+
+            # Determine landed_cost_usd and profit_margin_pct
+            if 'landed_cost_usd' in data and data['landed_cost_usd'] is not None and str(data['landed_cost_usd']).strip() != '':
+                landed_cost_usd = max(0.0, float(data['landed_cost_usd']))
+            else:
+                landed_cost_usd = float(curr.get('landed_cost_usd') or 0.0)
+
+            if 'profit_margin_pct' in data and data['profit_margin_pct'] is not None and str(data['profit_margin_pct']).strip() != '':
+                profit_margin_pct = float(data['profit_margin_pct'])
+            else:
+                profit_margin_pct = float(curr.get('profit_margin_pct') if curr.get('profit_margin_pct') is not None else 25.0)
+
+            # Calculate price_usd: landed_cost_usd * (1 + profit_margin_pct / 100)
+            if 'price_usd' in data and 'landed_cost_usd' not in data and 'profit_margin_pct' not in data:
+                price_usd = float(data['price_usd'])
+                if landed_cost_usd <= 0 and profit_margin_pct > -100:
+                    landed_cost_usd = round(price_usd / (1.0 + profit_margin_pct / 100.0), 2)
+            elif landed_cost_usd > 0:
+                price_usd = round(landed_cost_usd * (1.0 + profit_margin_pct / 100.0), 2)
+            elif 'price_usd' in data:
+                price_usd = float(data['price_usd'])
+            else:
+                price_usd = float(curr['price_usd'])
+
+            # Calculate price_try: price_usd * active_rate
+            if 'price_try' in data and 'price_usd' not in data and 'landed_cost_usd' not in data and 'profit_margin_pct' not in data:
+                price_try = float(data['price_try'])
+            else:
+                price_try = round(price_usd * active_rate, 2)
 
             orig_price_usd = float(data['original_price_usd']) if data.get('original_price_usd') is not None and data['original_price_usd'] != '' else curr['original_price_usd']
             orig_price_try = float(data['original_price_try']) if data.get('original_price_try') is not None and data['original_price_try'] != '' else curr['original_price_try']
@@ -4818,6 +4846,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             cursor.execute('''
                 UPDATE products SET
                     stock = ?,
+                    landed_cost_usd = ?,
+                    profit_margin_pct = ?,
                     price_usd = ?,
                     price_try = ?,
                     original_price_usd = ?,
@@ -4833,7 +4863,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     image_url = ?
                 WHERE id = ?
             ''', (
-                stock, price_usd, price_try, orig_price_usd, orig_price_try, discount_pct,
+                stock, landed_cost_usd, profit_margin_pct, price_usd, price_try, orig_price_usd, orig_price_try, discount_pct,
                 name_en, name_tr, category_id, brand, badge, featured, is_bestseller, image_url, prod_id
             ))
             conn.commit()
@@ -4913,6 +4943,17 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     WHERE id IN ({placeholders})
                 ''', [disc_val] + prod_ids)
 
+            elif action == 'margin_set':
+                margin_val = float(value)
+                rate = get_setting('usd_rate', 50.0)
+                cursor.execute(f'''
+                    UPDATE products
+                    SET profit_margin_pct = ?,
+                        price_usd = CASE WHEN landed_cost_usd > 0 THEN ROUND(landed_cost_usd * (1.0 + (? / 100.0)), 2) ELSE price_usd END,
+                        price_try = CASE WHEN landed_cost_usd > 0 THEN ROUND(ROUND(landed_cost_usd * (1.0 + (? / 100.0)), 2) * ?, 2) ELSE ROUND(price_usd * ?, 2) END
+                    WHERE id IN ({placeholders})
+                ''', [margin_val, margin_val, margin_val, rate, rate] + prod_ids)
+
             elif action == 'currency_sync':
                 rate = float(value) if value else get_setting('usd_rate', 50.0)
                 cursor.execute(f'''
@@ -4944,8 +4985,14 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             name_tr = data.get('name_tr', '').strip() or name_en
             category_id = data.get('category_id', 'motors')
             brand = data.get('brand', 'Pozitron')
-            price_usd = float(data.get('price_usd', 29.99))
             active_rate = get_setting('usd_rate', 50.0)
+            profit_margin_pct = float(data.get('profit_margin_pct', 25.0))
+            if 'landed_cost_usd' in data and data['landed_cost_usd'] is not None and str(data['landed_cost_usd']).strip() != '' and float(data['landed_cost_usd']) > 0:
+                landed_cost_usd = float(data['landed_cost_usd'])
+                price_usd = float(data.get('price_usd', round(landed_cost_usd * (1.0 + profit_margin_pct / 100.0), 2)))
+            else:
+                price_usd = float(data.get('price_usd', 29.99))
+                landed_cost_usd = round(price_usd / (1.0 + profit_margin_pct / 100.0), 2)
             price_try = float(data.get('price_try', round(price_usd * active_rate, 2)))
             stock = max(0, int(data.get('stock', 50)))
             badge = data.get('badge', 'NEW')
@@ -4971,15 +5018,15 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             cursor.execute('''
                 INSERT INTO products (
                     id, slug, sku, name_en, name_tr, category_id, brand,
-                    price_usd, price_try, original_price_usd, original_price_try,
+                    price_usd, price_try, landed_cost_usd, profit_margin_pct, original_price_usd, original_price_try,
                     discount_pct, rating, review_count, stock, badge,
                     specs_json, tags_json, image_url, gallery_json,
                     description_en, description_tr, compatibility_json,
                     featured, is_bestseller, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 5.0, 0, ?, ?, '{}', '[]', ?, '[]', ?, ?, '{}', 0, 0, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, 0, 5.0, 0, ?, ?, '{}', '[]', ?, '[]', ?, ?, '{}', 0, 0, ?)
             ''', (
                 prod_id, slug, sku, name_en, name_tr, category_id, brand,
-                price_usd, price_try, stock, badge, image_url,
+                price_usd, price_try, landed_cost_usd, profit_margin_pct, stock, badge, image_url,
                 data.get('description_en', name_en), data.get('description_tr', name_tr), now_iso
             ))
 

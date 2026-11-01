@@ -325,15 +325,17 @@
                 <th style="min-width:150px;">Kontrol Edildi</th>
                 <th>Kategori / Marka</th>
                 <th style="min-width:180px;">Stok Adedi & Durum</th>
-                <th style="min-width:130px;">Fiyat (USD $)</th>
-                <th style="min-width:140px;">Fiyat (TRY ₺)</th>
-                <th style="min-width:90px;">İndirim %</th>
+                <th style="min-width:120px;" title="Birim tedarik maliyeti (Dolar)">Maliyet ($)</th>
+                <th style="min-width:90px;" title="Maliyet üzerine eklenen kâr marjı yüzdesi">Kâr %</th>
+                <th style="min-width:120px;" title="Maliyet + Kâr marjı ile hesaplanan nihai satış fiyatı (Dolar)">Satış ($)</th>
+                <th style="min-width:130px;" title="Satış USD * Güncel Dolar Kuru (TL)">Satış (₺)</th>
+                <th style="min-width:85px;">İndirim %</th>
                 <th style="text-align:right;">İşlemler</th>
               </tr>
             </thead>
             <tbody id="inventory-tbody">
               <tr>
-                <td colspan="9" style="text-align:center; padding:40px; color:#64748b;">
+                <td colspan="11" style="text-align:center; padding:40px; color:#64748b;">
                   Envanter verileri yükleniyor...
                 </td>
               </tr>
@@ -525,13 +527,24 @@
 
           <div class="admin-form-row">
             <div class="admin-form-group">
-              <label for="new-price-usd">Fiyat (USD $) *</label>
-              <input type="number" id="new-price-usd" step="0.01" required value="29.99" oninput="syncNewProductTryPrice()">
+              <label for="new-landed-cost-usd">Birim Maliyet (Landed Cost USD $) *</label>
+              <input type="number" id="new-landed-cost-usd" step="0.01" min="0" required value="23.99" oninput="syncNewProductPricing('cost')" placeholder="Örn: 23.99">
             </div>
             <div class="admin-form-group">
-              <label for="new-price-try">Fiyat (TRY ₺) *</label>
-              <input type="number" id="new-price-try" step="0.01" required value="1409.53">
+              <label for="new-profit-margin">Kâr Marjı (%) *</label>
+              <input type="number" id="new-profit-margin" step="0.5" required value="25.0" oninput="syncNewProductPricing('margin')" placeholder="Örn: 25.0">
             </div>
+            <div class="admin-form-group">
+              <label for="new-price-usd">Satış Fiyatı (USD $) *</label>
+              <input type="number" id="new-price-usd" step="0.01" required value="29.99" oninput="syncNewProductPricing('usd')">
+            </div>
+            <div class="admin-form-group">
+              <label for="new-price-try">Satış Fiyatı (TRY ₺) *</label>
+              <input type="number" id="new-price-try" step="0.01" required value="1499.50">
+            </div>
+          </div>
+
+          <div class="admin-form-row">
             <div class="admin-form-group">
               <label for="new-stock">Başlangıç Stok Adedi *</label>
               <input type="number" id="new-stock" required value="50" min="0">
@@ -1063,9 +1076,11 @@
     <div>
       <strong id="bulk-count-text">0 ürün seçildi</strong>
     </div>
-    <div style="display:flex; gap:8px; align-items:center;">
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
       <button type="button" class="bulk-btn" onclick="executeBulkAction('stock_increment', 10)">+10 Stok</button>
       <button type="button" class="bulk-btn" onclick="executeBulkAction('stock_increment', -5)">-5 Stok</button>
+      <button type="button" class="bulk-btn" onclick="executeBulkAction('margin_set', 25)">%25 Kâr Eşitle</button>
+      <button type="button" class="bulk-btn" onclick="executeBulkAction('margin_set', 30)">%30 Kâr Eşitle</button>
       <button type="button" class="bulk-btn" onclick="executeBulkAction('price_percent', 10)">+%10 Fiyat</button>
       <button type="button" class="bulk-btn" onclick="executeBulkAction('discount_set', 15)">%15 İndirim</button>
       <button type="button" class="bulk-btn" onclick="executeBulkAction('currency_sync')">Kurla Eşitle</button>
@@ -1108,15 +1123,26 @@
 
         <div class="admin-form-row">
           <div class="admin-form-group">
+            <label for="edit-landed-cost-usd">Birim Maliyet (Landed Cost USD $)</label>
+            <input type="number" id="edit-landed-cost-usd" step="0.01" min="0" oninput="syncEditModalPricing('cost')" placeholder="Örn: 23.99">
+          </div>
+          <div class="admin-form-group">
+            <label for="edit-profit-margin">Kâr Marjı (%)</label>
+            <input type="number" id="edit-profit-margin" step="0.5" value="25.0" oninput="syncEditModalPricing('margin')" placeholder="Örn: 25.0">
+          </div>
+          <div class="admin-form-group">
             <label for="edit-stock">Stok Adedi</label>
             <input type="number" id="edit-stock" required min="0">
           </div>
+        </div>
+
+        <div class="admin-form-row">
           <div class="admin-form-group">
-            <label for="edit-price-usd">Fiyat (USD $)</label>
-            <input type="number" id="edit-price-usd" step="0.01" required oninput="syncEditModalTryPrice()">
+            <label for="edit-price-usd">Satış Fiyatı (USD $)</label>
+            <input type="number" id="edit-price-usd" step="0.01" required oninput="syncEditModalPricing('usd')">
           </div>
           <div class="admin-form-group">
-            <label for="edit-price-try">Fiyat (TRY ₺)</label>
+            <label for="edit-price-try">Satış Fiyatı (TRY ₺)</label>
             <input type="number" id="edit-price-try" step="0.01" required>
           </div>
           <div class="admin-form-group">
@@ -2550,7 +2576,7 @@
       document.getElementById('btn-next-page').disabled = currentPage >= totalPages;
 
       if (products.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:40px; color:#64748b;">Kriterlere uygun ürün bulunamadı.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:40px; color:#64748b;">Kriterlere uygun ürün bulunamadı.</td></tr>`;
         return;
       }
 
@@ -2568,6 +2594,8 @@
         else if (isLow) badgeHtml = '<span class="badge-stock badge-stock-low">KRİTİK STOK</span>';
 
         const title = lang === 'tr' ? (p.name_tr || p.name_en) : (p.name_en || p.name_tr);
+        const costVal = p.landed_cost_usd != null ? p.landed_cost_usd : ((p.price_usd || 0) / 1.25);
+        const marginVal = p.profit_margin_pct != null ? p.profit_margin_pct : 25.0;
 
         return `
           <tr class="${rowClass}" id="row-${p.id}">
@@ -2606,13 +2634,25 @@
             <td>
               <div class="price-input-cell">
                 <span>$</span>
-                <input type="number" step="0.01" id="usd-${p.id}" value="${parseFloat(p.price_usd || 0).toFixed(2)}" oninput="handleUsdRowInput('${p.id}')">
+                <input type="number" step="0.01" min="0" id="cost-${p.id}" value="${parseFloat(costVal || 0).toFixed(2)}" oninput="handleCostOrMarginRowInput('${p.id}')" title="Maliyet (Landed Cost USD)">
+              </div>
+            </td>
+            <td>
+              <div class="price-input-cell" style="width:65px;">
+                <input type="number" step="0.5" id="margin-${p.id}" value="${parseFloat(marginVal).toFixed(1)}" oninput="handleCostOrMarginRowInput('${p.id}')" title="Kâr Marjı %">
+                <span>%</span>
+              </div>
+            </td>
+            <td>
+              <div class="price-input-cell">
+                <span>$</span>
+                <input type="number" step="0.01" min="0" id="usd-${p.id}" value="${parseFloat(p.price_usd || 0).toFixed(2)}" oninput="handleUsdRowInput('${p.id}')" title="Satış Fiyatı USD">
               </div>
             </td>
             <td>
               <div class="price-input-cell">
                 <span>₺</span>
-                <input type="number" step="0.01" id="try-${p.id}" value="${parseFloat(p.price_try || 0).toFixed(2)}">
+                <input type="number" step="0.01" min="0" id="try-${p.id}" value="${parseFloat(p.price_try || 0).toFixed(2)}" title="Satış Fiyatı TRY">
               </div>
             </td>
             <td>
@@ -2677,18 +2717,47 @@
       }
     }
 
+    function handleCostOrMarginRowInput(id) {
+      const costInput = document.getElementById(`cost-${id}`);
+      const marginInput = document.getElementById(`margin-${id}`);
+      const usdInput = document.getElementById(`usd-${id}`);
+      const tryInput = document.getElementById(`try-${id}`);
+      if (costInput && marginInput && usdInput && tryInput) {
+        const cost = parseFloat(costInput.value) || 0;
+        const margin = parseFloat(marginInput.value) || 0;
+        const usd = Math.round(cost * (1.0 + margin / 100.0) * 100) / 100;
+        usdInput.value = usd.toFixed(2);
+        tryInput.value = (usd * currentUsdRate).toFixed(2);
+      }
+    }
+
     function handleUsdRowInput(id) {
+      const costInput = document.getElementById(`cost-${id}`);
+      const marginInput = document.getElementById(`margin-${id}`);
       const usdInput = document.getElementById(`usd-${id}`);
       const tryInput = document.getElementById(`try-${id}`);
       if (usdInput && tryInput) {
         const usd = parseFloat(usdInput.value) || 0;
         tryInput.value = (usd * currentUsdRate).toFixed(2);
+        if (costInput && marginInput) {
+          const cost = parseFloat(costInput.value) || 0;
+          if (cost > 0) {
+            marginInput.value = (((usd - cost) / cost) * 100.0).toFixed(1);
+          } else {
+            const margin = parseFloat(marginInput.value) || 25.0;
+            costInput.value = (usd / (1.0 + margin / 100.0)).toFixed(2);
+          }
+        }
       }
     }
 
     async function saveRowProduct(id) {
       const btn = document.getElementById(`btn-save-${id}`);
       const stock = parseInt(document.getElementById(`stock-${id}`).value) || 0;
+      const costEl = document.getElementById(`cost-${id}`);
+      const marginEl = document.getElementById(`margin-${id}`);
+      const landedCostUsd = costEl ? (parseFloat(costEl.value) || 0) : 0;
+      const profitMarginPct = marginEl ? (parseFloat(marginEl.value) || 25.0) : 25.0;
       const priceUsd = parseFloat(document.getElementById(`usd-${id}`).value) || 0;
       const priceTry = parseFloat(document.getElementById(`try-${id}`).value) || 0;
       const discount = parseInt(document.getElementById(`disc-${id}`).value) || 0;
@@ -2703,6 +2772,8 @@
       const target = localProds.find(p => p.id === id);
       if (target) {
         target.stock = stock;
+        target.landed_cost_usd = landedCostUsd;
+        target.profit_margin_pct = profitMarginPct;
         target.price_usd = priceUsd;
         target.price_try = priceTry;
         target.discount_pct = discount;
@@ -2718,6 +2789,8 @@
           body: JSON.stringify({
             id: id,
             stock: stock,
+            landed_cost_usd: landedCostUsd,
+            profit_margin_pct: profitMarginPct,
             price_usd: priceUsd,
             price_try: priceTry,
             discount_pct: discount
@@ -2798,9 +2871,18 @@
           if (action === 'stock_increment') p.stock = Math.max(0, (p.stock || 0) + value);
           else if (action === 'stock_decrement') p.stock = Math.max(0, (p.stock || 0) - value);
           else if (action === 'stock_set') p.stock = Math.max(0, value);
-          else if (action === 'price_percent') {
+          else if (action === 'margin_set') {
+            p.profit_margin_pct = value;
+            const cost = p.landed_cost_usd != null ? p.landed_cost_usd : ((p.price_usd || 0) / 1.25);
+            p.landed_cost_usd = Math.round(cost * 100) / 100;
+            p.price_usd = Math.round(cost * (1.0 + value / 100.0) * 100) / 100;
+            p.price_try = Math.round(p.price_usd * currentUsdRate * 100) / 100;
+          } else if (action === 'price_percent') {
             p.price_usd = Math.round((p.price_usd || 0) * (1 + value / 100) * 100) / 100;
             p.price_try = Math.round((p.price_try || 0) * (1 + value / 100) * 100) / 100;
+            if (p.landed_cost_usd && p.landed_cost_usd > 0) {
+              p.profit_margin_pct = Math.round(((p.price_usd - p.landed_cost_usd) / p.landed_cost_usd) * 1000) / 10;
+            }
           } else if (action === 'discount_set') {
             p.discount_pct = value;
           } else if (action === 'currency_sync') {
@@ -2969,9 +3051,35 @@
     // -------------------------------------------------------------
     // Add Product Form (Hybrid)
     // -------------------------------------------------------------
+    function syncNewProductPricing(source) {
+      const costEl = document.getElementById('new-landed-cost-usd');
+      const marginEl = document.getElementById('new-profit-margin');
+      const usdEl = document.getElementById('new-price-usd');
+      const tryEl = document.getElementById('new-price-try');
+
+      if (!costEl || !marginEl || !usdEl || !tryEl) return;
+
+      if (source === 'cost' || source === 'margin') {
+        const cost = parseFloat(costEl.value) || 0;
+        const margin = parseFloat(marginEl.value) || 0;
+        const usd = Math.round(cost * (1.0 + margin / 100.0) * 100) / 100;
+        usdEl.value = usd.toFixed(2);
+        tryEl.value = (usd * currentUsdRate).toFixed(2);
+      } else if (source === 'usd') {
+        const usd = parseFloat(usdEl.value) || 0;
+        tryEl.value = (usd * currentUsdRate).toFixed(2);
+        const cost = parseFloat(costEl.value) || 0;
+        if (cost > 0) {
+          marginEl.value = (((usd - cost) / cost) * 100.0).toFixed(1);
+        } else {
+          const margin = parseFloat(marginEl.value) || 25.0;
+          costEl.value = (usd / (1.0 + margin / 100.0)).toFixed(2);
+        }
+      }
+    }
+
     function syncNewProductTryPrice() {
-      const usd = parseFloat(document.getElementById('new-price-usd').value) || 0;
-      document.getElementById('new-price-try').value = (usd * currentUsdRate).toFixed(2);
+      syncNewProductPricing('usd');
     }
 
     async function handleCreateProduct(e) {
@@ -2983,6 +3091,8 @@
         category_id: document.getElementById('new-category').value,
         brand: document.getElementById('new-brand').value.trim(),
         sku: document.getElementById('new-sku').value.trim() || ("SKU-" + Math.floor(100000 + Math.random()*900000)),
+        landed_cost_usd: parseFloat(document.getElementById('new-landed-cost-usd').value) || 0,
+        profit_margin_pct: parseFloat(document.getElementById('new-profit-margin').value) || 25.0,
         price_usd: parseFloat(document.getElementById('new-price-usd').value) || 0,
         price_try: parseFloat(document.getElementById('new-price-try').value) || 0,
         stock: parseInt(document.getElementById('new-stock').value) || 0,
@@ -3039,6 +3149,10 @@
       document.getElementById('edit-category').value = p.category_id || '';
       document.getElementById('edit-brand').value = p.brand || '';
       document.getElementById('edit-stock').value = p.stock || 0;
+      const costVal = p.landed_cost_usd != null ? p.landed_cost_usd : ((p.price_usd || 0) / 1.25);
+      const marginVal = p.profit_margin_pct != null ? p.profit_margin_pct : 25.0;
+      document.getElementById('edit-landed-cost-usd').value = parseFloat(costVal || 0).toFixed(2);
+      document.getElementById('edit-profit-margin').value = parseFloat(marginVal).toFixed(1);
       document.getElementById('edit-price-usd').value = p.price_usd || 0;
       document.getElementById('edit-price-try').value = p.price_try || 0;
       document.getElementById('edit-discount').value = p.discount_pct || 0;
@@ -3052,9 +3166,35 @@
       document.getElementById('edit-modal-backdrop').style.display = 'none';
     }
 
+    function syncEditModalPricing(source) {
+      const costEl = document.getElementById('edit-landed-cost-usd');
+      const marginEl = document.getElementById('edit-profit-margin');
+      const usdEl = document.getElementById('edit-price-usd');
+      const tryEl = document.getElementById('edit-price-try');
+
+      if (!costEl || !marginEl || !usdEl || !tryEl) return;
+
+      if (source === 'cost' || source === 'margin') {
+        const cost = parseFloat(costEl.value) || 0;
+        const margin = parseFloat(marginEl.value) || 0;
+        const usd = Math.round(cost * (1.0 + margin / 100.0) * 100) / 100;
+        usdEl.value = usd.toFixed(2);
+        tryEl.value = (usd * currentUsdRate).toFixed(2);
+      } else if (source === 'usd') {
+        const usd = parseFloat(usdEl.value) || 0;
+        tryEl.value = (usd * currentUsdRate).toFixed(2);
+        const cost = parseFloat(costEl.value) || 0;
+        if (cost > 0) {
+          marginEl.value = (((usd - cost) / cost) * 100.0).toFixed(1);
+        } else {
+          const margin = parseFloat(marginEl.value) || 25.0;
+          costEl.value = (usd / (1.0 + margin / 100.0)).toFixed(2);
+        }
+      }
+    }
+
     function syncEditModalTryPrice() {
-      const usd = parseFloat(document.getElementById('edit-price-usd').value) || 0;
-      document.getElementById('edit-price-try').value = (usd * currentUsdRate).toFixed(2);
+      syncEditModalPricing('usd');
     }
 
     async function handleSaveEditModal(e) {
@@ -3067,6 +3207,8 @@
         category_id: document.getElementById('edit-category').value,
         brand: document.getElementById('edit-brand').value.trim(),
         stock: parseInt(document.getElementById('edit-stock').value) || 0,
+        landed_cost_usd: parseFloat(document.getElementById('edit-landed-cost-usd').value) || 0,
+        profit_margin_pct: parseFloat(document.getElementById('edit-profit-margin').value) || 25.0,
         price_usd: parseFloat(document.getElementById('edit-price-usd').value) || 0,
         price_try: parseFloat(document.getElementById('edit-price-try').value) || 0,
         discount_pct: parseInt(document.getElementById('edit-discount').value) || 0,

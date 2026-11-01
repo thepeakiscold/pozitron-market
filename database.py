@@ -44,6 +44,8 @@ def init_db():
             brand TEXT NOT NULL,
             price_usd REAL NOT NULL,
             price_try REAL NOT NULL,
+            landed_cost_usd REAL DEFAULT 0.0,
+            profit_margin_pct REAL DEFAULT 25.0,
             original_price_usd REAL,
             original_price_try REAL,
             discount_pct INTEGER DEFAULT 0,
@@ -551,6 +553,18 @@ def init_db():
         ):
             cursor.execute("INSERT OR REPLACE INTO settings (key, value, updated_at) VALUES (?, ?, ?)",
                            (key, value, datetime.now().isoformat()))
+
+    # Migration: Ensure products table has landed_cost_usd and profit_margin_pct
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='products'")
+    if cursor.fetchone():
+        cursor.execute("PRAGMA table_info(products)")
+        prod_cols = [c[1] for c in cursor.fetchall()]
+        if 'landed_cost_usd' not in prod_cols:
+            cursor.execute("ALTER TABLE products ADD COLUMN landed_cost_usd REAL DEFAULT 0.0")
+            cursor.execute("UPDATE products SET landed_cost_usd = ROUND(price_usd / 1.25, 2) WHERE landed_cost_usd = 0.0 OR landed_cost_usd IS NULL")
+        if 'profit_margin_pct' not in prod_cols:
+            cursor.execute("ALTER TABLE products ADD COLUMN profit_margin_pct REAL DEFAULT 25.0")
+            cursor.execute("UPDATE products SET profit_margin_pct = 25.0 WHERE profit_margin_pct IS NULL")
 
     # Migration: Ensure image_mode column exists on instagram_posts
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='instagram_posts'")
