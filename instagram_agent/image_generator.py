@@ -221,15 +221,9 @@ class ImageGenerator:
             p = os.path.join(BASE_DIR, clean)
             if os.path.exists(p):
                 return p
-            p_png = os.path.splitext(p)[0] + '.png'
-            if os.path.exists(p_png):
-                return p_png
             p2 = os.path.join(BASE_DIR, 'assets', 'products', os.path.basename(clean))
             if os.path.exists(p2):
                 return p2
-            p2_png = os.path.splitext(p2)[0] + '.png'
-            if os.path.exists(p2_png):
-                return p2_png
             if os.path.exists(str(img_url)):
                 return str(img_url)
 
