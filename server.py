@@ -1102,6 +1102,16 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
+        # Automatic legacy .jpg -> .png 301 redirection for product images (HEAD)
+        if path.startswith('/assets/products/') and (path.endswith('.jpg') or path.endswith('.jpeg')):
+            png_path = re.sub(r'\.jpe?g$', '.png', path, flags=re.IGNORECASE)
+            png_file = os.path.join(BASE_DIR, png_path.lstrip('/'))
+            if os.path.isfile(png_file):
+                self.send_response(301)
+                self.send_header('Location', png_path)
+                self.end_headers()
+                return
+
         return super().do_HEAD()
 
     def handle_sitemap_xml(self):

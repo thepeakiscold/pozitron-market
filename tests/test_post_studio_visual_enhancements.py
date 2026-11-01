@@ -11,8 +11,8 @@ from instagram_agent.db import get_db
 class TestPostStudioVisualEnhancements:
 
     def test_normalized_avif_products_load_cleanly(self):
-        """Verify that products that were previously AVIF now decode as valid RGBA PIL Images."""
-        sample_avif_filenames = ['PZTR-CON-0180.jpg', 'PZTR-MOT-0004.jpg', 'PZTR-MOT-0015.jpg']
+        """Verify that products that were previously AVIF now decode as valid RGBA PIL Images in PNG format."""
+        sample_avif_filenames = ['PZTR-CON-0180.png', 'PZTR-MOT-0004.png', 'PZTR-MOT-0015.png']
         for fname in sample_avif_filenames:
             full_path = os.path.join('assets/products', fname)
             assert os.path.exists(full_path), f"File {full_path} must exist"
