@@ -42,7 +42,7 @@ def get_db_usd_rate():
                 return float(row[0])
         except Exception as e:
             print(f"Warning: Could not fetch usd_rate from DB: {e}")
-    return 50.0
+    return 75.00
 
 def get_db_review_stats():
     """Fetch aggregated real reviews from SQLite database."""
@@ -115,7 +115,7 @@ def get_bundle_items(current_prod, by_category, all_products):
                 break
     return bundle
 
-def generate_product_page(product, category, related_products, all_products, by_category, db_reviews=None, usd_rate=50.0):
+def generate_product_page(product, category, related_products, all_products, by_category, db_reviews=None, usd_rate=75.00):
     p_id = product.get("id", "")
     slug = product.get("slug", "")
     sku = product.get("sku", "")
@@ -125,6 +125,7 @@ def generate_product_page(product, category, related_products, all_products, by_
     price_try = product.get("price_try", 0.0)
     price_usd = float(product.get("price_usd") or 0.0)
     original_price_try = product.get("original_price_try", price_try)
+    original_price_usd = float(product.get("original_price_usd") or 0.0)
     image_rel = product.get("image_url", "./assets/placeholder.png")
     
     # Path handling from products/ directory
@@ -176,6 +177,68 @@ def generate_product_page(product, category, related_products, all_products, by_
     if original_price_try and original_price_try > price_try:
         has_discount = True
         discount_pct = int(round(((original_price_try - price_try) / original_price_try) * 100))
+
+    # Dynamic SEO Keywords & Alternates
+    tags_list = product.get("tags") or []
+    if isinstance(tags_list, str):
+        try:
+            tags_list = json.loads(tags_list)
+        except Exception:
+            tags_list = []
+    
+    model_code = specs.get("model") or ""
+    if not model_code:
+        m_match = re.search(r'\b(\d{4,5}(?:-[A-Za-z0-9]+)?|[A-Z]\d{3,4})\b', name_tr)
+        if m_match:
+            model_code = m_match.group(1)
+
+    seo_keywords_set = []
+    schema_alternates = []
+    if model_code:
+        clean_model = model_code.replace("Hurricane ", "").strip()
+        if cat_id == "propellers":
+            seo_keywords_set.append(f"{clean_model} pervane")
+            seo_keywords_set.append(f"{clean_model} drone pervanesi")
+            schema_alternates.append(f"{clean_model} pervane")
+            if "-" in clean_model:
+                base_code = clean_model.split("-")[0]
+                seo_keywords_set.append(f"{base_code} pervane")
+                seo_keywords_set.append(f"{brand.lower()} {base_code}")
+                schema_alternates.append(f"{brand} {base_code}")
+        else:
+            seo_keywords_set.append(f"{clean_model} {cat_name_tr.lower()}")
+            schema_alternates.append(f"{clean_model} {cat_name_tr.lower()}")
+            
+        seo_keywords_set.append(f"{brand} {clean_model}")
+        seo_keywords_set.append(f"{brand} Hurricane {clean_model}")
+        schema_alternates.append(f"{brand} {clean_model}")
+        schema_alternates.append(f"{brand} Hurricane {clean_model}")
+        seo_keywords_set.append(clean_model)
+
+    for t in tags_list[:8]:
+        if t and t not in seo_keywords_set:
+            seo_keywords_set.append(str(t))
+
+    seo_keywords_set.extend([
+        brand,
+        cat_name_tr,
+        "FPV drone parçaları",
+        name_tr,
+        "drone yedek parça",
+        "Teknofest donanım"
+    ])
+    
+    if name_en and name_en != name_tr:
+        schema_alternates.append(name_en)
+
+    seen_kw = set()
+    final_keywords = []
+    for kw in seo_keywords_set:
+        kw_clean = str(kw).strip()
+        if kw_clean and kw_clean.lower() not in seen_kw:
+            seen_kw.add(kw_clean.lower())
+            final_keywords.append(kw_clean)
+    keywords_str = ", ".join(final_keywords[:15])
 
     # Real Stock Status from Database
     real_stock = int(product.get("stock", 0))
@@ -421,6 +484,8 @@ def generate_product_page(product, category, related_products, all_products, by_
         "@context": "https://schema.org/",
         "@type": "Product",
         "name": name_tr,
+        "alternateName": schema_alternates if schema_alternates else ([name_en] if name_en else []),
+        "model": model_code if model_code else None,
         "image": [abs_img],
         "description": clean_desc_tr[:300],
         "sku": sku,
@@ -610,7 +675,7 @@ def generate_product_page(product, category, related_products, all_products, by_
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
               <span>Stoğa Girince Haber Ver</span>
             </div>
-            <p class="pdp-stock-alert-sub">Bu ürün şu anda stokta yok. Envanterimize yeniden girdiğinde e-posta ve WhatsApp ile ilk siz haberdar olun.</p>
+            <p class="pdp-stock-alert-sub">Bu ürün şu anda stokta yok. Stoğa girdiğinde e-posta ile ilk siz haberdar olun.</p>
             <form class="pdp-stock-alert-form" onsubmit="handleStockAlert(event)">
               <input type="email" id="pdp-stock-alert-email" class="pdp-stock-alert-input" placeholder="E-posta adresiniz *" required autocomplete="email">
               <input type="tel" id="pdp-stock-alert-phone" class="pdp-stock-alert-input" placeholder="Telefon / WhatsApp (opsiyonel)" autocomplete="tel">
@@ -698,7 +763,7 @@ def generate_product_page(product, category, related_products, all_products, by_
         }})
       }}).catch(err => console.log('Alert webhook error:', err));
 
-      showToast('Talebiniz alındı! Ürün stoğa girdiğinde e-posta ve WhatsApp ile bilgilendirileceksiniz.');
+      showToast('Talebiniz alındı! Ürün stoğa girdiğinde e-posta ile bilgilendirileceksiniz.');
       if (event.target && typeof event.target.reset === 'function') event.target.reset();
     }}
 """
@@ -728,7 +793,7 @@ def generate_product_page(product, category, related_products, all_products, by_
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{escape_str(name_tr)} Fiyatı ve Özellikleri | Pozitron Market</title>
   <meta name="description" content="{escape_str(meta_desc)}">
-  <meta name="keywords" content="{escape_str(brand)}, {escape_str(cat_name_tr)}, FPV drone parçaları, {escape_str(name_tr)}, drone yedek parça, Teknofest donanım">
+  <meta name="keywords" content="{escape_str(keywords_str)}">
   <link rel="canonical" href="{canonical_url}">
   
   <!-- OpenGraph Meta Tags -->
@@ -814,6 +879,11 @@ def generate_product_page(product, category, related_products, all_products, by_
 
       <!-- Action Nav Buttons (Clean SVG Icons, Zero Emojis) -->
       <nav class="header-actions" aria-label="Navigasyon Menüsü">
+        <div class="currency-selector" role="group" aria-label="Para Birimi">
+          <button type="button" class="curr-btn active" data-currency="TRY" onclick="switchPdpCurrency('TRY')">₺ TRY</button>
+          <button type="button" class="curr-btn" data-currency="USD" onclick="switchPdpCurrency('USD')">$ USD</button>
+        </div>
+
         <a href="../3d-baski-studio" class="btn-3d-print-nav" title="3D Baskı Studio">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
           <span>3D Baskı Studio</span>
@@ -875,10 +945,10 @@ def generate_product_page(product, category, related_products, all_products, by_
 
         {pdp_rating_row_html}
 
-        <!-- Price Card -->
+        <!-- Price Card with Live Dynamic Multi-Currency Attributes -->
         <div class="pdp-price-card">
-          <div class="pdp-price-current">{format_try(price_try)}</div>
-          {f'<div class="pdp-price-old">{format_try(original_price_try)}</div>' if has_discount else ''}
+          <div class="pdp-price-current" id="pdp-price-val" data-price-try="{float(price_try):.2f}" data-price-usd="{float(price_usd):.2f}">{format_try(price_try)}</div>
+          {f'<div class="pdp-price-old" id="pdp-orig-val" data-orig-try="{float(original_price_try):.2f}" data-orig-usd="{float(original_price_usd or 0):.2f}">{format_try(original_price_try)}</div>' if has_discount else ''}
         </div>
 
         <!-- Amazon Feature 1: Live Same-Day Shipping Countdown Timer -->
@@ -1503,6 +1573,42 @@ def generate_product_page(product, category, related_products, all_products, by_
       `).join('');
     }}
 
+    function switchPdpCurrency(curr) {{
+      try {{
+        localStorage.setItem('pozitron_currency', curr);
+      }} catch (e) {{}}
+      updatePdpCurrencyDisplay(curr);
+    }}
+
+    function updatePdpCurrencyDisplay(curr) {{
+      const isUSD = (curr === 'USD');
+      document.querySelectorAll('.curr-btn').forEach(btn => {{
+        btn.classList.toggle('active', btn.getAttribute('data-currency') === curr);
+      }});
+
+      const pEl = document.getElementById('pdp-price-val');
+      if (pEl) {{
+        const pTry = parseFloat(pEl.getAttribute('data-price-try')) || 0;
+        const pUsd = parseFloat(pEl.getAttribute('data-price-usd')) || 0;
+        if (isUSD) {{
+          pEl.innerText = '$' + pUsd.toFixed(2);
+        }} else {{
+          pEl.innerText = pTry.toLocaleString('tr-TR', {{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}) + ' ₺';
+        }}
+      }}
+
+      const oEl = document.getElementById('pdp-orig-val');
+      if (oEl) {{
+        const oTry = parseFloat(oEl.getAttribute('data-orig-try')) || 0;
+        const oUsd = parseFloat(oEl.getAttribute('data-orig-usd')) || 0;
+        if (isUSD) {{
+          oEl.innerText = '$' + oUsd.toFixed(2);
+        }} else {{
+          oEl.innerText = oTry.toLocaleString('tr-TR', {{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}) + ' ₺';
+        }}
+      }}
+    }}
+
 {stock_alert_script_html}    async function syncLiveStock() {{
       const slug = {json.dumps(slug)};
       const pId = {json.dumps(p_id)};
@@ -1519,9 +1625,23 @@ def generate_product_page(product, category, related_products, all_products, by_
         clearTimeout(timeoutId);
         if (res.ok) {{
           const data = await res.json();
-          if (data && data.product && typeof data.product.stock !== 'undefined') {{
-            currentStock = parseInt(data.product.stock, 10);
-            stockFound = true;
+          if (data && data.product) {{
+            if (typeof data.product.stock !== 'undefined') {{
+              currentStock = parseInt(data.product.stock, 10);
+              stockFound = true;
+            }}
+            const pEl = document.getElementById('pdp-price-val');
+            if (pEl && typeof data.product.price_try !== 'undefined') {{
+              pEl.setAttribute('data-price-try', data.product.price_try);
+              if (data.product.price_usd) pEl.setAttribute('data-price-usd', data.product.price_usd);
+            }}
+            const oEl = document.getElementById('pdp-orig-val');
+            if (oEl && typeof data.product.original_price_try !== 'undefined') {{
+              oEl.setAttribute('data-orig-try', data.product.original_price_try || '');
+              if (data.product.original_price_usd) oEl.setAttribute('data-orig-usd', data.product.original_price_usd || '');
+            }}
+            const curCurr = localStorage.getItem('pozitron_currency') || 'TRY';
+            updatePdpCurrencyDisplay(curCurr);
           }}
         }}
       }} catch (err) {{}}
@@ -1569,7 +1689,7 @@ def generate_product_page(product, category, related_products, all_products, by_
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
                   <span>Stoğa Girince Haber Ver</span>
                 </div>
-                <p class="pdp-stock-alert-sub">Bu ürün şu anda stokta yok. Envanterimize yeniden girdiğinde e-posta ve WhatsApp ile ilk siz haberdar olun.</p>
+                <p class="pdp-stock-alert-sub">Bu ürün şu anda stokta yok. Stoğa girdiğinde e-posta ile ilk siz haberdar olun.</p>
                 <form class="pdp-stock-alert-form" onsubmit="handleStockAlert(event)">
                   <input type="email" id="pdp-stock-alert-email" class="pdp-stock-alert-input" placeholder="E-posta adresiniz *" required autocomplete="email">
                   <input type="tel" id="pdp-stock-alert-phone" class="pdp-stock-alert-input" placeholder="Telefon / WhatsApp (opsiyonel)" autocomplete="tel">
@@ -1601,6 +1721,8 @@ def generate_product_page(product, category, related_products, all_products, by_
     }}
 
     window.addEventListener('DOMContentLoaded', () => {{
+      const initialCurr = localStorage.getItem('pozitron_currency') || 'TRY';
+      updatePdpCurrencyDisplay(initialCurr);
       updateHeaderCart();
       initDeliveryCountdown();
       renderPdpReviews();
@@ -1759,12 +1881,34 @@ def main():
 
     for p_url in sitemap_product_urls:
         escaped_url = p_url.replace("&", "&amp;")
+        priority_val = "0.9" if "gemfan-hurricane-4525-3" in p_url else "0.8"
         sitemap_lines.append('  <url>')
         sitemap_lines.append(f'    <loc>{escaped_url}</loc>')
         sitemap_lines.append(f'    <lastmod>{today_str}</lastmod>')
         sitemap_lines.append('    <changefreq>weekly</changefreq>')
-        sitemap_lines.append('    <priority>0.8</priority>')
+        sitemap_lines.append(f'    <priority>{priority_val}</priority>')
         sitemap_lines.append('  </url>')
+
+    # Add SEO Guides / Articles into sitemap.xml
+    db_path = os.environ.get('DATABASE_PATH') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pozitron.db')
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            c = conn.cursor()
+            c.execute("SELECT slug FROM seo_articles ORDER BY id DESC")
+            art_count = 0
+            for art_slug, in c.fetchall():
+                sitemap_lines.append('  <url>')
+                sitemap_lines.append(f'    <loc>{BASE_URL}/rehber/{html.escape(art_slug)}</loc>')
+                sitemap_lines.append(f'    <lastmod>{today_str}</lastmod>')
+                sitemap_lines.append('    <changefreq>weekly</changefreq>')
+                sitemap_lines.append('    <priority>0.85</priority>')
+                sitemap_lines.append('  </url>')
+                art_count += 1
+            conn.close()
+            print(f"Added {art_count} technical SEO guides to sitemap.xml!")
+        except Exception as e:
+            print(f"Sitemap articles fetch error: {e}")
 
     sitemap_lines.append('</urlset>')
 

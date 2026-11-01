@@ -73,19 +73,26 @@ chmod -R 775 "${APP_DIR}"
 echo -e "\n${YELLOW}[4/7] Guvenlik ve ortam degiskenleri hazirlaniyor...${NC}"
 mkdir -p "${ENV_DIR}"
 if [ ! -f "${ENV_DIR}/pozitron.env" ]; then
-    cat << 'EOF' > "${ENV_DIR}/pozitron.env"
+    SECRET_KEY_VALUE="$(python3 -c 'import secrets;print(secrets.token_urlsafe(48))')"
+    ADMIN_KEY_VALUE="$(python3 -c 'import secrets;print(secrets.token_urlsafe(48))')"
+    cat << EOF > "${ENV_DIR}/pozitron.env"
 # Pozitron Market Production Environment Variables
+# Secrets are generated per deployment. Never reuse values from the repository.
 POZITRON_ENV=production
 PORT=8000
-SECRET_KEY=pozitron_secret_prod_key_7792_fpv_market
-ADMIN_API_KEY=pzt_adm_sec_9941a87b32c
+HOST=127.0.0.1
+SECRET_KEY=${SECRET_KEY_VALUE}
+ADMIN_API_KEY=${ADMIN_KEY_VALUE}
 
-# SMTP E-posta Ayarlari (Direct SMTP port 587 Hetzner'de tamamen aciktir)
+# SMTP E-posta Ayarlari (degerleri elle doldurun; bos ise e-posta gonderilmez)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=noreply@pozitronmarkets.com
-SMTP_PASSWORD=fugtmwxhotugronp
+SMTP_USER=
+SMTP_PASSWORD=
 SMTP_FROM=Pozitron Market <noreply@pozitronmarkets.com>
+
+# Google ile giris yapan yoneticilerin token'larini dogrulamak icin
+# GOOGLE_CLIENT_ID=
 
 # Alternatif HTTP API E-posta Anahtarlari (Gerekirse)
 # RESEND_API_KEY=
@@ -136,11 +143,14 @@ server {
     listen [::]:80;
     server_name api.pozitronmarket.com _;
 
-    client_max_body_size 100M;
+    client_max_body_size 32M;
 
     # Guvenlik Basliklari
     add_header X-Content-Type-Options nosniff always;
     add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
 
     location / {
         proxy_pass http://127.0.0.1:8000;

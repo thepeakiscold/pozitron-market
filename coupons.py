@@ -21,12 +21,19 @@ from datetime import datetime, timedelta
 
 from database import get_db
 
-# Fixed discounts are TRY-based; convert to USD with this rate when needed.
+# Fixed discounts are TRY-based; convert to USD with the live rate from settings.
 def _exchange_rate() -> float:
     try:
-        return float(os.environ.get("USD_TRY_RATE", "35.5"))
+        from database import get_setting
+        rate = get_setting("usd_rate", None)
+        if rate:
+            return float(rate)
     except Exception:
-        return 35.5
+        pass
+    try:
+        return float(os.environ.get("USD_TRY_RATE", "75.0"))
+    except Exception:
+        return 75.0
 
 VALID_TYPES = ("percent", "fixed")
 

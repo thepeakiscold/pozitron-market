@@ -10,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from server import ThreadedHTTPServer, PozitronRequestHandler
+from server import ThreadedHTTPServer, PozitronRequestHandler, ADMIN_API_KEY
 
 class TestServerInstagramAPI(unittest.TestCase):
     @classmethod
@@ -39,14 +39,14 @@ class TestServerInstagramAPI(unittest.TestCase):
 
     def _get(self, path):
         url = f"http://127.0.0.1:{self.port}{path}"
-        req = urllib.request.Request(url)
+        req = urllib.request.Request(url, headers={'X-Admin-Key': ADMIN_API_KEY})
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status, json.loads(resp.read().decode('utf-8'))
 
     def _post(self, path, data):
         url = f"http://127.0.0.1:{self.port}{path}"
         payload = json.dumps(data).encode('utf-8')
-        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
+        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_API_KEY}, method='POST')
         with urllib.request.urlopen(req, timeout=10) as resp:
             return resp.status, json.loads(resp.read().decode('utf-8'))
 

@@ -11,14 +11,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from server import ThreadedHTTPServer, PozitronRequestHandler
+from server import ThreadedHTTPServer, PozitronRequestHandler, ADMIN_API_KEY
 from database import get_db, set_setting, get_setting
 from export_data import export_static_data
 
 class TestCurrencyAndAdminPanel(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.orig_rate = get_setting('usd_rate', 47.0)
+        cls.orig_rate = get_setting('usd_rate', 75.0)
         cls.port = 8895
         cls.httpd = ThreadedHTTPServer(('127.0.0.1', cls.port), PozitronRequestHandler)
         cls.server_thread = threading.Thread(target=cls.httpd.serve_forever, daemon=True)
@@ -48,14 +48,14 @@ class TestCurrencyAndAdminPanel(unittest.TestCase):
 
     def _get(self, path):
         url = f"http://127.0.0.1:{self.port}{path}"
-        req = urllib.request.Request(url)
+        req = urllib.request.Request(url, headers={'X-Admin-Key': ADMIN_API_KEY})
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status, json.loads(resp.read().decode('utf-8'))
 
     def _post(self, path, data):
         url = f"http://127.0.0.1:{self.port}{path}"
         payload = json.dumps(data).encode('utf-8')
-        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
+        req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json', 'X-Admin-Key': ADMIN_API_KEY}, method='POST')
         with urllib.request.urlopen(req, timeout=10) as resp:
             return resp.status, json.loads(resp.read().decode('utf-8'))
 
@@ -120,10 +120,13 @@ class TestCurrencyAndAdminPanel(unittest.TestCase):
         self.assertIn(code, (200, 201))
         self.assertTrue(res.get('success'))
 
-        # Verify retrieved settings
+        # Verify retrieved settings.
+        # bank_owner (a natural-person name) is intentionally withheld from the
+        # public settings payload for KVKK/payment-provider reasons; the business
+        # bank name and IBAN are what the checkout needs.
         code, settings = self._get('/api/settings')
         self.assertIn(code, (200, 201))
-        self.assertEqual(settings.get('bank_owner'), payload['bank_owner'])
+        self.assertEqual(settings.get('bank_owner'), '')
         self.assertEqual(settings.get('bank_iban'), payload['bank_iban'])
         self.assertEqual(settings.get('bank_name'), payload['bank_name'])
 
@@ -218,7 +221,7 @@ class TestCurrencyAndAdminPanel(unittest.TestCase):
                 html_content = hf.read()
 
             # Verify current price in PDP HTML matches products.json price_try
-            m_curr = re.search(r'<div class="pdp-price-current">([^<]+)</div>', html_content)
+            m_curr = re.search(r'<div class="pdp-price-current"[^>]*>([^<]+)</div>', html_content)
             self.assertIsNotNone(m_curr, f"pdp-price-current missing in {slug}.html")
             pdp_curr_text = m_curr.group(1).strip()
             self.assertTrue(pdp_curr_text.endswith('₺'), f"pdp-price-current format must end with ₺: {pdp_curr_text}")
@@ -227,7 +230,7 @@ class TestCurrencyAndAdminPanel(unittest.TestCase):
                                    msg=f"Price mismatch in {slug}: PDP={pdp_curr_val}, JSON={p['price_try']}")
 
             # Verify old price if discounted
-            m_old = re.search(r'<div class="pdp-price-old">([^<]+)</div>', html_content)
+            m_old = re.search(r'<div class="pdp-price-old"[^>]*>([^<]+)</div>', html_content)
             has_discount = bool(p.get('original_price_try') and float(p['original_price_try']) > float(p['price_try']))
             if has_discount:
                 self.assertIsNotNone(m_old, f"pdp-price-old missing in discounted product {slug}.html")

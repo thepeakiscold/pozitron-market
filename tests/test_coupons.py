@@ -247,7 +247,8 @@ class TestCouponEndpoints(unittest.TestCase):
         conn.close()
 
     def test_admin_create_and_list(self):
-        headers = {'X-Admin-Key': 'pzt_adm_sec_9941a87b32c'}
+        import server as _server
+        headers = {'X-Admin-Key': _server.ADMIN_API_KEY}
         code, data = self._post('/api/admin/coupons/create', {
             "code": "TSTADMIN1", "discount_type": "fixed", "discount_value": 300,
             "min_order_try": 3000, "valid_hours": 24, "description_tr": "test"

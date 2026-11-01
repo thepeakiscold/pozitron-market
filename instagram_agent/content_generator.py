@@ -560,16 +560,24 @@ ALL_POST_TYPES = [
     {"id": "tool_showcase", "name": "Atölye ve Araç Tanıtımı", "icon": "🔧", "desc": "Lehim istasyonları, duman önleyiciler ve araçlar"},
     {"id": "spot_guide", "name": "Uçuş Noktaları Rehberi", "icon": "📍", "desc": "Türkiye'deki güvenli ve popüler uçuş lokasyonları"},
     {"id": "review_highlight", "name": "Kullanıcı Yorumları & Değerlendirme", "icon": "⭐", "desc": "Gerçek pilot deneyimleri ve parça incelemeleri"},
+    {"id": "3d_print_studio", "name": "3D Baskı Studio & Özel İmalat", "icon": "🖨️", "desc": "Özel STL parça baskısı, kırılmaz TPU 95A GoPro/O3 mountları ve anında online sipariş"},
     {"id": "seo_article", "name": "Mühendislik & Teknik Rehber", "icon": "📘", "desc": "Derinlemesine motor dinamikleri ve elektronik makalesi"}
 ]
 
-# 8 Distinct Reels Formats (including toggleable Real FPV Video Reels)
+# 9 Distinct Reels Formats (including toggleable Real FPV Video Reels and 3D Print Studio)
 REELS_TYPES_METADATA = [
     {
         "id": "real_fpv_broll",
         "name": "Gerçek FPV Uçuş Videosu",
         "icon": "🎥",
         "desc": "Arka planda gerçek FPV uçuş b-roll çekimi ve üzerinde dinamik Pozitron bilgi katmanı",
+        "default_enabled": True
+    },
+    {
+        "id": "3d_print_showcase",
+        "name": "3D Baskı Studio & TPU Kırılmaz Parça",
+        "icon": "🖨️",
+        "desc": "STL yükleme, kırılmaz TPU 95A GoPro ve O3 mountları, darbe sönümleme ve online fiyat hesaplama",
         "default_enabled": True
     },
     {
@@ -634,13 +642,15 @@ REELS_TYPE_THEME_MAP = {
     'secret_spot': ['spot_guide'],
     'product_cinematic': ['product_spotlight'],
     'flash_deal': ['deal_drop'],
+    '3d_print_showcase': ['3d_print_studio', 'drone_build_showcase', 'tool_showcase'],
 }
 
 # --- Reels theme rotation (fixes the 100% product_spotlight problem) ---
 REELS_THEME_WEIGHTS = {
-    'community_quiz': 0.14,
-    'product_spotlight': 0.13,
-    'hardware_battle': 0.11,
+    '3d_print_studio': 0.15,
+    'community_quiz': 0.12,
+    'product_spotlight': 0.12,
+    'hardware_battle': 0.10,
     'pilot_tip': 0.10,
     'mistake_breakdown': 0.10,
     'drone_build_showcase': 0.09,
@@ -759,6 +769,16 @@ REELS_HOOKS = {
         "[FLAS FIRSAT] Stoklar sınırlı! Bu fiyata bir daha gelmez!",
         "[KAMPANYA] Haftanın en çok aranan FPV donanımında indirim!",
         "[STOK ALARMI] Tükenmeden yakala, aynı gün kargoda!"
+    ],
+    '3d_print_showcase': [
+        "[3D BASKI] Drone'u sert indirdin veya GoPro mount'un mu kırıldı?",
+        "[KIRILMAZ TPU] FPV parçalarında kırıma son! Esnek TPU 95A koruma!",
+        "[ONLINE SIPARIS] STL dosyanı saniyeler içinde yükle, anında fiyat al!"
+    ],
+    '3d_print_studio': [
+        "[3D STUDIO] Özel FPV parçalarını anında bastır!",
+        "[TPU 95A] Darbe emici kırılmaz kamera ve anten mountları!",
+        "[ONLINE HESAPLA] Gramaj ve fiyatı saniyeler içinde gör!"
     ]
 }
 
@@ -776,8 +796,10 @@ REELS_CTA = {
     'deal_drop': "Stoklar tükenmeden profildeki linki ziyaret et. Yoruma 'FIYAT' yaz, DM'den fiyat gönderelim.",
     'tool_showcase': "Aracı hemen dene: pozitronmarket.com/drone-toplama-sihirbazi",
     'review_highlight': "Sen de deneyimini paylaş. Binlerce pilot gibi sen de güvenle sipariş ver: pozitronmarket.com",
-    # 8 Reels Formats CTAs
+    '3d_print_studio': "Online 3D Baskı Studio'da STL dosyanı yükle, fiyatını hemen gör. Yoruma '3D' veya 'BASKI' yaz, %10 indirim kodunu DM'den gönderelim!",
+    # 9 Reels Formats CTAs
     'real_fpv_broll': "Bu hissi yaşamak istediğin arkadaşını etiketle! Hayalindeki FPV setup'ı topla: pozitronmarket.com",
+    '3d_print_showcase': "Dronun için kırılmaz TPU parça siparişi vermek için yoruma 'BASKI' veya '3D' yaz, %10 indirim kodun DM kutuna gelsin! pozitronmarket.com/3d-baski-studio",
     'freestyle_acro': "Senin en sevdiğin akro manevrası hangisi? Yoruma yaz! Dayanıklı freestyle parçaları: pozitronmarket.com",
     'hardware_vs': "Sen hangi tarafı seçerdin? Yoruma yaz! İkisini de incelemek için: pozitronmarket.com",
     'quick_tip_fix': "Bu taktiği kaydet, sahada çok lazım olacak. Pratik pilot aletleri: pozitronmarket.com",
@@ -833,6 +855,8 @@ REEL_COMBINATIONS = [
     {'id': 'reels_prod_neon',    'reels_type': 'product_cinematic','themes': ['product_spotlight'],     'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'bold'},
     {'id': 'reels_prod_stage',   'reels_type': 'product_cinematic','themes': ['product_spotlight'],     'style': 'clean_stage',    'video_mode': 'mode1', 'tone': 'listicle'},
     {'id': 'reels_deal_neon',    'reels_type': 'flash_deal',       'themes': ['deal_drop'],             'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'reels_3d_studio',    'reels_type': '3d_print_showcase', 'themes': ['3d_print_studio'],     'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'bold'},
+    {'id': 'reels_3d_workshop',  'reels_type': '3d_print_showcase', 'themes': ['3d_print_studio'],     'style': 'workshop_grit',  'video_mode': 'mode1', 'tone': 'listicle'},
 
     # Classic thematic rotation presets
     {'id': 'quiz_neon',          'reels_type': 'quick_tip_fix',    'themes': ['community_quiz'],        'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'question'},
@@ -962,6 +986,7 @@ class ContentGenerator:
         """
         valid_types = [
             'product_spotlight', 'drone_build_showcase', 'carousel_guide',
+            '3d_print_studio',
             'flight_weather_radar', 'pilot_tip', 'tool_showcase',
             'spot_guide', 'deal_drop', 'seo_article', 'review_highlight',
             'hardware_battle', 'mistake_breakdown', 'community_quiz',
@@ -1000,22 +1025,23 @@ class ContentGenerator:
 
             # Balanced PR & e-commerce diversity weights (16 distinct formats)
             type_weights = {
-                'product_spotlight': 0.13,
+                'product_spotlight': 0.12,
+                '3d_print_studio': 0.12,
                 'drone_build_showcase': 0.10,
-                'carousel_guide': 0.09,
-                'hardware_battle': 0.09,
+                'carousel_guide': 0.08,
+                'hardware_battle': 0.08,
                 'mistake_breakdown': 0.08,
-                'community_quiz': 0.09,
-                'flight_weather_radar': 0.07,
-                'pilot_tip': 0.07,
-                'myth_buster': 0.07,
+                'community_quiz': 0.08,
+                'flight_weather_radar': 0.06,
+                'pilot_tip': 0.06,
+                'myth_buster': 0.06,
                 'maintenance_checklist': 0.05,
                 'beginner_roadmap': 0.05,
                 'tool_showcase': 0.04,
                 'spot_guide': 0.04,
                 'seo_article': 0.03,
                 'review_highlight': 0.03,
-                'deal_drop': 0.03
+                'deal_drop': 0.02
             }
             weights = [type_weights.get(t, 0.05) for t in candidate_types]
             content_type = random.choices(candidate_types, weights=weights, k=1)[0]
@@ -1026,6 +1052,8 @@ class ContentGenerator:
             cur_type = explicit_type or content_type
             if cur_type == 'product_spotlight':
                 content = self._generate_product_spotlight(product_id)
+            elif cur_type == '3d_print_studio':
+                content = self._generate_3d_print_studio(product_id)
             elif cur_type == 'drone_build_showcase':
                 content = self._generate_drone_build_showcase(product_id)
             elif cur_type == 'carousel_guide':
@@ -1536,6 +1564,184 @@ Pozitron 5.8GHz Frekans Tablosu ile:
             'visual_summary': visual_summary,
             'product_data': prod if prod else None,
             'tool_info': tool_info
+        }
+
+    def _generate_3d_print_studio(self, product_id: str = None) -> dict:
+        """
+        Generates compelling, conversion-focused content highlighting Pozitron's
+        Online 3D Baskı Studio, flexible TPU 95A drone parts, and custom 3D printing orders.
+        """
+        recent_titles = set(get_recent_posted_titles(40))
+
+        themes = [
+            {
+                'id': 'tpu_gopro_mounts',
+                'title': '[3D BASKI] Kırılmaz TPU 95A GoPro & DJI O3 Kamera Mountları',
+                'caption': """[KORUMA] Drone'u sert indirdin veya beton duvara çarptın... Kameranın kasası mı çatladı?
+
+Pozitron 3D Baskı Studio ile kırıma son verin!
+• Darbe emici, esnek ve kopmayan endüstriyel TPU 95A filament
+• DJI O3 Air Unit, RunCam Thumb, GoPro Hero ve Action kameralar için özel açı ve kalıp
+• STL veya STEP dosyanızı siteye yükleyin, anında gramaj ve online fiyatını görün!
+• Pozitron Mavisi, Kırmızı, Sarı ve Siyah canlı renk seçenekleri ile aynı gün üretime geçsin.
+
+Kameranı riske atma, kırımdan önce koruma altına al!
+
+> STL modelini yükle, online fiyat al: pozitronmarket.com/3d-baski-studio
+Yoruma '3D' veya 'BASKI' yaz, ilk siparişine özel %10 indirim kodunu DM'den anında iletelim!""",
+                'hashtags': '#3dbaski #tpu95a #dronemount #gopromount #djio3 #fpvturkey #pozitronmarket #3dprinting #teknofest #droneparts',
+                'visual_summary': {
+                    'badge': '3D BASKI STUDIO',
+                    'headline': 'KIRILMAZ TPU MOUNT',
+                    'subhead': 'GoPro & DJI O3 İçin Darbe Koruması',
+                    'key_points': [
+                        "[KORUMA] TPU 95A Esnek Darbe Sönümleme Garantisi",
+                        "[HIZ] STL Dosyanı Yükle, Anında Online Fiyat Al",
+                        "[RENK] Pozitron Mavisi, Kırmızı, Sarı ve Siyah Seçenekleri"
+                    ],
+                    'cta': '> 3D BASKINI ANINDA SİPARİŞ ET'
+                }
+            },
+            {
+                'id': 'motor_arm_protectors',
+                'title': '[3D BASKI] Motor & Kol Ucu Darbe Sönümleyici TPU Koruma',
+                'caption': """[DARBE] Asfalta ve taşa çarpmalarda karbon kollar delamine olur, motor vidaları eğrilir!
+
+Kırılgan karbon kollarınızı ve pahalı motorlarınızı korumanın en hafif yolu:
+• Yüksek dayanımlı esnek TPU 95A motor koruma kılıfları ve kol ucu iniş takımları
+• Zemin sürtünmelerini ve darbe enerjisini kinetik olarak emer
+• Sadece birkaç gram ağırlıkla motor sargılarınızı toz, nem ve darbelerden korur!
+• STL dosyanı saniyeler içinde Pozitron 3D Studio'ya yükle, istediğin renkte bastır.
+
+> Özel parça bastır: pozitronmarket.com/3d-baski-studio
+Yoruma '3D' veya 'BASKI' yaz, anında STL yükleme linkini DM'den gönderelim!""",
+                'hashtags': '#3dbaski #tpu95a #kolkoruma #dronemotor #fpvkoruma #pozitronmarket #fpvturkey #teknofest #dronebuild',
+                'visual_summary': {
+                    'badge': '3D BASKI STUDIO',
+                    'headline': 'MOTOR KOL KORUMASI',
+                    'subhead': 'Karbon Delaminasyonunu & Kırımı Önle',
+                    'key_points': [
+                        "[DAYANIKLILIK] Sert İnişlerde Motor Sargılarını ve Vidaları Koru",
+                        "[HAFİFLİK] Aerodinamik ve Gramaj Optimizasyonlu Tasarım",
+                        "[ÜRETİM] Aynı Gün Özel Üretim ve Hızlı Kargo"
+                    ],
+                    'cta': '> KOL KORUMANI HEMEN BASTIR'
+                }
+            },
+            {
+                'id': 'online_stl_upload_quote',
+                'title': '[3D STUDIO] STL Dosyanı Yükle, Gramaj ve Fiyatı Anında Gör',
+                'caption': """[ONLINE 3D BASKI] "Özel drone parçası bastıracağım ama fiyatı ne kadar tutar?" diye günlerce teklif beklemeye son!
+
+Pozitron 3D Baskı Studio'da her şey şeffaf ve anında:
+1. STL veya STEP 3D tasarım dosyanı sisteme yükle
+2. Malzemeni seç: Kırılmaz esnek TPU 95A, mukavemetli PETG veya rijit PLA+
+3. Gramaj, üretim süresi ve online fiyatı saniyeler içinde ekranda gör!
+4. Siparişini ver, atölyemiz aynı gün üretime başlasın.
+
+> Saniyeler içinde online fiyat al: pozitronmarket.com/3d-baski-studio
+Yoruma '3D' veya 'BASKI' yaz, %10 özel indirim kuponunu DM kutuna bırakalım!""",
+                'hashtags': '#3dbaski #3dyazici #3dprintingturkey #tpu95a #stlbaski #pozitronmarket #teknofestiha #robotik #makersofturkey',
+                'visual_summary': {
+                    'badge': 'ONLINE 3D HESAPLAMA',
+                    'headline': 'ANINDA STL BASKI FİYATI',
+                    'subhead': 'Dosyanı Yükle, Saniyeler İçinde Sipariş Ver',
+                    'key_points': [
+                        "[ONLINE] STL & STEP Dosyası Yükleme ve 3D Önizleme",
+                        "[ŞEFFAF] Otomatik Gramaj ve Anında Net Fiyatlandırma",
+                        "[KALİTE] Profesyonel Endüstriyel 3D Baskı Kalitesi"
+                    ],
+                    'cta': '> STL YÜKLE, ANINDA FİYAT GÖR'
+                }
+            },
+            {
+                'id': 'antenna_gps_tpu',
+                'title': '[3D BASKI] Immortal-T Anten & M10 GPS Montaj Yuvaları',
+                'caption': """[SINYAL] Pervaneye temas edip kesilen anten kablolarına ve kaybolan GPS kilitlerine elveda!
+
+Pozitron 3D Baskı Studio'da üretilen özel anten ve GPS yuvaları ile:
+• Immortal-T ve T-Antenleri pervanelerden tamamen izole ederek kopmayı kesinlikle engeller
+• GPS modülünü titreşimsiz ve doğru açıyla sabitleyerek uydu kilitlenme süresini yarıya indirir
+• Kırılmaz esnek TPU 95A yapısıyla en sert kaza ve taklalarda bile yerinden oynamaz!
+• İstediğin açıda ve canlı renklerde hemen sipariş ver.
+
+> Hemen sipariş ver: pozitronmarket.com/3d-baski-studio
+Yoruma '3D' yaz, doğrudan linki ve %10 indirim kodunu DM'den iletelim!""",
+                'hashtags': '#3dbaski #tpu95a #antentutucu #gpsmount #elrs #tbsunify #pozitronmarket #fpvturkey #teknofest',
+                'visual_summary': {
+                    'badge': '3D BASKI STUDIO',
+                    'headline': 'ANTEN & GPS MOUNT',
+                    'subhead': 'Pervane Temasını Kes, Kesintisiz Sinyal Al',
+                    'key_points': [
+                        "[GÜVENLİK] Antenin Pervaneye Çarpıp Kopmasını Kesinlikle Önle",
+                        "[GPS] Titreşimsiz Konumlandırma ile Hızlı Uydu Kilidi",
+                        "[POZİTRON] İstediğin Açı ve Renkte Anında Özel İmalat"
+                    ],
+                    'cta': '> ANTEN MOUNTUNU SİPARİŞ VER'
+                }
+            },
+            {
+                'id': 'teknofest_custom_prototypes',
+                'title': '[3D BASKI] Teknofest & Robotik Takımlarına Özel İmalat',
+                'caption': """[TEKNOFEST] İHA, SİHA ve Robotik yarışmalarında hafif, dayanıklı ve hassas prototipler şart!
+
+Pozitron 3D Baskı Studio yarışma takımlarının yanında:
+• TPU 95A darbe sönümleyiciler, PETG mekanik gövde parçaları ve PLA+ prototip baskıları
+• Yüksek doluluk oranı ve katman yapışması ile yarışma şartlarına tam uyum
+• Toplu takım siparişlerinde hızlı üretim ve öncelikli kargo imkanı!
+• 3D STL modelini yükle, anında fiyat hesapla.
+
+> Takımına özel sipariş ver: pozitronmarket.com/3d-baski-studio
+Yoruma '3D' veya 'TAKIM' yaz, takımınıza özel %10 indirim kodunu DM'den gönderelim!""",
+                'hashtags': '#teknofest #teknofestiha #3dbaski #tpu95a #robotik #3dprintingturkey #prototip #pozitronmarket #droneturkey',
+                'visual_summary': {
+                    'badge': 'TEKNOFEST & AR-GE',
+                    'headline': 'ROBOTİK & İHA BASKI',
+                    'subhead': 'Hafif, Mukavemetli ve Hassas Prototip Üretimi',
+                    'key_points': [
+                        "[MUKAVEMET] Yüksek Doluluk ve Dayanıklı PETG/TPU Malzeme",
+                        "[AR-GE] Takımlara Özel Hızlı Üretim ve Teknik Destek",
+                        "[AVANTAJ] Online Siparişte %10 Takım İndirimi: STUDIO3D"
+                    ],
+                    'cta': '> TAKIM PARÇALARINI BASTIR'
+                }
+            }
+        ]
+
+        eligible = [t for t in themes if t['title'] not in recent_titles]
+        if not eligible:
+            eligible = themes
+        selected = random.choice(eligible)
+
+        title = selected['title']
+        caption = selected['caption']
+        hashtags = selected['hashtags']
+        visual_summary = selected['visual_summary']
+
+        if self._llm_available():
+            ai_data = self._call_gemini_post_and_summary('3d_print_studio', {
+                'theme_title': title, 'caption_draft': caption, 'visual_summary': visual_summary
+            })
+            if ai_data:
+                caption = ai_data.get('caption', caption)
+                hashtags = ai_data.get('hashtags', hashtags)
+                title = ai_data.get('title', title)
+                if ai_data.get('visual_summary'):
+                    visual_summary = ai_data['visual_summary']
+
+        prod = self._get_candidate_product(product_id) if product_id else None
+        return {
+            'content_type': '3d_print_studio',
+            'product_id': prod.get('id') if prod else None,
+            'title': title,
+            'caption': caption.strip(),
+            'hashtags': hashtags,
+            'visual_summary': visual_summary,
+            'product_data': prod if prod else None,
+            'tool_info': {
+                'tool_name': '3d_print_studio',
+                'url': 'https://pozitronmarket.com/3d-baski-studio'
+            }
         }
 
     def _generate_deal_drop(self, product_id: str = None) -> dict:
@@ -2724,6 +2930,7 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
         base_tags = content.get('hashtags', '') or ''
         content['hashtags'] = f"{base_tags} {REELS_EXTRA_TAGS}".strip()
         content = humanize_content(content)
+        content['voiceover_text'] = self.generate_reels_voiceover_script(content)
 
         self._session_recent_combo_ids.append(combo['id'])
         if len(self._session_recent_combo_ids) > 20:
@@ -2777,7 +2984,8 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
             'secret_spot': f"Sweeping cinematic aerial reveal flying low over a rugged hidden canyon and abandoned industrial structure, golden-hour volumetric mist, {style}",
             'product_cinematic': f"Ultra-detailed 360-degree turntable shot of {prod_name}, macro view of brushless copper stator windings and carbon fiber frame, {style}",
             'flash_deal': f"Futuristic neon-lit retail vitrine, glowing digital price tag and hologram discount aura around {prod_name}, cyber aesthetic, {style}",
-            'real_fpv_broll': f"Authentic first-person-view drone camera flight racing fast across scenic terrain, smooth brushless stabilization, {style}"
+            'real_fpv_broll': f"Authentic first-person-view drone camera flight racing fast across scenic terrain, smooth brushless stabilization, {style}",
+            '3d_print_showcase': f"Cinematic macro shot of a precision 3D printer nozzle extruding vibrant neon flexible TPU filament layer by layer, creating an aerodynamic drone camera mount, futuristic maker studio with blue and pink volumetric lighting, {style}"
         }
         reels_prompt_direction = reels_type_prompts.get(reels_type, f"Cinematic vertical 9:16 FPV video about {prod_name}, {style}")
 
@@ -2840,6 +3048,104 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
             "Continuous unbroken single shot, photorealistic 8K, cinematic volumetric lighting, "
             "no text, no watermark, no overlays."
         )
+
+    def generate_reels_voiceover_script(self, post_data: dict) -> str:
+        """
+        Generates a natural, conversational, punchy Turkish voiceover script
+        for Instagram Reels, specifically optimized for VoxCPM2 realistic female speech.
+        Length is tuned to 25-45 words (~10-15s spoken duration).
+        """
+        reels_type = post_data.get('reels_type') or post_data.get('content_type') or 'product_spotlight'
+        prod = post_data.get('product_data') or {}
+        prod_name = prod.get('name_tr') or prod.get('name') or post_data.get('title', 'FPV Donanımı')
+        # Clean brand and product name for natural speech
+        prod_name = re.sub(r'\[[^\]]*\]', '', prod_name).strip()
+        price_val = prod.get('price_try')
+        price_text = f"{int(float(price_val))} Türk Lirası" if price_val else "avantajlı fiyatlarla"
+
+        visual = post_data.get('visual_summary') or {}
+        key_points = visual.get('key_points') or []
+        highlight = key_points[0] if key_points else "üstün performansı ve yüksek dayanıklılığı"
+
+        # 1. Try LLM generation if available
+        try:
+            from llm_client import get_llm
+            llm = get_llm()
+            if llm.is_configured():
+                sys_prompt = (
+                    "Sen Pozitron Market için Instagram Reels videolarını seslendiren genç, dinamik, "
+                    "samimi ve profesyonel bir kadın sunucususun. "
+                    "Verilen ürün ve tema için konuşma dilinde, kulağa son derece doğal gelen, "
+                    "25-35 kelimelik akıcı bir Türkçe seslendirme metni yaz. "
+                    "Kural: Markdown, hashtag, emoji, link veya köşeli parantez KULLANMA. "
+                    "Metin doğrudan seslendirilecektir."
+                )
+                usr_prompt = (
+                    f"Reels Türü: {reels_type}\n"
+                    f"Ürün / Konu: {prod_name}\n"
+                    f"Fiyat: {price_text}\n"
+                    f"Öne Çıkan Özellik: {highlight}\n"
+                    f"Başlık: {post_data.get('title', '')}"
+                )
+                llm_out = llm.generate_text(f"{sys_prompt}\n\n{usr_prompt}", max_tokens=200, temperature=0.7)
+                if llm_out and len(llm_out.strip()) > 25:
+                    from .voxcpm_tts import clean_text_for_speech
+                    cleaned = clean_text_for_speech(llm_out.strip())
+                    if len(cleaned) > 20:
+                        return cleaned
+        except Exception:
+            pass
+
+        # 2. Expert rule-based scripts per Reels format
+        scripts = {
+            'product_cinematic': (
+                f"Pozitron Market'ten günün FPV fırsatı! {prod_name}, {highlight} ile şimdi {price_text}. "
+                "Detayları incelemek ve sipariş vermek için profildeki linke tıklayın veya yoruma kupon yazın."
+            ),
+            'freestyle_acro': (
+                f"Akrobasi ve hız tutkunları buraya! {prod_name} ile gap ve dive hissini zirvede yaşayın. "
+                "Maksimum çeviklik ve dayanıklılık sunan en yeni drone donanımları Pozitron'da."
+            ),
+            'quick_tip_fix': (
+                f"FPV pilotlarının mutlaka bilmesi gereken altın ipucu! Lehimleme ve motor montajında {highlight} adımı "
+                "uçuş sürenizi doğrudan artırır. Daha fazla pratik bilgi için takip etmeyi unutmayın."
+            ),
+            'mistake_warning': (
+                "Yeni başlayanların en sık yaptığı bu hataya asla düşmeyin! Duman önleyici kullanmadan pili takmak "
+                "bütün elektronik kartı yakabilir. Güvenli uçuş için aradığınız tüm koruma ekipmanları Pozitron Market'te."
+            ),
+            'secret_spot': (
+                "Türkiye'nin en büyüleyici FPV rotalarından birindeyiz! Kanyon geçişlerinde kesintisiz video sinyali ve "
+                "güçlü menzil için doğru donanım seçimi şart. Rotanın detayları için bizi takip edin."
+            ),
+            'hardware_vs': (
+                f"İki güçlü donanım karşı karşıya! {prod_name} ile ağırlık ve güç dengesini karşılaştırıyoruz. "
+                "Tarzınıza en uygun parçalar ve güncel fiyatlar Pozitron Market'te."
+            ),
+            'flash_deal': (
+                f"Flaş indirim alarmı! Pozitron Market'te sınırlı stok fırsatı başladı. {prod_name} şimdi {price_text}. "
+                "İndirim kodunu anında almak için yoruma kupon yazın."
+            ),
+            'real_fpv_broll': (
+                f"Gerçek FPV uçuş heyecanı Pozitron ile başlıyor! {prod_name} ile kusursuz stabilite ve akıcı kontrol. "
+                "Kendi dronunuzu toplamak için pozitron market nokta com'u ziyaret edin."
+            ),
+            '3d_print_showcase': (
+                "Dronunuz için kırılmaz özel parçalar mı lazım? Pozitron 3D Baskı Studio devrede! "
+                "GoPro ve O3 mountları, kol korumaları için esnek ve kırılmaz TPU 95A ile anında online fiyat hesaplayın. "
+                "STL dosyanızı yükleyin, aynı gün kargoya verelim. İndirim kuponu için yoruma baskı yazın!"
+            ),
+            '3d_print_studio': (
+                "Dronunuz için kırılmaz özel parçalar mı lazım? Pozitron 3D Baskı Studio devrede! "
+                "GoPro ve O3 mountları, kol korumaları için esnek ve kırılmaz TPU 95A ile anında online fiyat hesaplayın. "
+                "STL dosyanızı yükleyin, aynı gün kargoya verelim. İndirim kuponu için yoruma baskı yazın!"
+            ),
+        }
+
+        chosen_script = scripts.get(reels_type) or scripts['product_cinematic']
+        from .voxcpm_tts import clean_text_for_speech
+        return clean_text_for_speech(chosen_script)
+
 
 
 

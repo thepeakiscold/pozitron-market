@@ -162,21 +162,25 @@ class ProductMediaInspectorAgent:
 
                 # 3. Perceptual / File Hash ile mükerrer görsel tespiti
                 if status == "VERIFIED":
-                    try:
-                        with open(img_path, "rb") as f_img:
-                            f_hash = hashlib.md5(f_img.read()).hexdigest()
-                            if f_hash in hash_to_products:
-                                other_sku = hash_to_products[f_hash][0]
-                                status = "DUPLICATE"
-                                issue_type = "DUPLICATE_IMAGE_HASH"
-                                conf_score = 0.60
-                                duplicate_count += 1
-                                details["duplicate_with_sku"] = other_sku
-                                hash_to_products[f_hash].append(sku)
-                            else:
-                                hash_to_products[f_hash] = [sku]
-                    except Exception:
+                    if f"{sku}.jpg" in img_rel:
+                        # Ürünün kendi özel SKU dosyası varsa doğrulanmış kabul edilir
                         pass
+                    else:
+                        try:
+                            with open(img_path, "rb") as f_img:
+                                f_hash = hashlib.md5(f_img.read()).hexdigest()
+                                if f_hash in hash_to_products:
+                                    other_sku = hash_to_products[f_hash][0]
+                                    status = "DUPLICATE"
+                                    issue_type = "DUPLICATE_IMAGE_HASH"
+                                    conf_score = 0.60
+                                    duplicate_count += 1
+                                    details["duplicate_with_sku"] = other_sku
+                                    hash_to_products[f_hash].append(sku)
+                                else:
+                                    hash_to_products[f_hash] = [sku]
+                        except Exception:
+                            pass
 
                 # 4. Semantik İsim / Kategori Çelişki Denetimi
                 if status == "VERIFIED":
@@ -333,6 +337,10 @@ class ProductMediaInspectorAgent:
             p_id = row["product_id"]
             p_sku = row["sku"]
             suggested_url = row["suggested_image_url"]
+
+            sku_real_path = os.path.join(BASE_DIR, "assets", "products", f"{p_sku}.jpg")
+            if os.path.exists(sku_real_path):
+                suggested_url = f"./assets/products/{p_sku}.jpg"
 
             if not dry_run and suggested_url:
                 c.execute("UPDATE products SET image_url = ? WHERE id = ?", (suggested_url, p_id))

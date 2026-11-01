@@ -818,8 +818,7 @@ class TechnicalSeoAgent:
             exist_keywords = normalize_topic_keywords(f"{art.get('title', '')} {exist_focus}")
             if candidate_keywords and exist_keywords:
                 overlap = candidate_keywords.intersection(exist_keywords)
-                total_min = min(len(candidate_keywords), len(exist_keywords))
-                if total_min >= 2 and len(overlap) >= 2 and (len(overlap) / total_min) >= 0.70:
+                if len(candidate_keywords) >= 4 and len(overlap) >= 4 and (len(overlap) / len(candidate_keywords)) >= 0.85:
                     return True
 
         return False
@@ -1300,11 +1299,14 @@ Bu rehberde bahsi geçen sistemlerle %100 uyumlu, orijinal ve Türkiye stokları
             "published_at": datetime.now().isoformat()
         }
 
-    def get_articles(self, limit: int = 50) -> List[Dict]:
+    def get_articles(self, limit: Optional[int] = None) -> List[Dict]:
         """Fetches stored SEO guides with proper decoding."""
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC LIMIT ?", (limit,))
+        if limit is not None:
+            cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC LIMIT ?", (limit,))
+        else:
+            cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC")
         rows = cursor.fetchall()
         conn.close()
 
@@ -1312,7 +1314,10 @@ Bu rehberde bahsi geçen sistemlerle %100 uyumlu, orijinal ve Türkiye stokları
             self.generate_article()
             conn = get_db()
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC LIMIT ?", (limit,))
+            if limit is not None:
+                cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC LIMIT ?", (limit,))
+            else:
+                cursor.execute("SELECT * FROM seo_articles ORDER BY id DESC")
             rows = cursor.fetchall()
             conn.close()
 

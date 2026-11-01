@@ -78,7 +78,7 @@ def export_static_data():
     settings['bank_owner'] = ''  # Account holder names are not public.
 
     if 'usd_rate' not in settings:
-        settings['usd_rate'] = 50.0
+        settings['usd_rate'] = 75.00
 
     conn.close()
 
@@ -118,7 +118,7 @@ def export_static_data():
         "reviews": reviews,
         "seo_articles": seo_articles[:10],
         "settings": settings,
-        "usd_rate": settings.get("usd_rate", 50.0)
+        "usd_rate": settings.get("usd_rate", 75.00)
     }
 
     with open(os.path.join(OUTPUT_DIR, "pozitron_data.js"), "w", encoding="utf-8") as f:

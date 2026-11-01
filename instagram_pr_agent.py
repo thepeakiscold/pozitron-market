@@ -105,6 +105,42 @@ def cmd_daemon(agent: InstagramPRAgent):
         print("\n[BILGI] Kapatiliyor...")
         scheduler.stop()
 
+def cmd_reel(agent: InstagramPRAgent, reels_type: str = None, product_id: str = None):
+    print("\n[BILGI] Yeni Instagram REELS videosu ve VoxCPM2 Gerçekçi Kadın Sesi seslendirmesi üretiliyor...")
+    res = agent.generate_reel_post(reels_type=reels_type)
+    post = res.get('post') or {}
+    video_engine = res.get('video_engine') or post.get('video_engine')
+    if video_engine and video_engine != 'unknown':
+        print("\n" + "=" * 68)
+        print("  REELS VE GERÇEKÇİ KADIN SESLENDİRMESİ BAŞARIYLA ÜRETİLDİ!")
+        print("=" * 68)
+        print(f"[-] Gönderi ID:        {post.get('id')}")
+        print(f"[-] Reels Formatı:     {post.get('reels_type')}")
+        print(f"[-] Video Motoru:      {video_engine}")
+        print(f"[-] Video Dosyası:     {post.get('video_url')}")
+        print(f"[-] Video Süresi:      {post.get('video_duration', 0.0)} saniye")
+        print(f"[-] Seslendirme Motoru:{post.get('voiceover_engine') or 'VoxCPM2 (Doğal Türkçe Kadın Sesi)'}")
+        print(f"[-] Ses Dosyası:       {post.get('voiceover_path')}")
+        print(f"[-] Seslendirme Metni: \"{post.get('voiceover_text')}\"")
+        print("-" * 68)
+        print(f"[-] BAŞLIK: {post.get('title')}")
+        print("-" * 68)
+    else:
+        print(f"\n[HATA] Reels üretilemedi: {res.get('error')}")
+
+def cmd_test_tts(text: str = None):
+    from instagram_agent.voxcpm_tts import VoxCPMTTS
+    test_text = text or "Pozitron Market'ten günün FPV fırsatı! En iyi drone parçaları şimdi stokta. Detaylar profildeki linkte."
+    print(f"\n[BILGI] VoxCPM2 Türkçe Gerçekçi Kadın Sesi Test Ediliyor...")
+    print(f"[-] Metin: \"{test_text}\"")
+    tts = VoxCPMTTS()
+    out_wav = "/tmp/voxcpm2_female_voice_test.wav"
+    ok = tts.synthesize(test_text, out_wav)
+    if ok and os.path.exists(out_wav):
+        print(f"[BASARILI] Seslendirme oluşturuldu: {out_wav} ({os.path.getsize(out_wav)} bayt)")
+    else:
+        print("[HATA] Seslendirme oluşturulamadı.")
+
 def cmd_direct_publish(agent: InstagramPRAgent, content_type: str = None, product_id: str = None):
     print("[BILGI] Yeni Instagram gonderisi ve 1080x1080 afis uretilip dogrudan yayina aktariliyor...")
     res = agent.generate_and_publish_now(content_type=content_type, product_id=product_id)
@@ -124,11 +160,12 @@ def cmd_direct_publish(agent: InstagramPRAgent, content_type: str = None, produc
         else:
             sys.exit(1)
 
-def cmd_engage():
+def cmd_engage(focus_3d: bool = False):
     from instagram_agent.engagement import InstagramEngagementEngine
-    print("[BILGI] Drone Toplulugu Etkilesim Motoru Baslatiliyor (Hedef: 10 Takip, 10 Yorum & 10 Begeni)...")
+    target_desc = "3D Baskı, TPU ve Maker Toplulukları" if focus_3d else "Drone Toplulugu"
+    print(f"[BILGI] {target_desc} Etkilesim Motoru Baslatiliyor (Hedef: 10 Takip, 10 Yorum & 10 Begeni)...")
     engine = InstagramEngagementEngine()
-    res = engine.run_daily_drone_engagement(target_count=10)
+    res = engine.run_daily_drone_engagement(target_count=10, focus_3d=focus_3d)
     print("\n" + "=" * 60)
     print("ETKİLESİM RAPORU:")
     print(f"[-] Yeni Takip Edilen Pilot: +{res.get('new_follows', 0)} (Bugun Toplam: {res.get('today_follows', 0)}/10)")
@@ -215,8 +252,13 @@ def cmd_export_cookies():
 def main():
     parser = argparse.ArgumentParser(description="Pozitron Market Autonomous Instagram PR Agent CLI")
     parser.add_argument('--status', action='store_true', help="Ajan durumunu ve ayarlarini gosterir")
+    parser.add_argument('--reel', action='store_true', help="VoxCPM2 Gerçekçi Kadın Sesi ile videolu Reels üretir ve yayınlar")
+    parser.add_argument('--reels-type', type=str, choices=['product_cinematic', 'freestyle_acro', 'quick_tip_fix', 'mistake_warning', 'secret_spot', 'hardware_vs', 'flash_deal', 'real_fpv_broll', '3d_print_showcase'], help="Reels video formati")
+    parser.add_argument('--test-tts', action='store_true', help="VoxCPM2 Gerçekçi Kadın Sesi ile seslendirme test eder")
+    parser.add_argument('--tts-text', type=str, help="Seslendirme testi icin ozel metin")
     parser.add_argument('--direct-publish', action='store_true', help="Taslaksiz: Tek adimda gonderi uretip canli yayinlar")
     parser.add_argument('--engage', action='store_true', help="Drone meraklisi pilotlari takip eder ve destek yorumu atar (Gunde 10)")
+    parser.add_argument('--engage-3d', action='store_true', help="3D baskı, TPU parça ve maker topluluklarına özel takip ve sipariş dönüşümlü yorum atar")
     parser.add_argument('--auto', action='store_true', help="Belirtilen aralik geldiyse direkt paylasir + drone etkilesimi yapar")
     parser.add_argument('--force', action='store_true', help="Araligi beklemeden --auto modunu hemen tetikler")
     parser.add_argument('--set-freq', type=int, help="Paylasim sikligini saat olarak ayarlar (or: 3, 6, 12, 24)")
@@ -225,7 +267,7 @@ def main():
     parser.add_argument('--auto-cycle', action='store_true', help="Tek adimda gorsel ve icerik uretip paylasir ve etkilesime gecer")
     parser.add_argument('--export-cookies', action='store_true', help="GitHub Actions Secrets icin Instagram oturum cerezlerini JSON olarak disa aktarir")
     parser.add_argument('--id', type=str, help="Yayinlanacak gonderi ID'si")
-    parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight', 'drone_build_showcase', 'carousel_guide', 'flight_weather_radar', 'spot_guide', 'seo_article', 'hardware_battle', 'mistake_breakdown', 'community_quiz', 'myth_buster', 'maintenance_checklist', 'beginner_roadmap'], help="Icerik sutunu/tipi")
+    parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight', 'drone_build_showcase', 'carousel_guide', 'flight_weather_radar', 'spot_guide', 'seo_article', 'hardware_battle', 'mistake_breakdown', 'community_quiz', 'myth_buster', 'maintenance_checklist', 'beginner_roadmap', '3d_print_studio'], help="Icerik sutunu/tipi")
     parser.add_argument('--product', type=str, help="One cikarilacak urun ID'si veya slug")
     parser.add_argument('--list', action='store_true', help="Kayitli yayinlanan gonderileri listeler")
     parser.add_argument('--limit', type=int, default=15, help="Listelenecek gonderi sayisi")
@@ -240,10 +282,16 @@ def main():
         print(f"[BASARILI] Paylasim sikligi guncellendi: Her {args.set_freq} saatte bir")
     elif args.status:
         cmd_status(agent)
+    elif args.test_tts:
+        cmd_test_tts(args.tts_text)
+    elif args.reel:
+        cmd_reel(agent, reels_type=args.reels_type, product_id=args.product)
     elif args.direct_publish or args.generate or args.publish:
         cmd_direct_publish(agent, content_type=args.type, product_id=args.product)
+    elif args.engage_3d:
+        cmd_engage(focus_3d=True)
     elif args.engage:
-        cmd_engage()
+        cmd_engage(focus_3d=False)
     elif args.auto:
         cmd_auto(agent, force=args.force)
     elif args.auto_cycle:

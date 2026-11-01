@@ -12,6 +12,7 @@ import random
 import time
 import math
 import base64
+import secrets
 import threading
 import hmac
 import hashlib
@@ -21,7 +22,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formatdate, make_msgid
 from database import (
-    get_db, init_db, hash_password, get_setting, set_setting, get_all_settings,
+    get_db, init_db, hash_password, verify_password, get_setting, set_setting, get_all_settings,
     is_subagent_enabled, set_subagent_enabled, get_all_subagents_config
 )
 from seed_data import seed_database
@@ -33,8 +34,54 @@ import iyzico_checkout
 # ==============================================================================
 # Cyber Security Controls & Cryptographic Authentication
 # ==============================================================================
-SECRET_KEY = os.environ.get('SECRET_KEY', 'pozitron_secret_prod_key_7792_fpv_market')
-ADMIN_API_KEY = os.environ.get('ADMIN_API_KEY', 'pzt_adm_sec_9941a87b32c')
+# Secrets MUST come from the environment. When absent (first local run), a strong
+# random value is generated once and persisted outside version control so that
+# restarts do not silently invalidate every session. Never ship a fixed default.
+_SECRETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', '.runtime_secrets.json')
+
+
+def _load_runtime_secrets():
+    try:
+        with open(_SECRETS_FILE, 'r', encoding='utf-8') as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _resolve_secret(env_name: str, file_key: str, min_len: int = 32) -> str:
+    value = (os.environ.get(env_name) or '').strip()
+    if len(value) >= min_len:
+        return value
+    store = _load_runtime_secrets()
+    existing = (store.get(file_key) or '').strip()
+    if len(existing) >= min_len:
+        return existing
+    generated = secrets.token_urlsafe(48)
+    store[file_key] = generated
+    try:
+        os.makedirs(os.path.dirname(_SECRETS_FILE), exist_ok=True)
+        fd = os.open(_SECRETS_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'w', encoding='utf-8') as fh:
+            json.dump(store, fh)
+        print(f"[SECURITY] {env_name} was not provided; generated and stored in data/.runtime_secrets.json (0600).")
+    except Exception as exc:
+        print(f"[SECURITY] Could not persist {env_name}: {exc}. Sessions will reset on restart.")
+    return generated
+
+
+SECRET_KEY = _resolve_secret('SECRET_KEY', 'secret_key')
+ADMIN_API_KEY = _resolve_secret('ADMIN_API_KEY', 'admin_api_key')
+
+# Authorised shop operators. Kept server-side; the client no longer receives it.
+ADMIN_EMAILS = (
+    'thepeakiscold@gmail.com',
+    'furkaniusprimes@gmail.com',
+    'eyupfurkanpekoz@gmail.com',
+    'pekozfurkan@gmail.com',
+    'pozitronmarket@gmail.com',
+    'ahmet@pozitron.market',
+)
 
 BLOCKED_STATIC_EXTENSIONS = {
     '.db', '.sqlite', '.sqlite3', '.py', '.pyc', '.env', '.yaml', '.yml',
@@ -56,30 +103,274 @@ BLOCKED_SENSITIVE_FILES = {
 
 ALLOWED_UPLOAD_EXTENSIONS = {'.step', '.stp', '.stl', '.obj', '.3mf', '.png', '.jpg', '.jpeg', '.webp'}
 MAX_UPLOAD_SIZE = 30 * 1024 * 1024  # 30 MB
+MAX_JSON_BODY_SIZE = 1 * 1024 * 1024  # 1 MB for every non-upload JSON endpoint
+MAX_TELEMETRY_BODY_SIZE = 64 * 1024  # 64 KB
+
+
+def _send_transactional_email(to_email: str, subject: str, text_content: str) -> bool:
+    """Minimal HTML+text mailer used for stock alerts (same transports as auth mail)."""
+    html_content = (
+        '<!DOCTYPE html><html><head><meta charset="utf-8"></head>'
+        '<body style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f1f5f9;padding:24px;">'
+        '<div style="max-width:540px;margin:0 auto;background:#fff;border-radius:12px;padding:28px;border:1px solid #e2e8f0;">'
+        '<h1 style="font-size:20px;color:#0284c7;margin:0 0 16px;">Pozitron Market</h1>'
+        f'<div style="font-size:14px;color:#334155;line-height:1.6;white-space:pre-line;">{html.escape(text_content)}</div>'
+        '</div></body></html>'
+    )
+    resend_key = (os.environ.get('RESEND_API_KEY') or '').strip()
+    if resend_key:
+        try:
+            payload = json.dumps({
+                "from": os.environ.get('RESEND_FROM', 'Pozitron Market <onboarding@resend.dev>'),
+                "to": [to_email], "subject": subject, "html": html_content,
+            }).encode('utf-8')
+            req = urllib.request.Request(
+                'https://api.resend.com/emails', data=payload, method='POST',
+                headers={'Authorization': f'Bearer {resend_key}', 'Content-Type': 'application/json'},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if 200 <= resp.status < 300:
+                    return True
+        except Exception as exc:
+            print(f"[MAIL] Resend failed: {exc}")
+    brevo_key = (os.environ.get('BREVO_API_KEY') or '').strip()
+    if brevo_key:
+        try:
+            payload = json.dumps({
+                "sender": {"name": "Pozitron Market", "email": os.environ.get('SMTP_USER', 'noreply@pozitronmarkets.com')},
+                "to": [{"email": to_email}], "subject": subject, "htmlContent": html_content,
+            }).encode('utf-8')
+            req = urllib.request.Request(
+                'https://api.brevo.com/v3/smtp/email', data=payload, method='POST',
+                headers={'api-key': brevo_key, 'Content-Type': 'application/json'},
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if 200 <= resp.status < 300:
+                    return True
+        except Exception as exc:
+            print(f"[MAIL] Brevo failed: {exc}")
+    smtp_user = (os.environ.get('SMTP_USER') or '').strip()
+    smtp_password = (os.environ.get('SMTP_PASSWORD') or '').strip().replace(' ', '')
+    if smtp_user and smtp_password:
+        try:
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = subject
+            msg['From'] = os.environ.get('SMTP_FROM', f"Pozitron Market <{smtp_user}>")
+            msg['To'] = to_email
+            msg['Date'] = formatdate(localtime=True)
+            msg['Message-ID'] = make_msgid(domain='pozitronmarket.com')
+            msg['Auto-Submitted'] = 'auto-generated'
+            msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+            msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+            with smtplib.SMTP(os.environ.get('SMTP_HOST', 'smtp.gmail.com'),
+                              int(os.environ.get('SMTP_PORT', 587)), timeout=15) as server_conn:
+                server_conn.ehlo()
+                server_conn.starttls()
+                server_conn.ehlo()
+                server_conn.login(smtp_user, smtp_password)
+                server_conn.send_message(msg)
+            return True
+        except Exception as exc:
+            print(f"[MAIL] SMTP failed: {exc}")
+    return False
+
+
+def notify_stock_alerts(product_ref):
+    """Email every active subscriber once when a product comes back in stock.
+
+    The PDP promises "we will notify you"; before this existed the rows were
+    written to stock_alerts and then never used.
+    """
+    conn = None
+    try:
+        conn = get_db()
+        row = conn.execute(
+            "SELECT id, name_tr, name_en, slug, stock FROM products WHERE id = ? OR slug = ?",
+            (product_ref, product_ref),
+        ).fetchone()
+        if not row or int(row['stock'] or 0) <= 0:
+            return 0
+        product = dict(row)
+        pending = conn.execute(
+            "SELECT id, email FROM stock_alerts WHERE product_id = ? AND status = 'active'",
+            (product['id'],),
+        ).fetchall()
+        if not pending:
+            return 0
+
+        site = 'https://pozitronmarket.com'
+        url = f"{site}/products/{product['slug']}"
+        name = product['name_tr'] or product['name_en']
+        sent = 0
+        for sub in pending:
+            subject = f"[Pozitron Market] {name} yeniden stokta"
+            text = (
+                f"Merhaba,\n\nTakip ettiğiniz ürün yeniden stokta:\n\n{name}\n{url}\n\n"
+                f"Stok adedi sınırlıdır. İyi uçuşlar!\nPozitron Market"
+            )
+            try:
+                ok = _send_transactional_email(sub['email'], subject, text)
+            except Exception as exc:
+                print(f"[STOCK ALERT] {sub['email']}: {exc}")
+                ok = False
+            if ok:
+                conn.execute(
+                    "UPDATE stock_alerts SET status = 'notified', notified_at = ? WHERE id = ?",
+                    (datetime.now().isoformat(), sub['id']),
+                )
+                sent += 1
+        conn.commit()
+        return sent
+    except Exception as exc:
+        print(f"[STOCK ALERT] notify failed: {exc}")
+        return 0
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def process_new_stock_alerts(old_stock_by_id, new_stock_by_id):
+    """Queue notifications only for 0 -> >0 transitions."""
+    for pid, new_stock in (new_stock_by_id or {}).items():
+        old_stock = (old_stock_by_id or {}).get(pid, 0)
+        if int(new_stock or 0) > 0 and int(old_stock or 0) <= 0:
+            threading.Thread(target=notify_stock_alerts, args=(pid,), daemon=True).start()
+
+
+def refresh_product_page(product_ref):
+    """Regenerate one static product page (products/<slug>.html) from the DB.
+
+    The storefront serves pre-rendered HTML for /products/<slug>, so every write
+    that changes price, stock or content must re-render the page. Without this,
+    the admin panel and the product page drift apart (e.g. 375 TL in admin,
+    200 TL on the page).
+    """
+    conn = None
+    try:
+        from generate_product_pages import (
+            generate_product_page, get_db_review_stats, get_db_usd_rate,
+        )
+        conn = get_db()
+        row = conn.execute(
+            "SELECT * FROM products WHERE id = ? OR slug = ? OR sku = ?",
+            (product_ref, product_ref, product_ref),
+        ).fetchone()
+        if not row:
+            return False
+        product = dict(row)
+        for key, target in (('specs_json', 'specs'), ('tags_json', 'tags'), ('gallery_json', 'gallery')):
+            raw = product.get(key)
+            try:
+                product[target] = json.loads(raw) if raw else ({} if target == 'specs' else [])
+            except Exception:
+                product[target] = {} if target == 'specs' else []
+
+        category = conn.execute("SELECT * FROM categories WHERE id = ?", (product.get('category_id'),)).fetchone()
+        category = dict(category) if category else {"id": product.get('category_id') or 'motors'}
+
+        rows = conn.execute("SELECT * FROM products WHERE category_id = ?", (category['id'],)).fetchall()
+        all_products = []
+        for r in rows:
+            item = dict(r)
+            for key, target in (('specs_json', 'specs'), ('tags_json', 'tags'), ('gallery_json', 'gallery')):
+                raw = item.get(key)
+                try:
+                    item[target] = json.loads(raw) if raw else ({} if target == 'specs' else [])
+                except Exception:
+                    item[target] = {} if target == 'specs' else []
+            all_products.append(item)
+
+        related = [p for p in all_products if p.get('slug') != product.get('slug')]
+        content = generate_product_page(
+            product, category, related, all_products, {category['id']: all_products},
+            db_reviews=get_db_review_stats(), usd_rate=get_db_usd_rate(),
+        )
+        out_path = os.path.join(BASE_DIR, 'products', f"{product['slug']}.html")
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        tmp_path = out_path + '.tmp'
+        with open(tmp_path, 'w', encoding='utf-8') as fh:
+            fh.write(content)
+        os.replace(tmp_path, out_path)
+        return True
+    except Exception as exc:
+        print(f"[PRODUCT PAGE REFRESH] {product_ref}: {exc}")
+        return False
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+
+def refresh_product_pages(product_refs):
+    """Refresh several product pages; returns (updated, attempted)."""
+    unique = []
+    for ref in product_refs or []:
+        if ref and ref not in unique:
+            unique.append(ref)
+    updated = sum(1 for ref in unique if refresh_product_page(ref))
+    return updated, len(unique)
+
+TOKEN_TTL_SECONDS = int(os.environ.get('TOKEN_TTL_SECONDS', str(30 * 86400)))  # 30 days
+
+
+def _revoked_tokens_cleanup(conn):
+    try:
+        conn.execute("DELETE FROM revoked_tokens WHERE expires_at < ?", (int(time.time()),))
+    except Exception:
+        pass
+
 
 def create_auth_token(user_dict: dict) -> str:
     """Generates an unforgeable cryptographic HMAC-SHA256 signed session token."""
+    now = int(time.time())
     payload = {
-        "uid": str(user_dict.get("id", "")),
+        "uid": str(user_dict.get("id") or user_dict.get("uid") or ""),
         "email": str(user_dict.get("email") or "").lower().strip(),
         "role": str(user_dict.get("role", "customer")),
-        "ts": int(time.time()),
-        "exp": int(time.time()) + (365 * 86400)  # 365 days (1 year) valid - persistent sign-in
+        "ts": now,
+        "exp": now + TOKEN_TTL_SECONDS,
+        "jti": secrets.token_hex(12),
     }
     raw = base64.urlsafe_b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8').rstrip('=')
     sig = hmac.new(SECRET_KEY.encode('utf-8'), raw.encode('utf-8'), hashlib.sha256).hexdigest()
     return f"pztr.{raw}.{sig}"
 
-def verify_auth_token(token: str) -> dict:
-    """Verifies HMAC signature and expiration of an authentication token."""
+
+def revoke_auth_token(token: str) -> bool:
+    """Adds a signed token to the revocation list so logout really invalidates it."""
+    payload = verify_auth_token(token, check_revocation=False)
+    if not payload or not payload.get("jti"):
+        return False
+    try:
+        conn = get_db()
+        conn.execute(
+            "INSERT OR REPLACE INTO revoked_tokens (jti, expires_at, created_at) VALUES (?, ?, ?)",
+            (payload["jti"], int(payload.get("exp") or 0), int(time.time())),
+        )
+        _revoked_tokens_cleanup(conn)
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as exc:
+        print(f"[AUTH] Token revocation failed: {exc}")
+        return False
+
+
+def verify_auth_token(token: str, check_revocation: bool = True) -> dict:
+    """Verifies HMAC signature, expiration and revocation of an auth token."""
     if not token or not isinstance(token, str):
         return None
     token = token.strip()
     if token.startswith("Bearer "):
         token = token[7:].strip()
-    # Direct Master Admin Key verification
-    if token == ADMIN_API_KEY:
-        return {"uid": "master_admin", "email": "furkaniusprimes@gmail.com", "role": "admin"}
+    # Master admin key (environment secret, never shipped to the browser)
+    if token and hmac.compare_digest(token, ADMIN_API_KEY):
+        return {"uid": "master_admin", "email": "admin@pozitronmarket.com", "role": "admin"}
     parts = token.split('.')
     if len(parts) != 3 or parts[0] != 'pztr':
         return None
@@ -92,6 +383,14 @@ def verify_auth_token(token: str) -> dict:
         payload = json.loads(base64.urlsafe_b64decode(padded.encode('utf-8')).decode('utf-8'))
         if payload.get("exp", 0) < int(time.time()):
             return None  # Expired
+        if check_revocation and payload.get("jti"):
+            conn = get_db()
+            try:
+                row = conn.execute("SELECT 1 FROM revoked_tokens WHERE jti = ?", (payload["jti"],)).fetchone()
+                if row:
+                    return None
+            finally:
+                conn.close()
         return payload
     except Exception:
         return None
@@ -109,7 +408,7 @@ def send_verification_email(to_email: str, code: str) -> bool:
     smtp_host = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.environ.get('SMTP_PORT', 587))
     smtp_user = os.environ.get('SMTP_USER', 'noreply@pozitronmarkets.com').strip().lower()
-    smtp_password = os.environ.get('SMTP_PASSWORD', 'fugtmwxhotugronp').strip().replace(' ', '')
+    smtp_password = os.environ.get('SMTP_PASSWORD', '').strip().replace(' ', '')
     smtp_from = os.environ.get('SMTP_FROM', f"Pozitron Market <{smtp_user}>")
 
     subject = f"[Pozitron Market] Şifre Sıfırlama Doğrulama Kodu: {code}"
@@ -261,28 +560,28 @@ https://pozitronmarket.com
                 "status": f"SMTP Error: {err_str}"
             }
 
-    # 2. Relay via Google Apps Script Webhook
-    gas_url = os.environ.get('GAS_RELAY_URL', 'https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec')
-    try:
-        gas_payload = json.dumps({
-            "type": "password_reset",
-            "email": to_email,
-            "code": code,
-            "html_content": html_content
-        }).encode('utf-8')
-        gas_req = urllib.request.Request(gas_url, data=gas_payload, headers={'Content-Type': 'application/json'}, method='POST')
-        with urllib.request.urlopen(gas_req, timeout=12) as gas_resp:
-            gas_result = gas_resp.read().decode('utf-8')
-            if gas_result.strip().startswith('{') and '"status"' in gas_result and '"success"' in gas_result:
-                print(f"[AUTH EMAIL] GAS Relay sent successfully for {to_email}")
-                LAST_EMAIL_STATUS = {
-                    "timestamp": datetime.now().isoformat(),
-                    "to": to_email,
-                    "success": True,
-                    "status": "Sent via GAS Relay"
-                }
-                return True
-            else:
+    # Relay via Google Apps Script Webhook (opt-in: no URL baked into the source)
+    gas_url = (os.environ.get('GAS_RELAY_URL') or '').strip()
+    if gas_url:
+        try:
+            gas_payload = json.dumps({
+                "type": "password_reset",
+                "email": to_email,
+                "code": code,
+                "html_content": html_content
+            }).encode('utf-8')
+            gas_req = urllib.request.Request(gas_url, data=gas_payload, headers={'Content-Type': 'application/json'}, method='POST')
+            with urllib.request.urlopen(gas_req, timeout=12) as gas_resp:
+                gas_result = gas_resp.read().decode('utf-8')
+                if gas_result.strip().startswith('{') and '"status"' in gas_result and '"success"' in gas_result:
+                    print(f"[AUTH EMAIL] GAS Relay sent successfully for {to_email}")
+                    LAST_EMAIL_STATUS = {
+                        "timestamp": datetime.now().isoformat(),
+                        "to": to_email,
+                        "success": True,
+                        "status": "Sent via GAS Relay"
+                    }
+                    return True
                 print(f"[AUTH EMAIL ERROR] GAS Relay returned non-success response for {to_email}: {gas_result[:160]}")
                 LAST_EMAIL_STATUS = {
                     "timestamp": datetime.now().isoformat(),
@@ -290,10 +589,11 @@ https://pozitronmarket.com
                     "success": False,
                     "status": f"GAS Relay Error: {gas_result[:100]}"
                 }
-    except Exception as gas_e:
-        print(f"[AUTH EMAIL] GAS Relay notice for {to_email}: {gas_e}")
+        except Exception as gas_e:
+            print(f"[AUTH EMAIL] GAS Relay notice for {to_email}: {gas_e}")
 
-    print(f"[AUTH EMAIL NOTICE] Email delivery not configured. Reset code for {to_email}: {code}")
+    # Never print the reset code: it is a credential.
+    print(f"[AUTH EMAIL NOTICE] Email delivery is not configured for {to_email}.")
     LAST_EMAIL_STATUS = {
         "timestamp": datetime.now().isoformat(),
         "to": to_email,
@@ -400,31 +700,6 @@ def start_thread_watchdog():
                         print(f"[Watchdog] {expired} kupon suresi doldugu icin otomatik devre disi birakildi.")
                 except Exception as coupon_err:
                     print(f"[Watchdog] Kupon suresi kontrolu hatasi: {coupon_err}")
-
-                # 2. Periodic cloud market inventory sync (git pull --rebase)
-                try:
-                    import subprocess
-                    sync_proc = subprocess.run(
-                        ["git", "pull", "--rebase", "origin", "main"],
-                        cwd=BASE_DIR,
-                        capture_output=True,
-                        text=True,
-                        timeout=25
-                    )
-                    if sync_proc.returncode == 0 and "Already up to date." not in sync_proc.stdout:
-                        print("[Watchdog] Cloud market orders pulled:", sync_proc.stdout.strip())
-                        prod_json_p = os.path.join(BASE_DIR, "data", "products.json")
-                        if os.path.exists(prod_json_p):
-                            with open(prod_json_p, "r", encoding="utf-8") as pf:
-                                prods = json.load(pf)
-                            conn_w = get_db()
-                            cur_w = conn_w.cursor()
-                            for prd in prods:
-                                cur_w.execute("UPDATE products SET stock = ? WHERE id = ?", (prd.get("stock", 0), prd.get("id")))
-                            conn_w.commit()
-                            conn_w.close()
-                except Exception:
-                    pass
 
             except Exception as we:
                 print(f"[Watchdog] Loop notice: {we}")
@@ -539,14 +814,30 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if user:
             return user
 
-        # Local development convenience fallback ONLY if strictly running locally (not in cloud or proxied)
-        is_cloud = bool(os.environ.get('RENDER') or os.environ.get('PORT'))
-        is_proxied = bool(self.headers.get('X-Forwarded-For') or self.headers.get('CF-Connecting-IP'))
-        client_ip = self.client_address[0] if self.client_address else ""
-        if not is_cloud and not is_proxied and client_ip in ('127.0.0.1', 'localhost', '::1') and os.environ.get('POZITRON_ENV') != 'production':
-            return {"uid": "local_dev", "email": "furkaniusprimes@gmail.com", "role": "admin"}
-
         return None
+
+    def get_authenticated_user(self):
+        """Returns the signed-in caller (uid/email/role) or None."""
+        user = self.get_current_user()
+        if not user:
+            return None
+        return {
+            "uid": user.get("uid") or user.get("id"),
+            "id": user.get("uid") or user.get("id"),
+            "email": (user.get("email") or "").lower().strip(),
+            "role": user.get("role") or "customer",
+        }
+
+    def require_self_or_admin(self, owner_id):
+        """Returns the caller when they own the resource or are an admin."""
+        me = self.get_authenticated_user()
+        if not me:
+            self.send_json(401, {"error": "Bu işlem için giriş yapmalısınız.", "auth_required": True})
+            return None
+        if me["role"] != "admin" and str(me["uid"]) != str(owner_id or ""):
+            self.send_json(403, {"error": "Bu kaynağa erişim yetkiniz yok."})
+            return None
+        return me
 
     def require_admin(self) -> bool:
         """Enforces administrative authentication on protected endpoints."""
@@ -609,18 +900,56 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         return True
 
+    # CORS: only the storefront origins may read API responses from a browser.
+    _ALLOWED_ORIGINS = (
+        'https://pozitronmarket.com',
+        'https://www.pozitronmarket.com',
+        'https://thepeakiscold.github.io',
+    )
+
+    def _cors_headers(self):
+        origin = (self.headers.get('Origin') or '').strip().rstrip('/')
+        allowed = origin if origin in self._ALLOWED_ORIGINS else ''
+        if not allowed and origin.startswith('http://localhost'):
+            allowed = origin
+        if not allowed and origin.startswith('http://127.0.0.1'):
+            allowed = origin
+        if allowed:
+            self.send_header('Access-Control-Allow-Origin', allowed)
+            self.send_header('Access-Control-Allow-Credentials', 'true')
+            self.send_header('Vary', 'Origin')
+            self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Key')
+            self.send_header('Access-Control-Max-Age', '600')
+
     def send_json(self, status_code, data):
         response_bytes = json.dumps(data, ensure_ascii=False).encode('utf-8')
         self.send_response(status_code)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Content-Length', str(len(response_bytes)))
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Key')
+        self._cors_headers()
         self.end_headers()
         self.wfile.write(response_bytes)
 
     def end_headers(self):
+        # Baseline hardening on every response (Nginx adds the rest at the edge).
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'SAMEORIGIN')
+        self.send_header('Referrer-Policy', 'strict-origin-when-cross-origin')
+        self.send_header('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' data: https://fonts.gstatic.com; "
+            "connect-src 'self' https://api.pozitronmarket.com https://www.google-analytics.com https://accounts.google.com; "
+            "frame-src 'self' https://accounts.google.com; "
+            "frame-ancestors 'self'; base-uri 'self'; object-src 'none'"
+        )
+        self.send_header('Content-Security-Policy', csp)
+        self.send_header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
         if self.path.endswith('.js') or self.path.endswith('.css') or self.path.endswith('.html') or '/api/' in self.path:
             self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
             self.send_header('Pragma', 'no-cache')
@@ -628,10 +957,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_OPTIONS(self):
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Key')
+        self.send_response(204)
+        self._cors_headers()
         self.end_headers()
 
     def do_DELETE(self):
@@ -642,9 +969,22 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             addr_del_match = re.match(r'^/api/user/addresses/(.+)$', path)
             if addr_del_match:
                 addr_id = urllib.parse.unquote(addr_del_match.group(1)).strip()
+                me = self.get_authenticated_user()
+                if not me:
+                    self.send_json(401, {"error": "Adres silmek için giriş yapmalısınız.", "auth_required": True})
+                    return
                 conn = get_db()
                 cur = conn.cursor()
-                cur.execute("DELETE FROM user_addresses WHERE id = ?", (addr_id,))
+                owner_row = cur.execute("SELECT user_id FROM user_addresses WHERE id = ?", (addr_id,)).fetchone()
+                if not owner_row:
+                    conn.close()
+                    self.send_json(404, {"error": "Adres bulunamadı."})
+                    return
+                if me["role"] != "admin" and str(owner_row["user_id"]) != str(me.get("uid")):
+                    conn.close()
+                    self.send_json(403, {"error": "Bu kaynağa erişim yetkiniz yok."})
+                    return
+                cur.execute("DELETE FROM user_addresses WHERE id = ? AND user_id = ?", (addr_id, owner_row["user_id"]))
                 conn.commit()
                 conn.close()
                 self.send_json(200, {"success": True, "deleted_id": addr_id})
@@ -1259,17 +1599,27 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # Telemetry ingestion endpoint (Subagent 3: http://localhost:8000/bots)
         if path in ('/bots', '/bots.html', '/api/telemetry'):
-            content_length = int(self.headers.get('Content-Length', 0))
+            try:
+                content_length = int(self.headers.get('Content-Length', 0) or 0)
+            except (TypeError, ValueError):
+                content_length = 0
+            if content_length > MAX_TELEMETRY_BODY_SIZE:
+                self.send_json(413, {"error": "Telemetry payload too large"})
+                return
             body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
             try:
                 data = json.loads(body_raw.decode('utf-8'))
             except Exception:
                 data = {}
-            lead_supervisor_agent.telemetry_agent._save_to_db(data)
+            if not isinstance(data, dict):
+                self.send_json(400, {"error": "Invalid telemetry payload format (must be a JSON object)"})
+                return
+            clean_telemetry = {k: v for k, v in data.items() if isinstance(k, str) and len(k) < 64}
+            lead_supervisor_agent.telemetry_agent._save_to_db(clean_telemetry)
             self.send_json(200, {
                 "success": True,
                 "message": "Telemetry payload received successfully",
-                "timestamp": data.get("timestamp")
+                "timestamp": clean_telemetry.get("timestamp")
             })
             return
 
@@ -1279,23 +1629,31 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 import traceback
                 traceback.print_exc()
-                self.send_json(500, {"error": f"Dosya yükleme hatası: {str(e)}"})
+                self.send_json(500, {"error": "Dosya yüklenirken bir sunucu hatası oluştu. Lütfen tekrar deneyiniz."})
             return
 
         if path.startswith('/api/'):
-            content_length = int(self.headers.get('Content-Length', 0))
+            try:
+                content_length = int(self.headers.get('Content-Length', 0) or 0)
+            except (TypeError, ValueError):
+                content_length = 0
+            if content_length > MAX_JSON_BODY_SIZE:
+                self.send_json(413, {"error": "İstek gövdesi çok büyük."})
+                return
             body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
             try:
                 data = json.loads(body_raw.decode('utf-8'))
             except Exception:
                 data = {}
+            if not isinstance(data, dict):
+                data = {}
 
             try:
                 self.handle_api_post(path, data)
-            except Exception as e:
+            except Exception:
                 import traceback
                 traceback.print_exc()
-                self.send_json(500, {"error": str(e)})
+                self.send_json(500, {"error": "Sunucu hatası. Lütfen daha sonra tekrar deneyin."})
             return
 
         self.send_json(404, {"error": "Endpoint not found"})
@@ -1304,17 +1662,27 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         if path in ('/bots', '/bots.html', '/api/telemetry'):
-            content_length = int(self.headers.get('Content-Length', 0))
+            try:
+                content_length = int(self.headers.get('Content-Length', 0) or 0)
+            except (TypeError, ValueError):
+                content_length = 0
+            if content_length > MAX_TELEMETRY_BODY_SIZE:
+                self.send_json(413, {"error": "Telemetry payload too large"})
+                return
             body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
             try:
                 data = json.loads(body_raw.decode('utf-8'))
             except Exception:
                 data = {}
-            lead_supervisor_agent.telemetry_agent._save_to_db(data)
+            if not isinstance(data, dict):
+                self.send_json(400, {"error": "Invalid telemetry payload format (must be a JSON object)"})
+                return
+            clean_telemetry = {k: v for k, v in data.items() if isinstance(k, str) and len(k) < 64}
+            lead_supervisor_agent.telemetry_agent._save_to_db(clean_telemetry)
             self.send_json(200, {
                 "success": True,
                 "message": "Telemetry payload received successfully (PUT)",
-                "timestamp": data.get("timestamp")
+                "timestamp": clean_telemetry.get("timestamp")
             })
             return
         self.send_json(404, {"error": "Endpoint not found"})
@@ -1406,10 +1774,19 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # Health Check Endpoint (Cloud / Render / Railway)
         if path == '/api/health':
-            self.send_json(200, {
-                "status": "healthy",
+            db_ok = False
+            try:
+                probe = get_db()
+                probe.execute("SELECT 1").fetchone()
+                probe.close()
+                db_ok = True
+            except Exception:
+                db_ok = False
+            self.send_json(200 if db_ok else 503, {
+                "status": "healthy" if db_ok else "degraded",
                 "service": "pozitron-cloud-api",
-                "version": "2026.09.20.2",
+                "version": "2026.11.01.1",
+                "database": "ok" if db_ok else "unavailable",
                 "timestamp": datetime.now().isoformat()
             })
             return
@@ -1447,7 +1824,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if path in ('/api/currency-rate', '/api/currency'):
-            rate = get_setting('usd_rate', 50.0)
+            rate = get_setting('usd_rate', 75.00)
             self.send_json(200, {
                 "usd_rate": rate,
                 "currency": "TRY",
@@ -2814,7 +3191,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             in_stock = query.get('in_stock', ['0'])[0]
             featured_only = query.get('featured', ['0'])[0]
             bestseller_only = query.get('bestseller', ['0'])[0]
-            sort_by = query.get('sort', ['popular'])[0]
+            sort_by = query.get('sort', ['random'])[0]
             page = max(1, int(query.get('page', [1])[0]))
             limit = min(100, max(1, int(query.get('limit', [24])[0])))
             min_p = float(query.get('min_price', [0])[0])
@@ -2825,9 +3202,16 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             params = []
 
             if q:
-                where_clauses.append("(p.name_en LIKE ? OR p.name_tr LIKE ? OR p.brand LIKE ? OR p.sku LIKE ? OR p.tags_json LIKE ?)")
-                like_str = f"%{q}%"
-                params.extend([like_str, like_str, like_str, like_str, like_str])
+                words = [w for w in q.split() if w]
+                if len(words) <= 1:
+                    where_clauses.append("(p.name_en LIKE ? OR p.name_tr LIKE ? OR p.brand LIKE ? OR p.sku LIKE ? OR p.tags_json LIKE ? OR p.specs_json LIKE ?)")
+                    like_str = f"%{q}%"
+                    params.extend([like_str, like_str, like_str, like_str, like_str, like_str])
+                else:
+                    for word in words:
+                        where_clauses.append("(p.name_en LIKE ? OR p.name_tr LIKE ? OR p.brand LIKE ? OR p.sku LIKE ? OR p.tags_json LIKE ? OR p.specs_json LIKE ?)")
+                        like_w = f"%{word}%"
+                        params.extend([like_w, like_w, like_w, like_w, like_w, like_w])
 
             if cat and cat != 'all':
                 where_clauses.append("p.category_id = ?")
@@ -2861,17 +3245,21 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             where_sql = " AND ".join(where_clauses)
 
             # Sort mappings
-            sort_sql = "p.rating DESC, p.review_count DESC"
+            sort_sql = "RANDOM()"
             if sort_by == 'price_asc':
                 sort_sql = "p.price_usd ASC" if currency == 'USD' else "p.price_try ASC"
             elif sort_by == 'price_desc':
                 sort_sql = "p.price_usd DESC" if currency == 'USD' else "p.price_try DESC"
             elif sort_by == 'rating':
-                sort_sql = "p.rating DESC, p.review_count DESC"
+                sort_sql = "p.rating DESC, p.review_count DESC, RANDOM()"
             elif sort_by == 'newest':
                 sort_sql = "p.created_at DESC"
             elif sort_by == 'discount':
                 sort_sql = "p.discount_pct DESC"
+            elif sort_by == 'popular':
+                sort_sql = "p.rating DESC, p.review_count DESC, RANDOM()"
+            elif sort_by == 'random':
+                sort_sql = "RANDOM()"
 
             # Total Count Query
             count_query = f"SELECT COUNT(*) FROM products p WHERE {where_sql}"
@@ -2908,16 +3296,18 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
-        # 4b. User Addresses List: /api/user/addresses?user_id=...
+        # 4b. User Addresses List: /api/user/addresses?user_id=... (owner or admin only)
         if path == '/api/user/addresses':
-            uid = query.get('user_id', [''])[0].strip()
-            if not uid:
-                auth_user = self.get_authenticated_user()
-                if auth_user:
-                    uid = auth_user.get('uid') or auth_user.get('id')
-            if not uid:
+            me = self.get_authenticated_user()
+            if not me:
                 conn.close()
-                self.send_json(400, {"error": "user_id is required."})
+                self.send_json(401, {"error": "Adreslerinizi görmek için giriş yapmalısınız.", "auth_required": True})
+                return
+            requested_uid = query.get('user_id', [''])[0].strip()
+            uid = requested_uid or me.get('uid')
+            if me['role'] != 'admin' and str(uid) != str(me.get('uid')):
+                conn.close()
+                self.send_json(403, {"error": "Bu kaynağa erişim yetkiniz yok."})
                 return
             cursor.execute("SELECT * FROM user_addresses WHERE user_id = ? ORDER BY is_default_shipping DESC, created_at DESC", (uid,))
             addresses = [dict(r) for r in cursor.fetchall()]
@@ -2925,15 +3315,24 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"success": True, "addresses": addresses})
             return
 
-        # 5. Orders Query / List: /api/orders (supports ?email=... or ?user_id=...)
+        # 5. Orders Query / List: /api/orders (owner or admin only)
         if path == '/api/orders':
+            me = self.get_authenticated_user()
+            if not me:
+                conn.close()
+                self.send_json(401, {"error": "Siparişlerinizi görmek için giriş yapmalısınız.", "auth_required": True})
+                return
             user_id = query.get('user_id', [''])[0].strip()
             email = query.get('email', [''])[0].strip().lower()
-            if user_id or email:
-                cursor.execute("SELECT * FROM orders WHERE (user_id = ? AND ? != '') OR (LOWER(customer_email) = ? AND ? != '') ORDER BY created_at DESC",
-                               (user_id, user_id, email, email))
+            if me['role'] == 'admin':
+                if user_id or email:
+                    cursor.execute("SELECT * FROM orders WHERE (user_id = ? AND ? != '') OR (LOWER(customer_email) = ? AND ? != '') ORDER BY created_at DESC",
+                                   (user_id, user_id, email, email))
+                else:
+                    cursor.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT 200")
             else:
-                cursor.execute("SELECT * FROM orders ORDER BY created_at DESC LIMIT 50")
+                cursor.execute("SELECT * FROM orders WHERE user_id = ? OR (customer_email != '' AND LOWER(customer_email) = ?) ORDER BY created_at DESC",
+                               (str(me.get('uid')), me.get('email') or ''))
             orders = []
             for r in cursor.fetchall():
                 od = dict(r)
@@ -2947,29 +3346,46 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json(200, {"orders": orders})
             return
 
-        # 5b. Order lookup: /api/orders/<order_number>
+        # 5b. Order lookup: /api/orders/<order_number> (owner or admin only)
         order_match = re.match(r'^/api/orders/([a-zA-Z0-9_-]+)$', path)
         if order_match:
+            me = self.get_authenticated_user()
+            if not me:
+                conn.close()
+                self.send_json(401, {"error": "Sipariş detayını görmek için giriş yapmalısınız.", "auth_required": True})
+                return
             order_num = order_match.group(1)
             cursor.execute("SELECT * FROM orders WHERE order_number = ? OR id = ?", (order_num, order_num))
             order = cursor.fetchone()
-            conn.close()
             if not order:
+                conn.close()
                 self.send_json(404, {"error": "Order not found"})
                 return
             od = dict(order)
+            is_owner = (
+                (od.get('user_id') and str(od['user_id']) == str(me.get('uid')))
+                or (od.get('customer_email') and (od['customer_email'] or '').lower().strip() == me.get('email'))
+            )
+            if me['role'] != 'admin' and not is_owner:
+                conn.close()
+                self.send_json(404, {"error": "Order not found"})
+                return
+            conn.close()
             try:
                 od['items'] = json.loads(od['items_json'])
-            except:
+            except Exception:
                 od['items'] = []
             od['status'] = od.get('order_status') or od.get('status') or 'CONFIRMED'
             self.send_json(200, {"order": od})
             return
 
-        # 6. User Orders: /api/orders/user/<user_id>
+        # 6. User Orders: /api/orders/user/<user_id> (owner or admin only)
         user_orders_match = re.match(r'^/api/orders/user/([a-zA-Z0-9_-]+)$', path)
         if user_orders_match:
             user_id = user_orders_match.group(1)
+            if not self.require_self_or_admin(user_id):
+                conn.close()
+                return
             cursor.execute("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC", (user_id,))
             orders = []
             for r in cursor.fetchall():
@@ -3012,10 +3428,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 if search:
                     where.append('(r.user_name LIKE ? OR r.title LIKE ? OR r.comment LIKE ? OR p.name_tr LIKE ?)')
                     params.extend(['%' + search + '%'] * 4)
-                clause = ' AND '.join(where)
-                cursor.execute(f'SELECT COUNT(*) FROM reviews r LEFT JOIN products p ON p.id = r.product_id WHERE {clause}', params)
+                where_sql = ' AND '.join(where)
+                cursor.execute(f'SELECT COUNT(*) FROM reviews r LEFT JOIN products p ON p.id = r.product_id WHERE {where_sql}', params)
                 total = cursor.fetchone()[0]
-                cursor.execute(f"SELECT r.*, p.name_tr AS product_name FROM reviews r LEFT JOIN products p ON p.id = r.product_id WHERE {clause} ORDER BY r.created_at DESC, r.id DESC LIMIT ? OFFSET ?", params + [limit, (page - 1) * limit])
+                cursor.execute(f"SELECT r.*, p.name_tr AS product_name FROM reviews r LEFT JOIN products p ON p.id = r.product_id WHERE {where_sql} ORDER BY r.created_at DESC, r.id DESC LIMIT ? OFFSET ?", params + [limit, (page - 1) * limit])
                 self.send_json(200, {'reviews': [dict(row) for row in cursor.fetchall()], 'total': total, 'page': page, 'limit': limit})
             except ValueError:
                 self.send_json(400, {'error': 'Geçersiz sayfa bilgisi.'})
@@ -3405,6 +3821,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'media_type': 'REEL',
                     'engine': engine,
                     'reels_method': reels_method,
+                    'voiceover_text': content.get('voiceover_text'),
                     'created_at': __import__('datetime').datetime.now().isoformat()
                 }
                 post_data['metadata'] = {
@@ -3413,7 +3830,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'visual_style': content.get('visual_style'),
                     'video_mode': content.get('video_mode'),
                     'hook_tone': content.get('hook_tone'),
-                    'reels_method': reels_method
+                    'reels_method': reels_method,
+                    'voiceover_text': content.get('voiceover_text')
                 }
 
                 video_prompt = instagram_pr_agent.content_gen.generate_reels_video_prompt(post_data)
@@ -3440,6 +3858,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "reel_mode_info": post_data.get('reel_mode_info', ''),
                         "fallback_reason": post_data.get('fallback_reason', ''),
                         "video_prompt": post_data.get('video_prompt', ''),
+                        "has_voiceover": post_data.get('has_voiceover', False),
+                        "voiceover_text": post_data.get('voiceover_text', ''),
+                        "voiceover_engine": post_data.get('voiceover_engine', ''),
+                        "voiceover_path": post_data.get('voiceover_path', ''),
                         "title": post_data['title'],
                         "caption": post_data['caption']
                     })
@@ -4035,7 +4457,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
-        # 2. Manual User Login with Brute-Force & Cooldown Protection (3 attempts -> 30 min cooldown)
+        # 2. Manual User Login with Brute-Force & Cooldown Protection (IP+email composite key)
         if path == '/api/auth/login':
             email = data.get('email', '').strip().lower()
             password = data.get('password', '')
@@ -4043,16 +4465,17 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             if not email or not password:
                 conn.close()
-                self.send_json(400, {"error": "Email and password are required."})
+                self.send_json(400, {"error": "E-posta ve şifre zorunludur."})
                 return
 
-            # Check if email is currently locked (3 failed attempts -> 30 min cooldown)
-            is_locked, rem_sec, rem_min, attempts_left = check_login_rate_limit(email)
+            # Check if (IP:email) composite is locked to prevent account lockout DoS (SEC-18)
+            lockout_key = f"{client_ip}:{email}"
+            is_locked, rem_sec, rem_min, attempts_left = check_login_rate_limit(lockout_key)
 
             if is_locked:
                 conn.close()
                 self.send_json(429, {
-                    "error": f"[GUVENLIK KORUMASI] 3 kez hatali deneme yapildigi icin bu hesap kilitlendi! Lutfen {rem_min} dakika sonra tekrar deneyiniz.",
+                    "error": f"Giriş denemesi sınırına ulaşıldı. Güvenliğiniz için lütfen {rem_min} dakika sonra tekrar deneyiniz.",
                     "locked": True,
                     "remaining_seconds": rem_sec,
                     "remaining_minutes": rem_min
@@ -4062,27 +4485,37 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
 
-            if not user or dict(user).get('password_hash') != hash_password(password):
+            stored_hash = dict(user).get('password_hash', '') if user else ''
+            if not user or not verify_password(password, stored_hash):
                 conn.close()
-                is_now_locked, rem_sec, rem_min, left = record_failed_login(email)
+                is_now_locked, rem_sec, rem_min, left = record_failed_login(lockout_key)
                 
                 if is_now_locked:
                     self.send_json(429, {
-                        "error": "[GUVENLIK KORUMASI] 3 kez hatali giris yapildi! Guvenlik nedeniyle hesabiniz 30 dakika sureyle kilitlenmistir.",
+                        "error": "Giriş denemesi sınırına ulaşıldı. Güvenliğiniz için lütfen 30 dakika sonra tekrar deneyiniz.",
                         "locked": True,
                         "remaining_seconds": rem_sec,
                         "remaining_minutes": rem_min
                     })
                 else:
                     self.send_json(401, {
-                        "error": f"[HATA] Hatali sifre veya e-posta! Kalan deneme hakkiniz: {left}",
+                        "error": f"E-posta veya şifre hatalı. Kalan deneme hakkınız: {left}.",
                         "attempts_left": left,
                         "locked": False
                     })
                 return
 
-            # Successful login - Clear failed attempts for this email
-            clear_login_attempts(email)
+            # Successful login - Clear failed attempts for this lockout key
+            clear_login_attempts(lockout_key)
+
+            # Auto-upgrade legacy password hashes to PBKDF2-HMAC-SHA256 (SEC-09)
+            if not stored_hash.startswith("pbkdf2:"):
+                try:
+                    upgraded_hash = hash_password(password)
+                    cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (upgraded_hash, user['id']))
+                    conn.commit()
+                except Exception as e:
+                    print(f"[AUTH] Password rehash upgrade warning: {e}")
 
             user_dict = dict(user)
             if 'password_hash' in user_dict:
@@ -4098,53 +4531,58 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
-        # 3. Google / Gmail Sign-In with Cryptographic Verification
+        # 3. Google / Gmail Sign-In — a verified Google ID token is MANDATORY.
         if path == '/api/auth/google':
-            email = data.get('email', '').strip().lower()
-            full_name = data.get('full_name', '').strip() or email.split('@')[0].capitalize()
-            avatar_url = data.get('avatar_url', f"https://api.dicebear.com/7.x/bottts/svg?seed={email}")
-            credential = data.get('credential', '').strip()
-
-            if not email:
+            credential = str(data.get('credential') or '').strip()
+            if not credential:
                 conn.close()
-                self.send_json(400, {"error": "Google email is required."})
+                self.send_json(401, {
+                    "error": "Google kimlik doğrulaması gerekli. Lütfen 'Google ile Giriş Yap' düğmesini kullanın.",
+                    "auth_required": True
+                })
                 return
 
-            # Cryptographically verify Google ID Token with Google Accounts API
-            verified_by_google = False
-            if credential:
-                try:
-                    verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(credential)}"
-                    req = urllib.request.Request(verify_url, headers={'User-Agent': 'Pozitron-Auth-Verifier/1.0'})
-                    with urllib.request.urlopen(req, timeout=4) as g_resp:
-                        if g_resp.status == 200:
-                            token_info = json.loads(g_resp.read().decode('utf-8'))
-                            google_email = (token_info.get('email') or '').lower().strip()
-                            if google_email == email and token_info.get('email_verified') in ('true', True, 1):
-                                verified_by_google = True
-                                full_name = token_info.get('name') or full_name
-                                avatar_url = token_info.get('picture') or avatar_url
-                except Exception as ex:
-                    print(f"[Auth] Google token verification notice: {ex}")
+            # Cryptographically verify the Google ID token; the identity is taken
+            # from the signed token, never from a client-supplied field.
+            token_info = None
+            try:
+                verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={urllib.parse.quote(credential)}"
+                req = urllib.request.Request(verify_url, headers={'User-Agent': 'Pozitron-Auth-Verifier/1.0'})
+                with urllib.request.urlopen(req, timeout=6) as g_resp:
+                    if g_resp.status == 200:
+                        token_info = json.loads(g_resp.read().decode('utf-8'))
+            except Exception as ex:
+                print(f"[Auth] Google token verification failed: {ex}")
 
-            ADMIN_EMAILS = [
-                'thepeakiscold@gmail.com',
-                'furkaniusprimes@gmail.com',
-                'eyupfurkanpekoz@gmail.com',
-                'pekozfurkan@gmail.com',
-                'pozitronmarket@gmail.com',
-                'ahmet@pozitron.market'
-            ]
+            if not token_info:
+                conn.close()
+                self.send_json(401, {"error": "Google oturumu doğrulanamadı. Lütfen tekrar giriş yapın."})
+                return
+            issuer = str(token_info.get('iss') or '')
+            if issuer not in ('accounts.google.com', 'https://accounts.google.com'):
+                conn.close()
+                self.send_json(401, {"error": "Geçersiz kimlik sağlayıcısı."})
+                return
+            expected_aud = (os.environ.get('GOOGLE_CLIENT_ID') or '').strip()
+            if expected_aud and str(token_info.get('aud') or '') != expected_aud:
+                conn.close()
+                self.send_json(401, {"error": "Geçersiz istemci kimliği."})
+                return
+            if str(token_info.get('email_verified')).lower() not in ('true', '1', 'yes'):
+                conn.close()
+                self.send_json(401, {"error": "Google e-posta adresi doğrulanmamış."})
+                return
+
+            email = str(token_info.get('email') or '').strip().lower()
+            if not email:
+                conn.close()
+                self.send_json(401, {"error": "Google hesabından e-posta alınamadı."})
+                return
+            full_name = (token_info.get('name') or email.split('@')[0]).strip()
+            avatar_url = token_info.get('picture') or f"https://api.dicebear.com/7.x/bottts/svg?seed={urllib.parse.quote(email)}"
+
             is_whitelisted = (email in ADMIN_EMAILS) or email.endswith('@pozitron.market')
-            is_cloud = bool(os.environ.get('RENDER') or os.environ.get('PORT'))
-            is_proxied = bool(self.headers.get('X-Forwarded-For') or self.headers.get('CF-Connecting-IP'))
-            is_local = bool(not is_cloud and not is_proxied and self.client_address and self.client_address[0] in ('127.0.0.1', 'localhost', '::1') and os.environ.get('POZITRON_ENV') != 'production')
-            has_admin_key = (self.headers.get('X-Admin-Key') == ADMIN_API_KEY) or (self.headers.get('Authorization') == f"Bearer {ADMIN_API_KEY}")
-
-            # Admin escalation is protected: requires whitelisted email + cryptographic proof OR admin key
-            assigned_role = 'customer'
-            if is_whitelisted and (verified_by_google or has_admin_key or is_local):
-                assigned_role = 'admin'
+            assigned_role = 'admin' if is_whitelisted else 'customer'
 
             cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
             user = cursor.fetchone()
@@ -4153,7 +4591,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 user_dict = dict(user)
                 if 'password_hash' in user_dict:
                     del user_dict['password_hash']
-                # Upgrade to admin if email qualifies with verification
+                # Upgrade to admin if email qualifies (token already verified)
                 if assigned_role == 'admin' and user_dict.get('role') != 'admin':
                     cursor.execute("UPDATE users SET role = 'admin' WHERE id = ?", (user_dict['id'],))
                     conn.commit()
@@ -4245,20 +4683,20 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 })
                 return
 
-            # Generate 6-digit code
-            code = str(random.randint(100000, 999999))
+            # Generate 6-digit code cryptographically securely
+            code = f"{secrets.randbelow(1_000_000):06d}"
             reset_id = str(uuid.uuid4())
             expires_at = int(time.time()) + 1800  # 30 minutes
             now_iso = datetime.now().isoformat()
 
             cursor.execute('''
-                INSERT INTO password_resets (id, email, code, expires_at, used, created_at)
-                VALUES (?, ?, ?, ?, 0, ?)
+                INSERT INTO password_resets (id, email, code, expires_at, used, attempts, created_at)
+                VALUES (?, ?, ?, ?, 0, 0, ?)
             ''', (reset_id, email, code, expires_at, now_iso))
             conn.commit()
             conn.close()
 
-            print(f"[AUTH PASSWORD RESET] Code generated for {email}: {code} (expires in 30m)")
+            print(f"[AUTH PASSWORD RESET] Reset code sent for {email} (expires in 30m)")
 
             # Send verification email in background thread
             email_thread = threading.Thread(target=send_verification_email, args=(email, code), daemon=True)
@@ -4289,10 +4727,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             now_ts = int(time.time())
             cursor.execute('''
-                SELECT id FROM password_resets 
-                WHERE LOWER(email) = ? AND code = ? AND used = 0 AND expires_at > ?
+                SELECT id, code, attempts FROM password_resets 
+                WHERE LOWER(email) = ? AND used = 0 AND expires_at > ?
                 ORDER BY created_at DESC LIMIT 1
-            ''', (email, code, now_ts))
+            ''', (email, now_ts))
             reset_row = cursor.fetchone()
 
             if not reset_row:
@@ -4301,6 +4739,21 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             reset_id = reset_row[0]
+            real_code = reset_row[1]
+            attempts = reset_row[2] or 0
+
+            if attempts >= 5:
+                conn.close()
+                self.send_json(429, {"error": "Çok fazla hatalı deneme yapıldı. Lütfen yeni bir kod talep edin."})
+                return
+
+            if not hmac.compare_digest(str(real_code).strip(), str(code).strip()):
+                cursor.execute("UPDATE password_resets SET attempts = attempts + 1 WHERE id = ?", (reset_id,))
+                conn.commit()
+                conn.close()
+                self.send_json(400, {"error": "Geçersiz doğrulama kodu."})
+                return
+
             cursor.execute("UPDATE password_resets SET used = 1 WHERE id = ?", (reset_id,))
 
             new_hash = hash_password(new_password)
@@ -4323,10 +4776,21 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
-        # 3e. Create or Update User Address
+        # 3e. Create or Update User Address (owner or admin only)
         if path == '/api/user/addresses':
             addr_id = data.get('id') or str(uuid.uuid4())
-            user_id = data.get('user_id', '').strip()
+            user_id = str(data.get('user_id', '') or '').strip()
+            me = self.get_authenticated_user()
+            if not me:
+                conn.close()
+                self.send_json(401, {"error": "Adres kaydetmek için giriş yapmalısınız.", "auth_required": True})
+                return
+            if not user_id:
+                user_id = str(me.get('uid'))
+            if me['role'] != 'admin' and user_id != str(me.get('uid')):
+                conn.close()
+                self.send_json(403, {"error": "Bu kaynağa erişim yetkiniz yok."})
+                return
             title = data.get('title', 'Ev').strip()
             full_name = data.get('full_name', '').strip() or data.get('recipient_name', '').strip()
             phone = data.get('phone', '').strip()
@@ -4410,9 +4874,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             subtotal_usd = float(data.get('subtotal_usd', 0) or 0)
             subtotal_try = float(data.get('subtotal_try', 0) or 0)
             if subtotal_usd == 0 and subtotal_try > 0:
-                subtotal_usd = round(subtotal_try / 35.5, 2)
+                subtotal_usd = round(subtotal_try / coupon_service._exchange_rate(), 2)
             elif subtotal_try == 0 and subtotal_usd > 0:
-                subtotal_try = round(subtotal_usd * 35.5, 2)
+                subtotal_try = round(subtotal_usd * coupon_service._exchange_rate(), 2)
             user_id = data.get('user_id')
             email = data.get('email') or data.get('customer_email')
 
@@ -4423,7 +4887,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     user_id=user_id, email=email,
                 )
             except Exception as e:
-                self.send_json(500, {"valid": False, "error": f"Kupon doğrulanamadı: {e}"})
+                import traceback
+                traceback.print_exc()
+                self.send_json(500, {"valid": False, "error": "Kupon doğrulanırken bir sunucu hatası oluştu."})
                 return
             if result.get('valid'):
                 self.send_json(200, result)
@@ -4488,16 +4954,33 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             for item in items:
                 prod_id = item.get('id')
-                qty = max(1, int(item.get('quantity', 1)))
+                try:
+                    qty = int(item.get('quantity', 1))
+                except (TypeError, ValueError):
+                    qty = 1
+                qty = max(1, min(qty, 100))
                 cursor.execute("SELECT id, name_en, name_tr, brand, price_usd, price_try, stock, image_url, sku FROM products WHERE id = ?", (prod_id,))
                 prod = cursor.fetchone()
                 if not prod:
-                    continue
+                    conn.rollback()
+                    conn.close()
+                    self.send_json(400, {"error": "Sepetinizde artık mevcut olmayan bir ürün var. Lütfen sepeti güncelleyin."})
+                    return
                 p_dict = dict(prod)
-                
-                # Check & update stock
-                new_stock = max(0, p_dict['stock'] - qty)
-                cursor.execute("UPDATE products SET stock = ? WHERE id = ?", (new_stock, prod_id))
+
+                # Atomic stock reservation: no oversell, no silent zeroing.
+                reserved = cursor.execute(
+                    "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
+                    (qty, prod_id, qty),
+                )
+                if reserved.rowcount != 1:
+                    conn.rollback()
+                    conn.close()
+                    self.send_json(409, {
+                        "error": f"'{p_dict['name_tr']}' için yeterli stok yok. Sepetinizi güncelleyin.",
+                        "out_of_stock": prod_id,
+                    })
+                    return
 
                 item_usd = round(p_dict['price_usd'] * qty, 2)
                 item_try = round(p_dict['price_try'] * qty, 2)
@@ -4680,10 +5163,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == '/api/reviews':
             try:
                 raw_prod_id = data.get('product_id')
-                user_name = data.get('user_name', 'Anonymous Pilot').strip() or 'Anonymous Pilot'
+                user_name = html.escape(str(data.get('user_name', 'Anonymous Pilot')).strip() or 'Anonymous Pilot')[:60]
                 rating = max(1, min(5, int(data.get('rating', 5))))
-                title = data.get('title', '').strip()
-                comment = data.get('comment', '').strip()
+                title = html.escape(str(data.get('title', '')).strip())[:160]
+                # Store plain text only: comments are rendered by the client and must
+                # never carry markup (stored-XSS sink).
+                comment = html.escape(re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', str(data.get('comment', '')).strip()))[:2000]
 
                 if not comment:
                     self.send_json(400, {"error": "Comment is required."})
@@ -4696,14 +5181,25 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if m_row:
                         real_prod_id = m_row[0]
 
+                # "Verified purchase" must reflect a real paid order, never a constant.
+                me = self.get_authenticated_user()
+                verified = 0
+                if me and real_prod_id:
+                    buyer = cursor.execute(
+                        "SELECT id FROM orders WHERE payment_status = 'PAID' AND items_json LIKE ? "
+                        "AND (user_id = ? OR LOWER(customer_email) = ?) LIMIT 1",
+                        ('%"' + real_prod_id + '"%', str(me.get('uid')), me.get('email') or '')
+                    ).fetchone()
+                    verified = 1 if buyer else 0
+
                 rev_id = str(uuid.uuid4())
                 now_iso = datetime.now().isoformat()
                 avatar = data.get('user_avatar') or f"https://api.dicebear.com/7.x/bottts/svg?seed={urllib.parse.quote(user_name)}"
 
                 cursor.execute('''
                     INSERT INTO reviews (id, product_id, user_name, user_avatar, rating, title, comment, verified_purchase, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
-                ''', (rev_id, real_prod_id, user_name, avatar, rating, title, comment, now_iso))
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (rev_id, real_prod_id, user_name, avatar, rating, title, comment, verified, now_iso))
 
                 # Recalculate product rating if review was for a product
                 if real_prod_id:
@@ -4724,6 +5220,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                         "rating": rating,
                         "title": title,
                         "comment": comment,
+                        "verified_purchase": verified,
                         "created_at": now_iso
                     }
                 })
@@ -4799,36 +5296,43 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             stock = int(data.get('stock', curr['stock']))
             stock = max(0, stock)
 
-            active_rate = get_setting('usd_rate', 50.0)
+            active_rate = get_setting('usd_rate', 75.00)
+            try:
+                active_rate = float(active_rate) or 75.00
+            except (TypeError, ValueError):
+                active_rate = 75.00
 
             # Determine landed_cost_usd and profit_margin_pct
-            if 'landed_cost_usd' in data and data['landed_cost_usd'] is not None and str(data['landed_cost_usd']).strip() != '':
-                landed_cost_usd = max(0.0, float(data['landed_cost_usd']))
-            else:
-                landed_cost_usd = float(curr.get('landed_cost_usd') or 0.0)
+            has_cost = 'landed_cost_usd' in data and data['landed_cost_usd'] is not None and str(data['landed_cost_usd']).strip() != ''
+            has_margin = 'profit_margin_pct' in data and data['profit_margin_pct'] is not None and str(data['profit_margin_pct']).strip() != ''
+            has_usd = 'price_usd' in data and data['price_usd'] is not None and str(data['price_usd']).strip() != ''
+            has_try = 'price_try' in data and data['price_try'] is not None and str(data['price_try']).strip() != ''
 
-            if 'profit_margin_pct' in data and data['profit_margin_pct'] is not None and str(data['profit_margin_pct']).strip() != '':
-                profit_margin_pct = float(data['profit_margin_pct'])
-            else:
-                profit_margin_pct = float(curr.get('profit_margin_pct') if curr.get('profit_margin_pct') is not None else 25.0)
+            landed_cost_usd = max(0.0, float(data['landed_cost_usd'])) if has_cost else float(curr.get('landed_cost_usd') or 0.0)
+            profit_margin_pct = float(data['profit_margin_pct']) if has_margin else float(curr.get('profit_margin_pct') if curr.get('profit_margin_pct') is not None else 25.0)
 
-            # Calculate price_usd: landed_cost_usd * (1 + profit_margin_pct / 100)
-            if 'price_usd' in data and 'landed_cost_usd' not in data and 'profit_margin_pct' not in data:
-                price_usd = float(data['price_usd'])
+            # Price resolution order. An explicit value typed by the operator always
+            # wins; derived values are only used when no explicit price was sent.
+            # (Previously an explicit TRY price was silently recomputed from the old
+            # USD price, so admin edits appeared to "not save".)
+            if has_try and float(data['price_try']) > 0:
+                price_try = round(float(data['price_try']), 2)
+                # Keep enough USD precision so a later FX re-sync returns the
+                # exact TRY figure the operator typed (no 1-kuruş drift).
+                price_usd = round(price_try / active_rate, 4)
+                if landed_cost_usd <= 0 and profit_margin_pct > -100:
+                    landed_cost_usd = round(price_usd / (1.0 + profit_margin_pct / 100.0), 2)
+            elif has_usd and float(data['price_usd']) > 0:
+                price_usd = round(float(data['price_usd']), 2)
+                price_try = round(price_usd * active_rate, 2)
                 if landed_cost_usd <= 0 and profit_margin_pct > -100:
                     landed_cost_usd = round(price_usd / (1.0 + profit_margin_pct / 100.0), 2)
             elif landed_cost_usd > 0:
                 price_usd = round(landed_cost_usd * (1.0 + profit_margin_pct / 100.0), 2)
-            elif 'price_usd' in data:
-                price_usd = float(data['price_usd'])
+                price_try = round(price_usd * active_rate, 2)
             else:
                 price_usd = float(curr['price_usd'])
-
-            # Calculate price_try: price_usd * active_rate
-            if 'price_try' in data and 'price_usd' not in data and 'landed_cost_usd' not in data and 'profit_margin_pct' not in data:
-                price_try = float(data['price_try'])
-            else:
-                price_try = round(price_usd * active_rate, 2)
+                price_try = float(curr['price_try'])
 
             orig_price_usd = float(data['original_price_usd']) if data.get('original_price_usd') is not None and data['original_price_usd'] != '' else curr['original_price_usd']
             orig_price_try = float(data['original_price_try']) if data.get('original_price_try') is not None and data['original_price_try'] != '' else curr['original_price_try']
@@ -4886,9 +5390,17 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 print(f"[UYARI] Product update export hatasi: {e}")
 
+            # Re-render the static product page so /products/<slug> shows the new
+            # price/stock immediately (the storefront serves pre-rendered HTML).
+            page_refreshed = refresh_product_page(updated_prod.get('slug') or prod_id)
+
+            # 0 -> >0 stock transition: keep the "notify me" promise.
+            process_new_stock_alerts({prod_id: curr.get('stock', 0)}, {prod_id: stock})
+
             self.send_json(200, {
                 "success": True,
                 "message": "Product updated successfully",
+                "page_refreshed": bool(page_refreshed),
                 "product": updated_prod
             })
             return
@@ -4905,6 +5417,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             placeholders = ",".join("?" for _ in prod_ids)
+            stock_before = {
+                r["id"]: r["stock"]
+                for r in cursor.execute(
+                    f"SELECT id, stock FROM products WHERE id IN ({placeholders})", prod_ids
+                ).fetchall()
+            }
 
             if action == 'stock_increment':
                 inc_val = int(value)
@@ -4945,7 +5463,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             elif action == 'margin_set':
                 margin_val = float(value)
-                rate = get_setting('usd_rate', 50.0)
+                rate = get_setting('usd_rate', 75.00)
                 cursor.execute(f'''
                     UPDATE products
                     SET profit_margin_pct = ?,
@@ -4955,7 +5473,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 ''', [margin_val, margin_val, margin_val, rate, rate] + prod_ids)
 
             elif action == 'currency_sync':
-                rate = float(value) if value else get_setting('usd_rate', 50.0)
+                rate = float(value) if value else get_setting('usd_rate', 75.00)
                 cursor.execute(f'''
                     UPDATE products
                     SET price_try = ROUND(price_usd * ?, 2),
@@ -4972,9 +5490,28 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 print(f"[UYARI] Bulk update export hatasi: {e}")
 
+            # Re-render every affected product page so prices/stock match instantly.
+            pages_updated, pages_attempted = refresh_product_pages(prod_ids)
+
+            stock_after = {}
+            try:
+                conn2 = get_db()
+                stock_after = {
+                    r["id"]: r["stock"]
+                    for r in conn2.execute(
+                        f"SELECT id, stock FROM products WHERE id IN ({placeholders})", prod_ids
+                    ).fetchall()
+                }
+                conn2.close()
+            except Exception as exc:
+                print(f"[UYARI] Stok gecis kontrolu basarisiz: {exc}")
+            process_new_stock_alerts(stock_before, stock_after)
+
             self.send_json(200, {
                 "success": True,
                 "action": action,
+                "pages_updated": pages_updated,
+                "pages_attempted": pages_attempted,
                 "updated_count": len(prod_ids)
             })
             return
@@ -4985,7 +5522,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             name_tr = data.get('name_tr', '').strip() or name_en
             category_id = data.get('category_id', 'motors')
             brand = data.get('brand', 'Pozitron')
-            active_rate = get_setting('usd_rate', 50.0)
+            active_rate = get_setting('usd_rate', 75.00)
             profit_margin_pct = float(data.get('profit_margin_pct', 25.0))
             if 'landed_cost_usd' in data and data['landed_cost_usd'] is not None and str(data['landed_cost_usd']).strip() != '' and float(data['landed_cost_usd']) > 0:
                 landed_cost_usd = float(data['landed_cost_usd'])
@@ -5045,16 +5582,10 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             new_prod['gallery'] = []
             conn.close()
 
-            # Auto-generate product page HTML
-            try:
-                from generate_product_pages import generate_product_page
-                cat_dict = {"id": category_id, "name_en": new_prod.get('category_name_en', ''), "name_tr": new_prod.get('category_name_tr', '')}
-                page_html = generate_product_page(new_prod, cat_dict, [], [new_prod], {category_id: [new_prod]})
-                out_file = os.path.join(BASE_DIR, 'products', f"{slug}.html")
-                with open(out_file, "w", encoding="utf-8") as pf:
-                    pf.write(page_html)
-            except Exception as pe:
-                print(f"Failed to auto-generate static page for new product {slug}: {pe}")
+            # Auto-generate product page HTML (single source: DB + live FX rate)
+            page_refreshed = refresh_product_page(slug)
+            if not page_refreshed:
+                print(f"Failed to auto-generate static page for new product {slug}")
 
             # Auto-export static JSON/JS bundles
             try:
@@ -5182,7 +5713,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # 12. Admin: Currency Sync across catalog
         if path == '/api/admin/currency-sync':
-            rate = float(data.get('usd_rate', 50.0))
+            rate = float(data.get('usd_rate', 75.0))
             set_setting('usd_rate', rate)
 
             cat = data.get('category_id')
@@ -5356,11 +5887,14 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 def run_server():
     global PORT
+    # Bind to loopback unless a container/PaaS explicitly needs a public socket.
+    default_host = '0.0.0.0' if (os.environ.get('RENDER') or os.environ.get('POZITRON_BIND_PUBLIC') == '1') else '127.0.0.1'
+    host = (os.environ.get('HOST') or default_host).strip()
     ports_to_try = [int(os.environ.get('PORT', 8000)), 8000, 8001, 8081, 3000]
     httpd = None
     for p in ports_to_try:
         try:
-            server_address = ('0.0.0.0', p)
+            server_address = (host, p)
             httpd = ThreadedHTTPServer(server_address, PozitronRequestHandler)
             PORT = p
             break

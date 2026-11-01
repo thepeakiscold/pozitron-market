@@ -18,13 +18,13 @@
     "fpvfreestyle",
     "fpvracing"
   ],
-  "updated_at": "2026-11-01T03:17:32.172415",
-  "last_run_at": "2026-11-01T03:15:49.837243",
-  "next_run_at": "2026-11-01T05:15:49.837243",
+  "updated_at": "2026-11-01T20:22:21.444905",
+  "last_run_at": "2026-11-01T20:22:04.330524",
+  "next_run_at": "2026-11-02T20:06:00",
   "story_enabled": 1,
   "carousel_enabled": 0,
   "dm_automation_enabled": 0,
-  "peak_scheduler_enabled": 0,
+  "peak_scheduler_enabled": 1,
   "reels_enabled": 1,
   "flux_enabled": 1,
   "enabled_post_types": [
@@ -43,7 +43,8 @@
     "tool_showcase",
     "spot_guide",
     "review_highlight",
-    "seo_article"
+    "seo_article",
+    "3d_print_studio"
   ],
   "enabled_reels_types": [
     "real_fpv_broll",
@@ -53,6 +54,7 @@
     "mistake_warning",
     "secret_spot",
     "product_cinematic",
-    "flash_deal"
+    "flash_deal",
+    "3d_print_showcase"
   ]
 }

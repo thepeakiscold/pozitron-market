@@ -34,7 +34,9 @@
   <meta property="og:url" content="https://pozitronmarket.com/">
   <meta property="og:title" content="Pozitron Market | Drone &amp; FPV Parçaları">
   <meta property="og:description" content="3D Baskı Studio ile özel drone parçası bastır, Drone Toplama Sihirbazı ile bütçene göre FPV drone topla! FPV motorlar, ESC'ler, uçuş kontrol kartları, DJI HD sistemleri. Pozitron Market.">
-  <meta property="og:image" content="https://pozitronmarket.com/assets/hero_drone.png">
+  <meta property="og:image" content="https://pozitronmarket.com/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Pozitron Market">
   <meta property="og:locale" content="tr_TR">
   <meta property="og:locale:alternate" content="en_US">
@@ -77,11 +79,10 @@
   }
   </script>
 
-  <link rel="stylesheet" href="./styles.css?v=20261023_stock_alert2">
+  <link rel="stylesheet" href="./styles.css?v=20261101_fix1">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg?v=20260822_v2">
   <link rel="apple-touch-icon" href="./assets/favicon.png?v=20260822_v2">
-  <meta property="og:image" content="https://pozitronmarket.com/assets/og-image.jpg">
 
   <!-- Google Fonts: Inter & Plus Jakarta Sans for Modern Minimalist Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -109,7 +110,7 @@
         "description": "Türkiye'nin en kapsamlı FPV drone parçaları, 3D baskı studio ve donanım mağazası.",
         "contactPoint": {
           "@type": "ContactPoint",
-          "telephone": "+90-850-555-7090",
+          "telephone": "+90-552-128-0617",
           "contactType": "customer service",
           "areaServed": ["TR", "US", "EU"],
           "availableLanguage": ["Turkish", "English"]
@@ -162,7 +163,7 @@
             "name": "Hangi ödeme yöntemleri desteklenmektedir?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "İyzico 3D Secure kredi/banka kartı, PayTR 3D Secure ve FAST / Banka Havalesi ile güvenli ve anında onaylı ödeme yapabilirsiniz."
+              "text": "İyzico 256-bit SSL korumalı kredi/banka kartı ve FAST / Banka Havalesi ile güvenli ve anında onaylı ödeme yapabilirsiniz."
             }
           }
         ]
@@ -205,6 +206,8 @@
 </head>
 <body>
 
+  <a href="#main-content" class="skip-to-content">İçeriğe geç</a>
+
   <!-- Minimalist Top Announcement Bar -->
   <div class="announcement-bar" role="banner">
     <div class="container announcement-inner">
@@ -214,6 +217,12 @@
         <span data-i18n="announcement_shipping">1500 TL Üzeri Ücretsiz Hızlı Kargo</span>
       </div>
       <div class="announcement-actions">
+        <!-- Currency Selector -->
+        <div class="currency-selector" role="group" aria-label="Para Birimi">
+          <button type="button" class="curr-btn active" data-currency="TRY">₺ TRY</button>
+          <button type="button" class="curr-btn" data-currency="USD">$ USD</button>
+        </div>
+        <span class="sep" style="opacity:0.4;">|</span>
         <!-- Language Switcher -->
         <button type="button" class="lang-toggle-btn" id="lang-btn" aria-label="Dili Değiştir / Switch Language">
           <span class="lang-code" id="lang-label">TR</span>
@@ -246,11 +255,16 @@
             data-i18n-placeholder="search_placeholder"
             autocomplete="off"
             aria-label="Ürün Arama"
+            role="combobox"
+            aria-expanded="false"
+            aria-controls="search-suggestions"
+            aria-autocomplete="list"
+            aria-activedescendant=""
           >
           <button type="button" id="search-clear-btn" class="search-clear-btn" aria-label="Aramayı Temizle" style="display:none;">&times;</button>
         </form>
         <!-- Live Search Dropdown -->
-        <div id="search-suggestions" class="search-suggestions" style="display:none;"></div>
+        <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Arama Önerileri" aria-live="polite" style="display:none;"></div>
       </div>
 
       <!-- Action Nav Buttons -->
@@ -334,7 +348,7 @@
   </header>
 
   <!-- Main Content Layout -->
-  <main class="main-layout" id="main-content">
+  <main class="main-layout" id="main-content" tabindex="-1">
 
     <!-- Minimalist Hero Section -->
     <section class="minimal-hero" aria-label="Mağaza Tanıtımı">
@@ -500,6 +514,7 @@
             <div class="catalog-sort-wrap">
               <label for="sort-select" class="sort-label" data-i18n="sort_label">Sırala:</label>
               <select id="sort-select" class="sort-select" aria-label="Sıralama Seçeneği">
+                <option value="random" data-i18n="sort_random" selected>Rastgele / Keşfet</option>
                 <option value="popular" data-i18n="sort_popular">Öne Çıkanlar &amp; Popüler</option>
                 <option value="price_asc" data-i18n="sort_price_asc">Fiyat: Düşükten Yükseğe</option>
                 <option value="price_desc" data-i18n="sort_price_desc">Fiyat: Yüksekten Düşüğe</option>
@@ -589,6 +604,34 @@
         <!-- Comments Cards Grid -->
         <div class="comments-grid" id="community-comments-grid">
           <!-- Dynamically populated reviews -->
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section (Sıkça Sorulan Sorular) -->
+    <section class="faq-section" id="faq" aria-labelledby="faq-heading" style="padding: 60px 0; background: var(--bg-surface, #f8fafc); border-top: 1px solid var(--border-subtle, #e2e8f0);">
+      <div class="container" style="max-width: 900px; margin: 0 auto; padding: 0 16px;">
+        <div style="text-align: center; margin-bottom: 36px;">
+          <h2 id="faq-heading" style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary, #0f172a); margin-bottom: 8px;" data-i18n="faq_title">Sıkça Sorulan Sorular</h2>
+          <p style="font-size: 0.95rem; color: var(--text-muted, #64748b);" data-i18n="faq_subtitle">Pozitron Market sipariş, kargo, uyumluluk ve 3D baskı hizmetleri hakkında merak edilenler.</p>
+        </div>
+        <div class="faq-list" style="display: flex; flex-direction: column; gap: 14px;">
+          <details style="background: #ffffff; border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 10px; padding: 16px 20px; cursor: pointer;">
+            <summary style="font-weight: 600; color: var(--text-primary, #0f172a); font-size: 1rem;">Pozitron Market kargo ücreti ne kadar ve teslimat süresi nedir?</summary>
+            <p style="margin: 10px 0 0; color: var(--text-secondary, #475569); font-size: 0.92rem; line-height: 1.6;">Standart kargo ücretimiz tüm Türkiye için sabit 99 TL'dir. 1.500 TL ve üzeri tüm siparişlerde kargo tamamen ücretsizdir. Hafta içi saat 16:00'a kadar verilen siparişler aynı gün kargoya verilir ve 1-2 iş günü içerisinde teslim edilir.</p>
+          </details>
+          <details style="background: #ffffff; border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 10px; padding: 16px 20px; cursor: pointer;">
+            <summary style="font-weight: 600; color: var(--text-primary, #0f172a); font-size: 1rem;">FPV drone motoru, ESC ve batarya uyumluluğu nasıl seçilir?</summary>
+            <p style="margin: 10px 0 0; color: var(--text-secondary, #475569); font-size: 0.92rem; line-height: 1.6;">Pozitron Market bünyesindeki 'Drone Toplama Sihirbazı' aracını kullanarak 6S (1750-1950KV) ve 4S (2400-2750KV) voltaj, ESC akım kapasitesi (45A-60A) ve pervane boyut uyumunu otomatik olarak kontrol edebilir, bütçenize en uygun konfigürasyonu toplayabilirsiniz.</p>
+          </details>
+          <details style="background: #ffffff; border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 10px; padding: 16px 20px; cursor: pointer;">
+            <summary style="font-weight: 600; color: var(--text-primary, #0f172a); font-size: 1rem;">Özel 3D drone parçası (TPU kamera tutucu, anten aparatı) nasıl bastırılır?</summary>
+            <p style="margin: 10px 0 0; color: var(--text-secondary, #475569); font-size: 0.92rem; line-height: 1.6;">3D Baskı Studio sayfamız üzerinden STL dosyanızı yükleyerek TPU, PETG veya PLA malzemesinde anında gramaj ve fiyat hesaplaması yaptırabilir, siparişinize özel dayanıklı FPV parçaları ürettirebilirsiniz.</p>
+          </details>
+          <details style="background: #ffffff; border: 1px solid var(--border-subtle, #e2e8f0); border-radius: 10px; padding: 16px 20px; cursor: pointer;">
+            <summary style="font-weight: 600; color: var(--text-primary, #0f172a); font-size: 1rem;">Hangi ödeme yöntemleri desteklenmektedir?</summary>
+            <p style="margin: 10px 0 0; color: var(--text-secondary, #475569); font-size: 0.92rem; line-height: 1.6;">İyzico 256-bit SSL korumalı kredi/banka kartı altyapısı ve FAST / Banka Havalesi ile güvenli ve anında onaylı ödeme yapabilirsiniz.</p>
+          </details>
         </div>
       </div>
     </section>
@@ -722,6 +765,9 @@
             <input type="text" id="coupon-input" placeholder="İndirim Kodu" class="coupon-input" uppercase>
             <button type="button" id="apply-coupon-btn" class="btn-apply-coupon" data-i18n="apply_coupon">Kodu Uygula</button>
           </div>
+          <p class="coupon-login-hint" id="coupon-login-hint" style="display:none; font-size:0.75rem; color:#64748b; margin:6px 0 0;">
+            Kupon kullanmak için giriş yapmanız gerekir. <button type="button" class="link-like" onclick="window.app && window.app.openAuthModal()">Giriş yap</button>
+          </p>
           <div id="coupon-feedback" class="coupon-feedback"></div>
         </div>
 
@@ -764,7 +810,7 @@
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--brand-primary);"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         </div>
         <h2 class="auth-title" data-i18n="stock_alert_title">Stoğa Girince Haber Ver</h2>
-        <p class="auth-subtitle" data-i18n="stock_alert_sub">Bu ürün envanterimize yeniden girdiğinde e-posta ve WhatsApp ile anında bilgilendirileceksiniz.</p>
+        <p class="auth-subtitle" data-i18n="stock_alert_sub">Bu ürün envanterimize yeniden girdiğinde e-posta ile bilgilendirileceksiniz.</p>
       </div>
 
       <div id="stock-alert-prod-preview" style="display:flex; align-items:center; gap:14px; background:#f8fafc; border:1px solid var(--border-subtle); padding:12px; border-radius:12px; margin-bottom:18px;">
@@ -1049,7 +1095,7 @@
               <div id="addr-invoice-individual-fields">
                 <div class="form-group">
                   <label for="addr-tckn" data-i18n="tckn_label">T.C. Kimlik No (TCKN)</label>
-                  <input type="text" id="addr-tckn" class="form-input" placeholder="11 haneli TCKN (veya 11111111111)" maxlength="11">
+                  <input type="text" id="addr-tckn" class="form-input" placeholder="11 haneli T.C. Kimlik Numarası" maxlength="11">
                   <small style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:2px;" data-i18n="tckn_hint">Şahıs / Bireysel e-Arşiv faturaları için gereklidir.</small>
                 </div>
               </div>
@@ -1105,7 +1151,7 @@
       <div class="modal-header">
         <div>
           <h2 class="modal-title" data-i18n="checkout_title">Sipariş ve Ödeme Bilgileri</h2>
-          <p class="modal-subtitle" data-i18n="checkout_sub">Bilgilerinizi doldurun veya test kartı ile anında siparişi onaylayın.</p>
+          <p class="modal-subtitle" data-i18n="checkout_sub">Bilgilerinizi doldurun; iyzico'nun güvenli ödeme sayfasına veya havale adımına yönlendirileceksiniz.</p>
         </div>
         <button type="button" class="modal-close-btn" id="close-checkout-modal">&times;</button>
       </div>
@@ -1154,7 +1200,13 @@
               <div class="form-row">
                 <div class="form-group col-half">
                   <label for="chk-country" data-i18n="country_label">Ülke</label>
-                  <input type="text" id="chk-country" class="form-input" value="Turkey" required>
+                  <select id="chk-country" class="form-input form-select" required>
+                    <option value="Turkey" selected>Türkiye</option>
+                    <option value="Azerbaijan">Azerbaycan</option>
+                    <option value="TRNC">KKTC</option>
+                    <option value="Germany">Almanya</option>
+                    <option value="Other">Diğer (Yurt Dışı)</option>
+                  </select>
                 </div>
               </div>
               <div class="form-group">
@@ -1189,7 +1241,7 @@
                 <div id="invoice-individual-fields">
                   <div class="form-group">
                     <label for="chk-tckn" data-i18n="tckn_label">T.C. Kimlik No (TCKN)</label>
-                    <input type="text" id="chk-tckn" class="form-input" placeholder="11 haneli TCKN (veya 11111111111)" maxlength="11">
+                    <input type="text" id="chk-tckn" class="form-input" placeholder="11 haneli T.C. Kimlik Numarası" maxlength="11">
                     <small style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:2px;" data-i18n="tckn_hint">Şahıs / Bireysel e-Arşiv faturaları için gereklidir.</small>
                   </div>
                 </div>
@@ -1315,6 +1367,7 @@
 
             <!-- Checkout Order Summary & Pay Submit -->
             <div class="checkout-summary-box">
+              <div id="checkout-order-summary" class="checkout-order-summary" aria-live="polite"></div>
               <div class="summary-line">
                 <span data-i18n="order_total">Ödenecek Tutar:</span>
                 <strong id="checkout-total-val" class="checkout-total-text">0,00 ₺</strong>
@@ -1625,16 +1678,14 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container" aria-live="assertive"></div>
 
-  <!-- Local Three.js 3D WebGL Engine & STLLoader (100% Offline & Reliable) -->
-  <script src="./vendor/three.min.js"></script>
-  <script src="./vendor/OrbitControls.js"></script>
-  <script src="./vendor/STLLoader.js"></script>
+  <!-- Local Three.js 3D WebGL Engine & STLLoader are lazy-loaded by app.js
+       (ensure3DLibraries) only when the 3D Print Studio is opened. -->
 
   <!-- Client Application Scripts -->
   <script src="./data/pozitron_data.js?v=20261101_v51"></script>
-  <script src="./i18n.js?v=20261020_iyzico1"></script>
-  <script src="./api.js?v=20260920_v50"></script>
-  <script src="./app.js?v=20261101_v51"></script>
+  <script src="./i18n.js?v=20261101_fix1"></script>
+  <script src="./api.js?v=20261101_fix1"></script>
+  <script src="./app.js?v=20261101_fix1"></script>
 
   <!-- Load Dynamic FPV Guides for Showcase -->
   <script>

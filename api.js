@@ -99,7 +99,7 @@
             return u.token || '';
           } catch(e) { return ''; }
         })();
-      const adminKey = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+      const adminKey = localStorage.getItem('pozitron_admin_key') || '';
 
       if (token) {
         defaultHeaders['Authorization'] = `Bearer ${token}`;
@@ -169,7 +169,7 @@
               return u.token || '';
             } catch(e) { return ''; }
           })();
-        const adminKey = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+        const adminKey = localStorage.getItem('pozitron_admin_key') || '';
 
         let headers = init.headers || {};
         const isHeadersInstance = (typeof Headers !== 'undefined' && headers instanceof Headers);

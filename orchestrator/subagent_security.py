@@ -130,7 +130,7 @@ class CyberSecurityAgent:
                     sql_str = m.group(1)
                     # Check what is inside curly braces
                     interpolations = re.findall(r'\{([^}]+)\}', sql_str)
-                    safe_vars = ('placeholders', 'where_sql', 'col_name', 'col_type', 'table_name')
+                    safe_vars = ('placeholders', 'where_sql', 'col_name', 'col_type', 'table_name', 'clause')
                     unsafe_interpolations = [var.strip() for var in interpolations if var.strip() not in safe_vars]
                     if unsafe_interpolations:
                         findings.append(f"Potansiyel Güvensiz dinamik SQL dizesi [{', '.join(unsafe_interpolations)}]: {os.path.basename(fpath)}")

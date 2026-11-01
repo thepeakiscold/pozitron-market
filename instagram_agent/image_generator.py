@@ -325,6 +325,7 @@ class ImageGenerator:
             'tool_showcase': 'ATÖLYE & ARAÇ',
             'spot_guide': 'UÇUŞ SPATLARI',
             'review_highlight': 'PİLOT DENEYİMİ',
+            '3d_print_studio': '3D BASKI STUDIO',
             'seo_article': 'TEKNİK REHBER'
         }
         text = labels.get(content_type, 'POZITRON FPV')
@@ -1889,6 +1890,15 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         fw, fh = all_raw_frames[0][0], all_raw_frames[0][1]
         ai_duration = len(all_raw_frames) / 25.0
 
+        # Pre-resolve VoxCPM2 female voiceover to synchronize video pacing
+        vo_path = self._get_reels_voiceover(post_data)
+        vo_dur = float(post_data.get('voiceover_duration', 0.0))
+        if vo_dur > 0 and (len(all_raw_frames) / 25.0) < (vo_dur + 0.5):
+            needed_frames = int((vo_dur + 0.5) * 25) - len(all_raw_frames)
+            if needed_frames > 0 and all_raw_frames:
+                all_raw_frames.extend([all_raw_frames[-1]] * needed_frames)
+                ai_duration = len(all_raw_frames) / 25.0
+
         # Outro card appending:
         # multi_shot: 50 frames (2.0s) -> 2x113 (9.04s) + 2s = 11.04s (>=10s)
         # slow_motion: 38 frames (1.5s) -> 258 frames (10.32s) + 1.5s = 11.84s (>=10s)
@@ -1912,6 +1922,8 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             except Exception as e:
                 print(f"[Reels AI] Outro karti olusturulamadi: {e}")
 
+        total_duration = len(all_raw_frames) / 25.0
+
         filter_str = (
             f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
             f"setsar=1,fps=25[bg];"
@@ -1925,14 +1937,23 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             '-i', overlay_path,
         ]
 
-        if audio_path and os.path.exists(audio_path):
-            base_cmd += ['-stream_loop', '-1', '-i', audio_path, '-map', '2:a', '-c:a', 'aac', '-b:a', '192k', '-shortest']
+        # Attach VoxCPM2 female voiceover and background music
+        audio_inputs, final_filter, audio_maps = self._attach_reels_audio(
+            post_data,
+            base_filter=filter_str,
+            start_input_idx=2,
+            target_duration=total_duration,
+            pre_resolved_vo=vo_path
+        )
+        base_cmd.extend(audio_inputs)
 
         base_cmd += [
-            '-filter_complex', filter_str,
+            '-filter_complex', final_filter,
             '-map', '[v]',
+            *audio_maps,
             '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
             '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+            '-shortest',
             abs_video_path, '-y'
         ]
 
@@ -2161,21 +2182,128 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
         return ""
 
-    def _get_reels_audio(self) -> str:
+    def _get_reels_voiceover(self, post_data: dict) -> str:
         """
-        Returns a custom user audio track from assets/instagram/audio.
-        If no user audio files exist, returns empty string so video remains clean without artificial rhythm.
+        Generates or retrieves realistic Turkish female voiceover using VoxCPM2.
+        Returns the absolute path to the .wav file, or empty string on error.
+        """
+        try:
+            from .voxcpm_tts import VoxCPMTTS
+            tts = getattr(self, '_voxcpm_tts', None) or VoxCPMTTS()
+            self._voxcpm_tts = tts
+            rel_p = tts.generate_voiceover_for_post(post_data)
+            if rel_p:
+                clean_rel = rel_p.lstrip('./').lstrip('/')
+                abs_p = os.path.join(BASE_DIR, clean_rel)
+                if os.path.exists(abs_p) and os.path.getsize(abs_p) > 1000:
+                    return abs_p
+        except Exception as e:
+            print(f"[VoxCPM2 Voiceover Hatası] {e}")
+        return ""
+
+    def _get_reels_bg_music(self) -> str:
+        """
+        Returns an ambient background music track for Reels (custom user track or subtle drone beat).
         """
         audio_dir = os.path.join(BASE_DIR, 'assets', 'instagram', 'audio')
         os.makedirs(audio_dir, exist_ok=True)
         exts = ('.mp3', '.wav', '.aac', '.m4a', '.ogg')
         files = [
             os.path.join(audio_dir, f) for f in os.listdir(audio_dir)
-            if f.lower().endswith(exts) and 'fpv_beat_default' not in f.lower()
+            if f.lower().endswith(exts) and 'fpv_beat_default' not in f.lower() and 'reference' not in f.lower() and 'test' not in f.lower()
         ]
         if files:
             return random.choice(files)
+        default_beat = os.path.join(audio_dir, 'fpv_beat_default.wav')
+        if os.path.exists(default_beat):
+            return default_beat
         return ""
+
+    def _get_reels_audio(self) -> str:
+        """
+        Returns a custom user audio track from assets/instagram/audio.
+        If no user audio files exist, returns empty string so video remains clean without artificial rhythm.
+        """
+        return self._get_reels_bg_music()
+
+    def _attach_reels_audio(
+        self,
+        post_data: dict,
+        base_filter: str,
+        start_input_idx: int = 2,
+        native_audio_idx: int = None,
+        target_duration: float = None,
+        pre_resolved_vo: str = None
+    ) -> tuple:
+        """
+        Attaches VoxCPM2 female voiceover and background audio tracks to ffmpeg.
+        Returns (extra_inputs: list, final_filter: str, audio_maps: list).
+        """
+        vo_path = pre_resolved_vo or self._get_reels_voiceover(post_data)
+        bg_path = self._get_reels_bg_music()
+
+        extra_inputs = []
+        filter_parts = [base_filter]
+        curr_idx = start_input_idx
+
+        vo_in_idx = None
+        if vo_path and os.path.exists(vo_path):
+            extra_inputs.extend(['-i', vo_path])
+            vo_in_idx = curr_idx
+            curr_idx += 1
+
+        bg_in_idx = None
+        if bg_path and os.path.exists(bg_path):
+            extra_inputs.extend(['-stream_loop', '-1', '-i', bg_path])
+            bg_in_idx = curr_idx
+            curr_idx += 1
+
+        fade_st = max(0.5, round(target_duration - 0.7, 2)) if target_duration else None
+
+        # Mixing decision matrix
+        if vo_in_idx is not None and bg_in_idx is not None:
+            # Studio female voiceover prominent at 1.0 + ambient background music ducked at 0.15
+            mix_f = f"[{vo_in_idx}:a]volume=1.0[vo];[{bg_in_idx}:a]volume=0.15[bgm];[vo][bgm]amix=inputs=2:duration=first:dropout_transition=2"
+            if fade_st is not None:
+                mix_f += f",afade=t=out:st={fade_st}:d=0.7[aout]"
+            else:
+                mix_f += "[aout]"
+            filter_parts.append(mix_f)
+            audio_maps = ['-map', '[aout]', '-c:a', 'aac', '-b:a', '192k']
+
+        elif vo_in_idx is not None and native_audio_idx is not None:
+            # Voiceover prominent at 1.0 + native drone motor noise ducked down to 0.10
+            mix_f = f"[{vo_in_idx}:a]volume=1.0[vo];[{native_audio_idx}:a]volume=0.10[drone];[vo][drone]amix=inputs=2:duration=first:dropout_transition=2"
+            if fade_st is not None:
+                mix_f += f",afade=t=out:st={fade_st}:d=0.7[aout]"
+            else:
+                mix_f += "[aout]"
+            filter_parts.append(mix_f)
+            audio_maps = ['-map', '[aout]', '-c:a', 'aac', '-b:a', '192k']
+
+        elif vo_in_idx is not None:
+            # Female voiceover only
+            if fade_st is not None:
+                filter_parts.append(f"[{vo_in_idx}:a]afade=t=out:st={fade_st}:d=0.7[aout]")
+                audio_maps = ['-map', '[aout]', '-c:a', 'aac', '-b:a', '192k']
+            else:
+                audio_maps = ['-map', f'{vo_in_idx}:a', '-c:a', 'aac', '-b:a', '192k']
+
+        elif bg_in_idx is not None:
+            # Background beat only
+            if fade_st is not None:
+                filter_parts.append(f"[{bg_in_idx}:a]afade=t=out:st={fade_st}:d=0.7[aout]")
+                audio_maps = ['-map', '[aout]', '-c:a', 'aac', '-b:a', '192k']
+            else:
+                audio_maps = ['-map', f'{bg_in_idx}:a', '-c:a', 'aac', '-b:a', '192k']
+
+        elif native_audio_idx is not None:
+            audio_maps = ['-map', f'{native_audio_idx}:a', '-c:a', 'aac', '-b:a', '192k']
+
+        else:
+            audio_maps = ['-an']
+
+        return extra_inputs, ';'.join(filter_parts), audio_maps
 
     def _check_video_has_audio(self, video_path: str) -> bool:
         """Checks if a video file contains an audio stream using ffprobe."""
@@ -2426,22 +2554,30 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 return self._fallback_single_slide_video(post_data, abs_video_path, video_filename)
 
             s1, s2, s3 = slides[0], slides[1], slides[2]
-            audio_path = self._get_reels_audio()
 
-            # Variable slide duration + transition for Reels format diversity.
+            # Pre-resolve VoxCPM2 female voiceover to dynamically synchronize slide pacing
+            vo_path = self._get_reels_voiceover(post_data)
+            vo_dur = float(post_data.get('voiceover_duration', 0.0))
+
             try:
                 slide_dur = float(post_data.get('reel_slide_dur', 3.0))
             except Exception:
                 slide_dur = 3.0
             slide_dur = max(2.0, min(slide_dur, 4.5))
             xfade = 0.5
+
+            if vo_dur > 0:
+                min_total = round(vo_dur + 0.6, 2)
+                # Calculate required slide_dur so 3*slide_dur - 2*xfade >= min_total
+                req_slide_dur = round((min_total + 2 * xfade) / 3.0, 2)
+                slide_dur = max(slide_dur, req_slide_dur)
+
             offset1 = round(slide_dur - xfade, 2)
             offset2 = round(2 * slide_dur - 2 * xfade, 2)
-            total_dur = round(3 * slide_dur - 3 * xfade, 2)
+            total_dur = round(3 * slide_dur - 2 * xfade, 2)
             transition = post_data.get('reel_transition') or random.choice(
                 ['wipeleft', 'slideleft', 'smoothleft', 'circleopen', 'fade', 'wiperight']
             )
-            audio_fade_start = max(0.5, round(total_dur - 0.7, 2))
 
             filter_str = (
                 "[0:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v0];"
@@ -2458,33 +2594,25 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 '-loop', '1', '-t', str(slide_dur), '-i', s3,
             ]
 
-            if audio_path and os.path.exists(audio_path):
-                cmd.extend(['-i', audio_path])
-                cmd.extend([
-                    '-filter_complex', filter_str,
-                    '-map', '[v]',
-                    '-map', '3:a',
-                    '-c:v', 'libx264',
-                    '-c:a', 'aac',
-                    '-b:a', '192k',
-                    '-t', str(total_dur),
-                    '-pix_fmt', 'yuv420p',
-                    '-af', f'afade=t=out:st={audio_fade_start}:d=0.7',
-                    '-movflags', '+faststart',
-                    abs_video_path,
-                    '-y'
-                ])
-            else:
-                cmd.extend([
-                    '-filter_complex', filter_str,
-                    '-map', '[v]',
-                    '-c:v', 'libx264',
-                    '-t', str(total_dur),
-                    '-pix_fmt', 'yuv420p',
-                    '-movflags', '+faststart',
-                    abs_video_path,
-                    '-y'
-                ])
+            audio_inputs, final_filter, audio_maps = self._attach_reels_audio(
+                post_data,
+                base_filter=filter_str,
+                start_input_idx=3,
+                target_duration=total_dur,
+                pre_resolved_vo=vo_path
+            )
+            cmd.extend(audio_inputs)
+            cmd.extend([
+                '-filter_complex', final_filter,
+                '-map', '[v]',
+                *audio_maps,
+                '-c:v', 'libx264',
+                '-t', str(total_dur),
+                '-pix_fmt', 'yuv420p',
+                '-movflags', '+faststart',
+                abs_video_path,
+                '-y'
+            ])
 
             res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=45)
             if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 1000:
@@ -2528,6 +2656,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
         headline, subhead, points = self._template_text(post_data)
         f_head = get_font(58, bold=True)
+        f_sub = get_font(28, bold=False)
         draw = ImageDraw.Draw(img)
         y = int(H * 0.70)
         reels_type = post_data.get('reels_type')
@@ -2539,7 +2668,8 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             'secret_spot': '📍 GİZLİ UÇUŞ SPOTU',
             'product_cinematic': '💎 SİNEMATİK VİTRİN',
             'flash_deal': '🔥 FLAŞ FIRSAT',
-            'real_fpv_broll': '🎥 GERÇEK FPV UÇUŞU'
+            'real_fpv_broll': '🎥 GERÇEK FPV UÇUŞU',
+            '3d_print_showcase': '🖨️ 3D BASKI STUDIO'
         }
         badge_text = reels_badges.get(reels_type)
         if badge_text:
@@ -2584,20 +2714,19 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 'ffmpeg',
                 '-i', broll_path,
                 '-loop', '1', '-i', overlay_path,
-                '-filter_complex', filter_str,
-                '-map', '[v]',
             ]
 
-            if has_audio:
-                cmd.extend([
-                    '-map', '0:a',
-                    '-c:a', 'aac',
-                    '-b:a', '192k'
-                ])
-            else:
-                cmd.extend(['-an'])
-
+            audio_inputs, final_filter, audio_maps = self._attach_reels_audio(
+                post_data,
+                base_filter=filter_str,
+                start_input_idx=2,
+                native_audio_idx=0 if has_audio else None
+            )
+            cmd.extend(audio_inputs)
             cmd.extend([
+                '-filter_complex', final_filter,
+                '-map', '[v]',
+                *audio_maps,
                 '-c:v', 'libx264',
                 '-pix_fmt', 'yuv420p',
                 '-movflags', '+faststart',
@@ -2628,28 +2757,50 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
     def _fallback_single_slide_video(self, post_data: dict, abs_video_path: str, video_filename: str) -> str:
         """
-        Ultimate fallback: 5-second single image zoompan video.
+        Ultimate fallback: smooth Ken-Burns brand video with realistic female voiceover.
         """
         story_img_rel = self.generate_story_image(post_data)
         abs_story_img = os.path.join(BASE_DIR, story_img_rel.lstrip('./').lstrip('/'))
+
+        vo_path = self._get_reels_voiceover(post_data)
+        vo_dur = float(post_data.get('voiceover_duration', 0.0))
+        target_dur = max(5.5, round(vo_dur + 0.6, 2)) if vo_dur > 0 else 5.0
+
+        fps = 30
+        total_frames = int(target_dur * fps)
+        vf_str = f"zoompan=z='min(zoom+0.0012,1.08)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={total_frames}:s=1080x1920:fps={fps}[v]"
 
         try:
             cmd = [
                 'ffmpeg',
                 '-loop', '1',
                 '-i', abs_story_img,
-                '-vf', "zoompan=z='min(zoom+0.0015,1.08)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=150:s=1080x1920:fps=30",
+            ]
+            audio_inputs, final_filter, audio_maps = self._attach_reels_audio(
+                post_data,
+                base_filter=vf_str,
+                start_input_idx=1,
+                target_duration=target_dur,
+                pre_resolved_vo=vo_path
+            )
+            cmd.extend(audio_inputs)
+            cmd.extend([
+                '-filter_complex', final_filter,
+                '-map', '[v]',
+                *audio_maps,
                 '-c:v', 'libx264',
-                '-t', '5',
+                '-t', str(target_dur),
                 '-pix_fmt', 'yuv420p',
                 '-movflags', '+faststart',
                 abs_video_path,
-                '-y',
-                '-loglevel', 'quiet'
-            ]
-            res = subprocess.run(cmd, timeout=30)
+                '-y'
+            ])
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=45)
             if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 1000:
                 return f"./assets/instagram/reels/{video_filename}"
+            else:
+                err_msg = (res.stderr or b'').decode('utf-8', 'ignore')[-300:]
+                print(f"[Fallback Video HATA] code={res.returncode}, stderr={err_msg}")
         except Exception as e:
             print(f"[UYARI] Fallback video hatasi: {e}")
 

@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
+  <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -1630,36 +1631,13 @@
         }
       } catch(e) {}
 
-      // Auto-authenticate for local development
-      if ((!user || !isUserAdmin(user)) && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-        user = { email: 'furkaniusprimes@gmail.com', full_name: 'Mağaza Yöneticisi', role: 'admin', provider: 'gmail' };
-        localStorage.setItem('pozitron_user', JSON.stringify(user));
-      }
-
       if (user && isUserAdmin(user)) {
         user.role = 'admin';
         localStorage.setItem('pozitron_user', JSON.stringify(user));
 
-        if (!localStorage.getItem('pozitron_admin_key')) {
-          localStorage.setItem('pozitron_admin_key', 'pzt_adm_sec_9941a87b32c');
-        }
-
-        // Sync authenticated user to backend database and get cryptographically signed token
-        if (user.email) {
-          fetch('/api/auth/google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: user.email,
-              full_name: user.full_name,
-              avatar_url: user.avatar_url
-            })
-          }).then(res => res.json()).then(data => {
-            if (data && data.token) {
-              localStorage.setItem('pozitron_token', data.token);
-            }
-          }).catch(() => {});
-        }
+        // The admin session is established ONLY by a real Google sign-in
+        // (handleAdminGoogleLogin sends the verified ID token). Never silently
+        // mint a server session from a client-supplied e-mail.
 
         if (guard) guard.style.display = 'none';
         if (app) app.style.display = 'block';
@@ -1720,16 +1698,12 @@
 
         localStorage.setItem('pozitron_user', JSON.stringify(adminUser));
 
-        // Sync to backend SQLite database
+        // Establish the server session from the Google ID token (verified server-side)
         try {
           const authRes = await fetch('/api/auth/google', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: adminUser.email,
-              full_name: adminUser.full_name,
-              avatar_url: adminUser.avatar_url
-            })
+            body: JSON.stringify({ credential: response.credential })
           });
           if (authRes.ok) {
             const authData = await authRes.json();
@@ -3281,7 +3255,7 @@
       try {
         const baseUrl = typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '';
         const apiUrl = (baseUrl ? baseUrl.replace(/\/+$/, '') : '') + '/api/admin/orders';
-        const adminKey = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+        const adminKey = localStorage.getItem('pozitron_admin_key') || '';
         const token = localStorage.getItem('pozitron_token');
         const headers = { 'Accept': 'application/json' };
         if (adminKey) headers['X-Admin-Key'] = adminKey;
@@ -3589,7 +3563,7 @@
       try {
         const baseUrl = typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '';
         const apiUrl = (baseUrl ? baseUrl.replace(/\/+$/, '') : '') + '/api/admin/orders/update';
-        const adminKey = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+        const adminKey = localStorage.getItem('pozitron_admin_key') || '';
         const token = localStorage.getItem('pozitron_token');
         const headers = { 'Content-Type': 'application/json' };
         if (adminKey) headers['X-Admin-Key'] = adminKey;
@@ -4427,7 +4401,7 @@
 <script>
   function cpHeaders(extra) {
     var h = { 'Content-Type': 'application/json' };
-    var k = localStorage.getItem('pozitron_admin_key') || 'pzt_adm_sec_9941a87b32c';
+    var k = localStorage.getItem('pozitron_admin_key') || '';
     if (k) h['X-Admin-Key'] = k;
     return Object.assign(h, extra || {});
   }

@@ -77,7 +77,7 @@ class PozitronApp {
       bestseller: '0',
       min_price: '',
       max_price: '',
-      sort: 'popular',
+      sort: 'random',
       page: 1,
       limit: 24
     };
@@ -90,7 +90,7 @@ class PozitronApp {
       battery: null
     };
 
-    this.usdRate = (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 50.0);
+    this.usdRate = (window.pozitronData && window.pozitronData.usd_rate ? parseFloat(window.pozitronData.usd_rate) : 75.00);
     const cachedRate = parseFloat(localStorage.getItem('pozitron_usd_rate'));
     if (!isNaN(cachedRate) && cachedRate > 0) {
       this.usdRate = cachedRate;
@@ -340,7 +340,7 @@ class PozitronApp {
       bestseller: '0',
       min_price: '',
       max_price: '',
-      sort: 'popular',
+      sort: 'random',
       page: 1,
       limit: 24
     };
@@ -400,6 +400,7 @@ class PozitronApp {
 
     if (searchInput) {
       let debounceTimer = null;
+      this._selectedSuggestionIndex = -1;
       searchInput.addEventListener('input', (e) => {
         const val = e.target.value.trim();
         if (searchClear) searchClear.style.display = val ? 'block' : 'none';
@@ -410,6 +411,30 @@ class PozitronApp {
       });
 
       searchInput.addEventListener('keydown', (e) => {
+        const box = document.getElementById('search-suggestions');
+        const items = box ? box.querySelectorAll('.suggestion-item') : [];
+        if (box && box.style.display !== 'none' && items.length > 0) {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            this._selectedSuggestionIndex = (this._selectedSuggestionIndex + 1) % items.length;
+            this.updateSuggestionSelection(items, this._selectedSuggestionIndex, searchInput);
+            return;
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            this._selectedSuggestionIndex = (this._selectedSuggestionIndex - 1 + items.length) % items.length;
+            this.updateSuggestionSelection(items, this._selectedSuggestionIndex, searchInput);
+            return;
+          } else if (e.key === 'Enter') {
+            if (this._selectedSuggestionIndex >= 0 && items[this._selectedSuggestionIndex]) {
+              e.preventDefault();
+              items[this._selectedSuggestionIndex].click();
+              return;
+            }
+          } else if (e.key === 'Escape') {
+            this.hideSuggestions();
+            return;
+          }
+        }
         if (e.key === 'Enter') {
           e.preventDefault();
           this.handleSearchSubmit(e);
@@ -752,7 +777,7 @@ class PozitronApp {
   }
 
   formatPrice(priceUSD, priceTRY) {
-    const rate = this.usdRate || 50.0;
+    const rate = this.usdRate || 75.00;
     let tryVal = priceTRY;
     let usdVal = priceUSD;
 
@@ -1050,9 +1075,15 @@ class PozitronApp {
       items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
     } else if (sort === 'discount') {
       items.sort((a, b) => (b.discount_pct || 0) - (a.discount_pct || 0));
+    } else if (sort === 'random') {
+      // Fisher-Yates shuffle for true random distribution
+      for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+      }
     } else {
-      // popular / default
-      items.sort((a, b) => (b.is_bestseller || 0) - (a.is_bestseller || 0) || (b.rating || 0) - (a.rating || 0));
+      // popular / default: prioritize real reviews, then shuffle ties to prevent category grouping
+      items.sort((a, b) => (b.is_bestseller || 0) - (a.is_bestseller || 0) || (b.rating || 0) - (a.rating || 0) || (Math.random() - 0.5));
     }
 
     const total = items.length;
@@ -1486,13 +1517,17 @@ class PozitronApp {
 
     const staticData = this.getStaticData();
     const q = query.toLowerCase().trim();
+    const tokens = q.split(/\s+/).filter(Boolean);
     const allMatches = (staticData.products || []).filter(p => {
       const nameTR = (p.name_tr || '').toLowerCase();
       const nameEN = (p.name_en || '').toLowerCase();
       const brand = (p.brand || '').toLowerCase();
       const sku = (p.sku || '').toLowerCase();
       const cat = (p.category_id || '').toLowerCase();
-      return nameTR.includes(q) || nameEN.includes(q) || brand.includes(q) || sku.includes(q) || cat.includes(q);
+      const tags = Array.isArray(p.tags) ? p.tags.join(' ').toLowerCase() : (typeof p.tags_json === 'string' ? p.tags_json.toLowerCase() : '');
+      const specs = typeof p.specs === 'object' && p.specs ? Object.values(p.specs).join(' ').toLowerCase() : (typeof p.specs_json === 'string' ? p.specs_json.toLowerCase() : '');
+      const fullText = `${nameTR} ${nameEN} ${brand} ${sku} ${cat} ${tags} ${specs}`;
+      return tokens.every(token => fullText.includes(token));
     });
 
     const totalCount = allMatches.length;
@@ -1517,7 +1552,7 @@ class PozitronApp {
       categoryMap[c.id] = lang === 'tr' ? (c.name_tr || c.name) : (c.name_en || c.name);
     });
 
-    let itemsHtml = items.map(p => {
+    let itemsHtml = items.map((p, idx) => {
       const name = lang === 'tr' ? p.name_tr : p.name_en;
       const price = this.formatPrice(p.price_usd, p.price_try);
       const catName = categoryMap[p.category_id] || p.category_id;
@@ -1525,7 +1560,7 @@ class PozitronApp {
       const stockColor = p.stock > 0 ? '#16a34a' : '#ef4444';
 
       return `
-        <div class="suggestion-item" data-id="${p.id}">
+        <div class="suggestion-item" data-id="${p.id}" id="suggestion-opt-${idx}" role="option" aria-selected="false" tabindex="-1">
           <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="suggestion-img" loading="lazy">
           <div class="suggestion-info">
             <div class="suggestion-title">${name}</div>
@@ -1562,6 +1597,11 @@ class PozitronApp {
     `;
 
     box.style.display = 'flex';
+    const sInput = document.getElementById('search-input');
+    if (sInput) {
+      sInput.setAttribute('aria-expanded', 'true');
+    }
+    this._selectedSuggestionIndex = -1;
 
     box.querySelectorAll('.suggestion-item').forEach(item => {
       item.addEventListener('click', (e) => {
@@ -1592,9 +1632,27 @@ class PozitronApp {
     }
   }
 
+  updateSuggestionSelection(items, activeIndex, inputEl) {
+    items.forEach((item, idx) => {
+      const isSelected = (idx === activeIndex);
+      item.classList.toggle('is-selected', isSelected);
+      item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      if (isSelected) {
+        inputEl.setAttribute('aria-activedescendant', item.id);
+        item.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  }
+
   hideSuggestions() {
     const box = document.getElementById('search-suggestions');
     if (box) box.style.display = 'none';
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+      searchInput.setAttribute('aria-expanded', 'false');
+      searchInput.removeAttribute('aria-activedescendant');
+    }
+    this._selectedSuggestionIndex = -1;
   }
 
   // ==========================================
@@ -1829,7 +1887,7 @@ class PozitronApp {
       if (isFreeShipping) {
         progressText.innerHTML = window.i18n.t('free_shipping_earned');
       } else {
-        const remaining = this.formatPrice((freeShippingTargetTRY - subtotalTRY) / (this.usdRate || 50.0), freeShippingTargetTRY - subtotalTRY);
+        const remaining = this.formatPrice((freeShippingTargetTRY - subtotalTRY) / (this.usdRate || 75.00), freeShippingTargetTRY - subtotalTRY);
         progressText.innerHTML = `${remaining} daha ekleyin, <strong>Ücretsiz Kargo</strong> kazanın!`;
       }
     }
@@ -1837,7 +1895,10 @@ class PozitronApp {
 
   openCartDrawer() {
     const backdrop = document.getElementById('cart-backdrop');
-    if (backdrop) backdrop.classList.add('open');
+    if (backdrop) {
+      backdrop.classList.add('open');
+      this.trapFocus(backdrop);
+    }
 
     // GA4 view_cart tracking
     if (this.cart && this.cart.length > 0) {
@@ -1863,7 +1924,10 @@ class PozitronApp {
 
   closeCartDrawer() {
     const backdrop = document.getElementById('cart-backdrop');
-    if (backdrop) backdrop.classList.remove('open');
+    if (backdrop) {
+      backdrop.classList.remove('open');
+      this.releaseFocus(backdrop);
+    }
   }
 
   openCart() {
@@ -1874,24 +1938,20 @@ class PozitronApp {
     this.closeCartDrawer();
   }
 
-  async handleApplyCoupon() {
-    const input = document.getElementById('coupon-input');
-    const feedback = document.getElementById('coupon-feedback');
-    if (!input) return;
-
-    const code = input.value.trim().toUpperCase();
-    if (!code) return;
-
+  async validateAndApplyCoupon(code, feedbackEl) {
+    if (!code) return false;
     let subtotalUSD = 0;
     let subtotalTRY = 0;
     this.cart.forEach(i => {
-      subtotalUSD += i.price_usd * i.quantity;
-      subtotalTRY += i.price_try * i.quantity;
+      subtotalUSD += (parseFloat(i.price_usd) || 0) * (i.quantity || 1);
+      subtotalTRY += (parseFloat(i.price_try) || 0) * (i.quantity || 1);
     });
 
     let data = null;
     try {
       const u = this.user || {};
+      const chkEmailEl = document.getElementById('chk-email');
+      const emailVal = u.email || (chkEmailEl ? chkEmailEl.value.trim() : '');
       const res = await fetch(`${this.apiBase}/coupons/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1900,16 +1960,15 @@ class PozitronApp {
           subtotal_usd: subtotalUSD,
           subtotal_try: subtotalTRY,
           user_id: u.id || '',
-          email: u.email || ''
+          email: emailVal || ''
         })
       });
       data = await res.json().catch(() => null);
       if (!res.ok && data) {
-        // Server rejected (expired / already used / min order / login required).
-        feedback.innerHTML = `<span class="text-danger">${data.error || 'Geçersiz kupon kodu.'}</span>`;
+        if (feedbackEl) feedbackEl.innerHTML = `<span class="text-danger" style="color:#dc2626;">${data.error || 'Geçersiz kupon kodu.'}</span>`;
         this.appliedCoupon = null;
         this.updateCartUI();
-        return;
+        return false;
       }
     } catch (e) {
       // static fallback
@@ -1939,11 +1998,27 @@ class PozitronApp {
           extra = ` <small>(son: ${new Date(data.expires_at).toLocaleString('tr-TR')})</small>`;
         } catch (e) {}
       }
-      feedback.innerHTML = `<span class="text-success">✓ ${label} uygulandı!${extra}</span>`;
+      if (feedbackEl) feedbackEl.innerHTML = `<span class="text-success" style="color:#16a34a;">✓ ${label} uygulandı!${extra}</span>`;
       this.updateCartUI();
+      return true;
     } else {
-      feedback.innerHTML = `<span class="text-danger">${data.error || 'Geçersiz kupon kodu.'}</span>`;
+      if (feedbackEl) feedbackEl.innerHTML = `<span class="text-danger" style="color:#dc2626;">${data.error || 'Geçersiz kupon kodu.'}</span>`;
+      return false;
     }
+  }
+
+  async handleApplyCoupon() {
+    const input = document.getElementById('coupon-input');
+    const feedback = document.getElementById('coupon-feedback');
+    const loginHint = document.getElementById('coupon-login-hint');
+    if (!input) return;
+
+    const code = input.value.trim().toUpperCase();
+    if (!code) return;
+
+    // Coupons are bound to an identity to prevent repeated redemption.
+    if (loginHint) loginHint.style.display = this.user ? 'none' : 'block';
+    await this.validateAndApplyCoupon(code, feedback);
   }
 
   // ==========================================
@@ -2015,7 +2090,10 @@ class PozitronApp {
 
   openAuthModal() {
     const backdrop = document.getElementById('auth-modal-backdrop');
-    if (backdrop) backdrop.style.display = 'flex';
+    if (backdrop) {
+      backdrop.style.display = 'flex';
+      this.trapFocus(backdrop);
+    }
     // Clear any previous error messages
     const loginErr = document.getElementById('login-error-msg');
     const regErr = document.getElementById('reg-error-msg');
@@ -2025,7 +2103,10 @@ class PozitronApp {
 
   closeAuthModal() {
     const backdrop = document.getElementById('auth-modal-backdrop');
-    if (backdrop) backdrop.style.display = 'none';
+    if (backdrop) {
+      backdrop.style.display = 'none';
+      this.releaseFocus(backdrop);
+    }
   }
 
 
@@ -2097,6 +2178,7 @@ class PozitronApp {
     if (!modal || !body) return;
 
     modal.style.display = 'flex';
+    this.trapFocus(modal);
     body.innerHTML = '<div style="text-align:center; padding:32px 16px; color:var(--text-muted);">Siparişleriniz yükleniyor...</div>';
 
     let orders = [];
@@ -2108,10 +2190,13 @@ class PozitronApp {
 
     // Try fetching live orders from API if user is logged in
     const currentUser = JSON.parse(localStorage.getItem('pozitron_user') || 'null');
+    const token = localStorage.getItem('pozitron_token') || (currentUser && currentUser.token);
     if (currentUser && (currentUser.email || currentUser.id)) {
       try {
         const qUrl = currentUser.email ? `/api/orders?email=${encodeURIComponent(currentUser.email)}` : `/api/orders/user/${encodeURIComponent(currentUser.id)}`;
-        const res = await fetch(qUrl);
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch(qUrl, { headers });
         if (res.ok) {
           const data = await res.json();
           if (data && Array.isArray(data.orders) && data.orders.length > 0) {
@@ -2164,7 +2249,10 @@ class PozitronApp {
 
   closeOrdersModal() {
     const modal = document.getElementById('orders-modal-backdrop');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.style.display = 'none';
+      this.releaseFocus(modal);
+    }
   }
 
   isUserAdmin(user) {
@@ -3241,6 +3329,8 @@ class PozitronApp {
     this._currentGrandUSD = grandUSD;
     this._currentGrandTRY = grandTRY;
 
+    this.renderCheckoutOrderSummary();
+
     const totalEl = document.getElementById('checkout-total-val');
     if (totalEl) totalEl.textContent = this.formatPrice(grandUSD, grandTRY);
 
@@ -3263,11 +3353,207 @@ class PozitronApp {
 
     this.setPaymentMethod(this.activePaymentMethod);
     modal.style.display = 'flex';
+    this.trapFocus(modal);
   }
 
   closeCheckoutModal() {
     const modal = document.getElementById('checkout-modal-backdrop');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.style.display = 'none';
+      this.releaseFocus(modal);
+    }
+  }
+
+  /**
+   * Renders the cart line items inside the checkout modal. Without this the buyer
+   * only saw a grand total and could not verify what they were paying for.
+   */
+  renderCheckoutOrderSummary() {
+    const box = document.getElementById('checkout-order-summary');
+    if (!box) return;
+
+    const t = (key, fallback) => (window.i18n && window.i18n.t) ? (window.i18n.t(key) || fallback) : fallback;
+    if (!this.cart || this.cart.length === 0) {
+      box.innerHTML = `<p class="checkout-summary-empty">${t('cart_empty', 'Sepetiniz boş.')}</p>`;
+      return;
+    }
+
+    const rows = this.cart.map(item => {
+      const name = (window.i18n && window.i18n.currentLang === 'en')
+        ? (item.name_en || item.name_tr || '')
+        : (item.name_tr || item.name_en || '');
+      const qty = item.quantity || 1;
+      const lineTRY = (parseFloat(item.price_try) || 0) * qty;
+      const lineUSD = (parseFloat(item.price_usd) || 0) * qty;
+      const img = this.formatImgUrl ? this.formatImgUrl(item.image_url) : (item.image_url || '');
+      return `
+        <div class="checkout-summary-item">
+          <img src="${this.escapeHTML(img)}" alt="" class="checkout-summary-thumb" loading="lazy">
+          <div class="checkout-summary-info">
+            <span class="checkout-summary-name">${this.escapeHTML(name)}</span>
+            <span class="checkout-summary-qty">${qty} × ${this.formatPrice(item.price_usd, item.price_try)}</span>
+          </div>
+          <span class="checkout-summary-line">${this.formatPrice(lineUSD, lineTRY)}</span>
+        </div>`;
+    }).join('');
+
+    let couponHtml = '';
+    if (this.appliedCoupon) {
+      couponHtml = `
+        <div class="checkout-coupon-container">
+          <div class="checkout-coupon-applied-badge">
+            <span>🏷️ ${this.escapeHTML(this.appliedCoupon.code || '')} (−${this.formatPrice(this.appliedCoupon.discount_usd || 0, this.appliedCoupon.discount_try || 0)})</span>
+            <button type="button" class="btn-remove-coupon-chk" onclick="window.app && window.app.removeCouponFromCheckout()" title="Kuponu Kaldır">✕</button>
+          </div>
+        </div>`;
+    } else {
+      const loginNote = !this.user ? `<div class="checkout-coupon-hint" style="font-size:0.75rem; color:#64748b; margin-top:4px;">Kuponlar hesap veya e-posta bazlıdır. Giriş yaparak veya e-posta girerek kullanabilirsiniz.</div>` : '';
+      couponHtml = `
+        <div class="checkout-coupon-container">
+          <div class="checkout-coupon-row">
+            <input type="text" id="chk-coupon-code" class="checkout-coupon-input" placeholder="${t('coupon_code', 'Kupon Kodu')}" aria-label="${t('coupon_code', 'Kupon Kodu')}">
+            <button type="button" class="btn-checkout-apply-coupon" onclick="window.app && window.app.applyCouponFromCheckout()">${t('apply', 'Uygula')}</button>
+          </div>
+          <div id="chk-coupon-feedback" class="checkout-coupon-feedback"></div>
+          ${loginNote}
+        </div>`;
+    }
+
+    let totals = '';
+    let subTRY = 0;
+    let subUSD = 0;
+    this.cart.forEach(i => {
+      subTRY += (parseFloat(i.price_try) || 0) * (i.quantity || 1);
+      subUSD += (parseFloat(i.price_usd) || 0) * (i.quantity || 1);
+    });
+
+    totals += `
+      <div class="checkout-summary-total-row">
+        <span>${t('cart_subtotal', 'Ara Toplam')}</span>
+        <strong>${this.formatPrice(subUSD, subTRY)}</strong>
+      </div>`;
+
+    if (this.appliedCoupon) {
+      totals += `
+        <div class="checkout-summary-total-row is-discount">
+          <span>${t('coupon_label', 'Kupon')} (${this.escapeHTML(this.appliedCoupon.code || '')})</span>
+          <strong>−${this.formatPrice(this.appliedCoupon.discount_usd || 0, this.appliedCoupon.discount_try || 0)}</strong>
+        </div>`;
+    }
+    const isFree = subTRY >= 1500;
+    const shippingTRY = isFree ? 0 : 99;
+    totals += `
+      <div class="checkout-summary-total-row">
+        <span>${t('shipping_label', 'Kargo')}</span>
+        <strong>${isFree ? t('free_shipping', 'Ücretsiz') : this.formatPrice(2.10, 99)}</strong>
+      </div>`;
+
+    const headHtml = `
+      <div class="checkout-summary-head">
+        <span>${t('order_summary', 'Sipariş Özeti')}</span>
+        <button type="button" class="btn-checkout-edit-cart" onclick="window.app && window.app.editCartFromCheckout()">${t('edit_cart', 'Sepeti Düzenle')}</button>
+      </div>`;
+
+    box.innerHTML = `${headHtml}${rows}${couponHtml}${totals}`;
+  }
+
+  editCartFromCheckout() {
+    this.closeCheckoutModal();
+    this.openCartDrawer();
+  }
+
+  async applyCouponFromCheckout() {
+    const input = document.getElementById('chk-coupon-code');
+    const feedback = document.getElementById('chk-coupon-feedback');
+    if (!input) return;
+    const code = input.value.trim().toUpperCase();
+    if (!code) return;
+
+    const ok = await this.validateAndApplyCoupon(code, feedback);
+    if (ok) {
+      this.renderCheckoutOrderSummary();
+      this.updateCheckoutTotalsAfterCoupon();
+    }
+  }
+
+  removeCouponFromCheckout() {
+    this.appliedCoupon = null;
+    const feedback = document.getElementById('coupon-feedback');
+    if (feedback) feedback.innerHTML = '';
+    const input = document.getElementById('coupon-input');
+    if (input) input.value = '';
+    this.updateCartUI();
+    this.renderCheckoutOrderSummary();
+    this.updateCheckoutTotalsAfterCoupon();
+  }
+
+  updateCheckoutTotalsAfterCoupon() {
+    let subTRY = 0;
+    let subUSD = 0;
+    this.cart.forEach(i => {
+      subTRY += (parseFloat(i.price_try) || 0) * (i.quantity || 1);
+      subUSD += (parseFloat(i.price_usd) || 0) * (i.quantity || 1);
+    });
+
+    if (this.appliedCoupon) {
+      subTRY = Math.max(0, subTRY - (parseFloat(this.appliedCoupon.discount_try) || 0));
+      subUSD = Math.max(0, subUSD - (parseFloat(this.appliedCoupon.discount_usd) || 0));
+    }
+
+    const isFree = subTRY >= 1500;
+    const grandUSD = subUSD + (isFree ? 0 : 2.10);
+    const grandTRY = subTRY + (isFree ? 0 : 99);
+    this._currentGrandUSD = grandUSD;
+    this._currentGrandTRY = grandTRY;
+
+    const totalEl = document.getElementById('checkout-total-val');
+    if (totalEl) totalEl.textContent = this.formatPrice(grandUSD, grandTRY);
+
+    this.setPaymentMethod(this.activePaymentMethod || 'iyzico');
+  }
+
+  trapFocus(modal) {
+    if (!modal) return;
+    this._previousActiveElement = document.activeElement;
+    const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusables = Array.from(modal.querySelectorAll(focusableSelectors)).filter(el => !el.disabled && el.offsetParent !== null);
+    if (focusables.length > 0) {
+      setTimeout(() => focusables[0].focus(), 60);
+    }
+
+    const keyListener = (e) => {
+      if (e.key !== 'Tab') return;
+      const currentFocusables = Array.from(modal.querySelectorAll(focusableSelectors)).filter(el => !el.disabled && el.offsetParent !== null);
+      if (currentFocusables.length === 0) return;
+      const first = currentFocusables[0];
+      const last = currentFocusables[currentFocusables.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          last.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === last) {
+          first.focus();
+          e.preventDefault();
+        }
+      }
+    };
+    modal._focusTrapListener = keyListener;
+    modal.addEventListener('keydown', keyListener);
+  }
+
+  releaseFocus(modal) {
+    if (modal && modal._focusTrapListener) {
+      modal.removeEventListener('keydown', modal._focusTrapListener);
+      delete modal._focusTrapListener;
+    }
+    if (this._previousActiveElement && typeof this._previousActiveElement.focus === 'function') {
+      try {
+        this._previousActiveElement.focus();
+      } catch (e) {}
+    }
   }
 
   // Handle ESC (Escape) key globally across all open modals, drawers, and menus
@@ -3404,10 +3690,11 @@ class PozitronApp {
     const btnText = document.getElementById('pay-submit-btn-text');
     const btnIcon = document.getElementById('pay-submit-btn-icon');
     const submitBtn = document.getElementById('submit-order-btn');
+    const formattedTotal = this.formatPrice(this._currentGrandUSD || 0, this._currentGrandTRY || 0);
 
     if (method === 'iyzico') {
       if (btnIcon) btnIcon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>';
-      if (btnText) btnText.textContent = 'iyzico Güvenli Ödemeye Geç';
+      if (btnText) btnText.textContent = `${formattedTotal} Öde — iyzico Güvenli Ödeme`;
       if (submitBtn) {
         submitBtn.style.background = '#1a56db';
         submitBtn.style.borderColor = '#1a56db';
@@ -3421,7 +3708,7 @@ class PozitronApp {
       }
     } else if (method === 'havale') {
       if (btnIcon) btnIcon.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>';
-      if (btnText) btnText.textContent = 'Havale Bildirimini Tamamla';
+      if (btnText) btnText.textContent = `${formattedTotal} — Havale Bildirimini Tamamla`;
       if (submitBtn) {
         submitBtn.style.background = '#059669';
         submitBtn.style.borderColor = '#059669';
@@ -3534,12 +3821,13 @@ class PozitronApp {
       taxId = (document.getElementById('chk-tckn')?.value || '').trim();
       if (taxId && (taxId.length !== 11 || !/^\d{11}$/.test(taxId))) {
         if (err) {
-          err.textContent = "T.C. Kimlik Numarası (TCKN) 11 haneli rakam olmalıdır (veya boş bırakabilirsiniz).";
+          err.textContent = "T.C. Kimlik Numarası (TCKN) 11 haneli rakam olmalıdır.";
           err.style.display = 'block';
         }
         return;
       }
-      if (!taxId) taxId = '11111111111'; // Legal default for individual e-Arşiv in Turkey
+      // Never inject a placeholder identity: an e-Arşiv invoice must carry the
+      // buyer's real TCKN. Empty stays empty and the operator requests it.
     }
 
     const sameBilling = document.getElementById('chk-same-billing')?.checked;
@@ -4105,7 +4393,7 @@ class PozitronApp {
     const lang = window.i18n.currentLang;
     const st = this.builderState;
     const curSymbol = this.currency === 'USD' ? '$' : '₺';
-    const rate = this.usdRate || 50.0;
+    const rate = this.usdRate || 75.00;
     const budgetVal = st.budget;
 
     body.innerHTML = `
@@ -4617,16 +4905,16 @@ class PozitronApp {
         <div class="build-summary-banner">
           <div class="build-summary-stat">
             <span class="stat-label">${lang === 'tr' ? 'Seçilen Bütçe' : 'Target Budget'}</span>
-            <span style="font-size:1.15rem; font-weight:700; color:#e2e8f0;">${this.formatPrice(b.targetBudget / (this.usdRate || 50.0), b.targetBudget)}</span>
+            <span style="font-size:1.15rem; font-weight:700; color:#e2e8f0;">${this.formatPrice(b.targetBudget / (this.usdRate || 75.00), b.targetBudget)}</span>
           </div>
           <div class="build-summary-stat">
             <span class="stat-label">${lang === 'tr' ? 'Toplam Parça Tutarı' : 'Total Package Price'}</span>
-            <span class="stat-val">${this.formatPrice(b.totalPrice / (this.usdRate || 50.0), b.totalPrice)}</span>
+            <span class="stat-val">${this.formatPrice(b.totalPrice / (this.usdRate || 75.00), b.totalPrice)}</span>
           </div>
           <div class="build-summary-stat">
             <span class="stat-label">${isUnderBudget ? (lang === 'tr' ? 'Kalan Bütçe' : 'Remaining Budget') : (lang === 'tr' ? 'Bütçe Farkı' : 'Difference')}</span>
             <span style="font-size:1.15rem; font-weight:800; color:${isUnderBudget ? '#4ade80' : '#fb923c'};">
-              ${isUnderBudget ? '+' : ''}${this.formatPrice(diff / (this.usdRate || 50.0), diff)}
+              ${isUnderBudget ? '+' : ''}${this.formatPrice(diff / (this.usdRate || 75.00), diff)}
             </span>
           </div>
         </div>
@@ -4647,7 +4935,7 @@ class PozitronApp {
         <div class="build-items-list">
           ${b.items.map(it => {
             const p = it.product;
-            const unitTRY = Number(p.price_try) || (Number(p.price_usd) * (this.usdRate || 50.0)) || 0;
+            const unitTRY = Number(p.price_try) || (Number(p.price_usd) * (this.usdRate || 75.00)) || 0;
             const subtotalTRY = unitTRY * it.qty;
             const rawTitle = (lang === 'tr' ? p.name_tr : p.name_en) || p.title || '';
             const brandStr = p.brand || '';
@@ -4666,8 +4954,8 @@ class PozitronApp {
                   <div class="build-item-title">${displayTitle}</div>
                 </div>
                 <div class="build-item-price">
-                  ${this.formatPrice(subtotalTRY / (this.usdRate || 50.0), subtotalTRY)}
-                  ${it.qty > 1 ? `<div style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">(Birim: ${this.formatPrice(unitTRY / (this.usdRate || 50.0), unitTRY)})</div>` : ''}
+                  ${this.formatPrice(subtotalTRY / (this.usdRate || 75.00), subtotalTRY)}
+                  ${it.qty > 1 ? `<div style="font-size:0.72rem; color:var(--text-muted); font-weight:500;">(Birim: ${this.formatPrice(unitTRY / (this.usdRate || 75.00), unitTRY)})</div>` : ''}
                 </div>
               </div>
             `;
@@ -4725,7 +5013,7 @@ class PozitronApp {
     const lang = window.i18n.currentLang;
     const ids = b.items.map(it => `${it.product.id}:${it.qty}`).join(',');
     const shareUrl = `${window.location.origin}/#build=${encodeURIComponent(ids)}`;
-    const formattedTotal = this.formatPrice(b.totalPrice / (this.usdRate || 50.0), b.totalPrice);
+    const formattedTotal = this.formatPrice(b.totalPrice / (this.usdRate || 75.00), b.totalPrice);
 
     const itemsText = b.items.map((it, idx) => {
       const name = (lang === 'tr' ? it.product.name_tr : it.product.name_en) || it.product.title;
@@ -4753,7 +5041,7 @@ class PozitronApp {
         const qty = parseInt(qtyStr, 10) || 1;
         const prod = allProducts.find(p => p.id === pId || p.slug === pId);
         if (prod) {
-          const unitTRY = Number(prod.price_try) || (Number(prod.price_usd) * (this.usdRate || 50.0)) || 0;
+          const unitTRY = Number(prod.price_try) || (Number(prod.price_usd) * (this.usdRate || 75.00)) || 0;
           totalPrice += unitTRY * qty;
           validItems.push({ product: prod, qty });
         }
@@ -5058,27 +5346,52 @@ class PozitronApp {
     if (!modal) return;
     modal.style.display = 'flex';
 
-    if (!this._3dViewerInitialized) {
-      this.init3DViewer();
-      this.init3DStudio();
-      this._3dViewerInitialized = true;
-    }
-
-    this.refresh3DMaterialPriceTags();
-    this.calculate3DPrice();
-
-    setTimeout(() => {
-      if (this._3dRenderer && this._3dCamera) {
-        const container = document.getElementById('viewport-3d-container');
-        if (container) {
-          const width = container.clientWidth || 500;
-          const height = container.clientHeight || 420;
-          this._3dRenderer.setSize(width, height);
-          this._3dCamera.aspect = width / height;
-          this._3dCamera.updateProjectionMatrix();
-        }
+    // Three.js (~626 KB) is fetched only when the studio is actually opened.
+    this.ensure3DLibraries().then(() => {
+      if (!this._3dViewerInitialized) {
+        this.init3DViewer();
+        this.init3DStudio();
+        this._3dViewerInitialized = true;
       }
-    }, 100);
+
+      this.refresh3DMaterialPriceTags();
+      this.calculate3DPrice();
+
+      setTimeout(() => {
+        if (this._3dRenderer && this._3dCamera) {
+          const container = document.getElementById('viewport-3d-container');
+          if (container) {
+            const width = container.clientWidth || 500;
+            const height = container.clientHeight || 420;
+            this._3dRenderer.setSize(width, height);
+            this._3dCamera.aspect = width / height;
+            this._3dCamera.updateProjectionMatrix();
+          }
+        }
+      }, 100);
+    }).catch(() => {
+      this.showToast('3D görüntüleyici yüklenemedi. Lütfen sayfayı yenileyin.', 'error');
+    });
+  }
+
+  ensure3DLibraries() {
+    if (window.THREE && typeof window.THREE.Scene !== 'undefined') {
+      return Promise.resolve(true);
+    }
+    if (this._3dLoaderPromise) return this._3dLoaderPromise;
+    const load = (src) => new Promise((resolve, reject) => {
+      const el = document.createElement('script');
+      el.src = src;
+      el.async = false;
+      el.onload = resolve;
+      el.onerror = () => reject(new Error('Failed to load ' + src));
+      document.body.appendChild(el);
+    });
+    this._3dLoaderPromise = load('./vendor/three.min.js')
+      .then(() => load('./vendor/OrbitControls.js'))
+      .then(() => load('./vendor/STLLoader.js'))
+      .then(() => true);
+    return this._3dLoaderPromise;
   }
 
   close3DStudioModal() {
@@ -6567,7 +6880,7 @@ class PozitronApp {
     }
 
     const itemPriceTRY = this._3dConfig.unitPriceTRY;
-    const itemPriceUSD = itemPriceTRY / (this.currencyRates?.TRY || this.usdRate || 50.0);
+    const itemPriceUSD = itemPriceTRY / (this.currencyRates?.TRY || this.usdRate || 75.00);
 
     const customCartItem = {
       id: 'custom_3d_' + Date.now().toString(36),
@@ -6740,25 +7053,28 @@ class PozitronApp {
       const tooltipText = window.i18n?.currentLang === 'tr' ? 'Ürünü İncele' : 'View Product';
 
       const productTagHtml = r.productName ? `
-        <div class="comment-product-tag" data-slug="${targetSlug}" title="${targetSlug ? tooltipText : ''}" role="button">
-          <span>${r.productName}</span>
+        <div class="comment-product-tag" data-slug="${this.escapeHTML(targetSlug)}" title="${targetSlug ? tooltipText : ''}" role="button" tabindex="0">
+          <span>${this.escapeHTML(r.productName)}</span>
         </div>
       ` : '';
 
+      const safeAuthor = this.escapeHTML(r.userName || '');
+      const safeAvatar = this.escapeHTML(r.userAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(r.userName || '')}`);
+      const safeComment = this.escapeHTML(r.comment || '');
       return `
         <article class="comment-card">
           <div class="comment-card-top">
-            <img src="${r.userAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(r.userName)}`}" alt="${r.userName}" class="comment-avatar" loading="lazy">
+            <img src="${safeAvatar}" alt="${safeAuthor}" class="comment-avatar" loading="lazy">
             <div class="comment-author-wrap">
               <h3 class="comment-author-name">
-                <span>${r.userName}</span>
+                <span>${safeAuthor}</span>
               </h3>
-              <div class="comment-date">${r.date || 'Bugün'}</div>
+              <div class="comment-date">${this.escapeHTML(r.date || 'Bugün')}</div>
             </div>
-            <div class="comment-stars" title="${r.rating} / 5 Yıldız">${starsHtml}</div>
+            <div class="comment-stars" title="${Number(r.rating) || 5} / 5 Yıldız">${starsHtml}</div>
           </div>
           ${productTagHtml}
-          <p class="comment-text">"${r.comment}"</p>
+          <p class="comment-text">"${safeComment}"</p>
         </article>
       `;
     }).join('');
@@ -6798,14 +7114,14 @@ class PozitronApp {
     }
 
     return productReviews.map(r => {
-      const starsHtml = '★'.repeat(r.rating || 5);
+      const starsHtml = '★'.repeat(Math.max(0, Math.min(5, Number(r.rating) || 5)));
       return `
         <div class="product-mini-review-card">
           <div class="product-mini-review-top">
-            <span class="product-mini-review-author">${r.userName}</span>
+            <span class="product-mini-review-author">${this.escapeHTML(r.userName || '')}</span>
             <span style="color:#f59e0b; font-size:0.8rem;">${starsHtml}</span>
           </div>
-          <p class="product-mini-review-text">"${r.comment}"</p>
+          <p class="product-mini-review-text">"${this.escapeHTML(r.comment || '')}"</p>
         </div>
       `;
     }).join('');

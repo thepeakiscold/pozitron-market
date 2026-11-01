@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from database import get_db
 
-CURRENT_USD_RATE = 38.50  # USD to TRY reference
+CURRENT_USD_RATE = 75.00  # USD to TRY reference matching database settings
 
 class ProcurementOrderAgent:
     """
@@ -23,8 +23,13 @@ class ProcurementOrderAgent:
 
     def __init__(self):
         self.model_code = "deepseek-v4.1-flash-high"
-        self.usd_rate = CURRENT_USD_RATE
-        self.usd_try_rate = CURRENT_USD_RATE
+        try:
+            from database import get_setting
+            configured_rate = float(get_setting('usd_rate', CURRENT_USD_RATE) or CURRENT_USD_RATE)
+        except Exception:
+            configured_rate = CURRENT_USD_RATE
+        self.usd_rate = configured_rate
+        self.usd_try_rate = configured_rate
 
     def analyze_and_generate_order_plan(self, target_budget_try: float = 250000.0) -> Dict:
         """
@@ -81,7 +86,7 @@ class ProcurementOrderAgent:
                 price_try = round(price_usd * self.usd_rate * 1.30, 2)
 
             # Estimated wholesale cost (typically 60-70% of retail price in FPV hardware)
-            cost_try = round(price_usd * self.usd_rate * 0.72, 2) if price_usd > 0 else round(price_try * 0.65, 2)
+            cost_try = round(price_try * 0.65, 2) if price_try > 0 else round(price_usd * self.usd_rate * 0.65, 2)
             margin_try = max(price_try - cost_try, 50.0)
             margin_pct = round((margin_try / price_try) * 100, 1) if price_try > 0 else 30.0
 

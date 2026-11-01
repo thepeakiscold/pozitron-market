@@ -89,7 +89,7 @@ class TestSeoDeduplicationAndTurkishTargeting(unittest.TestCase):
         with open("data/seo_articles.json", "r", encoding="utf-8") as f:
             json_articles = json.load(f)
 
-        db_articles = self.agent.get_articles(limit=100)
+        db_articles = self.agent.get_articles(limit=None)
         self.assertEqual(len(json_articles), len(db_articles), "JSON export and DB article counts must match")
 
 if __name__ == '__main__':

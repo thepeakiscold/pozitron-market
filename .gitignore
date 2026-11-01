@@ -36,3 +36,7 @@ backups/
 
 # Generated social-media archives (existing tracked assets remain published)
 /assets/instagram/
+
+# Runtime-generated secrets (created on first boot, never commit)
+data/.runtime_secrets.json
+.runtime_secrets.json

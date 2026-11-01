@@ -17,7 +17,7 @@ def generate_feeds():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT id, slug, sku, name_tr, name_en, category_id, brand, price_try, original_price_try, stock, image_url, description_tr, description_en
+        SELECT id, slug, sku, name_tr, name_en, category_id, brand, price_try, original_price_try, stock, image_url, description_tr, description_en, specs_json, tags_json
         FROM products
         ORDER BY id ASC
     ''')
@@ -41,10 +41,24 @@ def generate_feeds():
     c_desc.text = "Türkiye'nin Lider FPV Drone, Motor, ESC, Uçuş Kontrol Kartı ve Yedek Parça Mağazası"
 
     tsv_rows = []
-    tsv_headers = ['id', 'title', 'description', 'link', 'image_link', 'availability', 'price', 'brand', 'condition', 'google_product_category', 'identifier_exists', 'shipping']
+    tsv_headers = ['id', 'title', 'description', 'link', 'image_link', 'availability', 'price', 'brand', 'condition', 'google_product_category', 'identifier_exists', 'mpn', 'shipping']
 
     for p in products:
-        p_id, slug, sku, name_tr, name_en, cat_id, brand, price_try, orig_price_try, stock, img_url, desc_tr, desc_en = p
+        p_id, slug, sku, name_tr, name_en, cat_id, brand, price_try, orig_price_try, stock, img_url, desc_tr, desc_en, specs_json, tags_json = p
+        
+        specs = {}
+        try:
+            if specs_json:
+                specs = json.loads(specs_json)
+        except Exception:
+            specs = {}
+
+        mpn = str(specs.get('model') or '').strip()
+        if not mpn:
+            import re
+            m = re.search(r'\b(\d{4,5}(?:-[A-Za-z0-9]+)?|[A-Z]\d{3,4})\b', name_tr or '')
+            if m:
+                mpn = m.group(1)
         
         # Absolute Image URL
         if img_url.startswith('./'):
@@ -97,9 +111,14 @@ def generate_feeds():
         g_cat = ET.SubElement(item, 'g:google_product_category')
         g_cat.text = '5433'  # Google Taxonomy: Cameras & Optics > Photography > Digital Cameras / Drones & Accessories
         
-        # Google Merchant Center: For custom/unbarcoded parts without official GTIN/MPN, set identifier_exists to no
-        g_id_exists = ET.SubElement(item, 'g:identifier_exists')
-        g_id_exists.text = 'no'
+        if mpn:
+            g_mpn = ET.SubElement(item, 'g:mpn')
+            g_mpn.text = mpn
+            g_id_exists = ET.SubElement(item, 'g:identifier_exists')
+            g_id_exists.text = 'yes'
+        else:
+            g_id_exists = ET.SubElement(item, 'g:identifier_exists')
+            g_id_exists.text = 'no'
 
         # Shipping Details (1500 TL+ Free Shipping, under 1500 TL 99 TL)
         g_shipping = ET.SubElement(item, 'g:shipping')
@@ -122,7 +141,8 @@ def generate_feeds():
             'brand': brand or 'Pozitron',
             'condition': 'new',
             'google_product_category': '5433',
-            'identifier_exists': 'no',
+            'identifier_exists': 'yes' if mpn else 'no',
+            'mpn': mpn,
             'shipping': f"TR:::Standart Kargo:{shipping_cost}"
         })
 

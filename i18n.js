@@ -91,6 +91,7 @@ const i18nData = {
     all: "Tümü",
     
     sort_label: "Sırala:",
+    sort_random: "Rastgele / Keşfet",
     sort_popular: "Öne Çıkanlar & Popüler",
     sort_price_asc: "Fiyat: Düşükten Yükseğe",
     sort_price_desc: "Fiyat: Yüksekten Düşüğe",
@@ -107,6 +108,8 @@ const i18nData = {
     empty_desc: "Filtreleri sıfırlayarak veya farklı bir arama terimi deneyerek tüm drone parçalarına göz atabilirsiniz.",
     
     cart_title: "Alışveriş Sepetiniz",
+    edit_cart: "Sepeti Düzenle",
+    order_summary: "Sipariş Özeti",
     free_shipping_hint: "1500 TL üzeri siparişlerde <strong>Ücretsiz Kargo</strong> kazanın!",
     free_shipping_earned: "<strong>Ücretsiz Kargo</strong> Kazandınız!",
     apply_coupon: "Kodu Uygula",
@@ -133,7 +136,7 @@ const i18nData = {
     btn_reg_submit: "Hesap Oluştur",
     
     checkout_title: "Sipariş ve Ödeme Bilgileri",
-    checkout_sub: "Lütfen teslimat ve sipariş bilgilerinizi giriniz.",
+    checkout_sub: "Bilgilerinizi doldurun; iyzico güvenli ödeme sayfasına veya havale adımına yönlendirileceksiniz.",
     shipping_info_title: "1. Teslimat & Fatura Bilgileri",
     payment_info_title: "2. Kredi / Banka Kartı",
     card_holder_label: "Kart Üzerindeki İsim",
@@ -350,6 +353,7 @@ const i18nData = {
     all: "All",
     
     sort_label: "Sort By:",
+    sort_random: "Random / Explore",
     sort_popular: "Featured & Popular",
     sort_price_asc: "Price: Low to High",
     sort_price_desc: "Price: High to Low",
@@ -366,6 +370,8 @@ const i18nData = {
     empty_desc: "Try resetting your filters or using a different search query to explore our drone items.",
     
     cart_title: "Your Shopping Cart",
+    edit_cart: "Edit Cart",
+    order_summary: "Order Summary",
     free_shipping_hint: "Add more to get <strong>Free Express Shipping</strong>!",
     free_shipping_earned: "You have earned <strong>Free Shipping</strong>!",
     apply_coupon: "Apply Code",
@@ -392,7 +398,7 @@ const i18nData = {
     btn_reg_submit: "Create Account",
     
     checkout_title: "Order and Payment Details",
-    checkout_sub: "Please enter your delivery and order details.",
+    checkout_sub: "Enter your details and continue to iyzico secure checkout or bank transfer.",
     shipping_info_title: "1. Delivery & Contact Details",
     payment_info_title: "2. Credit / Debit Card",
     card_holder_label: "Cardholder Name",

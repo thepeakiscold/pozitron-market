@@ -30,11 +30,12 @@ class TestContentFilteringAndNewReelsTypes(unittest.TestCase):
         self.assertIn("deal_drop", post_type_ids)
         self.assertIn("pilot_tip", post_type_ids)
 
-        self.assertEqual(len(ALL_REELS_TYPES), 8)
-        self.assertEqual(len(REELS_TYPES_METADATA), 8)
+        self.assertEqual(len(ALL_REELS_TYPES), 9)
+        self.assertEqual(len(REELS_TYPES_METADATA), 9)
         reels_type_ids = [rt["id"] for rt in REELS_TYPES_METADATA]
         expected_reels = [
             "real_fpv_broll",
+            "3d_print_showcase",
             "freestyle_acro",
             "hardware_vs",
             "quick_tip_fix",

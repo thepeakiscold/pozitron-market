@@ -2,6 +2,7 @@ import sqlite3
 import os
 import json
 import hashlib
+import hmac
 import uuid
 from datetime import datetime
 
@@ -227,6 +228,7 @@ def init_db():
             code TEXT NOT NULL,
             expires_at INTEGER NOT NULL,
             used INTEGER DEFAULT 0,
+            attempts INTEGER DEFAULT 0,
             created_at TEXT NOT NULL
         )
     ''')
@@ -524,7 +526,7 @@ def init_db():
 
     # Seed default settings if not exists
     default_settings = [
-        ('usd_rate', '50.0'),
+        ('usd_rate', '75.0'),
         ('site_name', 'Pozitron Market'),
         ('support_email', 'destek@pozitronmarket.com'),
         ('bank_owner', ''),
@@ -811,9 +813,32 @@ def get_all_subagents_config() -> List[Dict]:
         print(f"Error getting subagents config: {e}")
         return []
 
-def hash_password(password: str) -> str:
-    salt = "pozitron_fpv_salt_2026"
-    return hashlib.sha256((password + salt).encode('utf-8')).hexdigest()
+def hash_password(password: str, salt: str = None) -> str:
+    """Hashes password using PBKDF2-HMAC-SHA256 with 100,000 iterations (SEC-09)."""
+    if salt is None:
+        salt = hashlib.sha256((password + "pzt_pw_pepper_2026_pbkdf2").encode('utf-8')).hexdigest()[:16]
+    derived = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100_000).hex()
+    return f"pbkdf2:sha256:100000${salt}${derived}"
+
+def verify_password(password: str, stored_hash: str) -> bool:
+    """Verifies password against PBKDF2 hash or legacy SHA-256 hash (SEC-09)."""
+    if not stored_hash or not isinstance(stored_hash, str):
+        return False
+    if stored_hash.startswith("pbkdf2:sha256:"):
+        try:
+            parts = stored_hash.split('$')
+            if len(parts) == 3:
+                prefix_and_iters, salt, hex_hash = parts
+                iters = int(prefix_and_iters.split(':')[-1])
+                test_derived = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), iters).hex()
+                return hmac.compare_digest(test_derived, hex_hash)
+        except Exception:
+            return False
+    # Legacy single-salt SHA-256 for seamless backward compatibility
+    legacy_salt = "pozitron_fpv_salt_2026"
+    legacy_hash1 = hashlib.sha256((password + legacy_salt).encode('utf-8')).hexdigest()
+    legacy_hash2 = hashlib.sha256((legacy_salt + password).encode('utf-8')).hexdigest()
+    return hmac.compare_digest(legacy_hash1, stored_hash) or hmac.compare_digest(legacy_hash2, stored_hash)
 
 if __name__ == '__main__':
     init_db()

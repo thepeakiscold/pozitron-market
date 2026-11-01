@@ -21,5 +21,9 @@ services:
     envVars:
       - key: POZITRON_ENV
         value: production
+      - key: POZITRON_BIND_PUBLIC
+        value: "1"
+      - key: SECRET_KEY
+        generateValue: true
       - key: ADMIN_API_KEY
-        value: pzt_adm_sec_9941a87b32c
+        generateValue: true

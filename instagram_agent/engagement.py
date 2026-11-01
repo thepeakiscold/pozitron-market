@@ -21,6 +21,22 @@ TARGET_HASHTAGS = [
     'turkdrone'
 ]
 
+TARGET_HASHTAGS_3D = [
+    '3dbaski',
+    '3dyazici',
+    '3dprintingturkey',
+    'tpu95a',
+    'bambulabturkiye',
+    'crealityturkiye',
+    'dronemount',
+    'gopromount',
+    'fpvbuild',
+    'robotik',
+    'makersofturkey',
+    '3dprintturkey',
+    'prototip'
+]
+
 TURKISH_CHARS = set('çğıöşüİĞŞÇÖÜ')
 TURKISH_KEYWORDS = [
     'türkiye', 'turkiye', 'turk', 'türk', 'turkey', 'teknofest', 'iha', 'siha',
@@ -28,6 +44,7 @@ TURKISH_KEYWORDS = [
     'pervane', 'batarya', 'kumanda', 'atölye', 'atolye', 'antrenman',
     'gökyüzü', 'gokyuzu', 'yarış', 'yaris', 'kadraj', 'lehim', 'lehimleme',
     'fırçasız', 'fircasiz', 'takım', 'takim', 'ekip', 'pozitron',
+    '3d', 'baskı', 'baski', 'yazıcı', 'yazici', 'filament', 'tpu', 'petg', 'pla', 'stl', 'mount', 'koruma',
     'istanbul', 'ankara', 'izmir', 'bursa', 'antalya', 'adana', 'konya',
     'kocaeli', 'eskisehir', 'eskişehir', 'trabzon', 'gaziantep', 'samsun', 'kayseri'
 ]
@@ -47,7 +64,9 @@ FPV_WARM_COMMENTS = [
     "Çok temiz bir build ve uçuş performansı! Tebrikler.",
     "Drone hakimiyeti harika, gökyüzünde bol kırımsız uçuşlar!",
     "Renkler ve hatlar müthiş! İyi uçuşlar pilot.",
-    "Harika video! Pozitron FPV ailesi olarak selamlar ve kırımsız günler dileriz."
+    "Harika video! Pozitron FPV ailesi olarak selamlar ve kırımsız günler dileriz.",
+    "Elinize sağlık! Kırılmaz TPU 95A kamera ve kol korumaları için Pozitron 3D Studio her zaman yanınızda.",
+    "Baskı kalitesi ve katmanlar çok temiz görünüyor, elinize sağlık! Pozitron 3D Studio'dan selamlar."
 ]
 
 class InstagramEngagementEngine:
@@ -244,17 +263,18 @@ class InstagramEngagementEngine:
         cap_lower = caption.lower()
         self._load_gemini_key_if_needed()
 
-        prompt = f"""Bir Türk FPV drone pilotunun Instagram gönderisine Pozitron Market FPV ekibi olarak samimi, motive edici, nazik TEK CÜMLELİK kısa bir yorum yaz.
+        prompt = f"""Bir Türk FPV drone pilotunun veya maker/3D baskı meraklısının Instagram gönderisine Pozitron Market ve 3D Baskı Studio ekibi olarak samimi, motive edici, nazik TEK CÜMLELİK kısa bir yorum yaz.
 Pilot Kullanıcı Adı: @{username}
 Gönderi Metni: {caption[:300]}
 
 KRİTİK UYARI VE İÇERİK UYUMU:
 1. GÖNDERİ KONUSUNA TAM UYUMLU OL:
-   - Eğer gönderide kırım, kaza, yanan motor/ESC veya hasar varsa: Geçmiş olsun dile, moral ver ("Büyük geçmiş olsun, en kısa sürede göklere dönmen dileğiyle"). ASLA kaza gönderisine "Harika uçuş!" deme!
+   - Eğer gönderide 3D baskı, TPU parça, STL, yazıcı veya kamera mountu varsa: Baskı kalitesini öv, kırılmaz TPU ve 3D parça siparişlerinde Pozitron 3D Studio olarak destek olabileceğini samimice belirt.
+   - Eğer gönderide kırım, kaza, yanan motor/ESC veya kırılan parça varsa: Geçmiş olsun dile, kırılan parçaları ve kamera mountlarını esnek TPU 95A ile bastırabileceğini nazikçe hatırlat ("Büyük geçmiş olsun, kırılan mountlar için TPU 95A baskıda yanındayız, tez zamanda göklere dönmeniz dileğiyle"). ASLA kaza gönderisine "Harika uçuş!" deme!
    - Eğer gönderi yeni bir drone toplama/build/lehimleme ise: Temiz işçiliği ve build kalitesini öv ("Elinize sağlık, çok temiz bir build olmuş, ilk uçuşta başarılar").
    - Eğer gönderi yarış/Teknofest ise: Parkurda ve yarışta başarılar dile.
    - Eğer gönderi freestyle veya akrobasi uçuşu ise: Akıcı hatları ve kontrolü tebrik et.
-2. 1 cümle olsun, maksimum 15 kelime.
+2. 1 cümle olsun, maksimum 16 kelime.
 3. KESİNLİKLE HİÇBİR EMOJİ KULLANMA.
 4. Sadece yorum metnini döndür."""
 
@@ -290,12 +310,20 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                     continue
 
         # Intelligent context-aware rule-based fallback
-        crash_words = ['kırım', 'kirim', 'kırdım', 'kirdim', 'yandı', 'yandi', 'hasar', 'patladı', 'patladi', 'çöp', 'cop', 'crash', 'geçmiş olsun']
+        crash_words = ['kırım', 'kirim', 'kırdım', 'kirdim', 'kırıldı', 'kirildi', 'yandı', 'yandi', 'hasar', 'patladı', 'patladi', 'çöp', 'cop', 'crash', 'geçmiş olsun']
         if any(w in cap_lower for w in crash_words):
             return random.choice([
-                "Büyük geçmiş olsun pilot, FPV'nin doğasında kırım var. En kısa sürede göklere dönmen dileğiyle!",
-                "Geçmiş olsun, toparlayıp en kısa sürede tekrar gökyüzüne dönmeniz dileğiyle.",
-                "Geçmiş olsun dostum, kırımsız günlere en kısa sürede dönüş dileriz."
+                "Büyük geçmiş olsun! Kırılan kamera mountları veya kol korumaları için kırılmaz TPU 95A parça bastırmak isterseniz Pozitron 3D Studio devrede, en kısa sürede göklere dönmeniz dileğiyle!",
+                "Büyük geçmiş olsun pilot, FPV'nin doğasında kırım var. Kırılan parçalarda Pozitron 3D Studio olarak her zaman yanındayız!",
+                "Geçmiş olsun! Kırılan parçaların STL'ini Pozitron 3D Studio'ya yükleyip aynı gün üretime verebilirsiniz, bol şans!"
+            ])
+
+        print_words = ['3d', 'baskı', 'baski', 'yazıcı', 'yazici', 'filament', 'tpu', 'petg', 'pla', 'mount', 'stl', 'katman']
+        if any(w in cap_lower for w in print_words):
+            return random.choice([
+                "Elinize sağlık, katmanlar ve baskı kalitesi harika görünüyor! FPV ve TPU parçalarında Pozitron 3D Studio olarak her zaman yanınızdayız.",
+                "Harika bir parça olmuş! Kırılmaz TPU 95A kamera mountları veya STL siparişlerinde Pozitron 3D Studio her zaman hazır.",
+                "Elinize sağlık, çok temiz bir baskı! GoPro ve O3 için kırılmaz esnek parça ihtiyaçlarınızda Pozitron 3D Studio'dan anında fiyat alabilirsiniz."
             ])
 
         build_words = ['build', 'lehim', 'lehimleme', 'toplama', 'f405', 'f722', 'frame', 'atölye', 'atolye', 'setup', 'motor montaj']
@@ -608,10 +636,11 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             print(f"Tag search error for #{target_tag}: {e}")
         return posts
 
-    def run_daily_drone_engagement(self, target_count: int = 10) -> dict:
+    def run_daily_drone_engagement(self, target_count: int = 10, focus_3d: bool = False) -> dict:
         """
         Engages with drone community: follows up to target_count (max 10) drone pilots
         and leaves friendly, supportive comments on their posts.
+        If focus_3d is True, prioritizes 3D printing and custom part maker communities.
         """
         self._load_session_if_needed()
         if not self.session_cookies or not self.session_cookies.get('sessionid'):
@@ -680,6 +709,9 @@ KRİTİK UYARI VE İÇERİK UYUMU:
         # Randomize hashtag order for natural engagement
         shuffled_tags = list(TARGET_HASHTAGS)
         random.shuffle(shuffled_tags)
+        if focus_3d:
+            tags_3d = list(TARGET_HASHTAGS_3D)
+            shuffled_tags = tags_3d + [t for t in shuffled_tags if t not in tags_3d]
 
         new_follows = 0
         new_comments = 0
@@ -918,7 +950,7 @@ KRİTİK UYARI VE İÇERİK UYUMU:
         if publisher is None:
             publisher = MetaPublisher(dry_run=True)
 
-        target_keywords = ['kupon', 'link', 'fiyat', 'parca', 'parça', 'indirim', 'kod']
+        target_keywords = ['kupon', 'link', 'fiyat', 'parca', 'parça', 'indirim', 'kod', '3d', 'baski', 'baskı', 'print', 'tpu', 'stl', 'mount']
         
         comments_to_process = []
         if test_comments is not None:
@@ -966,19 +998,32 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             if not matched_kw:
                 continue
 
+            is_3d_query = any(k in text for k in ['3d', 'baski', 'baskı', 'print', 'tpu', 'stl', 'mount'])
+            if is_3d_query:
+                reply_text = f"@{u_name} Harika! 3D Baskı Studio STL yükleme linkini ve sana özel %10 indirim kodunu DM kutuna ilettik. Kırılmaz parçalarda ilk baskıda yanındayız!"
+                dm_text = (
+                    f"Selam @{u_name}! Pozitron 3D Baskı Studio'ya hoş geldin. 🖨️✨\n\n"
+                    f"[3D BASKI STUDIO] STL veya STEP dosyanı yükleyip anında gramaj ve online fiyat hesaplamak için:\n"
+                    f"👉 https://pozitronmarket.com/3d-baski-studio\n\n"
+                    f"[MALZEMELER] Kırılmaz esnek TPU 95A (GoPro & O3 mountları, kol uçları, anten yuvaları) veya rijit PETG/PLA seçenekleri.\n"
+                    f"[KUPON] İlk 3D baskı siparişinde geçerli %10 indirim kodun: STUDIO3D\n\n"
+                    f"Dosyanı yükle veya özel parça tasarımın için bize buradan yazabilirsin! Kırımsız uçuşlar ve keyifli baskılar dileriz!"
+                )
+            else:
+                reply_text = f"@{u_name} Harika! Ozel indirim kodunu ve urun baglantisini DM kutuna ilettik. Keyifli ve kirimsiz ucuslar dileriz!"
+                dm_text = (
+                    f"Selam @{u_name}! Pozitron Market FPV ailesine hos geldin.\n\n"
+                    f"[KUPON] Sana ozel %10 indirim kodun: POZITRON10\n"
+                    f"[LINK] Dogrudan alisveris ve urun linki: https://pozitronmarket.com\n\n"
+                    f"Teknik sorularin ve donanim secimi icin bize buradan her zaman yazabilirsin. Kirimsiz ucuslar dileriz!"
+                )
+
             # 1. Public comment reply
-            reply_text = f"@{u_name} Harika! Ozel indirim kodunu ve urun baglantisini DM kutuna ilettik. Keyifli ve kirimsiz ucuslar dileriz!"
             reply_res = publisher.reply_to_comment(c_id, reply_text)
             if reply_res.get('success'):
                 replies_sent += 1
 
             # 2. Private direct message
-            dm_text = (
-                f"Selam @{u_name}! Pozitron Market FPV ailesine hos geldin.\n\n"
-                f"[KUPON] Sana ozel %10 indirim kodun: POZITRON10\n"
-                f"[LINK] Dogrudan alisveris ve urun linki: https://pozitronmarket.com\n\n"
-                f"Teknik sorularin ve donanim secimi icin bize buradan her zaman yazabilirsin. Kirimsiz ucuslar dileriz!"
-            )
             dm_res = publisher.send_direct_message(u_id, dm_text)
             dm_status = 'sent' if dm_res.get('success') else 'failed'
             if dm_res.get('success'):

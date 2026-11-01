@@ -252,6 +252,7 @@ class TestInstagramAdvancedPR(unittest.TestCase):
     def test_10_autonomous_cycle_includes_reel_and_story(self):
         """Verify run_autonomous_cycle triggers reel and story when enabled."""
         update_agent_config({
+            'dry_run_mode': 1,
             'story_enabled': 1,
             'reels_enabled': 1,
             'carousel_enabled': 0,

@@ -680,6 +680,7 @@ class InstagramPRAgent:
                 'video_mode': content.get('video_mode'),
                 'reel_combo': content.get('reel_combo'),
                 'hook_tone': content.get('hook_tone'),
+                'voiceover_text': content.get('voiceover_text'),
                 'created_at': datetime.now().isoformat()
             }
         else:
@@ -732,17 +733,29 @@ class InstagramPRAgent:
         self._sync_assets_to_repo([video_rel_path], f"instagram reels video {post_id}")
 
         result = self.publisher.publish_reel(post_data, video_rel_path)
+        now_iso = datetime.now().isoformat()
         if result.get('success'):
-            now_iso = datetime.now().isoformat()
             post_data['status'] = 'published'
             post_data['ig_media_id'] = result.get('ig_media_id')
             post_data['ig_permalink'] = result.get('ig_permalink')
             post_data['published_at'] = now_iso
             save_instagram_post(post_data)
-            result['post'] = post_data
+        else:
+            post_data['status'] = 'draft'
+            post_data['publish_error'] = result.get('error')
+            save_instagram_post(post_data)
+
+        result['post'] = post_data
         result['video_engine'] = video_engine
         result['video_prompt'] = post_data.get('video_prompt', '')
+        result['has_voiceover'] = post_data.get('has_voiceover', False)
+        result['voiceover_text'] = post_data.get('voiceover_text', '')
+        result['voiceover_engine'] = post_data.get('voiceover_engine', '')
+        result['voiceover_path'] = post_data.get('voiceover_path', '')
         return result
+
+    # Alias for generate_and_publish_reel
+    generate_reel_post = generate_and_publish_reel
 
     def process_comment_automations(self, test_comments: list = None) -> dict:
         """

@@ -588,7 +588,7 @@ class GlobalTrendHunterAgent:
             except Exception:
                 existing_comps = {}
 
-        query = "SELECT id, sku, name_tr, category_id, brand, price_try, stock, image_url FROM products ORDER BY id ASC"
+        query = "SELECT id, sku, name_tr, category_id, brand, price_try, stock, image_url, discount_pct FROM products ORDER BY id ASC"
         if limit:
             query += f" LIMIT {int(limit)}"
         cursor.execute(query)
@@ -677,7 +677,17 @@ class GlobalTrendHunterAgent:
                         # Fiyatı piyasanın %5 altına otomatik güncelle
                         new_price_try = target_five_pct_below
                         new_price_usd = round(new_price_try / usd_rate, 2)
-                        products_to_update.append((new_price_try, new_price_usd, sku))
+                        
+                        # İndirim oranı varsa liste (orijinal) fiyatını da orantılı güncelle
+                        disc_pct = int(p['discount_pct'] or 0)
+                        if 0 < disc_pct < 100:
+                            new_orig_try = round(new_price_try / (1.0 - (disc_pct / 100.0)), 2)
+                            new_orig_usd = round(new_orig_try / usd_rate, 2)
+                        else:
+                            new_orig_try = None
+                            new_orig_usd = None
+
+                        products_to_update.append((new_price_try, new_price_usd, new_orig_try, new_orig_usd, sku))
                         auto_updated_count += 1
 
                         # Yeni fiyat farkı ve durum (Artık piyasanın %5 altında rekabetçi seviyede)
@@ -738,7 +748,7 @@ class GlobalTrendHunterAgent:
         if products_to_update:
             cursor.executemany("""
                 UPDATE products
-                SET price_try = ?, price_usd = ?
+                SET price_try = ?, price_usd = ?, original_price_try = ?, original_price_usd = ?
                 WHERE sku = ?
             """, products_to_update)
             conn.commit()
@@ -948,11 +958,22 @@ class GlobalTrendHunterAgent:
             pass
 
         new_price_usd = round(float(new_price_try) / usd_rate, 2)
+        
+        # Ürünün mevcut indirim oranını al ve liste fiyatını orantılı güncelle
+        row_disc = cursor.execute("SELECT discount_pct FROM products WHERE sku = ?", (sku,)).fetchone()
+        disc_pct = int(row_disc['discount_pct'] or 0) if row_disc else 0
+        if 0 < disc_pct < 100:
+            new_orig_try = round(float(new_price_try) / (1.0 - (disc_pct / 100.0)), 2)
+            new_orig_usd = round(new_orig_try / usd_rate, 2)
+        else:
+            new_orig_try = None
+            new_orig_usd = None
+
         cursor.execute("""
             UPDATE products
-            SET price_try = ?, price_usd = ?
+            SET price_try = ?, price_usd = ?, original_price_try = ?, original_price_usd = ?
             WHERE sku = ?
-        """, (new_price_try, new_price_usd, sku))
+        """, (new_price_try, new_price_usd, new_orig_try, new_orig_usd, sku))
 
         # Mevcut piyasa kıyaslama verilerini al
         cursor.execute("SELECT turkey_min_price_try, turkey_avg_price_try, cheapest_vendor, in_stock_vendors_count, out_of_stock_vendors_count, stale_prices_ignored_json FROM trend_price_comparisons WHERE sku = ?", (sku,))
