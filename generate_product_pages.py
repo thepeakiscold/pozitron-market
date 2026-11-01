@@ -131,15 +131,19 @@ def generate_product_page(product, category, related_products, all_products, by_
     if image_rel.startswith("./"):
         img_src = f"../{image_rel[2:]}"
         abs_img = f"{BASE_URL}/{image_rel[2:]}"
+        img_api_path = f"/{image_rel[2:]}"
     elif image_rel.startswith("/"):
         img_src = f"..{image_rel}"
         abs_img = f"{BASE_URL}{image_rel}"
+        img_api_path = image_rel
     elif image_rel.startswith("http"):
         img_src = image_rel
         abs_img = image_rel
+        img_api_path = ""
     else:
         img_src = f"../{image_rel}"
         abs_img = f"{BASE_URL}/{image_rel}"
+        img_api_path = f"/{image_rel}"
 
     desc_tr = product.get("description_tr") or f"{name_tr}, yüksek performanslı FPV drone ve robotik projeleri için tasarlanmış birinci sınıf donanım bileşenidir."
     desc_en = product.get("description_en") or ""
@@ -410,8 +414,7 @@ def generate_product_page(product, category, related_products, all_products, by_
           </a>
         """
 
-    # JSON-LD Schema
-    is_in_stock = int(product.get("stock", 50)) > 0
+    # JSON-LD Schema (inherits accurate is_in_stock from database above)
     shipping_val = "0.00" if float(price_try) >= 1500.0 else "99.00"
 
     schema_json = {
@@ -581,7 +584,7 @@ def generate_product_page(product, category, related_products, all_products, by_
     # of a disabled cart button.
     if is_in_stock:
         purchase_actions_html = f"""        <!-- Purchase Actions Box -->
-        <div class="pdp-purchase-actions">
+        <div class="pdp-purchase-actions" id="pdp-purchase-actions-box">
           <div class="pdp-qty-row">
             <div class="pdp-qty-picker">
               <button type="button" class="pdp-qty-btn" onclick="changeQty(-1)" aria-label="Adeti Azalt">−</button>
@@ -601,7 +604,7 @@ def generate_product_page(product, category, related_products, all_products, by_
           </button>"""
     else:
         purchase_actions_html = f"""        <!-- Purchase Actions Box: out of stock, notify me -->
-        <div class="pdp-purchase-actions">
+        <div class="pdp-purchase-actions" id="pdp-purchase-actions-box">
           <div class="pdp-stock-alert-box">
             <div class="pdp-stock-alert-title">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -633,12 +636,12 @@ def generate_product_page(product, category, related_products, all_products, by_
 
     css_version = "20260912_amazon_suite" if is_in_stock else "20261023_stock_alert"
 
-    stock_alert_script_html = "" if is_in_stock else f"""    // "Notify me when back in stock" for out-of-stock products
+    stock_alert_script_html = f"""    // "Notify me when back in stock" for out-of-stock products
     function handleStockAlert(event) {{
       event.preventDefault();
       const emailInput = document.getElementById('pdp-stock-alert-email');
       const phoneInput = document.getElementById('pdp-stock-alert-phone');
-      const email = (emailInput.value || '').trim();
+      const email = (emailInput ? emailInput.value || '' : '').trim();
       const phone = (phoneInput ? phoneInput.value || '' : '').trim();
 
       if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {{
@@ -665,7 +668,21 @@ def generate_product_page(product, category, related_products, all_products, by_
       alerts.push(newAlert);
       localStorage.setItem('pozitron_stock_alerts', JSON.stringify(alerts));
 
-      // Send alert to the same Google Sheets CRM webhook used by the main site
+      // Post to backend API
+      try {{
+        fetch(getApiBase() + '/api/stock-alerts', {{
+          method: 'POST',
+          headers: {{ 'Content-Type': 'application/json' }},
+          body: JSON.stringify({{
+            product_id: {json.dumps(p_id)},
+            email: email,
+            phone: phone,
+            whatsapp: !!phone
+          }})
+        }}).catch(e => console.log('API stock alert note:', e));
+      }} catch (e) {{}}
+
+      // Send alert to Google Sheets CRM webhook
       const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw_YHCFvOkkq2usjJh4XCMMHWgHy9V_7C5fROFCjrTGw1iGsPy_39o6JXyvlowO9iy5/exec";
       fetch(WEBHOOK_URL, {{
         method: 'POST',
@@ -682,10 +699,27 @@ def generate_product_page(product, category, related_products, all_products, by_
       }}).catch(err => console.log('Alert webhook error:', err));
 
       showToast('Talebiniz alındı! Ürün stoğa girdiğinde e-posta ve WhatsApp ile bilgilendirileceksiniz.');
-      event.target.reset();
+      if (event.target && typeof event.target.reset === 'function') event.target.reset();
     }}
-
 """
+
+    gallery_list = product.get("gallery") or []
+    if not gallery_list and product.get("image_url"):
+        gallery_list = [product.get("image_url")]
+
+    thumbs_html = ""
+    if len(gallery_list) > 1:
+        thumbs_html = '<div class="pdp-thumbs">'
+        for t_idx, g_img in enumerate(gallery_list):
+            g_img_src = f"../{g_img[2:]}" if g_img.startswith("./") else g_img
+            g_rel_src = g_img[1:] if g_img.startswith(".") else g_img
+            active_cls = "active" if t_idx == 0 else ""
+            thumbs_html += f"""
+              <button type="button" class="pdp-thumb-btn {active_cls}" onclick="switchPdpImage(this, '{escape_str(g_img_src)}')">
+                <img src="{escape_str(g_img_src)}" alt="{escape_str(name_tr)} - Görsel {t_idx+1}" loading="lazy" onerror="this.onerror=null; if(!this.src.includes('api.pozitronmarket.com')){{ this.src='https://api.pozitronmarket.com{g_rel_src}'; }} else {{ this.src='../assets/hero_drone.png'; }}">
+              </button>
+            """
+        thumbs_html += '</div>'
 
     html_content = f"""<!DOCTYPE html>
 <html lang="tr">
@@ -726,6 +760,7 @@ def generate_product_page(product, category, related_products, all_products, by_
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css?v={css_version}">
+  <script src="../api.js?v=20261101_v1"></script>
   <script>
     if (window.location.pathname.endsWith('.html')) {{
       window.history.replaceState(null, '', window.location.pathname.slice(0, -5) + window.location.search + window.location.hash);
@@ -824,8 +859,9 @@ def generate_product_page(product, category, related_products, all_products, by_
       <div class="pdp-gallery">
         <div class="pdp-main-image-wrap">
           {f'<span class="pdp-badge-discount">%{discount_pct} İndirim</span>' if has_discount else ''}
-          <img id="main-pdp-img" src="{escape_str(img_src)}" alt="{escape_str(name_tr)}" onerror="this.src='../assets/hero_drone.png'">
+          <img id="main-pdp-img" src="{escape_str(img_src)}" alt="{escape_str(name_tr)}" onerror="this.onerror=null; if(!this.src.includes('api.pozitronmarket.com')){{ this.src='https://api.pozitronmarket.com{img_api_path}'; }} else {{ this.src='../assets/hero_drone.png'; }}">
         </div>
+        {thumbs_html}
       </div>
 
       <!-- Info & Purchase Column -->
@@ -1064,6 +1100,21 @@ def generate_product_page(product, category, related_products, all_products, by_
 
   <!-- Interactivity Script (Cart & Amazon Suite Client Logic) -->
   <script>
+    function getApiBase() {{
+      if (window.PozitronAPI && typeof window.PozitronAPI.getBaseUrl === 'function') {{
+        const u = window.PozitronAPI.getBaseUrl();
+        if (u) return u.replace(/\/+$/, '');
+      }}
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      return isLocal ? '' : 'https://api.pozitronmarket.com';
+    }}
+
+    function switchPdpImage(btn, src) {{
+      const main = document.getElementById('main-pdp-img');
+      if (main) main.src = src;
+      document.querySelectorAll('.pdp-thumb-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }}
     function changeQty(delta) {{
       const input = document.getElementById('product-qty');
       let val = parseInt(input.value) || 1;
@@ -1301,7 +1352,7 @@ def generate_product_page(product, category, related_products, all_products, by_
       }};
 
       try {{
-      const response = await fetch('/api/reviews', {{
+      const response = await fetch(getApiBase() + '/api/reviews', {{
         method: 'POST',
         headers: {{ 'Content-Type': 'application/json' }},
         body: JSON.stringify({{
@@ -1333,7 +1384,7 @@ def generate_product_page(product, category, related_products, all_products, by_
 
       let reviews = [];
       try {{
-        const res = await fetch('/api/reviews?product_id=' + encodeURIComponent({json.dumps(p_id)}));
+        const res = await fetch(getApiBase() + '/api/reviews?product_id=' + encodeURIComponent({json.dumps(p_id)}));
         if (res.ok) {{
           const data = await res.json();
           if (data && data.reviews && data.reviews.length > 0) {{
@@ -1452,10 +1503,108 @@ def generate_product_page(product, category, related_products, all_products, by_
       `).join('');
     }}
 
-{stock_alert_script_html}    window.addEventListener('DOMContentLoaded', () => {{
+{stock_alert_script_html}    async function syncLiveStock() {{
+      const slug = {json.dumps(slug)};
+      const pId = {json.dumps(p_id)};
+      let currentStock = {real_stock};
+      let stockFound = false;
+
+      try {{
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        const res = await fetch(getApiBase() + '/api/products/' + encodeURIComponent(slug), {{
+          signal: controller.signal,
+          headers: {{ 'Accept': 'application/json' }}
+        }});
+        clearTimeout(timeoutId);
+        if (res.ok) {{
+          const data = await res.json();
+          if (data && data.product && typeof data.product.stock !== 'undefined') {{
+            currentStock = parseInt(data.product.stock, 10);
+            stockFound = true;
+          }}
+        }}
+      }} catch (err) {{}}
+
+      if (!stockFound) {{
+        try {{
+          const res = await fetch('../data/products.json');
+          if (res.ok) {{
+            const list = await res.json();
+            const found = list.find(p => p.slug === slug || p.id === pId);
+            if (found && typeof found.stock !== 'undefined') {{
+              currentStock = parseInt(found.stock, 10);
+              stockFound = true;
+            }}
+          }}
+        }} catch (e) {{}}
+      }}
+
+      // Update Stock Row Indicator
+      const stockRow = document.querySelector('.pdp-stock-row');
+      if (stockRow) {{
+        if (currentStock <= 0) {{
+          stockRow.className = 'pdp-stock-row';
+          stockRow.innerHTML = '<span class="pdp-stock-indicator out-of-stock"></span><span>Tükendi / Stokta Yok</span>';
+        }} else if (currentStock <= 3) {{
+          stockRow.className = 'pdp-stock-row low-stock';
+          stockRow.innerHTML = `<span class="pdp-stock-indicator pulse"></span><span>Stokta Son <strong>${{currentStock}}</strong> Adet Kaldı!</span> <span class="stock-badge-low">Tükeniyor</span>`;
+        }} else {{
+          stockRow.className = 'pdp-stock-row';
+          stockRow.innerHTML = '<span class="pdp-stock-indicator"></span><span>Stokta Var</span>';
+        }}
+      }}
+
+      // Update Purchase Actions Area
+      const actionsWrap = document.getElementById('pdp-purchase-actions-box');
+      const bundleSection = document.querySelector('.pdp-bundle-section');
+      if (actionsWrap) {{
+        if (currentStock <= 0) {{
+          if (!actionsWrap.querySelector('.pdp-stock-alert-box')) {{
+            const waLink = document.getElementById('product-wa-link');
+            const waHref = waLink ? waLink.getAttribute('href') : '#';
+            actionsWrap.innerHTML = `
+              <div class="pdp-stock-alert-box">
+                <div class="pdp-stock-alert-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                  <span>Stoğa Girince Haber Ver</span>
+                </div>
+                <p class="pdp-stock-alert-sub">Bu ürün şu anda stokta yok. Envanterimize yeniden girdiğinde e-posta ve WhatsApp ile ilk siz haberdar olun.</p>
+                <form class="pdp-stock-alert-form" onsubmit="handleStockAlert(event)">
+                  <input type="email" id="pdp-stock-alert-email" class="pdp-stock-alert-input" placeholder="E-posta adresiniz *" required autocomplete="email">
+                  <input type="tel" id="pdp-stock-alert-phone" class="pdp-stock-alert-input" placeholder="Telefon / WhatsApp (opsiyonel)" autocomplete="tel">
+                  <button type="submit" class="pdp-btn-cart" style="height:46px; flex:none;">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span>Bildirim Oluştur</span>
+                  </button>
+                </form>
+              </div>
+              <a href="${{waHref}}" id="product-wa-link" target="_blank" rel="noopener" class="pdp-btn-wa">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.311.045-.698.055-2.062-.511-1.615-.668-2.673-2.316-2.753-2.424-.08-.108-.66-88-.66-1.678 0-.798.42-1.19.568-1.341.144-.15.314-.189.42-.189.105 0 .21.002.302.006.096.004.226-.036.353.27.13.314.444 1.082.483 1.161.039.08.065.173.013.277-.052.105-.078.17-.156.26-.078.092-.163.205-.233.276-.079.079-.161.165-.069.324.092.158.408.673.875 1.089.601.535 1.107.701 1.265.78.158.079.25.069.344-.04.095-.108.405-.471.513-.633.107-.162.217-.135.363-.081.147.054.929.438 1.088.517.159.08.264.12.303.186.039.066.039.384-.105.789z"></path></svg>
+                <span>WhatsApp ile Sipariş &amp; Destek</span>
+              </a>
+              <a href="../drone-toplama-sihirbazi" class="pdp-btn-wizard">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+                <span>Bu Parçayı Drone Sihirbazında Test Et</span>
+              </a>
+            `;
+          }}
+          if (bundleSection) bundleSection.style.display = 'none';
+        }}
+      }}
+
+      // Update Compare Table Cell if present
+      const compareBtn = document.querySelector('.pdp-compare-table .pdp-col-current .pdp-btn-compare-cart');
+      if (compareBtn && currentStock <= 0) {{
+        compareBtn.outerHTML = '<span style="font-size:0.82rem; color:var(--text-muted);">Stokta Yok</span>';
+      }}
+    }}
+
+    window.addEventListener('DOMContentLoaded', () => {{
       updateHeaderCart();
       initDeliveryCountdown();
       renderPdpReviews();
+      syncLiveStock();
     }});
   </script>
 
