@@ -1,16 +1,16 @@
 {
-  "timestamp": "2026-11-01T03:23:03.774601",
+  "timestamp": "2026-11-01T03:40:41.060846",
   "total_products_scanned": 50,
   "verified_clean_count": 50,
   "visual_health_score": 100,
   "issues_summary": {
     "category_mismatch": 0,
-    "duplicate_images": 0,
+    "duplicate_images": 15,
     "low_resolution": 0,
-    "corrupt_or_missing": 16,
+    "corrupt_or_missing": 0,
     "description_issues": 0
   },
   "quarantine_candidates_count": 0,
   "findings": [],
-  "last_auto_fix_at": "2026-11-01T03:23:03.784210"
+  "last_auto_fix_at": "2026-11-01T03:40:41.062834"
 }

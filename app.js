@@ -783,13 +783,9 @@ class PozitronApp {
   formatImgUrl(url) {
     if (!url) return './assets/products/motor.png';
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
-    let res = url;
-    if (res.startsWith('/assets/')) res = '.' + res;
-    else if (res.startsWith('assets/')) res = './' + res;
-    if (res.endsWith('.jpg') || res.endsWith('.jpeg')) {
-      res = res.replace(/\.jpe?g$/i, '.png');
-    }
-    return res;
+    if (url.startsWith('/assets/')) return '.' + url;
+    if (url.startsWith('assets/')) return './' + url;
+    return url;
   }
 
   // ==========================================
@@ -1370,7 +1366,7 @@ class PozitronApp {
         <article class="product-card" data-id="${p.id}" data-slug="${p.slug}">
           <a href="./products/${p.slug}" class="card-media-wrap" title="${name}">
             ${badgeHtml}
-            <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="card-product-img" loading="lazy" onerror="this.onerror=null; this.src='./assets/hero_drone.png';" data-rel-src="${this.formatImgUrl(p.image_url).replace('./', '/')}">
+            <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="card-product-img" loading="lazy">
           </a>
 
           <div class="card-body">
@@ -1530,7 +1526,7 @@ class PozitronApp {
 
       return `
         <div class="suggestion-item" data-id="${p.id}">
-          <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="suggestion-img" loading="lazy" onerror="this.onerror=null; this.src='./assets/hero_drone.png'">
+          <img src="${this.formatImgUrl(p.image_url)}" alt="${name}" class="suggestion-img" loading="lazy">
           <div class="suggestion-info">
             <div class="suggestion-title">${name}</div>
             <div class="suggestion-meta-row">
@@ -1762,7 +1758,7 @@ class PozitronApp {
 
       html += `
         <div class="cart-item-row">
-          <img src="${this.formatImgUrl(item.image_url)}" alt="${name}" class="cart-item-img" onerror="this.onerror=null; this.src='./assets/hero_drone.png'">
+          <img src="${this.formatImgUrl(item.image_url)}" alt="${name}" class="cart-item-img">
           <div class="cart-item-details">
             <div class="cart-item-name">${name}</div>
             ${specsHtml}
@@ -3958,7 +3954,6 @@ class PozitronApp {
 
     if (imgEl) {
       imgEl.src = this.formatImgUrl(p.image_url);
-      imgEl.onerror = () => { imgEl.src = './assets/hero_drone.png'; };
     }
     if (nameEl) nameEl.textContent = title;
     if (brandEl) brandEl.textContent = p.brand || 'Pozitron';
@@ -4662,7 +4657,7 @@ class PozitronApp {
 
             return `
               <div class="build-item-card" onclick="window.open('./products/' + ('${p.slug}' || '${p.id}'), '_blank')" title="${lang === 'tr' ? 'Ürünü Yeni Sekmede İncele' : 'View Product in New Tab'}">
-                <img src="${this.formatImgUrl(p.image_url)}" alt="${brandStr}" class="build-item-img" onerror="this.onerror=null; this.src='./assets/hero_drone.png';">
+                <img src="${this.formatImgUrl(p.image_url)}" alt="${brandStr}" class="build-item-img">
                 <div class="build-item-info">
                   <div style="display:flex; align-items:center;">
                     <span class="build-item-cat">${it.role}</span>
