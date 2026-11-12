@@ -1,5 +1,27 @@
 [
   {
+    "id": "ig_post_29efcc882f0d",
+    "content_type": "pilot_tip",
+    "product_id": null,
+    "title": "F405 vs F722 vs H7 İşlemci: Hangisini Seçmelisin?",
+    "caption": "F405 vs F722 vs H7 İşlemci: Hangisini Seçmelisin?\n\nF405 işlemciler ekonomik ve güvenilirdir ancak sınırlı UART portuna sahiptir. F722 işlemciler yüksek saat hızı ve dahili donanım inverteri ile tüm UART portlarında ELRS, GPS, VTX ve ESC telemetrisini aynı anda takılmadan işler.\n\nPozitron Sihirbazı'nı kullanarak motor-ESC-batarya uyumluluğunuzu tek tıkla test edebilirsiniz.\nMerak ettiğiniz teknik soruları yorumlarda pilotlarımızla paylaşın!\n\nDonanım ve uyumluluk testi: pozitronmarket.com\n\nYoruma 'kupon', 'link' veya 'fiyat' yaz, sana ozel indirim kodunu ve urun baglantisini aninda dm kutuna iletelim!",
+    "hashtags": "#flightcontroller #f722 #f405 #speedybee #pozitronmarket #fpvfreestyle #fpvracing #fpvdrone #fpvpilot #fpvturkey #dronecommunity #fpvfamily #dronetürkiye #fpvakademi #cinedrone #digitalfpv #fpvbuild #elrs #bfphoton",
+    "image_url": "./assets/instagram/posts/ig_post_29efcc882f0d.jpg",
+    "local_image_path": "./assets/instagram/posts/ig_post_29efcc882f0d.jpg",
+    "status": "published",
+    "ig_media_id": "18121956137061738",
+    "ig_permalink": "https://www.instagram.com/p/Dfp1l1WCnKZ/",
+    "error_message": null,
+    "scheduled_at": null,
+    "published_at": "2026-11-12T22:45:20.238010",
+    "metadata_json": "{\"image_hash\": \"1011111110111011000011010000110111111111000000000000000000001001\", \"image_hash_v2\": \"1011111110111011000011010000110111111111000000000000000000001001\", \"visual_audit\": {\"status\": \"NEEDS_REVISION\", \"quality_score\": 86, \"is_valid\": false, \"resolution\": \"1080x1080\", \"text_readability\": \"IYI\", \"emoji_detected\": false, \"framing_and_contrast\": \"UYGUN\", \"issues\": [\"Başlıkta Türkçe karakter kaybı var: 'F405 vs F722 ucus karti' ifadesi 'uçuş kartı' olarak düzeltilmeli (font/encoding hatası).\", \"'FPV REHBERİ & TEKNİK KART' rozetinin solunda boş bir kutu (□) glifi görünüyor; ikon fontu yüklenmemiş/bozuk glif mevcut — SIFIR EMOJİ / temiz glif kuralı ihlali.\", \"Alt kısımda kurumsal bir eyleme çağrı (CTA) butonu bulunmuyor; yalnızca düz 'pozitronmarket.com' metni var, bu da dönüşüm odağını zayıflatıyor.\"], \"recommendations\": \"Başlıktaki 'ucus karti' metnini 'uçuş kartı' olarak Unicode uyumlu fontla yeniden render edin. Rozetteki bozuk/eksik ikon glifini kaldırın veya doğru ikon fontunu gömün. Alt bölüme kurumsal mavi tonlarda, yüksek kontrastlı bir CTA butonu (örn. 'POZITRONMARKET.COM' veya 'İNCELE') ekleyin. Bu üç düzeltme sonrası kart tam kurumsal onaya hazır hale gelir.\", \"model_used\": \"gemini-3.8-flash-vision\", \"file_size_kb\": 115.7}}",
+    "created_at": "2026-11-12T22:43:00.356366",
+    "image_mode": "brand_template",
+    "media_type": "IMAGE",
+    "video_engine": null,
+    "video_url": null
+  },
+  {
     "id": "ig_reel_287215801905",
     "content_type": "product_spotlight",
     "product_id": null,
