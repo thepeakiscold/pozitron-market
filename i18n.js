@@ -35,8 +35,7 @@ const i18nData = {
     invoice_type: "Fatura Türü",
     invoice_individual: "Bireysel Fatura",
     invoice_corporate: "Kurumsal Fatura",
-    tckn_label: "T.C. Kimlik No (TCKN)",
-    tckn_hint: "Şahıs / Bireysel e-Arşiv faturaları için gereklidir.",
+    invoice_individual_note: "Bireysel fatura için ek bilgi gerekmez.",
     company_name: "Şirket / Firma Ünvanı",
     tax_office: "Vergi Dairesi",
     tax_id: "Vergi Kimlik Numarası (VKN)",
@@ -112,6 +111,12 @@ const i18nData = {
     order_summary: "Sipariş Özeti",
     free_shipping_hint: "1500 TL üzeri siparişlerde <strong>Ücretsiz Kargo</strong> kazanın!",
     free_shipping_earned: "<strong>Ücretsiz Kargo</strong> Kazandınız!",
+    free_shipping: "Ücretsiz",
+    cart_subtotal: "Ara Toplam",
+    shipping_label: "Kargo",
+    coupon_label: "Kupon",
+    cart_empty: "Sepetiniz boş.",
+    coupon_code: "Kupon Kodu",
     apply_coupon: "Kodu Uygula",
     subtotal: "Ara Toplam",
     discount: "İndirim",
@@ -261,8 +266,7 @@ const i18nData = {
     invoice_type: "Invoice Type",
     invoice_individual: "Individual Invoice",
     invoice_corporate: "Corporate Invoice",
-    tckn_label: "TR ID Number (TCKN)",
-    tckn_hint: "Required for individual e-Archive invoices.",
+    invoice_individual_note: "No additional information is required for an individual invoice.",
     company_name: "Company Name",
     tax_office: "Tax Office",
     tax_id: "Tax Identification Number (VKN)",
@@ -374,6 +378,12 @@ const i18nData = {
     order_summary: "Order Summary",
     free_shipping_hint: "Add more to get <strong>Free Express Shipping</strong>!",
     free_shipping_earned: "You have earned <strong>Free Shipping</strong>!",
+    free_shipping: "Free",
+    cart_subtotal: "Subtotal",
+    shipping_label: "Shipping",
+    coupon_label: "Coupon",
+    cart_empty: "Your cart is empty.",
+    coupon_code: "Coupon Code",
     apply_coupon: "Apply Code",
     subtotal: "Subtotal",
     discount: "Discount",
@@ -466,8 +476,13 @@ class I18nManager {
   }
 
   t(key, params = {}) {
+    let fallback = key;
+    if (typeof params === 'string') {
+      fallback = params;
+      params = {};
+    }
     const langDict = i18nData[this.currentLang] || i18nData['tr'];
-    let text = langDict[key] || (i18nData['en'] && i18nData['en'][key]) || key;
+    let text = langDict[key] || (i18nData['en'] && i18nData['en'][key]) || fallback;
     for (const [pKey, pVal] of Object.entries(params)) {
       text = text.replace(new RegExp(`\\{${pKey}\\}`, 'g'), pVal);
     }

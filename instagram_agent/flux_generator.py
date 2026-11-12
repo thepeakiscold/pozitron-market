@@ -147,6 +147,7 @@ class FluxGenerator:
         if not os.path.exists(script):
             return False
         try:
+            os.makedirs("/tmp/opencode", exist_ok=True)
             log = open("/tmp/opencode/comfyui_autostart.log", "a")
             subprocess.Popen([script], stdout=log, stderr=log, start_new_session=True)
             print("[FLUX] ComfyUI baslatiliyor (run_comfyui.sh)...")

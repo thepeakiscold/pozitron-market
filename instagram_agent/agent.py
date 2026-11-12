@@ -6,7 +6,7 @@ import random
 import urllib.request
 from datetime import datetime, timedelta
 from .db import (
-    get_agent_config, update_agent_config, save_instagram_post,
+    get_db, get_agent_config, update_agent_config, save_instagram_post,
     update_instagram_post_status, get_instagram_posts,
     get_instagram_post_by_id, delete_instagram_post, init_instagram_tables,
     get_last_post_image_mode, get_recent_posted_content_types_by_media
@@ -193,6 +193,7 @@ class InstagramPRAgent:
         Calculates the next scheduled run timestamp.
         Uses calculate_next_peak_window if peak_scheduler_enabled is True,
         otherwise calculates next_run based on posting_frequency_hours.
+        Enforces night resting window (23:30 - 08:30) to protect account health.
         """
         if from_dt is None:
             from_dt = datetime.now()
@@ -201,8 +202,17 @@ class InstagramPRAgent:
             # Human-like jitter (+/- up to 20 minutes) so posts never land on the exact same minute.
             target = target + timedelta(minutes=random.randint(-20, 20))
             return target.isoformat()
-        freq_hours = self.config.get('posting_frequency_hours', 6)
+        freq_hours = float(self.config.get('posting_frequency_hours', 8) or 8)
         target = from_dt + timedelta(hours=freq_hours) + timedelta(minutes=random.randint(-10, 10))
+
+        # Night rest window enforcement (23:30 - 08:30 TRT)
+        target_dec = target.hour + (target.minute / 60.0)
+        if target_dec >= 23.5 or target_dec < 8.5:
+            if target_dec >= 23.5:
+                target_date = target.date() + timedelta(days=1)
+            else:
+                target_date = target.date()
+            target = datetime(target_date.year, target_date.month, target_date.day, 9, 30, 0) + timedelta(minutes=random.randint(-20, 20))
         return target.isoformat()
 
     def get_effective_enabled_post_types(self) -> list:
@@ -326,46 +336,152 @@ class InstagramPRAgent:
 
         return self.get_safe_config()
 
+    @staticmethod
+    def _ensure_git_unlocked(repo_root: str) -> bool:
+        """Removes stale .git/index.lock (>120s old with no active git process) so git sync never freezes."""
+        try:
+            real_root = os.path.realpath(repo_root)
+            lock_path = os.path.join(real_root, ".git", "index.lock")
+            if os.path.exists(lock_path):
+                age = time.time() - os.path.getmtime(lock_path)
+                if age > 120:
+                    os.remove(lock_path)
+                    print(f"[GIT KORUMA] Bayat .git/index.lock ({int(age)} sn) otonom olarak temizlendi.")
+                    return True
+        except Exception:
+            pass
+        return False
+
     def _sync_assets_to_repo(self, asset_rel_paths: list, commit_subject: str) -> bool:
         """
-        Synchronizes media assets (images, slides, reels videos) to the GitHub repository
-        so that Meta Graph API can download them from the public raw URL.
+        Synchronizes updated data exports and tracked assets to the GitHub repository,
+        automatically healing stale .git/index.lock files so GitHub Pages never stalls.
         """
         if self.config.get('dry_run_mode', 0):
             return True
 
-        clean_paths = []
-        for p in asset_rel_paths:
-            if p:
-                clean_p = p.lstrip('./').lstrip('/')
-                clean_paths.append(clean_p)
-
-        if not clean_paths:
-            return True
-
         try:
             repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self._ensure_git_unlocked(repo_root)
             import subprocess
-            cmd_add = ["git", "add"] + clean_paths
-            subprocess.run(cmd_add, cwd=repo_root, check=False, timeout=10)
-            subprocess.run(["git", "commit", "-m", f"chore(assets): auto-sync {commit_subject} [skip ci] [skip render]"], cwd=repo_root, check=False, timeout=10)
-            subprocess.run(["git", "push", "origin", "main"], cwd=repo_root, check=False, timeout=20)
 
-            # Wait for GitHub CDN to return HTTP 200 for public raw url
-            for clean_p in clean_paths:
-                pub_url = f"{self.publisher.public_base_url}/{clean_p}"
-                for attempt in range(6):
-                    try:
-                        req_chk = urllib.request.Request(pub_url, headers={'User-Agent': 'Mozilla/5.0'})
-                        with urllib.request.urlopen(req_chk, timeout=4) as r_chk:
-                            if r_chk.status == 200:
-                                break
-                    except Exception:
-                        time.sleep(2)
+            data_candidates = [
+                "data/instagram_posts.json",
+                "data/instagram_config.json",
+                "data/instagram_interactions.json",
+                "data/seo_articles.json",
+                "data/pozitron_data.js",
+                "sitemap.xml",
+            ]
+            existing_data = [p for p in data_candidates if os.path.exists(os.path.join(repo_root, p))]
+            if existing_data:
+                subprocess.run(["git", "add"] + existing_data, cwd=repo_root, check=False, timeout=10)
+
+            # Check if there are staged changes to commit
+            diff_chk = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=repo_root, check=False, timeout=5)
+            if diff_chk.returncode != 0:
+                subprocess.run(
+                    ["git", "commit", "-m", f"chore(data): auto-sync {commit_subject} [skip ci] [skip render]"],
+                    cwd=repo_root, check=False, timeout=10
+                )
+                subprocess.run(["git", "push", "origin", "main"], cwd=repo_root, check=False, timeout=25)
             return True
         except Exception as sync_e:
             print(f"[UYARI] Medya senkronizasyon uyarisi: {sync_e}")
             return False
+
+    def sync_live_media_to_db(self, limit: int = 25) -> dict:
+        """
+        Pulls recent live media from Meta Graph API and backfills any missing posts into SQLite
+        so dashboard history, DuplicateGuard, and anti-repeat title memory stay 100% accurate.
+        """
+        self.reload_config()
+        live_items = self.publisher.fetch_recent_live_media(limit=limit)
+        if not live_items:
+            return {"synced": 0, "latest_published_at": None}
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT id, ig_media_id FROM instagram_posts")
+        rows = cur.fetchall()
+        conn.close()
+        known_media_ids = {str(r['ig_media_id']) for r in rows if r['ig_media_id']}
+        known_ids = {str(r['id']) for r in rows if r['id']}
+
+        synced = 0
+        latest_ts = None
+        for item in live_items:
+            mid = str(item.get('id') or '')
+            if not mid:
+                continue
+            raw_ts = item.get('timestamp') or ''
+            # Normalize Meta timestamp '2026-11-12T14:21:33+0000' -> local naive ISO
+            norm_ts = raw_ts
+            try:
+                if raw_ts.endswith('+0000'):
+                    dt_utc = datetime.fromisoformat(raw_ts[:-5] + '+00:00')
+                    norm_ts = dt_utc.astimezone().replace(tzinfo=None).isoformat()
+                else:
+                    norm_ts = datetime.fromisoformat(raw_ts).replace(tzinfo=None).isoformat()
+            except Exception:
+                norm_ts = raw_ts or datetime.now().isoformat()
+
+            if latest_ts is None or norm_ts > latest_ts:
+                latest_ts = norm_ts
+
+            if mid in known_media_ids:
+                continue
+
+            caption_full = (item.get('caption') or '').strip()
+            lines = [ln.strip() for ln in caption_full.splitlines() if ln.strip()]
+            first_line = lines[0] if lines else 'Pozitron Market FPV'
+            # If first line is a short Reels hook and second line has the real topic title, prefer second line
+            if len(lines) >= 2 and len(first_line) < 42 and any(w in first_line.lower() for w in ('izlemeden', 'kaydet', 'cevap', 'dikkat', 'fırsat', 'firsat', 'alarm')):
+                title = lines[1][:90]
+            else:
+                title = first_line[:90]
+
+            mpt = (item.get('media_product_type') or '').upper()
+            mt = (item.get('media_type') or 'IMAGE').upper()
+            if mpt == 'REELS' or mt == 'VIDEO':
+                media_type = 'REEL'
+                prefix = 'ig_reel_'
+            elif mt == 'CAROUSEL_ALBUM':
+                media_type = 'CAROUSEL'
+                prefix = 'ig_post_'
+            else:
+                media_type = 'IMAGE'
+                prefix = 'ig_post_'
+
+            post_id = f"{prefix}{mid[-12:]}"
+            if post_id in known_ids:
+                continue
+
+            media_url = item.get('media_url') or item.get('thumbnail_url') or ''
+            thumb_url = item.get('thumbnail_url') or media_url
+            save_instagram_post({
+                'id': post_id,
+                'content_type': 'product_spotlight',
+                'media_type': media_type,
+                'image_mode': 'brand_template',
+                'title': title,
+                'caption': caption_full,
+                'hashtags': '',
+                'image_url': thumb_url if media_type == 'REEL' else media_url,
+                'video_url': media_url if media_type == 'REEL' else None,
+                'local_image_path': '',
+                'status': 'published',
+                'ig_media_id': mid,
+                'ig_permalink': item.get('permalink') or f"https://www.instagram.com/p/{mid}/",
+                'published_at': norm_ts,
+                'created_at': norm_ts,
+                'metadata': {'synced_from_meta': True, 'media_product_type': mpt},
+            })
+            known_media_ids.add(mid)
+            known_ids.add(post_id)
+            synced += 1
+
+        return {"synced": synced, "latest_published_at": latest_ts}
 
     def generate_and_publish_now(self, content_type: str = None, product_id: str = None, coupon: dict = None, use_flux: bool = None, allowed_types: list = None) -> dict:
         """
@@ -480,6 +596,7 @@ class InstagramPRAgent:
         if img_hash:
             temp_post_data['image_hash'] = img_hash
             temp_post_data['metadata']['image_hash'] = img_hash
+            temp_post_data['metadata']['image_hash_v2'] = img_hash
 
         # 2.1 Multimodal Visual Quality & Safety Audit via Gemini 3.8 Flash Vision
         gemini_key = self.config.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY', '')
@@ -519,7 +636,9 @@ class InstagramPRAgent:
 
             update_agent_config({
                 'last_run_at': now_iso,
-                'next_run_at': next_run
+                'last_post_at': now_iso,
+                'next_run_at': next_run,
+                'next_post_at': next_run
             })
             result['post'] = temp_post_data
             return result
@@ -583,7 +702,9 @@ class InstagramPRAgent:
 
             update_agent_config({
                 'last_run_at': now_iso,
-                'next_run_at': next_run
+                'last_post_at': now_iso,
+                'next_run_at': next_run,
+                'next_post_at': next_run
             })
             result['post'] = temp_post_data
             return result
@@ -721,6 +842,15 @@ class InstagramPRAgent:
         video_prompt = self.content_gen.generate_reels_video_prompt(post_data)
 
         video_rel_path = self.image_gen.generate_reels_video(post_data, prompt=video_prompt)
+        # Clean up temporary intermediate story/overlay images created during Reel rendering
+        try:
+            posts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'instagram', 'posts')
+            for suffix in ('_story.jpg', '_reels_overlay.png'):
+                tmp_helper = os.path.join(posts_dir, f"{post_id}{suffix}")
+                if os.path.exists(tmp_helper):
+                    os.remove(tmp_helper)
+        except Exception:
+            pass
         if not video_rel_path:
             return {"success": False, "error": "Reels videosu olusturulamadi (AI video ve ffmpeg bos dondu)."}
 
@@ -917,7 +1047,9 @@ class InstagramPRAgent:
 
             update_agent_config({
                 'last_run_at': now_iso,
-                'next_run_at': next_run
+                'last_post_at': now_iso,
+                'next_run_at': next_run,
+                'next_post_at': next_run
             })
         result['post'] = get_instagram_post_by_id(post['id'])
         return result
@@ -948,6 +1080,12 @@ class InstagramPRAgent:
         """
         self.reload_config()
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INSTAGRAM AJANI] Instagram PR Ajani otonom dongu baslatiyor...")
+
+        # Sync recent live media from Meta Graph API so anti-repeat memory includes all live posts
+        try:
+            self.sync_live_media_to_db(limit=25)
+        except Exception:
+            pass
 
         # 0. Weekly limited-time deal (once every 7 days). When due, this replaces
         #    the regular feed post for the cycle and mints a fresh 24h coupon.
@@ -1029,8 +1167,11 @@ class InstagramPRAgent:
         next_run = self.calculate_next_run()
         update_agent_config({
             'last_run_at': now_iso,
-            'next_run_at': next_run
+            'last_post_at': now_iso,
+            'next_run_at': next_run,
+            'next_post_at': next_run
         })
+        self._sync_assets_to_repo(["data/instagram_posts.json", "data/instagram_config.json"], "instagram autonomous cycle")
 
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TAMAMLANDI] Otonom dongu tamamlandi. Gonderi Durumu: {post_res.get('success')}. Sonraki plan: {next_run}")
         return {

@@ -739,9 +739,19 @@ class SupervisorScheduler:
         if self.stop_event.wait(timeout=5.0):
             return
 
-        # Initial operational cycle check
+        # Initial operational cycle check (also run immediately if last_run_at is stale beyond interval)
         status = self.supervisor_agent.get_status()
-        if not status.get("active_directive"):
+        interval_hours = int(status.get("cycle_interval_hours", 2) or 2)
+        run_on_boot = not status.get("active_directive")
+        last_run_str = status.get("last_run_at")
+        if last_run_str and not run_on_boot:
+            try:
+                elapsed_s = (datetime.now() - datetime.fromisoformat(last_run_str)).total_seconds()
+                if elapsed_s >= (interval_hours * 3600):
+                    run_on_boot = True
+            except Exception:
+                pass
+        if run_on_boot:
             try:
                 self.supervisor_agent.execute_cycle()
             except Exception as e:

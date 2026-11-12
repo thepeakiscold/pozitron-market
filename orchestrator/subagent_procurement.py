@@ -345,7 +345,7 @@ class ProcurementOrderAgent:
         """Fetches the latest procurement plan from database or JSON."""
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM procurement_order_plans ORDER BY id DESC LIMIT 1")
+        cursor.execute("SELECT * FROM procurement_order_plans ORDER BY created_at DESC LIMIT 1")
         row = cursor.fetchone()
         conn.close()
 

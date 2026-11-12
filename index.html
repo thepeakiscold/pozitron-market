@@ -1054,7 +1054,13 @@
             </div>
             <div class="form-group col-half">
               <label for="addr-country" data-i18n="country_label">Ülke</label>
-              <input type="text" id="addr-country" class="form-input" value="Turkey" required>
+              <select id="addr-country" class="form-input form-select" required>
+                <option value="Turkey" selected>Türkiye</option>
+                <option value="Azerbaijan">Azerbaycan</option>
+                <option value="TRNC">KKTC</option>
+                <option value="Germany">Almanya</option>
+                <option value="Other">Diğer (Yurt Dışı)</option>
+              </select>
             </div>
           </div>
           <div class="form-group">
@@ -1093,11 +1099,7 @@
 
               <!-- Individual Invoice Fields -->
               <div id="addr-invoice-individual-fields">
-                <div class="form-group">
-                  <label for="addr-tckn" data-i18n="tckn_label">T.C. Kimlik No (TCKN)</label>
-                  <input type="text" id="addr-tckn" class="form-input" placeholder="11 haneli T.C. Kimlik Numarası" maxlength="11">
-                  <small style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:2px;" data-i18n="tckn_hint">Şahıs / Bireysel e-Arşiv faturaları için gereklidir.</small>
-                </div>
+                <p style="font-size:0.78rem; color:var(--text-muted); margin:0;" data-i18n="invoice_individual_note">Bireysel fatura için ek bilgi gerekmez.</p>
               </div>
 
               <!-- Corporate Invoice Fields -->
@@ -1239,11 +1241,7 @@
 
                 <!-- Individual Invoice Fields -->
                 <div id="invoice-individual-fields">
-                  <div class="form-group">
-                    <label for="chk-tckn" data-i18n="tckn_label">T.C. Kimlik No (TCKN)</label>
-                    <input type="text" id="chk-tckn" class="form-input" placeholder="11 haneli T.C. Kimlik Numarası" maxlength="11">
-                    <small style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:2px;" data-i18n="tckn_hint">Şahıs / Bireysel e-Arşiv faturaları için gereklidir.</small>
-                  </div>
+                  <p style="font-size:0.78rem; color:var(--text-muted); margin:0;" data-i18n="invoice_individual_note">Bireysel fatura için ek bilgi gerekmez.</p>
                 </div>
 
                 <!-- Corporate Invoice Fields -->
@@ -1682,10 +1680,10 @@
        (ensure3DLibraries) only when the 3D Print Studio is opened. -->
 
   <!-- Client Application Scripts -->
-  <script src="./data/pozitron_data.js?v=20261101_v51"></script>
-  <script src="./i18n.js?v=20261101_fix1"></script>
+  <script src="./data/pozitron_data.js?v=20261107_v52"></script>
+  <script src="./i18n.js?v=20261107_fix2"></script>
   <script src="./api.js?v=20261101_fix1"></script>
-  <script src="./app.js?v=20261101_fix1"></script>
+  <script src="./app.js?v=20261107_fix2"></script>
 
   <!-- Load Dynamic FPV Guides for Showcase -->
   <script>

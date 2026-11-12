@@ -384,6 +384,24 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             pass
         return tokens
 
+    def _prepare_mutation_headers(self, referer: str = 'https://www.instagram.com/') -> dict:
+        """Prepares full web browser headers with active AJAX rollout and device tokens."""
+        if self._web_tokens is None:
+            self._web_tokens = self._fetch_web_tokens()
+        tokens = self._web_tokens or {}
+
+        headers = self._get_headers(referer=referer)
+        if tokens.get("rollout_hash"):
+            headers["X-Instagram-AJAX"] = tokens["rollout_hash"]
+        if tokens.get("lsd"):
+            headers["X-FB-LSD"] = tokens["lsd"]
+        headers["X-IG-WWW-Claim"] = "0"
+        if self.session_cookies and self.session_cookies.get("mid"):
+            headers["X-Mid"] = self.session_cookies["mid"]
+        if self.session_cookies and self.session_cookies.get("ig_did"):
+            headers["X-Web-Device-Id"] = self.session_cookies["ig_did"]
+        return headers
+
     def follow_user(self, user_id: str, username: str) -> dict:
         """
         Sends a follow request to an Instagram user via the web GraphQL mutation.
@@ -401,20 +419,8 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             detail["message"] = "Instagram oturum cerezi (sessionid) bulunamadi."
             return detail
 
-        if self._web_tokens is None:
-            self._web_tokens = self._fetch_web_tokens()
+        headers = self._prepare_mutation_headers(referer=f"https://www.instagram.com/{username}/")
         tokens = self._web_tokens or {}
-
-        headers = self._get_headers(referer=f"https://www.instagram.com/{username}/")
-        if tokens.get("rollout_hash"):
-            headers["X-Instagram-AJAX"] = tokens["rollout_hash"]
-        if tokens.get("lsd"):
-            headers["X-FB-LSD"] = tokens["lsd"]
-        headers["X-IG-WWW-Claim"] = "0"
-        if self.session_cookies.get("mid"):
-            headers["X-Mid"] = self.session_cookies["mid"]
-        if self.session_cookies.get("ig_did"):
-            headers["X-Web-Device-Id"] = self.session_cookies["ig_did"]
 
         url = 'https://www.instagram.com/graphql/query'
         payload = {
@@ -504,15 +510,27 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             target_id = my_id or '0'
 
         res = self.follow_user(target_id, 'pozitron_diagnostic')
-        now_iso = datetime.now().isoformat()
+        now = datetime.now()
+        now_iso = now.isoformat()
         diag['last_follow_probe_at'] = now_iso
         diag['last_follow_attempt_at'] = now_iso
         diag['last_follow_error'] = res.get('error')
         diag['last_follow_message'] = res.get('message')
         diag['last_follow_status_code'] = res.get('status_code')
         diag['follow_blocked'] = bool(res.get('blocked'))
-        if res.get('blocked') and not diag.get('follow_blocked_until'):
-            diag['follow_blocked_until'] = (datetime.now() + timedelta(hours=24)).isoformat()
+        if res.get('blocked'):
+            existing_until = None
+            if diag.get('follow_blocked_until'):
+                try:
+                    existing_until = datetime.fromisoformat(diag['follow_blocked_until'])
+                except Exception:
+                    pass
+            if not existing_until or now >= existing_until:
+                diag['follow_blocked_until'] = (now + timedelta(hours=24)).isoformat()
+        elif res.get('success'):
+            diag['follow_blocked'] = False
+            diag['follow_blocked_until'] = None
+            diag['follow_failure_streak'] = 0
         data['follow_diagnostics'] = diag
         self.save_interactions_data(data)
         return diag
@@ -525,7 +543,7 @@ KRİTİK UYARI VE İÇERİK UYUMU:
         # Clean numeric media ID
         clean_id = media_id.split('_')[0] if '_' in str(media_id) else str(media_id)
         url = f"https://www.instagram.com/api/v1/web/comments/{clean_id}/add/"
-        headers = self._get_headers(referer=f"https://www.instagram.com/p/{media_code}/")
+        headers = self._prepare_mutation_headers(referer=f"https://www.instagram.com/p/{media_code}/")
         payload = {'comment_text': comment_text}
 
         try:
@@ -557,8 +575,7 @@ KRİTİK UYARI VE İÇERİK UYUMU:
         # Clean numeric media ID (strip any "userid_mediaid" composite form)
         clean_id = media_id.split('_')[0] if '_' in str(media_id) else str(media_id)
         url = f"https://www.instagram.com/api/v1/web/likes/{clean_id}/like/"
-        headers = self._get_headers(referer=f"https://www.instagram.com/p/{media_code}/")
-        headers["X-IG-WWW-Claim"] = "0"
+        headers = self._prepare_mutation_headers(referer=f"https://www.instagram.com/p/{media_code}/")
 
         try:
             res = requests.post(url, headers=headers, cookies=self.session_cookies, data={}, timeout=12)
@@ -650,6 +667,18 @@ KRİTİK UYARI VE İÇERİK UYUMU:
             }
 
         data = self.load_interactions_data()
+
+        # Night rest window enforcement (23:30 - 08:30 TRT)
+        from .scheduler import is_in_rest_window
+        if is_in_rest_window():
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] [DİNLENME MODU] Gece dinlenme penceresi (23:30 - 08:30) aktif; "
+                  f"hesap guvenligi ve organik insan davranisi icin takip/begeni ertelendi.")
+            return {
+                "success": True,
+                "completed_already": False,
+                "resting": True,
+                "message": "Gece dinlenme penceresi (23:30 - 08:30) aktif; etkilesim sabah saatlerine ertelendi."
+            }
 
         follow_diag = data.get('follow_diagnostics') or {}
         follows_blocked = False
@@ -797,8 +826,10 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                             follow_diag['follow_blocked_until'] = (datetime.now() + timedelta(hours=24)).isoformat()
                             follows_blocked = True
                             follows_needed = 0
+                            likes_blocked = True
+                            likes_needed = 0
                             print(f"[{datetime.now().strftime('%H:%M:%S')}] [TAKIP ENGELLENDI] Instagram takip aksiyonunu kisitladi "
-                                  f"(feedback_required). 24 saat boyunca takip denemesi yapilmayacak.")
+                                  f"(feedback_required). 24 saat boyunca takip ve begeni denemesi yapilmayacak (Dinlenme modu).")
                         elif follow_failures >= 3:
                             # Repeated non-block failures: back off so we do not spam the API or history
                             follow_diag['follow_blocked'] = True

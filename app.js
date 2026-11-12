@@ -1866,7 +1866,8 @@ class PozitronApp {
     }
 
     const freeShippingTargetTRY = 1500;
-    const isFreeShipping = subtotalTRY >= freeShippingTargetTRY;
+    const discountedTRY = Math.max(0, subtotalTRY - discountTRY);
+    const isFreeShipping = discountedTRY >= freeShippingTargetTRY;
     const shippingFeeUSD = isFreeShipping ? 0 : 2.10;
     const shippingFeeTRY = isFreeShipping ? 0 : 99;
 
@@ -1882,12 +1883,12 @@ class PozitronApp {
 
     // Free shipping progress bar
     if (progressFill && progressText) {
-      const pct = Math.min(100, Math.round((subtotalTRY / freeShippingTargetTRY) * 100));
+      const pct = Math.min(100, Math.round((discountedTRY / freeShippingTargetTRY) * 100));
       progressFill.style.width = `${pct}%`;
       if (isFreeShipping) {
         progressText.innerHTML = window.i18n.t('free_shipping_earned');
       } else {
-        const remaining = this.formatPrice((freeShippingTargetTRY - subtotalTRY) / (this.usdRate || 75.00), freeShippingTargetTRY - subtotalTRY);
+        const remaining = this.formatPrice((freeShippingTargetTRY - discountedTRY) / (this.usdRate || 75.00), freeShippingTargetTRY - discountedTRY);
         progressText.innerHTML = `${remaining} daha ekleyin, <strong>Ücretsiz Kargo</strong> kazanın!`;
       }
     }
@@ -2970,10 +2971,10 @@ class PozitronApp {
     const cityInput = document.getElementById('addr-city');
     const distInput = document.getElementById('addr-district');
     const lineInput = document.getElementById('addr-line');
+    const countryInput = document.getElementById('addr-country');
     const defInput = document.getElementById('addr-is-default');
 
     const sameBillingCheck = document.getElementById('addr-same-billing');
-    const tcknInput = document.getElementById('addr-tckn');
     const compInput = document.getElementById('addr-company-name');
     const taxOffInput = document.getElementById('addr-tax-office');
     const vknInput = document.getElementById('addr-vkn');
@@ -2990,6 +2991,7 @@ class PozitronApp {
       if (cityInput) cityInput.value = addr.city || 'İstanbul';
       if (distInput) distInput.value = addr.district || '';
       if (lineInput) lineInput.value = addr.address_line || '';
+      if (countryInput) countryInput.value = addr.country || 'Turkey';
       if (defInput) defInput.checked = !!addr.is_default;
 
       // Billing & Invoicing
@@ -3002,7 +3004,6 @@ class PozitronApp {
       if (r) r.checked = true;
       this.setAddressInvoiceType(invType);
 
-      if (tcknInput) tcknInput.value = (invType === 'individual' ? (addr.tax_id || '') : '');
       if (compInput) compInput.value = addr.company_name || '';
       if (taxOffInput) taxOffInput.value = addr.tax_office || '';
       if (vknInput) vknInput.value = (invType === 'corporate' ? (addr.tax_id || '') : '');
@@ -3019,6 +3020,7 @@ class PozitronApp {
       if (cityInput) cityInput.value = 'İstanbul';
       if (distInput) distInput.value = '';
       if (lineInput) lineInput.value = '';
+      if (countryInput) countryInput.value = 'Turkey';
       if (defInput) defInput.checked = (!this._cachedAddresses || this._cachedAddresses.length === 0);
 
       // Default: same as shipping checked = true
@@ -3029,7 +3031,6 @@ class PozitronApp {
       if (r) r.checked = true;
       this.setAddressInvoiceType('individual');
 
-      if (tcknInput) tcknInput.value = '';
       if (compInput) compInput.value = '';
       if (taxOffInput) taxOffInput.value = '';
       if (vknInput) vknInput.value = '';
@@ -3061,7 +3062,7 @@ class PozitronApp {
 
     const same_as_shipping = document.getElementById('addr-same-billing')?.checked ? 1 : 0;
     const invoice_type = document.querySelector('input[name="addr_invoice_type"]:checked')?.value || 'individual';
-    const tax_id = (invoice_type === 'individual' ? document.getElementById('addr-tckn')?.value.trim() : document.getElementById('addr-vkn')?.value.trim()) || '';
+    const tax_id = (invoice_type === 'corporate' ? document.getElementById('addr-vkn')?.value.trim() : '') || '';
     const company_name = document.getElementById('addr-company-name')?.value.trim() || '';
     const tax_office = document.getElementById('addr-tax-office')?.value.trim() || '';
     const billing_city = document.getElementById('addr-billing-city')?.value || '';
@@ -3116,7 +3117,8 @@ class PozitronApp {
       if (res.ok && data.success) {
         this.showToast('Adres başarıyla kaydedildi!', 'success');
       } else {
-        this.showToast(data.error || 'Adres kaydedildi.', 'info');
+        this.showToast(data.error || 'Adres kaydedilemedi. Lütfen tekrar deneyin.', 'error');
+        return;
       }
     } catch(err) {
       // Offline fallback
@@ -3187,8 +3189,10 @@ class PozitronApp {
     if (!val || val === 'new') {
       const addrEl = document.getElementById('chk-address');
       const distEl = document.getElementById('chk-district');
+      const countryEl = document.getElementById('chk-country');
       if (addrEl) addrEl.value = '';
       if (distEl) distEl.value = '';
+      if (countryEl) countryEl.value = 'Turkey';
       return;
     }
 
@@ -3200,12 +3204,14 @@ class PozitronApp {
     const cityEl = document.getElementById('chk-city');
     const distEl = document.getElementById('chk-district');
     const addrEl = document.getElementById('chk-address');
+    const countryEl = document.getElementById('chk-country');
 
     if (nameEl && (addr.recipient_name || addr.full_name)) nameEl.value = addr.recipient_name || addr.full_name;
     if (phoneEl && addr.phone) phoneEl.value = addr.phone;
     if (cityEl && addr.city) cityEl.value = addr.city;
     if (distEl && addr.district) distEl.value = addr.district;
     if (addrEl && addr.address_line) addrEl.value = addr.address_line;
+    if (countryEl && addr.country) countryEl.value = addr.country;
 
     // Pre-fill Billing & Invoicing Preferences from saved address
     const isSame = (addr.same_as_shipping !== 0 && addr.same_as_shipping !== false && addr.same_as_shipping !== '0');
@@ -3234,9 +3240,6 @@ class PozitronApp {
       if (cName) cName.value = addr.company_name || '';
       if (tOff) tOff.value = addr.tax_office || '';
       if (vknEl) vknEl.value = addr.tax_id || '';
-    } else {
-      const tcknEl = document.getElementById('chk-tckn');
-      if (tcknEl) tcknEl.value = addr.tax_id || '';
     }
   }
 
@@ -3440,7 +3443,7 @@ class PozitronApp {
           <strong>−${this.formatPrice(this.appliedCoupon.discount_usd || 0, this.appliedCoupon.discount_try || 0)}</strong>
         </div>`;
     }
-    const isFree = subTRY >= 1500;
+    const isFree = Math.max(0, subTRY - (parseFloat(this.appliedCoupon?.discount_try) || 0)) >= 1500;
     const shippingTRY = isFree ? 0 : 99;
     totals += `
       <div class="checkout-summary-total-row">
@@ -3720,8 +3723,14 @@ class PozitronApp {
     const b = this.bankSettings || { name: 'Akbank / Havale / EFT / FAST', iban: 'TR69 0004 6001 9188 8000 3245 80' };
     const nameEl = document.getElementById('bank-box-name');
     const ibanEl = document.getElementById('bank-box-iban');
+    const bankSelect = document.getElementById('havale-bank-select');
     if (nameEl) nameEl.textContent = b.name;
     if (ibanEl) ibanEl.textContent = b.iban;
+    // Keep the picker label in sync with the account shown below it.
+    if (bankSelect) {
+      const option = bankSelect.querySelector(`option[value="${bankKey || 'main'}"]`) || bankSelect.options[0];
+      if (option) option.textContent = b.name;
+    }
   }
 
   async loadBankSettings() {
@@ -3818,16 +3827,9 @@ class PozitronApp {
         return;
       }
     } else {
-      taxId = (document.getElementById('chk-tckn')?.value || '').trim();
-      if (taxId && (taxId.length !== 11 || !/^\d{11}$/.test(taxId))) {
-        if (err) {
-          err.textContent = "T.C. Kimlik Numarası (TCKN) 11 haneli rakam olmalıdır.";
-          err.style.display = 'block';
-        }
-        return;
-      }
-      // Never inject a placeholder identity: an e-Arşiv invoice must carry the
-      // buyer's real TCKN. Empty stays empty and the operator requests it.
+      // Individual invoices no longer collect a TCKN. The field stays empty and
+      // the operator can request it separately if the invoice legally needs it.
+      taxId = '';
     }
 
     const sameBilling = document.getElementById('chk-same-billing')?.checked;

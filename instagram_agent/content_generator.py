@@ -971,6 +971,31 @@ class ContentGenerator:
             pass
         return bool(self.gemini_api_key)
 
+    def _get_recent_titles_set(self, limit: int = 60) -> set:
+        """Returns both raw and humanized recent titles (plus lowercase) so template '[TAG]' titles match DB rows."""
+        raw = list(get_recent_posted_titles(limit)) + list(self._session_recent_titles[-40:])
+        expanded = set()
+        for t in raw:
+            if not t:
+                continue
+            s = str(t).strip()
+            expanded.add(s)
+            expanded.add(s.lower())
+            h = humanize_line(s)
+            if h:
+                expanded.add(h)
+                expanded.add(h.lower())
+        return expanded
+
+    def _is_title_recent(self, title: str, recent_titles: set) -> bool:
+        if not title:
+            return False
+        s = str(title).strip()
+        if s in recent_titles or s.lower() in recent_titles:
+            return True
+        h = humanize_line(s)
+        return bool(h and (h in recent_titles or h.lower() in recent_titles))
+
     def generate_content(self, content_type: str = None, product_id: str = None, allowed_types: list = None) -> dict:
         """
         Generates content dictionary with strict anti-duplicate guarantee and balanced catalog rotation:
@@ -1002,8 +1027,7 @@ class ContentGenerator:
                 valid_types = active_allowed
         
         recent_types = get_recent_posted_content_types(limit=5)
-        db_titles = set(get_recent_posted_titles(limit=40))
-        all_recent_titles = db_titles.union(set(self._session_recent_titles[-30:]))
+        all_recent_titles = self._get_recent_titles_set(limit=60)
 
         # Near-duplicate caption signatures (first 60 normalized chars) to stop
         # repetitive text that Instagram de-ranks.
@@ -1093,9 +1117,9 @@ class ContentGenerator:
                 content = humanize_content(content)
 
             if content and content.get('title'):
-                is_dup_title = content.get('title') in all_recent_titles
+                is_dup_title = self._is_title_recent(content.get('title'), all_recent_titles)
                 is_dup_caption = self._caption_signature(content.get('caption', '')) in recent_caption_sigs
-                if explicit_type or not (is_dup_title or is_dup_caption):
+                if not (is_dup_title or is_dup_caption):
                     break
 
             # If candidate was recently posted and not explicitly requested, rotate to a
@@ -1408,7 +1432,7 @@ class ContentGenerator:
         }
 
     def _generate_tool_showcase(self, product_id: str = None) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
+        recent_titles = self._get_recent_titles_set(60)
 
         tools = [
             {
@@ -1532,7 +1556,7 @@ Pozitron 5.8GHz Frekans Tablosu ile:
             }
         ]
 
-        eligible_tools = [t for t in tools if t['title'] not in recent_titles]
+        eligible_tools = [t for t in tools if not self._is_title_recent(t['title'], recent_titles)]
         if not eligible_tools:
             eligible_tools = tools
         tool = random.choice(eligible_tools)
@@ -1571,7 +1595,7 @@ Pozitron 5.8GHz Frekans Tablosu ile:
         Generates compelling, conversion-focused content highlighting Pozitron's
         Online 3D Baskı Studio, flexible TPU 95A drone parts, and custom 3D printing orders.
         """
-        recent_titles = set(get_recent_posted_titles(40))
+        recent_titles = self._get_recent_titles_set(60)
 
         themes = [
             {
@@ -1708,7 +1732,7 @@ Yoruma '3D' veya 'TAKIM' yaz, takımınıza özel %10 indirim kodunu DM'den gön
             }
         ]
 
-        eligible = [t for t in themes if t['title'] not in recent_titles]
+        eligible = [t for t in themes if not self._is_title_recent(t['title'], recent_titles)]
         if not eligible:
             eligible = themes
         selected = random.choice(eligible)
@@ -1745,7 +1769,7 @@ Yoruma '3D' veya 'TAKIM' yaz, takımınıza özel %10 indirim kodunu DM'den gön
         }
 
     def _generate_deal_drop(self, product_id: str = None) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
+        recent_titles = self._get_recent_titles_set(60)
 
         deals = [
             {
@@ -1794,7 +1818,7 @@ Yoruma '3D' veya 'TAKIM' yaz, takımınıza özel %10 indirim kodunu DM'den gön
             }
         ]
 
-        eligible_deals = [d for d in deals if d['title'] not in recent_titles]
+        eligible_deals = [d for d in deals if not self._is_title_recent(d['title'], recent_titles)]
         if not eligible_deals:
             eligible_deals = deals
         deal = random.choice(eligible_deals)
@@ -1854,10 +1878,10 @@ Kupon stoklarla ve süreyle sınırlıdır.
         }
 
     def _generate_pilot_tip(self, product_id: str = None) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
+        recent_titles = self._get_recent_titles_set(60)
         
         # Filter out recently posted tips
-        eligible_tips = [t for t in FPV_PILOT_TIPS if t['title'] not in recent_titles]
+        eligible_tips = [t for t in FPV_PILOT_TIPS if not self._is_title_recent(t['title'], recent_titles)]
         if not eligible_tips:
             eligible_tips = FPV_PILOT_TIPS
 
@@ -2086,8 +2110,8 @@ Detaylar ve sipariş için profildeki linke tıkla: {link}"""
         }
 
     def _generate_hardware_battle(self, product_id: str = None) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
-        eligible = [b for b in HARDWARE_BATTLES if b['title'] not in recent_titles]
+        recent_titles = self._get_recent_titles_set(60)
+        eligible = [b for b in HARDWARE_BATTLES if not self._is_title_recent(b['title'], recent_titles)]
         if not eligible:
             eligible = HARDWARE_BATTLES
         battle = random.choice(eligible)
@@ -2135,8 +2159,8 @@ Sen hangi taraftasın? Tercihini ve tecrübeni yorumlarda FPV topluluğuyla payl
         }
 
     def _generate_mistake_breakdown(self, product_id: str = None) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
-        eligible = [m for m in MISTAKE_BREAKDOWNS if m['title'] not in recent_titles]
+        recent_titles = self._get_recent_titles_set(60)
+        eligible = [m for m in MISTAKE_BREAKDOWNS if not self._is_title_recent(m['title'], recent_titles)]
         if not eligible:
             eligible = MISTAKE_BREAKDOWNS
         mistake = random.choice(eligible)
@@ -2184,8 +2208,8 @@ Daha önce bu hatayı yaşadın mı? Deneyimini yorumlarda paylaş, yeni pilotla
         }
 
     def _generate_community_quiz(self) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
-        eligible = [q for q in COMMUNITY_QUIZZES if q['title'] not in recent_titles]
+        recent_titles = self._get_recent_titles_set(60)
+        eligible = [q for q in COMMUNITY_QUIZZES if not self._is_title_recent(q['title'], recent_titles)]
         if not eligible:
             eligible = COMMUNITY_QUIZZES
         quiz = random.choice(eligible)
@@ -2233,8 +2257,8 @@ Doğru cevabını yorumlara yaz! Doğru yanıt günün sonunda hikayemizde ve yo
         }
 
     def _generate_myth_buster(self) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
-        eligible = [m for m in MYTH_BUSTERS if m['title'] not in recent_titles]
+        recent_titles = self._get_recent_titles_set(60)
+        eligible = [m for m in MYTH_BUSTERS if not self._is_title_recent(m['title'], recent_titles)]
         if not eligible:
             eligible = MYTH_BUSTERS
         myth = random.choice(eligible)
@@ -2285,8 +2309,8 @@ Sen bu efsaneye inanıyor muydun? Yoruma yaz, doğruyu birlikte yayalım!
         }
 
     def _generate_maintenance_checklist(self, product_id: str = None) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
-        eligible = [m for m in MAINTENANCE_CHECKS if m['title'] not in recent_titles]
+        recent_titles = self._get_recent_titles_set(60)
+        eligible = [m for m in MAINTENANCE_CHECKS if not self._is_title_recent(m['title'], recent_titles)]
         if not eligible:
             eligible = MAINTENANCE_CHECKS
         chk = random.choice(eligible)
@@ -2332,8 +2356,8 @@ Bu listeyi kaydet, sonraki bakımda tekrar kullan! Sorularını yoruma bırakabi
         }
 
     def _generate_beginner_roadmap(self) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
-        eligible = [r for r in BEGINNER_ROADMAP if r['title'] not in recent_titles]
+        recent_titles = self._get_recent_titles_set(60)
+        eligible = [r for r in BEGINNER_ROADMAP if not self._is_title_recent(r['title'], recent_titles)]
         if not eligible:
             eligible = BEGINNER_ROADMAP
         road = random.choice(eligible)
@@ -2471,7 +2495,7 @@ SADECE gecerli bir JSON objesi dondur:
         return caption + cta
 
     def _generate_carousel_guide(self) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
+        recent_titles = self._get_recent_titles_set(60)
 
         carousel_guides = [
             {
@@ -2569,7 +2593,7 @@ Slaytlari kaydir, drone'unu guvenceye al!
             }
         ]
 
-        eligible = [g for g in carousel_guides if g['title'] not in recent_titles]
+        eligible = [g for g in carousel_guides if not self._is_title_recent(g['title'], recent_titles)]
         if not eligible:
             eligible = carousel_guides
         guide = random.choice(eligible)
@@ -2595,7 +2619,7 @@ Slaytlari kaydir, drone'unu guvenceye al!
         }
 
     def _generate_drone_build_showcase(self, product_id: str = None) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
+        recent_titles = self._get_recent_titles_set(60)
 
         builds = [
             {
@@ -2656,7 +2680,7 @@ Slaytlari kaydir, drone'unu guvenceye al!
             }
         ]
 
-        eligible = [b for b in builds if b['title'] not in recent_titles]
+        eligible = [b for b in builds if not self._is_title_recent(b['title'], recent_titles)]
         if not eligible:
             eligible = builds
         b = random.choice(eligible)
@@ -2797,7 +2821,9 @@ Pervanelerinizi sikin, LiPo'larinizi tam voltaja (4.20V / hucre) sarj edin ve gu
                 'desc': 'Bando ucuslari son derece keyifli olsa da RF sinyali zayifladigi anda goruntu kaybi yasanabilir. Guclu VTX ve guvenli RTH ayarlari sarttir.'
             }
         ]
-        s = random.choice(spots)
+        recent_titles = self._get_recent_titles_set(60)
+        eligible_spots = [sp for sp in spots if not self._is_title_recent(sp['title'], recent_titles)]
+        s = random.choice(eligible_spots or spots)
         caption = f"""[FPV SAHA REHBERI] {s['headline']}
 
 {s['subhead']}
@@ -2895,17 +2921,28 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
         chosen = None
 
         content = None
+        recent_titles_set = self._get_recent_titles_set(60)
         # Try themes corresponding to chosen_reels_type or combo themes
         target_themes = REELS_TYPE_THEME_MAP.get(chosen_reels_type, combo['themes'])
         theme_order = list(dict.fromkeys(target_themes + combo['themes'] + [t for c in REEL_COMBINATIONS for t in c['themes']]))
+        fallback_content = None
+        fallback_chosen = None
         for theme in theme_order:
             try:
-                content = self.generate_content(content_type=theme, product_id=product_id)
+                cand = self.generate_content(content_type=theme, product_id=product_id)
             except Exception:
-                content = None
-            if content and content.get('title'):
-                chosen = theme
-                break
+                cand = None
+            if cand and cand.get('title'):
+                if fallback_content is None:
+                    fallback_content = cand
+                    fallback_chosen = theme
+                if not self._is_title_recent(cand.get('title'), recent_titles_set):
+                    content = cand
+                    chosen = theme
+                    break
+        if not content and fallback_content:
+            content = fallback_content
+            chosen = fallback_chosen
         if not content:
             content = self.generate_content(content_type='product_spotlight', product_id=product_id)
         if not content:

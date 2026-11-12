@@ -15,6 +15,12 @@ def get_db():
 
 def sync_posts_from_json(cursor):
     """Imports posts from data/instagram_posts.json if SQLite table is fresh."""
+    try:
+        cursor.execute("SELECT count(*) FROM instagram_posts")
+        if cursor.fetchone()[0] > 0:
+            return
+    except Exception:
+        return
     if os.path.exists(JSON_POSTS_PATH):
         try:
             with open(JSON_POSTS_PATH, 'r', encoding='utf-8') as f:
@@ -143,7 +149,9 @@ def init_instagram_tables():
         ('content_mix_enabled', 'INTEGER', '0'),
         ('flux_enabled', 'INTEGER', '1'),
         ('enabled_post_types', 'TEXT', 'NULL'),
-        ('enabled_reels_types', 'TEXT', 'NULL')
+        ('enabled_reels_types', 'TEXT', 'NULL'),
+        ('last_post_at', 'TEXT', 'NULL'),
+        ('next_post_at', 'TEXT', 'NULL')
     ]:
         if col_name not in cfg_cols:
             cursor.execute(f"ALTER TABLE instagram_agent_config ADD COLUMN {col_name} {col_type} DEFAULT {default_val}")
@@ -203,7 +211,7 @@ def update_agent_config(updates: dict = None, **kwargs):
         'access_token', 'instagram_account_id', 'gemini_api_key',
         'is_autonomous_enabled', 'posting_frequency_hours', 'dry_run_mode',
         'public_base_url', 'preferred_language', 'default_hashtags',
-        'last_run_at', 'next_run_at',
+        'last_run_at', 'next_run_at', 'last_post_at', 'next_post_at',
         'story_enabled', 'carousel_enabled', 'dm_automation_enabled',
         'peak_scheduler_enabled', 'reels_enabled', 'bilingual_enabled', 'content_mix_enabled',
         'flux_enabled', 'enabled_post_types', 'enabled_reels_types'
@@ -234,7 +242,7 @@ def update_agent_config(updates: dict = None, **kwargs):
         if os.path.exists(JSON_CONFIG_PATH):
             with open(JSON_CONFIG_PATH, 'r', encoding='utf-8') as f:
                 json_cfg = json.load(f)
-        for k, v in updates.items():
+        for k, v in merged.items():
             if k not in ('access_token', 'gemini_api_key'):  # Don't leak raw secrets to git json
                 json_cfg[k] = v
         json_cfg['updated_at'] = datetime.now().isoformat()

@@ -114,12 +114,15 @@ class DuplicateGuard:
         title_groups = {}
         caption_groups = {}
         for p in posts:
+            if str(p.get('id', '')).startswith('test_'):
+                continue
+            mtype = p.get('media_type') or 'IMAGE'
             tsig = title_signature(p.get('title', ''))
             if tsig:
-                title_groups.setdefault(tsig, []).append(p)
+                title_groups.setdefault(f"{mtype}:{tsig}", []).append(p)
             csig = caption_signature(p.get('caption', ''))
             if csig:
-                caption_groups.setdefault(csig, []).append(p)
+                caption_groups.setdefault(f"{mtype}:{csig}", []).append(p)
 
         dup_titles = {k: v for k, v in title_groups.items() if len(v) > 1}
         dup_captions = {k: v for k, v in caption_groups.items() if len(v) > 1}
@@ -157,7 +160,7 @@ class DuplicateGuard:
         self._ig_all_groups = all_groups
         return self.instagram_report
 
-    def _scan_instagram_images(self, posts: list, threshold: int = 5) -> list:
+    def _scan_instagram_images(self, posts: list, threshold: int = 2) -> list:
         try:
             from instagram_agent.image_generator import perceptual_hash, hamming_distance
         except Exception:
@@ -165,14 +168,18 @@ class DuplicateGuard:
 
         hashed = []
         for p in posts:
-            h = (p.get('metadata') or {}).get('image_hash')
+            if str(p.get('id', '')).startswith('test_'):
+                continue
+            mtype = p.get('media_type') or 'IMAGE'
+            meta = p.get('metadata') or {}
+            h = meta.get('image_hash_v2')
             if not h:
                 rel = p.get('local_image_path') or p.get('image_url') or ''
                 abs_p = os.path.join(BASE_DIR, rel.lstrip('./').lstrip('/'))
                 if rel.lower().endswith(('.jpg', '.jpeg', '.png')) and os.path.exists(abs_p):
                     h = perceptual_hash(abs_p)
             if h:
-                hashed.append((p, h))
+                hashed.append((p, h, mtype))
 
         groups = []
         used = set()
@@ -182,6 +189,9 @@ class DuplicateGuard:
             cluster = [hashed[i]]
             for j in range(i + 1, len(hashed)):
                 if j in used:
+                    continue
+                # Only compare images of the same media_type (never cluster a STORY with a FEED post)
+                if hashed[i][2] != hashed[j][2]:
                     continue
                 if hamming_distance(hashed[i][1], hashed[j][1]) <= threshold:
                     cluster.append(hashed[j])
@@ -212,16 +222,17 @@ class DuplicateGuard:
 
         id_to_post = {p["id"]: p for p in get_instagram_posts(limit=2000)}
         groups = getattr(self, "_ig_all_groups", None) or self.instagram_report.get("groups", [])
-        to_delete = set()
+        to_delete = {
+            pid for pid in id_to_post
+            if str(pid).startswith("test_") or str(pid).startswith("sim_ig_")
+        }
         flagged = 0
         for grp in groups:
             ids = [pid for pid in grp.get("post_ids", []) if pid in id_to_post]
             if len(ids) <= 1:
                 continue
             if grp.get("kind") == "caption":
-                # Yalnizca metin benzerligi -> silme, isaretle.
                 flagged += len(ids) - 1
-                continue
             ids_sorted = sorted(ids, key=lambda i: (id_to_post[i].get("created_at") or ""), reverse=(keep == "newest"))
             for pid in ids_sorted[1:]:
                 to_delete.add(pid)

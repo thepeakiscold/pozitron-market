@@ -95,5 +95,49 @@ class TestQAFullPipeline(unittest.TestCase):
         self.assertTrue(analysis["follow_blocked"])
         self.assertEqual(analysis["last_follow_error"], "feedback_required")
 
+    def test_analyze_engagement_detects_stale_lock_and_like_failures(self):
+        """Detects expired stale lock, like failure streaks, and recent failure rates."""
+        from datetime import datetime
+        history = []
+        for i in range(10):
+            history.append({
+                "type": "like",
+                "status": "failed",
+                "error": "non_json_response",
+                "timestamp": f"2026-10-10T12:0{i}:00"
+            })
+        data = {
+            "today_date": "2026-10-12",
+            "today_follows_count": 0,
+            "today_comments_count": 5,
+            "today_likes_count": 0,
+            "history": history,
+            "follow_diagnostics": {
+                "last_follow_error": "feedback_required",
+                "follow_blocked": True,
+                "follow_blocked_until": "2026-10-01T00:00:00"
+            },
+            "like_diagnostics": {
+                "last_like_error": "non_json_response",
+                "like_blocked": False
+            }
+        }
+        analysis = self.agent._analyze_engagement_data(data)
+        self.assertTrue(analysis["stale_lock_detected"])
+        self.assertIn("takip kilidi", analysis["stale_lock_reason"].lower())
+        self.assertEqual(analysis["recent_failure_rate"], 100.0)
+        self.assertEqual(analysis["recent_dominant_error"], "non_json_response")
+
+    def test_night_rest_window(self):
+        """Ensures night rest window (23:30 - 08:30) is accurately detected."""
+        from datetime import datetime
+        from instagram_agent.scheduler import is_in_rest_window
+        night_time_1 = datetime(2026, 11, 2, 2, 30, 0)
+        night_time_2 = datetime(2026, 11, 2, 23, 45, 0)
+        day_time = datetime(2026, 11, 2, 14, 0, 0)
+        self.assertTrue(is_in_rest_window(night_time_1))
+        self.assertTrue(is_in_rest_window(night_time_2))
+        self.assertFalse(is_in_rest_window(day_time))
+
 if __name__ == "__main__":
     unittest.main()

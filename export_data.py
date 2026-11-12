@@ -5,11 +5,13 @@ Export Pozitron Market database into JSON and JS files for GitHub Pages static h
 import sqlite3
 import json
 import os
+import time
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "pozitron.db")
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "data")
+_LAST_HEAVY_REBUILD_TS = 0.0
 
-def export_static_data():
+def export_static_data(force_rebuild_pages: bool = False):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -46,11 +48,11 @@ def export_static_data():
     reviews = [dict(row) for row in cursor.fetchall()]
 
     # 4. Instagram Posts
-    cursor.execute("SELECT * FROM instagram_posts ORDER BY id DESC")
+    cursor.execute("SELECT * FROM instagram_posts WHERE status = 'published' ORDER BY created_at DESC")
     instagram_posts = [dict(row) for row in cursor.fetchall()]
 
     # 5. Reddit Interactions
-    cursor.execute("SELECT * FROM reddit_interactions ORDER BY id DESC")
+    cursor.execute("SELECT * FROM reddit_interactions ORDER BY created_at DESC")
     reddit_interactions = [dict(row) for row in cursor.fetchall()]
 
     # 6. SEO Articles (Subagent 3)
@@ -58,7 +60,7 @@ def export_static_data():
     seo_articles = [dict(row) for row in cursor.fetchall()]
 
     # 7. Global Trend Proposals (Subagent 6)
-    cursor.execute("SELECT * FROM global_trend_proposals ORDER BY id DESC")
+    cursor.execute("SELECT * FROM global_trend_proposals ORDER BY created_at DESC")
     global_trends = [dict(row) for row in cursor.fetchall()]
 
     # 8. Settings (System, FX rate, Payment configurations)
@@ -128,6 +130,12 @@ def export_static_data():
 
     print(f"Exported {len(products)} products, {len(categories)} categories, and {len(brands)} brands to {OUTPUT_DIR}")
 
+    global _LAST_HEAVY_REBUILD_TS
+    now_ts = time.time()
+    if not force_rebuild_pages and (now_ts - _LAST_HEAVY_REBUILD_TS) < 20.0:
+        return
+    _LAST_HEAVY_REBUILD_TS = now_ts
+
     # Generate Google Merchant XML & TSV Feeds
     try:
         from generate_google_feed import generate_feeds
@@ -143,4 +151,4 @@ def export_static_data():
         print(f"Product pages generation note: {pe}")
 
 if __name__ == "__main__":
-    export_static_data()
+    export_static_data(force_rebuild_pages=True)

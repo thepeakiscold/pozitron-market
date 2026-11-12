@@ -85,8 +85,40 @@ class MetaPublisher:
         if cloud_url:
             return cloud_url
         clean_path = url.lstrip('./').lstrip('/')
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # If running on the cloud server itself (/var/www/pozitron), serve directly from api.pozitronmarket.com
+        if os.path.realpath(repo_root).startswith('/var/www/'):
+            return f"https://api.pozitronmarket.com/{clean_path}"
+        # Fallback: force-push asset to GitHub raw CDN so Meta can still download it even if cloud upload failed
+        try:
+            import subprocess
+            git_dir = os.path.join(os.path.realpath(repo_root), '.git')
+            lock_file = os.path.join(git_dir, 'index.lock')
+            if os.path.exists(lock_file) and (time.time() - os.path.getmtime(lock_file)) > 120:
+                os.remove(lock_file)
+            subprocess.run(["git", "add", "-f", clean_path], cwd=repo_root, check=False, timeout=10)
+            subprocess.run(["git", "commit", "-m", f"chore(assets): fallback sync {os.path.basename(clean_path)} [skip ci]"], cwd=repo_root, check=False, timeout=10)
+            subprocess.run(["git", "push", "origin", "main"], cwd=repo_root, check=False, timeout=25)
+            return f"https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main/{clean_path}"
+        except Exception:
+            pass
         base = self.public_base_url if ('raw.githubusercontent.com' not in self.public_base_url) else 'https://api.pozitronmarket.com'
         return f"{base.rstrip('/')}/{clean_path}"
+
+    def fetch_recent_live_media(self, limit: int = 25) -> list:
+        """Fetches recent live published media directly from Meta Graph API."""
+        if not self.access_token or not self.instagram_account_id:
+            return []
+        try:
+            fields = "id,caption,media_type,media_product_type,timestamp,permalink,media_url,thumbnail_url"
+            url = f"https://graph.facebook.com/{self.graph_api_version}/{self.instagram_account_id}/media?fields={fields}&limit={int(limit)}&access_token={self.access_token}"
+            req = urllib.request.Request(url, method='GET')
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                return data.get('data') or []
+        except Exception as e:
+            print(f"[UYARI] Meta canli medya listesi alinamadi: {e}")
+            return []
 
     def publish_post(self, post_data: dict) -> dict:
         """

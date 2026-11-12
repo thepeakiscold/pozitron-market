@@ -101,8 +101,8 @@ BLOCKED_SENSITIVE_FILES = {
     'instagram_config.json', 'reddit_history.json', 'admin.html'
 }
 
-ALLOWED_UPLOAD_EXTENSIONS = {'.step', '.stp', '.stl', '.obj', '.3mf', '.png', '.jpg', '.jpeg', '.webp'}
-MAX_UPLOAD_SIZE = 30 * 1024 * 1024  # 30 MB
+ALLOWED_UPLOAD_EXTENSIONS = {'.step', '.stp', '.stl', '.obj', '.3mf', '.png', '.jpg', '.jpeg', '.webp', '.mp4', '.mov', '.webm'}
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 MAX_JSON_BODY_SIZE = 1 * 1024 * 1024  # 1 MB for every non-upload JSON endpoint
 MAX_TELEMETRY_BODY_SIZE = 64 * 1024  # 64 KB
 
@@ -1076,7 +1076,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.handle_sitemap_xml()
             return
 
-        if path.startswith('/api/'):
+        if path.startswith('/api/') or path == '/health':
             try:
                 self.handle_api_get(path, query)
             except Exception as e:
@@ -1114,6 +1114,12 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     content_type = 'image/jpeg'
                 elif ext == '.webp':
                     content_type = 'image/webp'
+                elif ext == '.mp4':
+                    content_type = 'video/mp4'
+                elif ext == '.mov':
+                    content_type = 'video/quicktime'
+                elif ext == '.webm':
+                    content_type = 'video/webm'
                 self.send_header('Content-Type', content_type)
                 self.send_header('Content-Length', str(os.path.getsize(file_path)))
                 self.send_header('Access-Control-Allow-Origin', '*')
@@ -1353,7 +1359,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 return
 
-        if path == '/api/health':
+        if path in ('/api/health', '/health'):
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
@@ -1773,7 +1779,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         # Health Check Endpoint (Cloud / Render / Railway)
-        if path == '/api/health':
+        if path in ('/api/health', '/health'):
             db_ok = False
             try:
                 probe = get_db()
@@ -5024,9 +5030,13 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                 discount_try = v['discount_try']
                 applied_coupon_code = v['code']
 
-            # Shipping fees (Free for orders >= 1500 TRY or >= $35 USD)
-            shipping_fee_usd = 0.0 if subtotal_usd >= 35.0 else 2.10
-            shipping_fee_try = 0.0 if subtotal_try >= 1500.0 else 99.0
+            # Shipping fees: one authoritative TRY threshold after discount, so the
+            # cart, checkout, iyzico and this endpoint always agree. 1500 TRY is the
+            # storefront promise; USD mirrors it instead of using a separate $35 rule.
+            shipping_discounted_try = max(0.0, subtotal_try - discount_try)
+            free_shipping = shipping_discounted_try >= 1500.0
+            shipping_fee_usd = 0.0 if free_shipping else 2.10
+            shipping_fee_try = 0.0 if free_shipping else 99.0
 
             total_usd = max(0.0, round(subtotal_usd - discount_usd + shipping_fee_usd, 2))
             total_try = max(0.0, round(subtotal_try - discount_try + shipping_fee_try, 2))

@@ -740,7 +740,7 @@ class TechnicalSeoAgent:
     """
     def __init__(self, gemini_api_key: str = ""):
         self.gemini_api_key = gemini_api_key or os.environ.get("GEMINI_API_KEY", "")
-        self.models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        self.models = ["gemini-3.8-flash", "gemini-2.5-flash"]
         self._ensure_api_key()
 
     def _ensure_api_key(self):
@@ -850,7 +850,7 @@ class TechnicalSeoAgent:
             if cand_words and exist_words:
                 inter = cand_words.intersection(exist_words)
                 min_len = min(len(cand_words), len(exist_words))
-                if min_len > 10 and (len(inter) / min_len) > 0.75:
+                if min_len > 10 and (len(inter) / min_len) > 0.88:
                     return True
         return False
 
@@ -1257,10 +1257,30 @@ Bu rehberde bahsi geçen sistemlerle %100 uyumlu, orijinal ve Türkiye stokları
             content = self._synthesize_technical_guide(selected_topic, internal_links)
             title = selected_topic["title"]
 
-        # Content deduplication safety check
+        # Content deduplication safety check: if all curated/combinatorial topics are already in DB, return existing latest article instead of inserting a duplicate
         if self.is_content_duplicate(content):
-            print(f"[SEO Agent] UYARI: Üretilen içerik veritabanında zaten mevcut. Yeniden sentezleniyor...")
-            content = self._synthesize_technical_guide(selected_topic, internal_links)
+            combo_alt = self._generate_combinatorial_topic()
+            if combo_alt and combo_alt.get("component_focus") != final_focus:
+                selected_topic = combo_alt
+                final_focus = selected_topic["component_focus"]
+                title = selected_topic["title"]
+                final_keywords = selected_topic.get("target_keywords", final_keywords)
+                keywords_str = ", ".join(final_keywords)
+                content = self._synthesize_technical_guide(selected_topic, internal_links)
+            if self.is_content_duplicate(content):
+                existing = self.get_covered_topics()
+                if existing:
+                    latest_ex = existing[0]
+                    return {
+                        "slug": latest_ex.get("slug", ""),
+                        "title": latest_ex.get("title", title),
+                        "component_focus": latest_ex.get("component_focus", final_focus),
+                        "target_keywords": final_keywords,
+                        "internal_links": internal_links,
+                        "content_markdown": content,
+                        "published_at": datetime.now().isoformat(),
+                        "reused_existing": True
+                    }
 
         # Step 4: Slug & Storage
         slug_base = turkish_to_slug(final_focus)

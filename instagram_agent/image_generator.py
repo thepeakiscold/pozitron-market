@@ -49,14 +49,38 @@ def get_font(size: int, bold: bool = False):
     return ImageFont.load_default()
 
 def perceptual_hash(image_path: str, hash_size: int = 8) -> str:
-    """Average-hash (aHash) of an image as a bit string, for near-duplicate detection."""
+    """Content-aware difference + chrominance hash (dHash) of an image as a bit string.
+    Crops out uniform brand margins and captures both structural gradients (text/hero)
+    and color palette differences so distinct template cards never collide.
+    """
     try:
-        img = Image.open(image_path).convert('L').resize((hash_size, hash_size), Image.Resampling.LANCZOS)
-        pixels = list(img.tobytes())
-        if not pixels:
-            return ''
-        avg = sum(pixels) / len(pixels)
-        return ''.join('1' if p > avg else '0' for p in pixels)
+        raw = Image.open(image_path).convert('RGB')
+        w, h = raw.size
+        if w > 32 and h > 32:
+            raw = raw.crop((int(w * 0.12), int(h * 0.14), int(w * 0.88), int(h * 0.86)))
+        total_bits = hash_size * hash_size
+        half_rows = max(1, hash_size // 2)
+        # 1. Structural horizontal dHash on grayscale
+        gray = raw.convert('L').resize((hash_size + 1, half_rows), Image.Resampling.LANCZOS)
+        gpix = list(gray.tobytes())
+        bits = []
+        stride = hash_size + 1
+        for r in range(half_rows):
+            row_off = r * stride
+            for c in range(hash_size):
+                bits.append('1' if gpix[row_off + c] > gpix[row_off + c + 1] else '0')
+        # 2. Chrominance + vertical gradient bits on RGB
+        rem_rows = max(1, hash_size - half_rows)
+        rgb_small = raw.resize((hash_size, rem_rows + 1), Image.Resampling.LANCZOS)
+        r_ch, g_ch, b_ch = rgb_small.split()
+        r_pix, g_pix, b_pix = list(r_ch.tobytes()), list(g_ch.tobytes()), list(b_ch.tobytes())
+        chroma = [r_pix[i] * 2 - g_pix[i] - b_pix[i] for i in range(len(r_pix))]
+        for r in range(rem_rows):
+            row_off = r * hash_size
+            next_off = (r + 1) * hash_size
+            for c in range(hash_size):
+                bits.append('1' if chroma[row_off + c] >= chroma[next_off + c] else '0')
+        return ''.join(bits[:total_bits])
     except Exception:
         return ''
 

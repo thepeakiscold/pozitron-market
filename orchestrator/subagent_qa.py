@@ -166,13 +166,16 @@ class QASentinelAgent:
             cursor.execute("SELECT count(*) FROM instagram_posts WHERE status = 'published'")
             result["published_posts"] = cursor.fetchone()[0]
 
-            cursor.execute("SELECT created_at FROM instagram_posts ORDER BY id DESC LIMIT 1")
+            cursor.execute("SELECT created_at FROM instagram_posts WHERE status = 'published' ORDER BY created_at DESC LIMIT 1")
             last_post = cursor.fetchone()
+            if not last_post:
+                cursor.execute("SELECT created_at FROM instagram_posts ORDER BY created_at DESC LIMIT 1")
+                last_post = cursor.fetchone()
             if last_post:
                 result["last_post_at"] = last_post[0]
 
             # Check recent banner images on disk
-            cursor.execute("SELECT id, local_image_path FROM instagram_posts WHERE local_image_path IS NOT NULL ORDER BY id DESC LIMIT 10")
+            cursor.execute("SELECT id, local_image_path FROM instagram_posts WHERE local_image_path IS NOT NULL AND local_image_path != '' ORDER BY created_at DESC LIMIT 10")
             recent_posts = cursor.fetchall()
             conn.close()
 
@@ -218,6 +221,47 @@ class QASentinelAgent:
                 except Exception as ex:
                     result["token_error"] = str(ex)
 
+            # Check Chrome session cookie health
+            try:
+                from instagram_agent.chrome_session import extract_chrome_instagram_cookies
+                c_info = extract_chrome_instagram_cookies()
+                if not c_info.get("success") or not c_info.get("cookies", {}).get("sessionid"):
+                    result["chrome_session_valid"] = False
+                    result["chrome_session_error"] = c_info.get("error", "sessionid bulunamadi")
+                    result["issues"].append(f"Instagram Chrome oturum cerezi (sessionid) eksik veya okunamaz durumda.")
+                    if not is_dry_run:
+                        result["status"] = "DEGRADED"
+                else:
+                    result["chrome_session_valid"] = True
+                    result["chrome_account_id"] = c_info.get("user_id")
+            except Exception as ce:
+                result["chrome_session_valid"] = False
+                result["chrome_session_error"] = str(ce)
+
+            # Check posting frequency safety (rate-limit / spam risk)
+            posting_freq = float(cfg_dict.get("posting_frequency_hours", 8) or 8)
+            result["posting_frequency_hours"] = posting_freq
+            if posting_freq < 4.0:
+                result["posting_frequency_risk"] = "HIGH"
+                result["issues"].append(
+                    f"Instagram paylasim sikligi asiri yuksek ({posting_freq} saat). "
+                    f"Gunde 6+ otonom gonderi Instagram bot/spam filtresini tetikler. Guvenli aralik: 8-12 saat."
+                )
+                result["status"] = "DEGRADED"
+            elif posting_freq < 6.0:
+                result["posting_frequency_risk"] = "MEDIUM"
+                result["issues"].append(f"Instagram paylasim sikligi ({posting_freq} saat) spam sinirina yakin. Onerilen: 8-12 saat.")
+            else:
+                result["posting_frequency_risk"] = "LOW"
+
+            # Check night rest window status (23:30 - 08:30 TRT)
+            try:
+                from instagram_agent.scheduler import is_in_rest_window
+                result["rest_window_active"] = is_in_rest_window()
+            except Exception:
+                result["rest_window_active"] = False
+            result["rest_window_schedule"] = "23:30 - 08:30 TRT"
+
         except Exception as e:
             result["status"] = "DEGRADED"
             result["issues"].append(f"Instagram probu calistirilirken hata olustu: {str(e)}")
@@ -252,6 +296,17 @@ class QASentinelAgent:
             "follow_blocked_until": None,
             "last_follow_error": None,
             "last_follow_message": None,
+            "trailing_zero_like_days": 0,
+            "like_blocked": False,
+            "like_blocked_until": None,
+            "last_like_error": None,
+            "last_like_message": None,
+            "stale_lock_detected": False,
+            "stale_lock_reason": None,
+            "recent_total_count": 0,
+            "recent_failed_count": 0,
+            "recent_failure_rate": 0.0,
+            "recent_dominant_error": None,
         }
 
         diag = data.get("follow_diagnostics") or {}
@@ -303,6 +358,62 @@ class QASentinelAgent:
                 break
         analysis["trailing_zero_follow_days"] = streak
         analysis["trailing_comment_days"] = comment_streak
+
+        # Trailing consecutive days that produced comments/follows but zero likes
+        like_streak = 0
+        for day in sorted(days.keys(), reverse=True):
+            bucket = days[day]
+            if bucket["comments"] == 0 and bucket["follows"] == 0 and bucket["likes"] == 0:
+                continue
+            if (bucket["comments"] > 0 or bucket["follows"] > 0) and bucket["likes"] == 0:
+                like_streak += 1
+            elif bucket["likes"] > 0:
+                break
+        analysis["trailing_zero_like_days"] = like_streak
+
+        # Like diagnostics inspection
+        like_diag = data.get("like_diagnostics") or {}
+        analysis["last_like_error"] = like_diag.get("last_like_error")
+        analysis["last_like_message"] = like_diag.get("last_like_message")
+        l_blocked_until = like_diag.get("like_blocked_until")
+        now = datetime.now()
+        if l_blocked_until:
+            analysis["like_blocked_until"] = l_blocked_until
+            try:
+                if now < datetime.fromisoformat(l_blocked_until):
+                    analysis["like_blocked"] = True
+            except Exception:
+                pass
+
+        # Stale lock detection (lock expired in past but state remained blocked)
+        if blocked_until:
+            try:
+                if now >= datetime.fromisoformat(blocked_until) and (diag.get("follow_blocked") or diag.get("last_follow_error") == "feedback_required"):
+                    analysis["stale_lock_detected"] = True
+                    analysis["stale_lock_reason"] = f"Instagram takip kilidi suresi ({blocked_until}) dolmus olmasina ragmen kilit kaydi temizlenmemis."
+            except Exception:
+                pass
+        if l_blocked_until:
+            try:
+                if now >= datetime.fromisoformat(l_blocked_until) and like_diag.get("like_blocked"):
+                    analysis["stale_lock_detected"] = True
+                    analysis["stale_lock_reason"] = f"Instagram begeni kilidi suresi ({l_blocked_until}) dolmus olmasina ragmen kilit kaydi temizlenmemis."
+            except Exception:
+                pass
+
+        # Recent failure rate & dominant error (last 15 recorded interaction events)
+        history_events = data.get("history", [])
+        recent_window = history_events[-15:] if len(history_events) >= 15 else history_events
+        failed_evs = [e for e in recent_window if e.get("status") == "failed"]
+        analysis["recent_total_count"] = len(recent_window)
+        analysis["recent_failed_count"] = len(failed_evs)
+        analysis["recent_failure_rate"] = round((len(failed_evs) / len(recent_window) * 100), 1) if recent_window else 0.0
+        if failed_evs:
+            from collections import Counter
+            counts = Counter(e.get("error") for e in failed_evs if e.get("error"))
+            if counts:
+                analysis["recent_dominant_error"] = counts.most_common(1)[0][0]
+
         return analysis
 
     def _analyze_follow_rate_limit(self, data: Dict, analysis: Dict) -> Dict:
@@ -461,6 +572,35 @@ class QASentinelAgent:
                 msg = (f"Son takip denemesi basarisiz oldu: {analysis['last_follow_error']} - "
                        f"{analysis['last_follow_message']}")
                 result["issues"].append(msg)
+
+            # Check like action health
+            if analysis.get("like_blocked"):
+                result["status"] = "DEGRADED"
+                result["issues"].append(
+                    f"Instagram begeni aksiyonu kisitli (kilit bitisi: {analysis.get('like_blocked_until')}). "
+                    f"Son hata: {analysis.get('last_like_error')}"
+                )
+            elif analysis.get("trailing_zero_like_days", 0) >= 2:
+                result["status"] = "DEGRADED"
+                result["issues"].append(
+                    f"Instagram begeni kotasi {analysis.get('trailing_zero_like_days')} gundur hic kullanilmiyor "
+                    f"(Son hata: {analysis.get('last_like_error')})."
+                )
+
+            # Check recent action failure rate (across last 15 actions)
+            if analysis.get("recent_failure_rate", 0) >= 50.0 and analysis.get("recent_total_count", 0) >= 3:
+                result["status"] = "DEGRADED"
+                result["issues"].append(
+                    f"Instagram son etkilesim basarisizlik orani yuksek (%{analysis.get('recent_failure_rate')} - "
+                    f"{analysis.get('recent_failed_count')}/{analysis.get('recent_total_count')}). "
+                    f"Baskin hata: {analysis.get('recent_dominant_error')}."
+                )
+
+            # Check stale lock
+            if analysis.get("stale_lock_detected"):
+                result["issues"].append(
+                    f"Bayat kilit tespit edildi: {analysis.get('stale_lock_reason')}"
+                )
 
             # Surface the rate-limit root-cause verdict as its own health issue.
             if result.get("rate_limit_risk") in ("HIGH", "MEDIUM"):
@@ -1152,7 +1292,7 @@ class QASentinelAgent:
             if not is_subagent_enabled("subagent_6_trend"):
                 result["subagents"]["trend_hunter"]["status"] = "DISABLED"
             else:
-                cursor.execute("SELECT * FROM global_trend_proposals ORDER BY id DESC LIMIT 1")
+                cursor.execute("SELECT * FROM global_trend_proposals ORDER BY created_at DESC LIMIT 1")
                 trnd = cursor.fetchone()
                 if trnd:
                     tr_dict = dict(trnd)
@@ -1176,7 +1316,7 @@ class QASentinelAgent:
             if not is_subagent_enabled("subagent_8_procurement"):
                 result["subagents"]["procurement"]["status"] = "DISABLED"
             else:
-                cursor.execute("SELECT * FROM procurement_order_plans ORDER BY id DESC LIMIT 1")
+                cursor.execute("SELECT * FROM procurement_order_plans ORDER BY created_at DESC LIMIT 1")
                 proc_row = cursor.fetchone()
                 if proc_row:
                     p_dict = dict(proc_row)
@@ -1449,6 +1589,29 @@ KURALLAR:
         cursor = conn.cursor()
         now_iso = datetime.now().isoformat()
 
+        # Remedy 0: Stale Git index.lock auto-healing
+        try:
+            real_root = os.path.realpath(PROJECT_ROOT)
+            git_lock = os.path.join(real_root, ".git", "index.lock")
+            if os.path.exists(git_lock) and (time.time() - os.path.getmtime(git_lock)) > 120:
+                os.remove(git_lock)
+                act = {
+                    "channel": "system_storage",
+                    "action": "Takili kalan .git/index.lock dosyasi otonom olarak silindi, Git senkronizasyonu acildi.",
+                    "status": "SUCCESS"
+                }
+                healed_actions.append(act)
+                self.log_incident(
+                    incident_type="GIT_INDEX_LOCK_HEALED",
+                    channel="system_storage",
+                    severity="WARNING",
+                    description="120 saniyeden eski .git/index.lock dosyasi tespit edilerek otonom temizlendi.",
+                    auto_healed=True,
+                    heal_action=act["action"]
+                )
+        except Exception:
+            pass
+
         # Remedy 1: Instagram Meta Token validation & mode enforcement
         ig = probe_results.get('probes', {}).get('instagram', {})
         if ig and not ig.get('token_valid', True):
@@ -1506,7 +1669,7 @@ KURALLAR:
             try:
                 from instagram_agent.image_generator import ImageGenerator
                 gen = ImageGenerator()
-                cursor.execute("SELECT id, caption, content_type, local_image_path FROM instagram_posts WHERE local_image_path IS NOT NULL ORDER BY id DESC LIMIT 10")
+                cursor.execute("SELECT id, caption, content_type, local_image_path FROM instagram_posts WHERE local_image_path IS NOT NULL AND local_image_path != '' ORDER BY created_at DESC LIMIT 10")
                 posts = cursor.fetchall()
                 fixed_count = 0
                 for p in posts:
@@ -1838,10 +2001,23 @@ KURALLAR:
                 except Exception:
                     pass
 
-            if eng.get('follow_blocked') or diagnosed_error == 'feedback_required':
+            is_active_block = False
+            if eng.get('follow_blocked_until'):
+                try:
+                    if datetime.now() < datetime.fromisoformat(eng.get('follow_blocked_until')):
+                        is_active_block = True
+                except Exception:
+                    pass
+
+            if is_active_block or eng.get('follow_blocked'):
                 severity = "WARNING"
                 action_desc = (f"Instagram takip aksiyonu rate-limit/action-block altinda "
                                f"(feedback_required). Kilit bitisi: {eng.get('follow_blocked_until')}.")
+                auto_healed = False
+            elif diagnosed_error == 'feedback_required':
+                severity = "WARNING"
+                action_desc = (f"Instagram takip aksiyonu rate-limit/action-block gecmiste yasandi "
+                               f"(feedback_required). Onceki kilit suresi doldu ({eng.get('follow_blocked_until')}), yeni deneme bekleniyor.")
                 auto_healed = False
             else:
                 severity = "CRITICAL"
@@ -1865,6 +2041,80 @@ KURALLAR:
                 auto_healed=auto_healed,
                 heal_action="Takip denemeleri kilit suresi boyunca askiya alindi; kota tekrar kullanilabilir hale gelince otomatik devam edecek."
             )
+
+        # Remedy 9: Stale Engagement Lock Auto-Clearing
+        if eng and eng.get('stale_lock_detected'):
+            try:
+                ledger_path = os.path.join(PROJECT_ROOT, "data", "instagram_interactions.json")
+                if os.path.exists(ledger_path):
+                    with open(ledger_path, "r", encoding="utf-8") as f:
+                        l_data = json.load(f)
+                    changed = False
+                    now = datetime.now()
+                    f_diag = l_data.get("follow_diagnostics") or {}
+                    if f_diag.get("follow_blocked_until"):
+                        try:
+                            if now >= datetime.fromisoformat(f_diag["follow_blocked_until"]):
+                                f_diag["follow_blocked"] = False
+                                f_diag["follow_blocked_until"] = None
+                                if f_diag.get("last_follow_error") == "feedback_required":
+                                    f_diag["last_follow_error"] = None
+                                changed = True
+                        except Exception:
+                            pass
+                    l_diag = l_data.get("like_diagnostics") or {}
+                    if l_diag.get("like_blocked_until"):
+                        try:
+                            if now >= datetime.fromisoformat(l_diag["like_blocked_until"]):
+                                l_diag["like_blocked"] = False
+                                l_diag["like_blocked_until"] = None
+                                changed = True
+                        except Exception:
+                            pass
+                    if changed:
+                        l_data["follow_diagnostics"] = f_diag
+                        l_data["like_diagnostics"] = l_diag
+                        with open(ledger_path, "w", encoding="utf-8") as f:
+                            json.dump(l_data, f, indent=2, ensure_ascii=False)
+                        act = {
+                            "channel": "instagram_engagement",
+                            "action": "Suresi dolmus bayat Instagram etkilesim kilidi otonom olarak sifirlandi.",
+                            "status": "SUCCESS"
+                        }
+                        healed_actions.append(act)
+                        self.log_incident(
+                            incident_type="INSTAGRAM_STALE_LOCK_CLEARED",
+                            channel="instagram_engagement",
+                            severity="INFO",
+                            description="Suresi dolmus Instagram kilidi otonom olarak sifirlandi.",
+                            auto_healed=True,
+                            heal_action=act["action"]
+                        )
+            except Exception:
+                pass
+
+        # Remedy 10: Dangerous High Posting Frequency Auto-Optimization
+        ig_probe = probe_results.get('probes', {}).get('instagram', {})
+        if ig_probe and ig_probe.get('posting_frequency_risk') == 'HIGH':
+            try:
+                from instagram_agent.db import update_agent_config
+                update_agent_config({'posting_frequency_hours': 8})
+                act = {
+                    "channel": "instagram",
+                    "action": f"Instagram paylasim sikligi asiri riskli seviyeden ({ig_probe.get('posting_frequency_hours')} saat) guvenli 8 saate cekildi.",
+                    "status": "SUCCESS"
+                }
+                healed_actions.append(act)
+                self.log_incident(
+                    incident_type="INSTAGRAM_FREQUENCY_OPTIMIZED",
+                    channel="instagram",
+                    severity="INFO",
+                    description=act["action"],
+                    auto_healed=True,
+                    heal_action=act["action"]
+                )
+            except Exception:
+                pass
 
         # Remedy: Content duplicates (Instagram posts + site guides)
         dupes = probe_results.get('probes', {}).get('duplicate_content', {})

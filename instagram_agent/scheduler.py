@@ -3,6 +3,18 @@ import threading
 from datetime import datetime, timedelta
 from .db import get_agent_config, update_agent_config
 
+def is_in_rest_window(dt: datetime = None) -> bool:
+    """
+    Returns True if datetime falls within the night rest window (23:30 - 08:30 local TRT).
+    During this window, real humans sleep, so automated bot posting and engagement are paused
+    to protect the account from heuristic spam flags.
+    """
+    if dt is None:
+        dt = datetime.now()
+    hour_val = dt.hour + (dt.minute / 60.0)
+    return hour_val >= 23.5 or hour_val < 8.5
+
+
 def calculate_next_peak_window(from_dt: datetime = None) -> datetime:
     """
     Calculates the next optimal posting timestamp targeting Turkish FPV drone community peak engagement:
@@ -74,6 +86,26 @@ class InstagramScheduler:
                 is_enabled = bool(config.get('is_autonomous_enabled', 0))
                 
                 if is_enabled:
+                    # Respect night rest window (23:30 - 08:30)
+                    if is_in_rest_window():
+                        next_run_str = config.get('next_run_at')
+                        if next_run_str:
+                            try:
+                                next_run_dt = datetime.fromisoformat(next_run_str)
+                                if datetime.now() >= next_run_dt:
+                                    now = datetime.now()
+                                    target_date = (now + timedelta(days=1)).date() if now.hour >= 23 else now.date()
+                                    morning_target = datetime(target_date.year, target_date.month, target_date.day, 9, 30, 0)
+                                    update_agent_config({'next_run_at': morning_target.isoformat()})
+                                    print(f"[{now.strftime('%H:%M:%S')}] [DİNLENME MODU] Gece dinlenme penceresi (23:30 - 08:30) aktif. Planlanan otonom aksiyon 09:30 sabahina ertelendi.")
+                            except Exception:
+                                pass
+                        for _ in range(12):
+                            if self._stop_event.is_set():
+                                break
+                            time.sleep(5)
+                        continue
+
                     next_run_str = config.get('next_run_at')
                     should_run = False
                     
@@ -86,6 +118,29 @@ class InstagramScheduler:
                                 should_run = True
                         except Exception:
                             should_run = True
+
+                    if should_run:
+                        # Cross-instance coordination: check if a live post was already published recently on Meta API
+                        if not config.get('dry_run_mode', 0) and hasattr(self.agent, 'sync_live_media_to_db'):
+                            try:
+                                sync_info = self.agent.sync_live_media_to_db(limit=10)
+                                latest_live = sync_info.get('latest_published_at')
+                                if latest_live:
+                                    latest_dt = datetime.fromisoformat(latest_live)
+                                    freq_h = float(config.get('posting_frequency_hours', 8) or 8)
+                                    elapsed_h = (datetime.now() - latest_dt).total_seconds() / 3600.0
+                                    if 0 <= elapsed_h < max(2.0, freq_h * 0.75):
+                                        deferred_next = self.agent.calculate_next_run(from_dt=latest_dt)
+                                        update_agent_config({
+                                            'last_run_at': latest_live,
+                                            'last_post_at': latest_live,
+                                            'next_run_at': deferred_next,
+                                            'next_post_at': deferred_next
+                                        })
+                                        print(f"[{datetime.now().strftime('%H:%M:%S')}] [SENKRON KORUMA] Instagram hesabinda {elapsed_h:.1f} saat once canli paylasim tespit edildi. Cift paylasimi onlemek icin sonraki plan: {deferred_next}")
+                                        should_run = False
+                            except Exception:
+                                pass
 
                     if should_run:
                         print(f"[{datetime.now().strftime('%H:%M:%S')}] [OTONOM TETİKLEME] Planlanan saat geldi, otonom paylasim yapiliyor...")
