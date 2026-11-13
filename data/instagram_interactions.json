@@ -4997,8 +4997,8 @@
     }
   ],
   "follow_diagnostics": {
-    "last_follow_probe_at": "2026-11-13T05:21:42.865263",
-    "last_follow_attempt_at": "2026-11-13T05:21:42.865263",
+    "last_follow_probe_at": "2026-11-13T17:24:23.579041",
+    "last_follow_attempt_at": "2026-11-13T17:24:23.579041",
     "last_follow_error": "no_session",
     "last_follow_message": "Instagram oturum cerezi (sessionid) bulunamadi.",
     "last_follow_status_code": 0,
