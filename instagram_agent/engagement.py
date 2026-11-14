@@ -981,7 +981,11 @@ KRİTİK UYARI VE İÇERİK UYUMU:
         if publisher is None:
             publisher = MetaPublisher(dry_run=True)
 
-        target_keywords = ['kupon', 'link', 'fiyat', 'parca', 'parça', 'indirim', 'kod', '3d', 'baski', 'baskı', 'print', 'tpu', 'stl', 'mount']
+        target_keywords = [
+            'rehber', 'kılavuz', 'kilavuz', 'ayar',
+            'kupon', 'link', 'fiyat', 'parca', 'parça', 'indirim', 'kod',
+            '3d', 'baski', 'baskı', 'print', 'tpu', 'stl', 'mount'
+        ]
         
         comments_to_process = []
         if test_comments is not None:
@@ -1030,6 +1034,7 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                 continue
 
             is_3d_query = any(k in text for k in ['3d', 'baski', 'baskı', 'print', 'tpu', 'stl', 'mount'])
+            is_rehber_query = any(k in text for k in ['rehber', 'kılavuz', 'kilavuz', 'ayar'])
             if is_3d_query:
                 reply_text = f"@{u_name} Harika! 3D Baskı Studio STL yükleme linkini ve sana özel %10 indirim kodunu DM kutuna ilettik. Kırılmaz parçalarda ilk baskıda yanındayız!"
                 dm_text = (
@@ -1040,11 +1045,22 @@ KRİTİK UYARI VE İÇERİK UYUMU:
                     f"[KUPON] İlk 3D baskı siparişinde geçerli %10 indirim kodun: STUDIO3D\n\n"
                     f"Dosyanı yükle veya özel parça tasarımın için bize buradan yazabilirsin! Kırımsız uçuşlar ve keyifli baskılar dileriz!"
                 )
+            elif is_rehber_query:
+                reply_text = f"@{u_name} Harika! Pozitron Mühendislik Rehberi bağlantısını ve sana özel %10 indirim kodunu DM kutuna gönderdik. Kırımsız uçuşlar!"
+                dm_text = (
+                    f"Selam @{u_name}! Pozitron FPV Mühendislik Rehberi'ne hoş geldin.\n\n"
+                    f"[TEKNİK REHBER] UART, Betaflight 4.5, LiPo güvenliği, ELRS ve motor-ESC kalibrasyon kılavuzlarımız:\n"
+                    f"👉 https://pozitronmarket.com/rehber\n\n"
+                    f"[DRONE SİHİRBAZI] Uyumlu parçaları otomatik eşleştirmek için: https://pozitronmarket.com/drone-toplama-sihirbazi\n"
+                    f"[KUPON] Sana özel %10 indirim kodun: POZITRON10\n\n"
+                    f"Kurulum ve lehimleme soruların için bize buradan her zaman yazabilirsin. Kırımsız uçuşlar dileriz!"
+                )
             else:
                 reply_text = f"@{u_name} Harika! Ozel indirim kodunu ve urun baglantisini DM kutuna ilettik. Keyifli ve kirimsiz ucuslar dileriz!"
                 dm_text = (
                     f"Selam @{u_name}! Pozitron Market FPV ailesine hos geldin.\n\n"
                     f"[KUPON] Sana ozel %10 indirim kodun: POZITRON10\n"
+                    f"[TEKNİK REHBER] Kurulum kılavuzları: https://pozitronmarket.com/rehber\n"
                     f"[LINK] Dogrudan alisveris ve urun linki: https://pozitronmarket.com\n\n"
                     f"Teknik sorularin ve donanim secimi icin bize buradan her zaman yazabilirsin. Kirimsiz ucuslar dileriz!"
                 )

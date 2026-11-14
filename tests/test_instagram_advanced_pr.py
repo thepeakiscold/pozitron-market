@@ -250,20 +250,23 @@ class TestInstagramAdvancedPR(unittest.TestCase):
         self.assertEqual(dm_res['processed_comments'], 1)
 
     def test_10_autonomous_cycle_includes_reel_and_story(self):
-        """Verify run_autonomous_cycle triggers reel and story when enabled."""
+        """Verify run_autonomous_cycle strictly publishes Reels (Reels-only mode) and skips stories/static posts."""
+        from unittest.mock import patch
         update_agent_config({
             'dry_run_mode': 1,
-            'story_enabled': 1,
+            'story_enabled': 0,
             'reels_enabled': 1,
             'carousel_enabled': 0,
             'dm_automation_enabled': 0
         })
-        cycle_res = self.agent.run_autonomous_cycle(run_engagement=False)
+        with patch.object(self.agent.image_gen, '_get_reels_voiceover', return_value=None):
+            cycle_res = self.agent.run_autonomous_cycle(run_engagement=False)
         self.assertTrue(cycle_res['success'])
         self.assertIn('story_result', cycle_res)
         self.assertIn('reel_result', cycle_res)
-        self.assertTrue(cycle_res['story_result'].get('success'))
+        self.assertTrue(cycle_res['story_result'].get('skipped'))
         self.assertTrue(cycle_res['reel_result'].get('success'))
+        self.assertEqual(cycle_res['post_result'].get('post', {}).get('media_type'), 'REEL')
 
     def test_11_sync_assets_to_repo(self):
         """Verify _sync_assets_to_repo helper handles empty and dry-run paths safely."""

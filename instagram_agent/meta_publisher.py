@@ -458,14 +458,16 @@ class MetaPublisher:
             }
 
         try:
-            # Step 1: Create Reels Container
+            # Step 1: Create Reels Container (share_to_feed=true maximizes initial feed + Reels tab velocity)
             container_url = f"https://graph.facebook.com/{self.graph_api_version}/{self.instagram_account_id}/media"
-            payload = urllib.parse.urlencode({
+            container_params = {
                 'video_url': pub_video_url,
                 'media_type': 'REELS',
+                'share_to_feed': 'true',
                 'caption': full_caption,
                 'access_token': self.access_token
-            }).encode('utf-8')
+            }
+            payload = urllib.parse.urlencode(container_params).encode('utf-8')
             req = urllib.request.Request(container_url, data=payload, method='POST')
             with urllib.request.urlopen(req, timeout=40) as resp:
                 body = json.loads(resp.read().decode('utf-8'))
@@ -476,7 +478,7 @@ class MetaPublisher:
 
             # Poll video processing status until FINISHED
             status_url = f"https://graph.facebook.com/{self.graph_api_version}/{creation_id}?fields=status_code,status&access_token={self.access_token}"
-            for _ in range(12):  # Poll up to 60 seconds
+            for _ in range(18):  # Poll up to 90 seconds
                 time.sleep(5)
                 try:
                     req_status = urllib.request.Request(status_url)
@@ -502,6 +504,32 @@ class MetaPublisher:
                 media_id = body_pub.get('id')
 
             permalink = f"https://www.instagram.com/reel/{media_id}/"
+            try:
+                perm_url = f"https://graph.facebook.com/{self.graph_api_version}/{media_id}?fields=permalink&access_token={self.access_token}"
+                with urllib.request.urlopen(urllib.request.Request(perm_url), timeout=10) as p_resp:
+                    p_data = json.loads(p_resp.read().decode('utf-8'))
+                    if p_data.get('permalink'):
+                        permalink = p_data['permalink']
+            except Exception:
+                pass
+
+            # Step 3: Seed first comment on the Reel to trigger comment-to-DM engagement & algorithmic boost
+            try:
+                rehber_slug = ((post_data.get('rehber_info') or {}).get('slug') or '')
+                rehber_link = f"pozitronmarket.com/rehber/{rehber_slug}" if rehber_slug else "pozitronmarket.com/rehber"
+                first_comment = (
+                    f"Videodaki teknik kurulum detaylari ({rehber_link}) ve sana ozel %10 indirim kuponu icin "
+                    f"bu yoruma 'REHBER' veya 'KUPON' yaz, DM kutuna aninda gonderelim!"
+                )
+                comm_url = f"https://graph.facebook.com/{self.graph_api_version}/{media_id}/comments"
+                comm_payload = urllib.parse.urlencode({
+                    'message': first_comment,
+                    'access_token': self.access_token
+                }).encode('utf-8')
+                urllib.request.urlopen(urllib.request.Request(comm_url, data=comm_payload, method='POST'), timeout=12)
+            except Exception:
+                pass
+
             return {
                 "success": True,
                 "mode": "live",

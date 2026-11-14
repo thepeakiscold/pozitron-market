@@ -634,36 +634,42 @@ REELS_TYPES_METADATA = [
 ALL_REELS_TYPES = [t['id'] for t in REELS_TYPES_METADATA]
 
 REELS_TYPE_THEME_MAP = {
-    'real_fpv_broll': ['drone_build_showcase', 'spot_guide', 'product_spotlight', 'pilot_tip'],
-    'freestyle_acro': ['drone_build_showcase', 'spot_guide', 'pilot_tip'],
-    'hardware_vs': ['hardware_battle'],
-    'quick_tip_fix': ['pilot_tip', 'tool_showcase'],
-    'mistake_warning': ['mistake_breakdown', 'maintenance_checklist'],
+    'real_fpv_broll': ['seo_article', 'drone_build_showcase', 'spot_guide', 'product_spotlight', 'pilot_tip'],
+    'freestyle_acro': ['drone_build_showcase', 'spot_guide', 'pilot_tip', 'seo_article'],
+    'hardware_vs': ['hardware_battle', 'seo_article'],
+    'quick_tip_fix': ['seo_article', 'pilot_tip', 'tool_showcase'],
+    'mistake_warning': ['seo_article', 'mistake_breakdown', 'maintenance_checklist'],
     'secret_spot': ['spot_guide'],
-    'product_cinematic': ['product_spotlight'],
+    'product_cinematic': ['product_spotlight', 'seo_article'],
     'flash_deal': ['deal_drop'],
     '3d_print_showcase': ['3d_print_studio', 'drone_build_showcase', 'tool_showcase'],
 }
 
-# --- Reels theme rotation (fixes the 100% product_spotlight problem) ---
+# --- Reels theme rotation (includes high-value Rehber / seo_article engineering content) ---
 REELS_THEME_WEIGHTS = {
-    '3d_print_studio': 0.15,
-    'community_quiz': 0.12,
-    'product_spotlight': 0.12,
+    'seo_article': 0.16,
+    '3d_print_studio': 0.14,
+    'community_quiz': 0.11,
+    'product_spotlight': 0.11,
     'hardware_battle': 0.10,
     'pilot_tip': 0.10,
-    'mistake_breakdown': 0.10,
-    'drone_build_showcase': 0.09,
-    'myth_buster': 0.07,
-    'spot_guide': 0.06,
-    'flight_weather_radar': 0.05,
-    'maintenance_checklist': 0.05,
-    'deal_drop': 0.05,
+    'mistake_breakdown': 0.09,
+    'drone_build_showcase': 0.07,
+    'myth_buster': 0.05,
+    'spot_guide': 0.04,
+    'flight_weather_radar': 0.03,
+    'maintenance_checklist': 0.04,
+    'deal_drop': 0.04,
     'tool_showcase': 0.03,
     'review_highlight': 0.02,
 }
 
 REELS_HOOKS = {
+    'seo_article': [
+        "[MÜHENDİSLİK REHBERİ] Pilotların %90'ı bu teknik detayı atladığı için kırım yaşıyor!",
+        "[TEKNİK REHBER] Dronunu yakmadan önce bu 3 mühendislik kuralını mutlaka kaydet!",
+        "[LABORATUVAR SIRRI] Uçuş süreni ve sinyal menzilini ikiye katlayan Pozitron Rehber formülü!"
+    ],
     'community_quiz': [
         "[REELS QUIZ] Bu FPV sorusunu 5 saniyede bilen gerçek pilot!",
         "[BILGI TESTI] Cevabı sonuna kadar izle, bilemezsen kaydet!",
@@ -729,11 +735,11 @@ REELS_HOOKS = {
         "[DENEYIM] Gerçek kullanıcı deneyimi: fiyatına değer mi?",
         "[INCELEME] Alıp memnun kalanların ortak görüşü!"
     ],
-    # 8 Reels Formats Hooks
+    # 9 Reels Formats Hooks
     'real_fpv_broll': [
-        "[GERCEK UCUS] Kokpitteymiş gibi hisset! Gerçek FPV uçuşu!",
-        "[FPV ADRENALIN] Gözlüğü taktığın an dünya değişiyor!",
-        "[PILOT GOZUNDEN] Gerçek FPV akrobasisi ve saf hız!"
+        "[GERCEK UCUS] Kokpitteymiş gibi hisset! Gerçek FPV uçuşu ve teknik rehber!",
+        "[FPV ADRENALIN] Gözlüğü taktığın an dünya değişiyor! İşte kusursuz ayar sırrı!",
+        "[PILOT GOZUNDEN] Gerçek FPV akrobasisi, saf hız ve mühendislik tüyosu!"
     ],
     'freestyle_acro': [
         "[AKRO FREESTYLE] Bu gap'ten geçebilecek kaç pilot var?",
@@ -746,12 +752,12 @@ REELS_HOOKS = {
         "[SECIM] Pilotlar ikiye bölündü: Hangi taraf daha güçlü?"
     ],
     'quick_tip_fix': [
-        "[15S IPUCU] Sahada hayat kurtaran o küçük ayar!",
+        "[15S REHBER] Sahada hayat kurtaran o mühendislik ayarı!",
         "[ATOLYE SIRRI] Motor yönünü BLHeli olmadan 10 saniyede çevir!",
         "[PILOT HILESI] Lehim yaparken bunu uygula, kopma derdini unut!"
     ],
     'mistake_warning': [
-        "[UYARI] Bu hatayı sakın yapma! VTX anında çöp olur!",
+        "[UYARI] Bu hatayı sakın yapma! VTX ve FC anında çöp olur!",
         "[KIRIM ALARMI] Yeni pilotların %90'ının düştüğü büyük tuzak!",
         "[DIKKAT] Kalkıştan önce bu testi yapmadıysan quad'ı unut!"
     ],
@@ -761,7 +767,7 @@ REELS_HOOKS = {
         "[SAHA REHBERI] Hafta sonu için keşfedilmemiş FPV cenneti!"
     ],
     'product_cinematic': [
-        "[DONANIM] 8K Makro detaylarla yeni sezon FPV canavarı!",
+        "[DONANIM & REHBER] 8K Makro detaylarla yeni sezon FPV canavarı!",
         "[VITRIN] Titreşimsiz uçuşun gizli kahramanı bu donanım!",
         "[KALITE] Pozitron vitrininin en çok konuşulan parçası!"
     ],
@@ -783,33 +789,34 @@ REELS_HOOKS = {
 }
 
 REELS_CTA = {
-    'community_quiz': "Cevabını yoruma yaz! Doğru cevabı story'de açıklıyoruz. Yeni başlayanlar için tüm donanım: pozitronmarket.com",
-    'product_spotlight': "Detaylar ve fiyat için profildeki linke göz at. Yoruma 'LINK' yazarsan DM'den hemen gönderelim.",
-    'hardware_battle': "Sen hangisini seçerdin? Yoruma yaz! İkisini de incelemek için: pozitronmarket.com",
-    'pilot_tip': "Bu ipucunu kaydet, uçuşta işine yarayacak. Daha fazlası için takipte kal. pozitronmarket.com",
-    'mistake_breakdown': "Başına geldi mi? Yorumlarda paylaş. Kırılmaz yedek parçalar: pozitronmarket.com",
-    'drone_build_showcase': "Parça listesini yoruma istemeyi unutma. Tüm build donanımı: pozitronmarket.com",
-    'myth_buster': "Sen bu efsaneye inanıyor muydun? Yoruma yaz! Doğrusunu öğrenmek için takipte kal.",
-    'spot_guide': "Bu spotu kaydet, hafta sonu planına ekle. Uçuş donanımı: pozitronmarket.com",
+    'seo_article': "Bu teknik rehberi mutlaka KAYDET ve ekip arkadaşına GÖNDER! Yoruma 'REHBER' yaz, tam kılavuz linkini ve %10 indirim kodunu DM'den hemen atalım. pozitronmarket.com/rehber",
+    'community_quiz': "Cevabını yoruma yaz ve arkadaşınla paylaş! Yoruma 'REHBER' yazarsan teknik kılavuz ve kupon DM'de: pozitronmarket.com",
+    'product_spotlight': "Detaylar ve fiyat için profildeki linke göz at. Yoruma 'LINK' veya 'REHBER' yazarsan DM'den hemen gönderelim.",
+    'hardware_battle': "Sen hangisini seçerdin? Yoruma yaz ve kaydet! Karşılaştırma rehberi için yoruma 'REHBER' yaz: pozitronmarket.com",
+    'pilot_tip': "Bu ipucunu KAYDET, uçuşta işine yarayacak! Yoruma 'REHBER' yaz, detaylı mühendislik kılavuzunu DM'den atalım. pozitronmarket.com",
+    'mistake_breakdown': "Başına geldi mi? Videoyu KAYDET ve yoruma 'REHBER' yaz, koruma kılavuzunu DM kutuna gönderelim: pozitronmarket.com",
+    'drone_build_showcase': "Parça listesi ve montaj şeması için yoruma 'REHBER' veya 'LINK' yaz! Tüm build donanımı: pozitronmarket.com",
+    'myth_buster': "Sen bu efsaneye inanıyor muydun? Yoruma yaz ve arkadaşına gönder! Doğrusunu öğrenmek için takipte kal.",
+    'spot_guide': "Bu spotu KAYDET, hafta sonu planına ekle! Uçuş donanımı ve teknik rehber: pozitronmarket.com",
     'flight_weather_radar': "Günlük uçuş radarı için takipte kal. Her koşul için donanım: pozitronmarket.com",
-    'maintenance_checklist': "Bu listeyi kaydet! Yedek parça ve korumalar: pozitronmarket.com",
-    'deal_drop': "Stoklar tükenmeden profildeki linki ziyaret et. Yoruma 'FIYAT' yaz, DM'den fiyat gönderelim.",
-    'tool_showcase': "Aracı hemen dene: pozitronmarket.com/drone-toplama-sihirbazi",
+    'maintenance_checklist': "Bu listeyi KAYDET! Yoruma 'REHBER' yaz, tam bakım kontrol listesini DM'den gönderelim: pozitronmarket.com",
+    'deal_drop': "Stoklar tükenmeden profildeki linki ziyaret et. Yoruma 'FIYAT' veya 'KUPON' yaz, DM'den gönderelim.",
+    'tool_showcase': "Aracı hemen dene: pozitronmarket.com/drone-toplama-sihirbazi | Yoruma 'REHBER' yaz, link DM'e gelsin!",
     'review_highlight': "Sen de deneyimini paylaş. Binlerce pilot gibi sen de güvenle sipariş ver: pozitronmarket.com",
     '3d_print_studio': "Online 3D Baskı Studio'da STL dosyanı yükle, fiyatını hemen gör. Yoruma '3D' veya 'BASKI' yaz, %10 indirim kodunu DM'den gönderelim!",
     # 9 Reels Formats CTAs
-    'real_fpv_broll': "Bu hissi yaşamak istediğin arkadaşını etiketle! Hayalindeki FPV setup'ı topla: pozitronmarket.com",
+    'real_fpv_broll': "Bu videoyu KAYDET ve FPV tutkunu arkadaşına GÖNDER! Yoruma 'REHBER' yaz, teknik kurulum kılavuzu ve %10 kupon DM kutuna gelsin: pozitronmarket.com",
     '3d_print_showcase': "Dronun için kırılmaz TPU parça siparişi vermek için yoruma 'BASKI' veya '3D' yaz, %10 indirim kodun DM kutuna gelsin! pozitronmarket.com/3d-baski-studio",
-    'freestyle_acro': "Senin en sevdiğin akro manevrası hangisi? Yoruma yaz! Dayanıklı freestyle parçaları: pozitronmarket.com",
-    'hardware_vs': "Sen hangi tarafı seçerdin? Yoruma yaz! İkisini de incelemek için: pozitronmarket.com",
-    'quick_tip_fix': "Bu taktiği kaydet, sahada çok lazım olacak. Pratik pilot aletleri: pozitronmarket.com",
-    'mistake_warning': "Senin başına geldi mi? Yorumlarda anlat. Kırılmaz yedek parçalar: pozitronmarket.com",
-    'secret_spot': "Bu spotu kaydet, hafta sonu ekiple git! Uçuş donanımı: pozitronmarket.com",
-    'product_cinematic': "Detaylar ve canlı fiyat için profildeki linke göz at. Yoruma 'FIYAT' yaz, linki anında DM'den atalım.",
+    'freestyle_acro': "Senin en sevdiğin akro manevrası hangisi? Yoruma yaz ve kaydet! Dayanıklı freestyle parçaları: pozitronmarket.com",
+    'hardware_vs': "Sen hangi tarafı seçerdin? Yoruma yaz! Teknik karşılaştırma rehberi için yoruma 'REHBER' yaz: pozitronmarket.com",
+    'quick_tip_fix': "Bu taktiği mutlaka KAYDET, sahada hayat kurtarır! Yoruma 'REHBER' yaz, tam mühendislik rehberini DM'den atalım: pozitronmarket.com",
+    'mistake_warning': "Dronunu korumak için bu videoyu KAYDET! Yoruma 'REHBER' yaz, arıza önleme kılavuzu ve kupon DM'e gelsin: pozitronmarket.com",
+    'secret_spot': "Bu spotu KAYDET, hafta sonu ekiple git! Uçuş donanımı: pozitronmarket.com",
+    'product_cinematic': "Detaylar ve canlı fiyat için profildeki linke göz at. Yoruma 'FIYAT' veya 'REHBER' yaz, linki anında DM'den atalım.",
     'flash_deal': "Fırsatı kaçırmamak için hemen pozitronmarket.com'u ziyaret et. Yoruma 'KUPON' yaz!"
 }
 
-REELS_EXTRA_TAGS = "#reels #fpvreels #dronereels #fpvvideo #dronevideo"
+REELS_EXTRA_TAGS = "#reels #fpvreels #dronereels #fpvvideo #dronevideo #fpvtürkiye #teknofest #dronerehberi #keşfet"
 
 # Theme-aware cinematic style presets so reel video prompts are not identical.
 REEL_STYLE_PRESETS = {
@@ -884,6 +891,10 @@ REEL_COMBINATIONS = [
     {'id': 'product_night',      'reels_type': 'product_cinematic','themes': ['product_spotlight'],     'style': 'night_city',     'video_mode': 'mode1', 'tone': 'story'},
     {'id': 'tool_holo',          'reels_type': 'quick_tip_fix',    'themes': ['tool_showcase'],         'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'listicle'},
     {'id': 'review_stage',       'reels_type': 'product_cinematic','themes': ['review_highlight'],      'style': 'clean_stage',    'video_mode': 'mode1', 'tone': 'story'},
+    {'id': 'rehber_lab',         'reels_type': 'quick_tip_fix',    'themes': ['seo_article'],           'style': 'holo_lab',       'video_mode': 'mode1', 'tone': 'listicle'},
+    {'id': 'rehber_workshop',    'reels_type': 'mistake_warning',  'themes': ['seo_article'],           'style': 'workshop_grit',  'video_mode': 'mode1', 'tone': 'warning'},
+    {'id': 'rehber_broll',       'reels_type': 'real_fpv_broll',   'themes': ['seo_article'],           'style': 'golden_field',   'video_mode': 'mode2', 'tone': 'bold'},
+    {'id': 'rehber_vs',          'reels_type': 'hardware_vs',      'themes': ['seo_article'],           'style': 'studio_neon',    'video_mode': 'mode1', 'tone': 'versus'},
 ]
 
 # --- Text diversity layer: hashtag sets, caption structures, CTA closers ---
@@ -1930,73 +1941,204 @@ Merak ettiğiniz teknik soruları yorumlarda pilotlarımızla paylaşın!
             'tool_info': None
         }
 
-    def _generate_seo_article(self) -> dict:
-        recent_titles = set(get_recent_posted_titles(40))
+    def _extract_rehber_insights(self, article_row: dict) -> dict:
+        """
+        Parses a Rehber (`seo_articles`) row from pozitron.db (or data/seo_articles.json)
+        and extracts concrete engineering rules, numeric specifications, tips, and linked
+        in-stock products so Reels contain real technical substance from /rehber.
+        """
+        art_title = (article_row.get('title') or '').strip()
+        focus = (article_row.get('component_focus') or art_title).strip()
+        slug = (article_row.get('slug') or '').strip()
+        md = article_row.get('content_markdown') or ''
+        links_raw = article_row.get('internal_links_json') or '[]'
 
+        # 1. Extract pure technical bullet points and numbered steps (excluding product URL list)
+        tech_facts = []
+        tip_callout = ""
+        for line in md.splitlines():
+            raw = line.strip()
+            if not raw or 'pozitronmarket.com' in raw.lower():
+                continue
+            if raw.startswith('>'):
+                clean_q = re.sub(r'^>\s*\[[^\]]*\]\s*', '', raw).lstrip('> ').strip()
+                clean_q = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', clean_q)
+                clean_q = re.sub(r'[*_`]', '', clean_q).strip()
+                if len(clean_q) > 20 and not tip_callout:
+                    tip_callout = clean_q
+                continue
+            if raw.startswith(('- ', '* ', '1. ', '2. ', '3. ', '4. ')):
+                clean_b = re.sub(r'^[-*\d.]+\s*', '', raw)
+                clean_b = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', clean_b)
+                clean_b = re.sub(r'[*_`]', '', clean_b).strip()
+                if 18 <= len(clean_b) <= 190 and not clean_b.startswith('PZTR-'):
+                    tech_facts.append(clean_b)
+
+        # Fallback: extract informative sentences from prose if few bullets found
+        if len(tech_facts) < 3:
+            for para in md.split('\n\n'):
+                p_clean = para.strip()
+                if p_clean.startswith(('#', '|', '>', '-', '*', '**Yazar:**')):
+                    continue
+                p_clean = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', p_clean)
+                p_clean = re.sub(r'[*_`]', '', p_clean).strip()
+                for sent in re.split(r'(?<=[.!?])\s+', p_clean):
+                    if 30 <= len(sent) <= 175 and 'pozitronmarket' not in sent.lower():
+                        tech_facts.append(sent)
+                        if len(tech_facts) >= 4:
+                            break
+                if len(tech_facts) >= 4:
+                    break
+
+        if not tech_facts:
+            tech_facts = [
+                f"{focus} kurulumunda multimetre ile kısa devre ve voltaj kontrolü yapın.",
+                "İlk enerjiyi mutlaka Smoke Stopper üzerinden vererek elektronik kartları koruyun.",
+                "Betaflight üzerinde UART ve DShot protokol uyumunu uçuş öncesi doğrulayın."
+            ]
+
+        primary_tip = tech_facts[0]
+        short_points = []
+        for idx, fact in enumerate(tech_facts[:3]):
+            tag = ["[TEKNİK]", "[KURAL]", "[İPUCU]"][idx % 3]
+            clipped = fact[:82].rstrip('.,;: ') + ('...' if len(fact) > 82 else '')
+            short_points.append(f"{tag} {clipped}")
+
+        # 2. Parse linked products from internal_links_json
+        linked_skus = []
+        try:
+            parsed_links = json.loads(links_raw) if isinstance(links_raw, str) else (links_raw or [])
+            for item in parsed_links:
+                if isinstance(item, dict) and item.get('sku'):
+                    linked_skus.append(item['sku'])
+        except Exception:
+            pass
+
+        return {
+            'title': art_title,
+            'focus': focus,
+            'slug': slug,
+            'url': f"https://pozitronmarket.com/rehber/{slug}" if slug else "https://pozitronmarket.com/rehber",
+            'tip': primary_tip,
+            'facts': tech_facts[:4],
+            'short_points': short_points,
+            'linked_skus': linked_skus,
+        }
+
+    def _pick_rehber_article(self, topic_hint: str = None) -> Optional[dict]:
+        """Selects a relevant or fresh Rehber article from seo_articles in pozitron.db."""
+        recent_titles = set(get_recent_posted_titles(40))
+        articles = []
         try:
             conn = get_db()
             cursor = conn.cursor()
-            cursor.execute("SELECT id, title, slug, component_focus, content_markdown FROM seo_articles ORDER BY id DESC LIMIT 30")
+            cursor.execute(
+                "SELECT id, title, slug, component_focus, target_keywords, content_markdown, internal_links_json "
+                "FROM seo_articles ORDER BY id DESC LIMIT 120"
+            )
             articles = [dict(r) for r in cursor.fetchall()]
             conn.close()
+        except Exception:
+            pass
 
-            unique_articles = []
-            seen = set()
-            for a in articles:
-                clean_t = a['title']
-                if clean_t not in seen and f"[REHBER] {clean_t[:32]}" not in recent_titles and clean_t not in recent_titles:
-                    seen.add(clean_t)
-                    unique_articles.append(a)
+        if not articles:
+            json_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'seo_articles.json')
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, 'r', encoding='utf-8') as f:
+                        articles = json.load(f)
+                except Exception:
+                    articles = []
 
-            if unique_articles:
-                art = random.choice(unique_articles)
-                art_title = art['title']
-                focus = art['component_focus']
-                slug = art['slug']
-                post_title = f"[REHBER] {art_title[:32]}"
-                
-                caption = f"""[REHBER] {art_title}
+        if not articles:
+            return None
 
-[FPV ODAK] {focus}
+        # Deduplicate by title and filter out recently posted titles
+        unique_articles = []
+        seen = set()
+        for a in articles:
+            clean_t = (a.get('title') or '').strip()
+            if not clean_t or clean_t in seen:
+                continue
+            seen.add(clean_t)
+            unique_articles.append(a)
 
-Pozitron Mühendislik Ekibi tarafından hazırlanan bu teknik kılavuz ile FPV drone yapımında sıkça karşılaşılan montaj, kalibrasyon ve donanım eşleştirme sorunlarını profesyonelce çözün.
+        fresh_pool = [
+            a for a in unique_articles
+            if f"[REHBER] {a['title'][:32]}" not in recent_titles and a['title'] not in recent_titles
+        ]
+        pool = fresh_pool if fresh_pool else unique_articles
 
-[OZELLIK] Kılavuzda Öne Çıkanlar:
-• {focus} alanında dikkat edilmesi gereken kritik elektriksel sınırlar
-• Yanma ve kırım risklerini sıfıra indiren test protokolleri
-• Maksimum verimlilik için önerilen komponent konfigürasyonları
+        if topic_hint:
+            hint_words = [w.lower() for w in re.findall(r'\w+', topic_hint) if len(w) >= 3]
+            if hint_words:
+                scored = []
+                for a in pool:
+                    hay = f"{a.get('title', '')} {a.get('component_focus', '')} {a.get('target_keywords', '')}".lower()
+                    score = sum(2 if w in hay else 0 for w in hint_words)
+                    if score > 0:
+                        scored.append((score, a))
+                if scored:
+                    scored.sort(key=lambda x: x[0], reverse=True)
+                    top_matches = [x[1] for x in scored[:6]]
+                    return self._extract_rehber_insights(random.choice(top_matches))
 
-> Kılavuzun tamamını okumak için profildeki linke tıkla: pozitronmarket.com/rehber/{slug}"""
+        return self._extract_rehber_insights(random.choice(pool))
 
-                hashtags = "#fpvrehber #teknikmakale #dronemuhendislik #pozitronmarket #fpvturkey #teknofest"
+    def _generate_seo_article(self, product_id: str = None) -> dict:
+        rehber = self._pick_rehber_article()
+        if rehber:
+            art_title = rehber['title']
+            focus = rehber['focus']
+            slug = rehber['slug']
+            facts = rehber['facts']
+            post_title = f"[REHBER] {art_title[:36]}"
 
-                visual_summary = {
-                    'badge': 'TEKNİK MÜHENDİSLİK REHBERİ',
-                    'headline': art_title[:30],
-                    'subhead': f'Odak: {focus[:40]}',
-                    'key_points': [
-                        f"[ODAK] {focus[:40]}",
-                        "[REHBER] Kapsamlı Montaj & Donanım Kalibrasyonu",
-                        "[POZİTRON] pozitronmarket.com/docs Üzerinde Yayında"
-                    ],
-                    'cta': '> REHBERİN TAMAMINI OKU'
-                }
+            # Resolve a real product from product_id or from the Rehber article's linked SKUs
+            prod = self._get_candidate_product(product_id) if product_id else None
+            if not prod and rehber.get('linked_skus'):
+                for sku in rehber['linked_skus']:
+                    cand_p = self._get_candidate_product(sku)
+                    if cand_p:
+                        prod = cand_p
+                        break
 
-                return {
-                    'content_type': 'seo_article',
-                    'product_id': None,
-                    'title': post_title,
-                    'caption': caption.strip(),
-                    'hashtags': hashtags,
-                    'visual_summary': visual_summary,
-                    'product_data': None,
-                    'tool_info': {'slug': slug}
-                }
-        except Exception as e:
-            print(f"[UYARI] SEO makalesi sorgulama hatası: {e}")
+            facts_bullets = "\n".join(f"• {f}" for f in facts[:3])
+            caption = f"""[MÜHENDİSLİK REHBERİ] {art_title}
+
+[TEKNİK ODAK] {focus}
+
+Pozitron Mühendislik Rehberi'nden sahada ve atölyede kırım riskini sıfıra indiren kritik kurallar:
+{facts_bullets}
+
+[KAYDET & PAYLAŞ] Bu teknik bilgileri uçuş öncesi kontrol listenize eklemek için videoyu kaydedin!
+> Teknik kılavuzun tamamı: pozitronmarket.com/rehber/{slug}
+> Yoruma 'REHBER' veya 'KUPON' yaz, kılavuz bağlantısını ve %10 indirim kodunu DM kutuna gönderelim!"""
+
+            hashtags = "#fpvrehber #teknikmakale #dronemuhendislik #pozitronmarket #fpvturkey #teknofest #dronerehberi"
+
+            visual_summary = {
+                'badge': 'POZİTRON MÜHENDİSLİK REHBERİ',
+                'headline': focus[:32].upper(),
+                'subhead': art_title[:48],
+                'key_points': rehber['short_points'][:3],
+                'cta': "YORUMA 'REHBER' YAZ -> DM'DE!"
+            }
+
+            return {
+                'content_type': 'seo_article',
+                'product_id': prod.get('id') if prod else None,
+                'title': post_title,
+                'caption': caption.strip(),
+                'hashtags': hashtags,
+                'visual_summary': visual_summary,
+                'product_data': prod if prod else None,
+                'rehber_info': rehber,
+                'tool_info': {'slug': slug, 'url': rehber['url']}
+            }
 
         # Fallback to pilot tip
-        return self._generate_pilot_tip()
+        return self._generate_pilot_tip(product_id=product_id)
 
     def _generate_review_highlight(self, product_id: str = None) -> dict:
         conn = get_db()
@@ -2957,13 +3099,25 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
         content['visual_style'] = REEL_STYLE_PRESETS.get(combo['style'], random.choice(REEL_VISUAL_STYLES))
         content['video_mode'] = 'mode2' if chosen_reels_type == 'real_fpv_broll' else combo.get('video_mode', 'mode1')
         content['hook_tone'] = combo['tone']
+
+        # Attach Rehber (seo_articles) engineering knowledge to EVERY Reel
+        content = self._attach_rehber_to_reel(content)
+
         hooks = REELS_HOOKS.get(chosen_reels_type) or REELS_HOOKS.get(chosen) or REELS_HOOKS['product_spotlight']
         idx = REEL_HOOK_TONES.get(combo['tone'], random.randrange(len(hooks)))
         hook = hooks[idx % len(hooks)]
         cta = REELS_CTA.get(chosen_reels_type) or REELS_CTA.get(chosen) or REELS_CTA['product_spotlight']
         content['hook'] = hook
         content['cta'] = cta
-        content['caption'] = self._build_reels_caption(chosen_reels_type, content.get('caption', ''), tone=combo['tone'], fallback_type=chosen, hook=hook, cta=cta)
+        content['caption'] = self._build_reels_caption(
+            chosen_reels_type,
+            content.get('caption', ''),
+            tone=combo['tone'],
+            fallback_type=chosen,
+            hook=hook,
+            cta=cta,
+            rehber_info=content.get('rehber_info'),
+        )
         base_tags = content.get('hashtags', '') or ''
         content['hashtags'] = f"{base_tags} {REELS_EXTRA_TAGS}".strip()
         content = humanize_content(content)
@@ -2974,8 +3128,56 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
             self._session_recent_combo_ids = self._session_recent_combo_ids[-20:]
         return content
 
-    def _build_reels_caption(self, content_type: str, base_caption: str, tone: str = None, fallback_type: str = None, hook: str = None, cta: str = None) -> str:
-        """Wraps the informative body with a reels-native hook and theme-specific CTA."""
+    def _attach_rehber_to_reel(self, content: dict) -> dict:
+        """
+        Ensures every Reel includes concrete engineering insights from Pozitron Rehber
+        (seo_articles in pozitron.db), enriching visual_summary, product_data, and metadata.
+        """
+        rehber = content.get('rehber_info')
+        if not rehber:
+            prod = content.get('product_data') or {}
+            hint = f"{content.get('title', '')} {prod.get('name_tr', '')} {prod.get('category', '')}"
+            rehber = self._pick_rehber_article(topic_hint=hint)
+        if not rehber:
+            return content
+
+        content['rehber_info'] = rehber
+        vs = dict(content.get('visual_summary') or {})
+        kps = list(vs.get('key_points') or [])
+        rehber_point = f"Rehber İpucu: {rehber['tip'][:78]}"
+        if not any('rehber' in str(kp).lower() for kp in kps):
+            if len(kps) >= 3:
+                kps[2] = rehber_point
+            else:
+                kps.append(rehber_point)
+        vs['key_points'] = kps
+        vs['rehber_badge'] = f"REHBER: {rehber['focus'][:34]}"
+        vs['rehber_tip'] = rehber['tip'][:95]
+        vs['rehber_slug'] = rehber['slug']
+        content['visual_summary'] = vs
+
+        # If Reel has no product attached yet, resolve a linked product from the Rehber article
+        if not content.get('product_data') and rehber.get('linked_skus'):
+            for sku in rehber['linked_skus']:
+                cand_p = self._get_candidate_product(sku)
+                if cand_p:
+                    content['product_data'] = cand_p
+                    content['product_id'] = cand_p.get('id')
+                    break
+
+        return content
+
+    def _build_reels_caption(
+        self,
+        content_type: str,
+        base_caption: str,
+        tone: str = None,
+        fallback_type: str = None,
+        hook: str = None,
+        cta: str = None,
+        rehber_info: dict = None,
+    ) -> str:
+        """Wraps the informative body with a reels-native hook, Rehber engineering block, and theme-specific CTA."""
         if not hook:
             hooks = REELS_HOOKS.get(content_type) or REELS_HOOKS.get(fallback_type) or REELS_HOOKS['product_spotlight']
             idx = REEL_HOOK_TONES.get(tone, random.randrange(len(hooks)))
@@ -2988,15 +3190,26 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
         for marker in ('[OTOMATIK DM ALARMI]', '[OTOMATIK DM ALARM]'):
             if marker in body:
                 body = body.split(marker)[0].strip()
-        # Trim overly long feed captions for Reels best practice (< ~1200 chars total).
-        if len(body) > 900:
-            body = body[:900].rstrip() + '...'
+        if len(body) > 650:
+            body = body[:650].rstrip() + '...'
 
         parts = [hook]
         if body:
             parts.append(body)
+
+        # Inject Pozitron Mühendislik Rehberi knowledge block if not already in body
+        if rehber_info and rehber_info.get('slug') and rehber_info['slug'] not in body:
+            facts = rehber_info.get('facts') or [rehber_info.get('tip', '')]
+            facts_lines = "\n".join(f"• {f}" for f in facts[:2] if f)
+            rehber_block = (
+                f"📘 Pozitron Mühendislik Rehberi Notu ({rehber_info.get('focus', 'Teknik Kılavuz')}):\n"
+                f"{facts_lines}\n"
+                f"🔗 Tam Rehber: pozitronmarket.com/rehber/{rehber_info['slug']}"
+            )
+            parts.append(rehber_block)
+
         parts.append(cta)
-        parts.append(f"Takip et: @pozitronmarket | Alışveriş: pozitronmarket.com")
+        parts.append("Takip et: @pozitronmarket | Teknik Rehber & Mağaza: pozitronmarket.com/rehber")
         return "\n\n".join(parts)
 
     def generate_reels_video_prompt(self, post_data: dict) -> str:
@@ -3088,21 +3301,32 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
 
     def generate_reels_voiceover_script(self, post_data: dict) -> str:
         """
-        Generates a natural, conversational, punchy Turkish voiceover script
-        for Instagram Reels, specifically optimized for VoxCPM2 realistic female speech.
-        Length is tuned to 25-45 words (~10-15s spoken duration).
+        Generates a high-retention, viral-paced Turkish voiceover script for Instagram Reels,
+        optimized for VoxCPM2 realistic Turkish speech + burned-in dynamic subtitles.
+        Integrates Pozitron Rehber (seo_articles) engineering insights into every Reel.
+        Length is tuned to 32-50 words (~10-14s spoken duration).
         """
         reels_type = post_data.get('reels_type') or post_data.get('content_type') or 'product_spotlight'
+        content_type = post_data.get('content_type') or reels_type
         prod = post_data.get('product_data') or {}
         prod_name = prod.get('name_tr') or prod.get('name') or post_data.get('title', 'FPV Donanımı')
-        # Clean brand and product name for natural speech
         prod_name = re.sub(r'\[[^\]]*\]', '', prod_name).strip()
         price_val = prod.get('price_try')
-        price_text = f"{int(float(price_val))} Türk Lirası" if price_val else "avantajlı fiyatlarla"
+        price_text = f"{int(float(price_val))} TL" if price_val else "avantajlı fiyatlarla"
 
         visual = post_data.get('visual_summary') or {}
-        key_points = visual.get('key_points') or []
-        highlight = key_points[0] if key_points else "üstün performansı ve yüksek dayanıklılığı"
+        key_points = [re.sub(r'\[[^\]]*\]', '', str(kp)).strip() for kp in (visual.get('key_points') or []) if kp]
+        highlight = key_points[0] if key_points else "üstün performans ve yüksek dayanıklılık"
+
+        rehber = post_data.get('rehber_info') or {}
+        rehber_tip = (rehber.get('tip') or visual.get('rehber_tip') or "").strip()
+        rehber_focus = (rehber.get('focus') or "FPV Mühendislik Rehberi").strip()
+        if not rehber_tip:
+            rehber_tip = "İlk enerjiyi mutlaka Smoke Stopper üzerinden vererek elektronik kartlarınızı koruyun."
+
+        # Shorten rehber_tip for punchy spoken delivery if overly long
+        if len(rehber_tip) > 125:
+            rehber_tip = rehber_tip[:122].rsplit(' ', 1)[0].rstrip('.,;:') + "."
 
         # 1. Try LLM generation if available
         try:
@@ -3110,78 +3334,110 @@ Sahada ihtiyacin olan tum FPV ekipmanlari ve yedek parcalar Pozitron Market'te!
             llm = get_llm()
             if llm.is_configured():
                 sys_prompt = (
-                    "Sen Pozitron Market için Instagram Reels videolarını seslendiren genç, dinamik, "
-                    "samimi ve profesyonel bir kadın sunucususun. "
-                    "Verilen ürün ve tema için konuşma dilinde, kulağa son derece doğal gelen, "
-                    "25-35 kelimelik akıcı bir Türkçe seslendirme metni yaz. "
-                    "Kural: Markdown, hashtag, emoji, link veya köşeli parantez KULLANMA. "
-                    "Metin doğrudan seslendirilecektir."
+                    "Sen Pozitron Market için viral Instagram Reels videolarını seslendiren enerjik, "
+                    "uzman ve samimi bir kadın sunucususun. "
+                    "İlk 3 saniyede izleyiciyi durduran çok güçlü bir kanca (hook) ile başla, "
+                    "ardından verilen Pozitron Rehber mühendislik bilgisini ve donanım detayını aktar, "
+                    "son cümlede ise videoyu kaydetmeye ve yoruma REHBER veya KUPON yazmaya çağır. "
+                    "32-45 kelimelik akıcı bir Türkçe seslendirme metni yaz. "
+                    "Kural: Markdown, hashtag, emoji, link veya köşeli parantez KULLANMA."
                 )
                 usr_prompt = (
-                    f"Reels Türü: {reels_type}\n"
+                    f"Reels Türü: {reels_type} ({content_type})\n"
                     f"Ürün / Konu: {prod_name}\n"
                     f"Fiyat: {price_text}\n"
                     f"Öne Çıkan Özellik: {highlight}\n"
+                    f"Rehber Konusu: {rehber_focus}\n"
+                    f"Rehber Teknik Bilgisi: {rehber_tip}\n"
                     f"Başlık: {post_data.get('title', '')}"
                 )
-                llm_out = llm.generate_text(f"{sys_prompt}\n\n{usr_prompt}", max_tokens=200, temperature=0.7)
-                if llm_out and len(llm_out.strip()) > 25:
+                llm_out = llm.generate_text(f"{sys_prompt}\n\n{usr_prompt}", max_tokens=240, temperature=0.7)
+                if llm_out and len(llm_out.strip()) > 30:
+                    raw_disp = re.sub(r'\[[^\]]*\]', '', llm_out.strip())
+                    raw_disp = re.sub(r'\s+', ' ', raw_disp).strip()
+                    post_data['voiceover_display_text'] = raw_disp
                     from .voxcpm_tts import clean_text_for_speech
-                    cleaned = clean_text_for_speech(llm_out.strip())
-                    if len(cleaned) > 20:
+                    cleaned = clean_text_for_speech(raw_disp)
+                    if len(cleaned) > 25:
                         return cleaned
         except Exception:
             pass
 
-        # 2. Expert rule-based scripts per Reels format
-        scripts = {
-            'product_cinematic': (
-                f"Pozitron Market'ten günün FPV fırsatı! {prod_name}, {highlight} ile şimdi {price_text}. "
-                "Detayları incelemek ve sipariş vermek için profildeki linke tıklayın veya yoruma kupon yazın."
-            ),
-            'freestyle_acro': (
-                f"Akrobasi ve hız tutkunları buraya! {prod_name} ile gap ve dive hissini zirvede yaşayın. "
-                "Maksimum çeviklik ve dayanıklılık sunan en yeni drone donanımları Pozitron'da."
-            ),
-            'quick_tip_fix': (
-                f"FPV pilotlarının mutlaka bilmesi gereken altın ipucu! Lehimleme ve motor montajında {highlight} adımı "
-                "uçuş sürenizi doğrudan artırır. Daha fazla pratik bilgi için takip etmeyi unutmayın."
-            ),
-            'mistake_warning': (
-                "Yeni başlayanların en sık yaptığı bu hataya asla düşmeyin! Duman önleyici kullanmadan pili takmak "
-                "bütün elektronik kartı yakabilir. Güvenli uçuş için aradığınız tüm koruma ekipmanları Pozitron Market'te."
-            ),
-            'secret_spot': (
-                "Türkiye'nin en büyüleyici FPV rotalarından birindeyiz! Kanyon geçişlerinde kesintisiz video sinyali ve "
-                "güçlü menzil için doğru donanım seçimi şart. Rotanın detayları için bizi takip edin."
-            ),
-            'hardware_vs': (
-                f"İki güçlü donanım karşı karşıya! {prod_name} ile ağırlık ve güç dengesini karşılaştırıyoruz. "
-                "Tarzınıza en uygun parçalar ve güncel fiyatlar Pozitron Market'te."
-            ),
-            'flash_deal': (
-                f"Flaş indirim alarmı! Pozitron Market'te sınırlı stok fırsatı başladı. {prod_name} şimdi {price_text}. "
-                "İndirim kodunu anında almak için yoruma kupon yazın."
-            ),
-            'real_fpv_broll': (
-                f"Gerçek FPV uçuş heyecanı Pozitron ile başlıyor! {prod_name} ile kusursuz stabilite ve akıcı kontrol. "
-                "Kendi dronunuzu toplamak için pozitron market nokta com'u ziyaret edin."
-            ),
-            '3d_print_showcase': (
-                "Dronunuz için kırılmaz özel parçalar mı lazım? Pozitron 3D Baskı Studio devrede! "
-                "GoPro ve O3 mountları, kol korumaları için esnek ve kırılmaz TPU 95A ile anında online fiyat hesaplayın. "
-                "STL dosyanızı yükleyin, aynı gün kargoya verelim. İndirim kuponu için yoruma baskı yazın!"
-            ),
-            '3d_print_studio': (
-                "Dronunuz için kırılmaz özel parçalar mı lazım? Pozitron 3D Baskı Studio devrede! "
-                "GoPro ve O3 mountları, kol korumaları için esnek ve kırılmaz TPU 95A ile anında online fiyat hesaplayın. "
-                "STL dosyanızı yükleyin, aynı gün kargoya verelim. İndirim kuponu için yoruma baskı yazın!"
-            ),
-        }
+        # 2. High-retention viral rule-based scripts (Hook + Rehber Technical Insight + Save/Comment Trigger)
+        if content_type == 'seo_article':
+            second_fact = (rehber.get('facts') or ["", ""])[1] if len(rehber.get('facts') or []) > 1 else highlight
+            raw_script = (
+                f"Sakın dronuna enerji vermeden önce bu mühendislik kuralını atlama! "
+                f"Pozitron {rehber_focus} rehberine göre, {rehber_tip} "
+                f"Ayrıca {second_fact} "
+                f"Bu bilgiyi kaybetmemek için videoyu hemen kaydet ve tam kılavuz linki için yoruma rehber yaz!"
+            )
+        else:
+            scripts = {
+                'product_cinematic': (
+                    f"Dronunda maksimum güç ve sıfır kırım istiyorsan bu detaya dikkat et! "
+                    f"{prod_name}, {highlight} ile şimdi Pozitron'da {price_text}. "
+                    f"Pozitron Rehber notu: {rehber_tip} "
+                    "Videoyu kaydet ve indirimli link için yoruma hemen rehber veya kupon yaz!"
+                ),
+                'freestyle_acro': (
+                    f"Yüz elli kilometre hızla bu manevrayı yaparken dronun nasıl dağılmıyor? "
+                    f"Sırrı {prod_name} ve doğru kurulumda! Pozitron Rehber ipucu: {rehber_tip} "
+                    "Uçuş öncesi bu videoyu kaydet, tam donanım listesi için yoruma rehber yaz!"
+                ),
+                'quick_tip_fix': (
+                    f"Pilotların yüzde doksanı sahada bu detayı atladığı için uçuş süresi kaybediyor! "
+                    f"Pozitron Mühendislik Rehberi diyor ki: {rehber_tip} "
+                    f"Üstelik {highlight}. "
+                    "Bu altın kuralı unutma, videoyu hemen kaydet ve yoruma rehber yaz!"
+                ),
+                'mistake_warning': (
+                    f"Dur! Bu hatayı yaparsan uçuş kartın ve görüntü vericin saniyeler içinde yanabilir! "
+                    f"Pozitron Rehber uyarısı: {rehber_tip} "
+                    "Dronunu korumak için bu videoyu şimdi kaydet ve arkadaşınla paylaş. Kılavuz linki için yoruma rehber yaz!"
+                ),
+                'secret_spot': (
+                    f"Türkiye'de uçabileceğin en efsane FPV rotalarından birindeyiz! "
+                    f"Ancak uzun menzilde sinyal kopmaması için Pozitron Rehber kuralını unutma: {rehber_tip} "
+                    "Hafta sonu planı için bu videoyu kaydet ve yoruma rehber yaz!"
+                ),
+                'hardware_vs': (
+                    f"İki efsane donanım karşı karşıya! Sen hangisini seçerdin? "
+                    f"{prod_name} incelemesinde Pozitron Rehber kriteri çok net: {rehber_tip} "
+                    "Kararını yoruma yaz, videoyu kaydet ve karşılaştırma tablosu için yoruma rehber yaz!"
+                ),
+                'flash_deal': (
+                    f"Beklenen flaş fırsat başladı ama stoklar çok sınırlı! "
+                    f"{prod_name} şimdi Pozitron Market'te {price_text}. "
+                    f"Kurulumda ise Pozitron Rehber kuralını unutma: {rehber_tip} "
+                    "İndirim kodunu kapmak için videoyu kaydet ve yoruma hemen kupon yaz!"
+                ),
+                'real_fpv_broll': (
+                    f"Gözlüğü taktığın an yerçekimi ortadan kalkıyor! "
+                    f"Böyle pürüzsüz bir uçuş için Pozitron Mühendislik Rehberi'nin altın kuralı: {rehber_tip} "
+                    f"En iyi {prod_name} donanımları ve tam kılavuz için videoyu kaydet, yoruma rehber yaz!"
+                ),
+                '3d_print_showcase': (
+                    f"Sert bir inişte kameran veya kolların kırılmasın istiyorsan bunu izle! "
+                    f"Pozitron 3D Baskı Studio'da esnek ve kırılmaz TPU 95A ile özel parçalarını anında bastır. "
+                    f"Rehber ipucu: {rehber_tip} "
+                    "Yüzde on indirim kodu için videoyu kaydet ve yoruma hemen baskı yaz!"
+                ),
+                '3d_print_studio': (
+                    f"Sert bir inişte kameran veya kolların kırılmasın istiyorsan bunu izle! "
+                    f"Pozitron 3D Baskı Studio'da esnek ve kırılmaz TPU 95A ile özel parçalarını anında bastır. "
+                    f"Rehber ipucu: {rehber_tip} "
+                    "Yüzde on indirim kodu için videoyu kaydet ve yoruma hemen baskı yaz!"
+                ),
+            }
+            raw_script = scripts.get(reels_type) or scripts['product_cinematic']
 
-        chosen_script = scripts.get(reels_type) or scripts['product_cinematic']
+        raw_disp = re.sub(r'\[[^\]]*\]', '', raw_script)
+        raw_disp = re.sub(r'\s+', ' ', raw_disp).strip()
+        post_data['voiceover_display_text'] = raw_disp
+
         from .voxcpm_tts import clean_text_for_speech
-        return clean_text_for_speech(chosen_script)
+        return clean_text_for_speech(raw_disp)
 
 
 

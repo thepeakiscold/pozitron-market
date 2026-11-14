@@ -74,6 +74,12 @@ class TestContentFilteringAndNewReelsTypes(unittest.TestCase):
         self.assertEqual(eff_posts, sample_post_types)
         self.assertEqual(eff_reels, sample_reels_types)
 
+        # Restore full list so subsequent tests are not restricted
+        update_agent_config(
+            enabled_post_types=[pt["id"] for pt in ALL_POST_TYPES],
+            enabled_reels_types=list(ALL_REELS_TYPES),
+        )
+
     def test_generate_content_respects_allowed_types(self):
         """Verify generate_content strictly limits generated content_type to allowed_types."""
         allowed = ["deal_drop", "pilot_tip"]
@@ -134,11 +140,11 @@ class TestContentFilteringAndNewReelsTypes(unittest.TestCase):
             mock_fallback.assert_called_once()
 
     def test_agent_autonomous_cycle_passes_effective_filters(self):
-        """Verify agent.run_autonomous_cycle calls generate_and_publish with effective filters."""
+        """Verify agent.run_autonomous_cycle is strictly Reels-only and passes effective Reels filters."""
         with patch.object(self.agent, "get_effective_enabled_post_types", return_value=["deal_drop"]), \
              patch.object(self.agent, "get_effective_enabled_reels_types", return_value=["quick_tip_fix"]), \
              patch.object(self.agent, "generate_and_publish_now") as mock_pub_post, \
-             patch.object(self.agent, "generate_and_publish_reel") as mock_pub_reel, \
+             patch.object(self.agent, "generate_and_publish_reel", return_value={"success": True, "post": {"media_type": "REEL"}}) as mock_pub_reel, \
              patch.object(self.agent, "reload_config"), \
              patch("database.get_setting", return_value=datetime.now().isoformat()):
 
@@ -149,8 +155,9 @@ class TestContentFilteringAndNewReelsTypes(unittest.TestCase):
                 "content_mix_enabled": 0,
             }
             res = self.agent.run_autonomous_cycle(run_engagement=False)
-            mock_pub_post.assert_called_once_with(allowed_types=["deal_drop"])
+            mock_pub_post.assert_not_called()
             mock_pub_reel.assert_called_once_with(allowed_reels_types=["quick_tip_fix"])
+            self.assertTrue(res.get("success"))
 
 
 if __name__ == "__main__":

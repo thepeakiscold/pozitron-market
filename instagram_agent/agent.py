@@ -770,31 +770,47 @@ class InstagramPRAgent:
             result['post'] = post_data
         return result
 
-    def generate_and_publish_reel(self, post_data: dict = None, reels_type: str = None, allowed_reels_types: list = None) -> dict:
+    def generate_and_publish_reel(
+        self,
+        post_data: dict = None,
+        reels_type: str = None,
+        allowed_reels_types: list = None,
+        content_type: str = None,
+        product_id: str = None,
+        coupon: dict = None,
+    ) -> dict:
         """
-        Creates a 9:16 vertical Reels video using LTX-Video / Gemini Omni Flash AI video
-        generation with ffmpeg fallback, and publishes it.
-
-        Supports the 8 distinct Reels formats (including toggleable Real FPV flight footage)
-        and respects allowed_reels_types.
+        Creates a 9:16 vertical Reels video using LTX-Video / FPV B-Roll / Ken-Burns
+        with local VoxCPM2 Turkish voiceover, dynamic synchronized subtitles, and
+        Pozitron Mühendislik Rehberi knowledge, then publishes it to Instagram.
         """
         self.reload_config()
         post_id = f"ig_reel_{uuid.uuid4().hex[:12]}"
 
         if not post_data:
             allowed = allowed_reels_types or self.get_effective_enabled_reels_types()
-            content = self.content_gen.generate_reels_content(allowed_reels_types=allowed, reels_type=reels_type)
+            content = self.content_gen.generate_reels_content(
+                content_type=content_type,
+                product_id=product_id,
+                allowed_reels_types=allowed,
+                reels_type=reels_type,
+            )
             if not content:
                 return {"success": False, "error": "Reels icerigi uretilemedi."}
             post_data = {
                 'id': post_id,
-                'content_type': content.get('content_type', 'product_spotlight'),
+                'content_type': content.get('content_type', content_type or 'product_spotlight'),
                 'reels_type': content.get('reels_type'),
                 'allowed_reels_types': allowed,
+                'product_id': content.get('product_id'),
                 'title': content['title'],
                 'caption': content['caption'],
                 'hashtags': content['hashtags'],
                 'product_data': content.get('product_data'),
+                'rehber_info': content.get('rehber_info'),
+                'tool_info': content.get('tool_info'),
+                'hook': content.get('hook'),
+                'cta': content.get('cta'),
                 'visual_summary': content.get('visual_summary'),
                 'visual_style': content.get('visual_style'),
                 'visual_style_key': content.get('visual_style_key'),
@@ -802,6 +818,7 @@ class InstagramPRAgent:
                 'reel_combo': content.get('reel_combo'),
                 'hook_tone': content.get('hook_tone'),
                 'voiceover_text': content.get('voiceover_text'),
+                'voiceover_display_text': content.get('voiceover_display_text'),
                 'created_at': datetime.now().isoformat()
             }
         else:
@@ -811,6 +828,37 @@ class InstagramPRAgent:
                 post_data['reels_type'] = reels_type
             if allowed_reels_types and not post_data.get('allowed_reels_types'):
                 post_data['allowed_reels_types'] = allowed_reels_types
+            if not post_data.get('rehber_info'):
+                post_data = self.content_gen._attach_rehber_to_reel(post_data)
+            if not post_data.get('voiceover_text'):
+                post_data['voiceover_text'] = self.content_gen.generate_reels_voiceover_script(post_data)
+
+        # Attach limited-time coupon (e.g. weekly deal) to Reel caption, visual summary, and voiceover
+        if coupon and coupon.get('code'):
+            deadline = ''
+            try:
+                deadline = datetime.fromisoformat(coupon['expires_at']).strftime('%d.%m.%Y %H:%M')
+            except Exception:
+                deadline = ''
+            desc = coupon.get('description_tr') or ''
+            code_block = (
+                "\n\n🔥 Bu haftanın Reels fırsatı: " + desc +
+                f"\n🎁 Kupon kodu: {coupon['code']}" +
+                (f"\n⏳ Son kullanım: {deadline}" if deadline else "") +
+                "\nKod tek gün geçerlidir ve her hesap yalnızca bir kez yararlanabilir."
+            )
+            post_data['caption'] = (post_data.get('caption', '') or '').rstrip() + code_block
+            post_data['coupon_code'] = coupon['code']
+            vs = dict(post_data.get('visual_summary') or {})
+            vs['badge'] = 'HAFTANIN REELS FIRSATI'
+            if desc:
+                vs['headline'] = desc[:42]
+                post_data['title'] = desc[:70]
+            kp = [p for p in (vs.get('key_points') or []) if p]
+            vs['key_points'] = ([f"Kupon kodu: {coupon['code']}"] + kp)[:3]
+            vs['cta'] = f"KUPON: {coupon['code']}"
+            post_data['visual_summary'] = vs
+            post_data['voiceover_text'] = self.content_gen.generate_reels_voiceover_script(post_data)
 
         post_data['media_type'] = 'REEL'
 
@@ -830,25 +878,35 @@ class InstagramPRAgent:
         if post_data.get('engine') not in ('ltx', 'ai', 'comfy', 'ltxv'):
             post_data['engine'] = 'ltx'
 
-        # Persist combination info into metadata for later anti-repeat checks.
+        # Persist combination & Rehber info into metadata for later anti-repeat checks.
         meta = post_data.get('metadata') if isinstance(post_data.get('metadata'), dict) else {}
         meta['reel_combo'] = post_data.get('reel_combo')
         meta['visual_style'] = post_data.get('visual_style')
         meta['video_mode'] = post_data.get('video_mode')
         meta['hook_tone'] = post_data.get('hook_tone')
+        if coupon and coupon.get('code'):
+            meta['coupon_code'] = coupon['code']
+        if post_data.get('rehber_info'):
+            meta['rehber_slug'] = post_data['rehber_info'].get('slug')
+            meta['rehber_focus'] = post_data['rehber_info'].get('focus')
         post_data['metadata'] = meta
 
         # Generate cinematic video prompt via ContentGenerator
         video_prompt = self.content_gen.generate_reels_video_prompt(post_data)
 
         video_rel_path = self.image_gen.generate_reels_video(post_data, prompt=video_prompt)
-        # Clean up temporary intermediate story/overlay images created during Reel rendering
+        # Clean up temporary intermediate story/overlay/ass files created during Reel rendering
         try:
-            posts_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'instagram', 'posts')
+            base_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            posts_dir = os.path.join(base_root, 'assets', 'instagram', 'posts')
+            reels_dir = os.path.join(base_root, 'assets', 'instagram', 'reels')
             for suffix in ('_story.jpg', '_reels_overlay.png'):
                 tmp_helper = os.path.join(posts_dir, f"{post_id}{suffix}")
                 if os.path.exists(tmp_helper):
                     os.remove(tmp_helper)
+            tmp_ass = os.path.join(reels_dir, f"{post_id}_subs.ass")
+            if os.path.exists(tmp_ass):
+                os.remove(tmp_ass)
         except Exception:
             pass
         if not video_rel_path:
@@ -858,6 +916,9 @@ class InstagramPRAgent:
         post_data['video_url'] = video_rel_path
         post_data['local_image_path'] = video_rel_path
         post_data['image_url'] = post_data.get('image_url') or video_rel_path
+        meta['has_voiceover'] = post_data.get('has_voiceover', False)
+        meta['voiceover_engine'] = post_data.get('voiceover_engine', '')
+        meta['voiceover_duration'] = post_data.get('voiceover_duration', 0.0)
 
         # Sync reels video to repo for Meta Graph API access
         self._sync_assets_to_repo([video_rel_path], f"instagram reels video {post_id}")
@@ -1056,8 +1117,8 @@ class InstagramPRAgent:
 
     def generate_and_publish_deal_coupon(self, deal: dict = None) -> dict:
         """
-        Creates (or reuses) this week's one-day coupon and publishes it as a feed
-        post. The coupon is auto-disabled when its 24h window ends.
+        Creates (or reuses) this week's one-day coupon and publishes it as a
+        Reels video with local TTS voiceover. The coupon is auto-disabled when its 24h window ends.
         """
         import coupons as coupon_service
         self.reload_config()
@@ -1065,21 +1126,21 @@ class InstagramPRAgent:
             deal = coupon_service.get_active_deal() or coupon_service.create_weekly_deal()
         if not deal:
             return {"success": False, "error": "Kupon olusturulamadi."}
-        res = self.generate_and_publish_now(content_type='deal_drop', coupon=deal)
+        res = self.generate_and_publish_reel(reels_type='flash_deal', content_type='deal_drop', coupon=deal)
         res['coupon'] = deal
         return res
 
     def run_autonomous_cycle(self, run_engagement: bool = True) -> dict:
         """
-        Executes a complete autonomous cycle:
-        1. Directly generates and publishes a new post (carousel or single).
-        2. Publishes an accompanying 9:16 Story if enabled.
-        3. Publishes an accompanying 9:16 Reel if enabled.
-        4. Processes comment & DM automations ('KUPON', 'LINK', 'FIYAT').
-        5. Engages with the drone community (follows up to 10 pilots & posts 10 comments).
+        Executes a complete REELS-ONLY autonomous cycle:
+        1. Generates and publishes a 9:16 Reels video with local VoxCPM2 Turkish voiceover,
+           dynamic synchronized subtitles, and Pozitron Mühendislik Rehberi knowledge.
+           (Never publishes static feed posts, carousels, or stories.)
+        2. Processes comment & DM automations ('REHBER', 'KUPON', 'LINK', 'FIYAT', '3D').
+        3. Engages with the Turkish drone community (follows, comments, likes).
         """
         self.reload_config()
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INSTAGRAM AJANI] Instagram PR Ajani otonom dongu baslatiyor...")
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [INSTAGRAM AJANI] Instagram PR Ajani SADECE REELS otonom dongusunu baslatiyor...")
 
         # Sync recent live media from Meta Graph API so anti-repeat memory includes all live posts
         try:
@@ -1087,10 +1148,11 @@ class InstagramPRAgent:
         except Exception:
             pass
 
-        # 0. Weekly limited-time deal (once every 7 days). When due, this replaces
-        #    the regular feed post for the cycle and mints a fresh 24h coupon.
+        allowed_reels = self.get_effective_enabled_reels_types()
         weekly_deal_res = {}
-        post_res = {}
+        reel_res = {}
+
+        # 0. Weekly limited-time deal (once every 7 days) — published as a flash_deal REEL (never a static post)
         try:
             from database import get_setting, set_setting
             import coupons as coupon_service
@@ -1102,48 +1164,31 @@ class InstagramPRAgent:
                 except Exception:
                     deal_due = True
             if deal_due:
-                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HAFTALIK FIRSAT] Bu haftanin 1 gunluk kuponu olusturuluyor ve paylasiliyor...")
+                print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [HAFTALIK REELS FIRSATI] Bu haftanin 1 gunluk kuponu Reels olarak olusturuluyor ve paylasiliyor...")
                 deal = coupon_service.create_weekly_deal()
-                post_res = self.generate_and_publish_now(content_type='deal_drop', coupon=deal)
-                weekly_deal_res = {"success": bool(post_res.get('success')), "coupon": deal}
-                if post_res.get('success'):
+                reel_res = self.generate_and_publish_reel(
+                    reels_type='flash_deal',
+                    allowed_reels_types=allowed_reels,
+                    content_type='deal_drop',
+                    coupon=deal,
+                )
+                weekly_deal_res = {"success": bool(reel_res.get('success')), "coupon": deal}
+                if reel_res.get('success'):
                     set_setting('last_weekly_deal_at', datetime.now().isoformat())
         except Exception as we:
             weekly_deal_res = {"success": False, "error": str(we)}
 
-        # 1. Post & Publish (with carousel support) — skipped if the weekly deal posted.
-        import random
-        if not post_res:
-            allowed_posts = self.get_effective_enabled_post_types()
-            if self.config.get('carousel_enabled', 1) and 'carousel_guide' in allowed_posts and random.random() < 0.30:
-                post_res = self.generate_and_publish_carousel()
-            else:
-                post_res = self.generate_and_publish_now(allowed_types=allowed_posts)
-
-        # Optional content-mix mode: stagger Story/Reel instead of always posting all three,
-        # so the account does not look like a repetitive trio-drop.
-        mix_enabled = bool(self.config.get('content_mix_enabled', 0))
-
-        # 2. Accompanying Story
-        story_res = {}
-        post_story = self.config.get('story_enabled', 1) and (not mix_enabled or random.random() < 0.75)
-        if post_story:
+        # 1. Main Reels Generation & Publishing (Strictly Reels-Only; static posts/carousels/stories disabled)
+        if not reel_res:
             try:
-                story_res = self.generate_and_publish_story()
-            except Exception as se:
-                story_res = {"success": False, "error": str(se)}
-
-        # 3. Accompanying Reel
-        reel_res = {}
-        post_reel = self.config.get('reels_enabled', 1) and (not mix_enabled or random.random() < 0.85)
-        if post_reel:
-            try:
-                allowed_reels = self.get_effective_enabled_reels_types()
                 reel_res = self.generate_and_publish_reel(allowed_reels_types=allowed_reels)
-            except Exception as re:
-                reel_res = {"success": False, "error": str(re)}
+            except Exception as re_err:
+                reel_res = {"success": False, "error": str(re_err)}
 
-        # 4. Comment & DM Automations
+        post_res = reel_res
+        story_res = {"skipped": True, "reason": "Reels-Only mode active (statik post ve story devre dışı)"}
+
+        # 2. Comment & DM Automations ('REHBER', 'KUPON', 'LINK', 'FIYAT', '3D')
         dm_res = {}
         if self.config.get('dm_automation_enabled', 1):
             try:
@@ -1151,7 +1196,7 @@ class InstagramPRAgent:
             except Exception as dme:
                 dm_res = {"success": False, "error": str(dme)}
 
-        # 5. Drone Community Engagement
+        # 3. Drone Community Engagement
         engagement_res = {}
         if run_engagement:
             try:
@@ -1173,9 +1218,9 @@ class InstagramPRAgent:
         })
         self._sync_assets_to_repo(["data/instagram_posts.json", "data/instagram_config.json"], "instagram autonomous cycle")
 
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TAMAMLANDI] Otonom dongu tamamlandi. Gonderi Durumu: {post_res.get('success')}. Sonraki plan: {next_run}")
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [TAMAMLANDI] Sadece-Reels otonom dongu tamamlandi. Reels Durumu: {reel_res.get('success')}. Sonraki plan: {next_run}")
         return {
-            "success": post_res.get('success', False),
+            "success": reel_res.get('success', False),
             "post_result": post_res,
             "story_result": story_res,
             "reel_result": reel_res,

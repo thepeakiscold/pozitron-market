@@ -6,8 +6,8 @@
   "public_base_url": "https://raw.githubusercontent.com/thepeakiscold/pozitron-market/main",
   "preferred_language": "tr",
   "default_hashtags": "#fpvturkey #fpvdrone #pozitronmarket #dronetopla #fpvpilot #fpvracing #betafpv #iflight #tmotor #teknofest",
-  "last_post_at": "2026-11-14T20:30:33.812810",
-  "next_post_at": "2026-11-15T09:48:00",
+  "last_post_at": "2026-11-14T20:30:45.296641",
+  "next_post_at": "2026-11-15T12:17:00",
   "target_hashtags": [
     "fpvturkey",
     "droneturkey",
@@ -18,22 +18,43 @@
     "fpvfreestyle",
     "fpvracing"
   ],
-  "updated_at": "2026-11-14T20:30:33.816580",
-  "last_run_at": "2026-11-14T20:30:33.812810",
-  "next_run_at": "2026-11-15T09:48:00",
+  "updated_at": "2026-11-14T20:30:47.046009",
+  "last_run_at": "2026-11-14T20:30:45.296641",
+  "next_run_at": "2026-11-15T12:30:00",
   "story_enabled": 0,
   "carousel_enabled": 0,
   "dm_automation_enabled": 0,
   "peak_scheduler_enabled": 1,
   "reels_enabled": 1,
-  "flux_enabled": 1,
+  "flux_enabled": 0,
   "enabled_post_types": [
     "product_spotlight",
     "deal_drop",
-    "pilot_tip"
+    "pilot_tip",
+    "hardware_battle",
+    "drone_build_showcase",
+    "carousel_guide",
+    "mistake_breakdown",
+    "community_quiz",
+    "myth_buster",
+    "maintenance_checklist",
+    "beginner_roadmap",
+    "flight_weather_radar",
+    "tool_showcase",
+    "spot_guide",
+    "review_highlight",
+    "3d_print_studio",
+    "seo_article"
   ],
   "enabled_reels_types": [
+    "real_fpv_broll",
+    "3d_print_showcase",
     "freestyle_acro",
-    "secret_spot"
+    "hardware_vs",
+    "quick_tip_fix",
+    "mistake_warning",
+    "secret_spot",
+    "product_cinematic",
+    "flash_deal"
   ]
 }

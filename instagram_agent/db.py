@@ -140,10 +140,10 @@ def init_instagram_tables():
     cursor.execute("PRAGMA table_info(instagram_agent_config)")
     cfg_cols = [c[1] for c in cursor.fetchall()]
     for col_name, col_type, default_val in [
-        ('story_enabled', 'INTEGER', '1'),
-        ('carousel_enabled', 'INTEGER', '1'),
+        ('story_enabled', 'INTEGER', '0'),
+        ('carousel_enabled', 'INTEGER', '0'),
         ('dm_automation_enabled', 'INTEGER', '1'),
-        ('peak_scheduler_enabled', 'INTEGER', '0'),
+        ('peak_scheduler_enabled', 'INTEGER', '1'),
         ('reels_enabled', 'INTEGER', '1'),
         ('bilingual_enabled', 'INTEGER', '0'),
         ('content_mix_enabled', 'INTEGER', '0'),

@@ -53,27 +53,15 @@ def cmd_status(agent: InstagramPRAgent):
     print(f"[-] Genel Web URL:     {cfg['public_base_url']}")
     print("=" * 64)
 
-def cmd_generate(agent: InstagramPRAgent, content_type: str = None, product_id: str = None):
-    print("[BILGI] Yeni Instagram gonderisi ve 1080x1080 gorsel uretiliyor...")
-    post = agent.generate_post(content_type=content_type, product_id=product_id)
-    print("\n[BASARILI] Gonderi basariyla uretildi:")
-    print(f"[-] Gonderi ID:    {post['id']}")
-    print(f"[-] Konsept:       {post['content_type']}")
-    print(f"[-] Gorsel Dosya:  {post['local_image_path']}")
-    print("-" * 64)
-    print(f"[-] BASLIK: {post['title']}")
-    print("\n[-] METIN (CAPTION):")
-    print(post['caption'])
-    print("\n[-] HASHTAGLER:")
-    print(post['hashtags'])
-    print("-" * 64)
-    print("[-] Paylasmak icin: python3 instagram_pr_agent.py --publish --id " + post['id'])
+def cmd_generate(agent: InstagramPRAgent, content_type: str = None, product_id: str = None, reels_type: str = None):
+    print("[BILGI] Yeni Instagram REELS videosu, Rehber bilgisi ve VoxCPM2 seslendirmesi uretilip yayinlaniyor...")
+    return cmd_direct_publish(agent, content_type=content_type, product_id=product_id, reels_type=reels_type)
 
 def cmd_publish(agent: InstagramPRAgent, post_id: str = None):
-    print("[BILGI] Gonderi Instagram'a aktariliyor...")
-    res = agent.publish_post(post_id=post_id)
+    print("[BILGI] Reels gonderisi Instagram'a aktariliyor...")
+    res = agent.publish_post(post_id=post_id) if post_id else agent.generate_and_publish_reel()
     if res.get('success'):
-        print("\n[BASARILI] Gonderi basariyla yayinlandi!")
+        print("\n[BASARILI] Reels basariyla yayinlandi!")
         print(f"[-] Mod:           {res.get('mode', 'dry_run').upper()}")
         print(f"[-] IG Media ID:   {res.get('ig_media_id')}")
         print(f"[-] Gonderi Linki: {res.get('ig_permalink')}")
@@ -105,14 +93,14 @@ def cmd_daemon(agent: InstagramPRAgent):
         print("\n[BILGI] Kapatiliyor...")
         scheduler.stop()
 
-def cmd_reel(agent: InstagramPRAgent, reels_type: str = None, product_id: str = None):
-    print("\n[BILGI] Yeni Instagram REELS videosu ve VoxCPM2 Gerçekçi Kadın Sesi seslendirmesi üretiliyor...")
-    res = agent.generate_reel_post(reels_type=reels_type)
+def cmd_reel(agent: InstagramPRAgent, reels_type: str = None, product_id: str = None, content_type: str = None):
+    print("\n[BILGI] Yeni Instagram REELS videosu, Rehber bilgisi ve VoxCPM2 Gerçekçi Kadın Sesi seslendirmesi üretiliyor...")
+    res = agent.generate_and_publish_reel(reels_type=reels_type, product_id=product_id, content_type=content_type)
     post = res.get('post') or {}
     video_engine = res.get('video_engine') or post.get('video_engine')
     if video_engine and video_engine != 'unknown':
         print("\n" + "=" * 68)
-        print("  REELS VE GERÇEKÇİ KADIN SESLENDİRMESİ BAŞARIYLA ÜRETİLDİ!")
+        print("  REELS, REHBER BİLGİSİ VE KADIN SESLENDİRMESİ BAŞARIYLA ÜRETİLDİ!")
         print("=" * 68)
         print(f"[-] Gönderi ID:        {post.get('id')}")
         print(f"[-] Reels Formatı:     {post.get('reels_type')}")
@@ -122,6 +110,8 @@ def cmd_reel(agent: InstagramPRAgent, reels_type: str = None, product_id: str = 
         print(f"[-] Seslendirme Motoru:{post.get('voiceover_engine') or 'VoxCPM2 (Doğal Türkçe Kadın Sesi)'}")
         print(f"[-] Ses Dosyası:       {post.get('voiceover_path')}")
         print(f"[-] Seslendirme Metni: \"{post.get('voiceover_text')}\"")
+        if post.get('rehber_info'):
+            print(f"[-] Rehber Makalesi:   {post['rehber_info'].get('title')} ({post['rehber_info'].get('url')})")
         print("-" * 68)
         print(f"[-] BAŞLIK: {post.get('title')}")
         print("-" * 68)
@@ -141,17 +131,23 @@ def cmd_test_tts(text: str = None):
     else:
         print("[HATA] Seslendirme oluşturulamadı.")
 
-def cmd_direct_publish(agent: InstagramPRAgent, content_type: str = None, product_id: str = None):
-    print("[BILGI] Yeni Instagram gonderisi ve 1080x1080 afis uretilip dogrudan yayina aktariliyor...")
-    res = agent.generate_and_publish_now(content_type=content_type, product_id=product_id)
+def cmd_direct_publish(agent: InstagramPRAgent, content_type: str = None, product_id: str = None, reels_type: str = None):
+    print("[BILGI] REELS-ONLY MODU: Yeni Instagram REELS videosu, Rehber bilgisi ve VoxCPM2 seslendirmesi uretilip yayina aktariliyor...")
+    res = agent.generate_and_publish_reel(content_type=content_type, product_id=product_id, reels_type=reels_type)
     if res.get('success'):
-        print("\n[BASARILI] Gonderi basariyla yayinlandi!")
-        print(f"[-] Mod:          {res.get('mode', 'live').upper()}")
-        print(f"[-] Gonderi ID:   {res.get('post', {}).get('id')}")
-        print(f"[-] Baslik:       {res.get('post', {}).get('title')}")
-        print(f"[-] IG Permalink: {res.get('ig_permalink')}")
+        now_iso = datetime.now().isoformat()
+        agent.update_config({'last_run_at': now_iso, 'last_post_at': now_iso})
+        post = res.get('post', {})
+        print("\n[BASARILI] Sesli Reels videosu basariyla yayinlandi!")
+        print(f"[-] Mod:           {res.get('mode', 'live').upper()}")
+        print(f"[-] Gonderi ID:    {post.get('id')}")
+        print(f"[-] Reels Formati: {post.get('reels_type')}")
+        print(f"[-] Baslik:        {post.get('title')}")
+        print(f"[-] Video Dosya:   {post.get('video_url')}")
+        print(f"[-] Seslendirme:   {post.get('voiceover_engine') or 'VoxCPM2'}")
+        print(f"[-] IG Permalink:  {res.get('ig_permalink')}")
         if res.get('token_expired'):
-            print("\n[UYARI] Meta Access Token suresi dolmus. Gonderi simulasyon (dry-run) modunda guvenle kaydedildi.")
+            print("\n[UYARI] Meta Access Token suresi dolmus. Reels simulasyon (dry-run) modunda guvenle kaydedildi.")
             print("[ONERI] Canli Meta yayini icin Meta Developer panelinden yeni bir Access Token tanimlayiniz.")
     else:
         print(f"\n[HATA] Yayinlama hatasi: {res.get('error')}")
@@ -253,18 +249,18 @@ def main():
     parser = argparse.ArgumentParser(description="Pozitron Market Autonomous Instagram PR Agent CLI")
     parser.add_argument('--status', action='store_true', help="Ajan durumunu ve ayarlarini gosterir")
     parser.add_argument('--reel', action='store_true', help="VoxCPM2 Gerçekçi Kadın Sesi ile videolu Reels üretir ve yayınlar")
-    parser.add_argument('--reels-type', type=str, choices=['product_cinematic', 'freestyle_acro', 'quick_tip_fix', 'mistake_warning', 'secret_spot', 'hardware_vs', 'flash_deal', 'real_fpv_broll', '3d_print_showcase'], help="Reels video formati")
+    parser.add_argument('--reels-type', type=str, choices=['product_cinematic', 'freestyle_acro', 'quick_tip_fix', 'mistake_warning', 'secret_spot', 'hardware_vs', 'flash_deal', 'real_fpv_broll', '3d_print_showcase', 'seo_article'], help="Reels video formati")
     parser.add_argument('--test-tts', action='store_true', help="VoxCPM2 Gerçekçi Kadın Sesi ile seslendirme test eder")
     parser.add_argument('--tts-text', type=str, help="Seslendirme testi icin ozel metin")
-    parser.add_argument('--direct-publish', action='store_true', help="Taslaksiz: Tek adimda gonderi uretip canli yayinlar")
+    parser.add_argument('--direct-publish', action='store_true', help="Taslaksiz: Tek adimda sesli Reels uretip canli yayinlar")
     parser.add_argument('--engage', action='store_true', help="Drone meraklisi pilotlari takip eder ve destek yorumu atar (Gunde 10)")
     parser.add_argument('--engage-3d', action='store_true', help="3D baskı, TPU parça ve maker topluluklarına özel takip ve sipariş dönüşümlü yorum atar")
-    parser.add_argument('--auto', action='store_true', help="Belirtilen aralik geldiyse direkt paylasir + drone etkilesimi yapar")
+    parser.add_argument('--auto', action='store_true', help="Belirtilen aralik geldiyse direkt sesli Reels paylasir + drone etkilesimi yapar")
     parser.add_argument('--force', action='store_true', help="Araligi beklemeden --auto modunu hemen tetikler")
     parser.add_argument('--set-freq', type=int, help="Paylasim sikligini saat olarak ayarlar (or: 3, 6, 12, 24)")
-    parser.add_argument('--generate', action='store_true', help="Yeni bir gonderi uretip yayinlar (Taslaksiz)")
-    parser.add_argument('--publish', action='store_true', help="Dogrudan yayinlar")
-    parser.add_argument('--auto-cycle', action='store_true', help="Tek adimda gorsel ve icerik uretip paylasir ve etkilesime gecer")
+    parser.add_argument('--generate', action='store_true', help="Yeni bir sesli Reels uretip yayinlar (Taslaksiz)")
+    parser.add_argument('--publish', action='store_true', help="Dogrudan sesli Reels yayinlar")
+    parser.add_argument('--auto-cycle', action='store_true', help="Tek adimda sesli Reels ve icerik uretip paylasir ve etkilesime gecer")
     parser.add_argument('--export-cookies', action='store_true', help="GitHub Actions Secrets icin Instagram oturum cerezlerini JSON olarak disa aktarir")
     parser.add_argument('--id', type=str, help="Yayinlanacak gonderi ID'si")
     parser.add_argument('--type', type=str, choices=['product_spotlight', 'tool_showcase', 'deal_drop', 'pilot_tip', 'review_highlight', 'drone_build_showcase', 'carousel_guide', 'flight_weather_radar', 'spot_guide', 'seo_article', 'hardware_battle', 'mistake_breakdown', 'community_quiz', 'myth_buster', 'maintenance_checklist', 'beginner_roadmap', '3d_print_studio'], help="Icerik sutunu/tipi")
@@ -285,9 +281,9 @@ def main():
     elif args.test_tts:
         cmd_test_tts(args.tts_text)
     elif args.reel:
-        cmd_reel(agent, reels_type=args.reels_type, product_id=args.product)
+        cmd_reel(agent, reels_type=args.reels_type, product_id=args.product, content_type=args.type)
     elif args.direct_publish or args.generate or args.publish:
-        cmd_direct_publish(agent, content_type=args.type, product_id=args.product)
+        cmd_direct_publish(agent, content_type=args.type, product_id=args.product, reels_type=args.reels_type)
     elif args.engage_3d:
         cmd_engage(focus_3d=True)
     elif args.engage:

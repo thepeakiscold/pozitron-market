@@ -1920,7 +1920,13 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         if vo_dur > 0 and (len(all_raw_frames) / 25.0) < (vo_dur + 0.5):
             needed_frames = int((vo_dur + 0.5) * 25) - len(all_raw_frames)
             if needed_frames > 0 and all_raw_frames:
-                all_raw_frames.extend([all_raw_frames[-1]] * needed_frames)
+                # Ping-pong (reverse-forward boomerang) loop so motion is continuous, never frozen
+                base_cycle = list(reversed(all_raw_frames[1:-1])) + list(all_raw_frames)
+                if not base_cycle:
+                    base_cycle = list(all_raw_frames)
+                while len(all_raw_frames) < int((vo_dur + 0.5) * 25):
+                    take = min(len(base_cycle), int((vo_dur + 0.5) * 25) - len(all_raw_frames))
+                    all_raw_frames.extend(base_cycle[:take])
                 ai_duration = len(all_raw_frames) / 25.0
 
         # Outro card appending:
@@ -1947,11 +1953,13 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 print(f"[Reels AI] Outro karti olusturulamadi: {e}")
 
         total_duration = len(all_raw_frames) / 25.0
+        ass_path = self._generate_viral_ass_subtitles(post_data, total_duration)
+        ass_filter = f",ass='{ass_path}'" if (ass_path and os.path.exists(ass_path)) else ""
 
         filter_str = (
             f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,"
             f"setsar=1,fps=25[bg];"
-            f"[bg][1:v]overlay=0:0:enable='lte(t,{ai_duration:.2f})'[v]"
+            f"[bg][1:v]overlay=0:0:enable='lte(t,{ai_duration:.2f})'{ass_filter}[v]"
         )
 
         base_cmd = [
@@ -2209,10 +2217,23 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
     def _get_reels_voiceover(self, post_data: dict) -> str:
         """
         Generates or retrieves realistic Turkish female voiceover using VoxCPM2.
+        Reuses an already-generated file for the same post_data if present, and guarantees
+        voiceover_chunks (timed subtitle segments) are populated on post_data.
         Returns the absolute path to the .wav file, or empty string on error.
         """
         try:
-            from .voxcpm_tts import VoxCPMTTS
+            from .voxcpm_tts import VoxCPMTTS, build_subtitle_chunks
+            existing_rel = post_data.get('voiceover_path')
+            if existing_rel:
+                abs_existing = os.path.join(BASE_DIR, existing_rel.lstrip('./').lstrip('/'))
+                if os.path.exists(abs_existing) and os.path.getsize(abs_existing) > 1000:
+                    dur = float(post_data.get('voiceover_duration') or self._get_video_duration(abs_existing) or 10.0)
+                    post_data['voiceover_duration'] = round(dur, 2)
+                    if not post_data.get('voiceover_chunks'):
+                        disp = post_data.get('voiceover_display_text') or post_data.get('voiceover_text') or ''
+                        post_data['voiceover_chunks'] = build_subtitle_chunks(disp, dur)
+                    return abs_existing
+
             tts = getattr(self, '_voxcpm_tts', None) or VoxCPMTTS()
             self._voxcpm_tts = tts
             rel_p = tts.generate_voiceover_for_post(post_data)
@@ -2224,6 +2245,109 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         except Exception as e:
             print(f"[VoxCPM2 Voiceover Hatası] {e}")
         return ""
+
+    @staticmethod
+    def _format_ass_time(seconds: float) -> str:
+        """Formats float seconds into ASS timestamp H:MM:SS.cc."""
+        s = max(0.0, float(seconds))
+        h = int(s // 3600)
+        m = int((s % 3600) // 60)
+        sec = s % 60
+        return f"{h}:{m:02d}:{sec:05.2f}"
+
+    def _generate_viral_ass_subtitles(self, post_data: dict, total_duration: float) -> str:
+        """
+        Creates an Advanced SubStation Alpha (.ass) file for high-retention viral Reels:
+        - Synchronized 2-to-4 word Karaoke/Hormozi-style pop-in captions with neon keyword highlight
+        - 0.0s - 2.8s top-center Pattern-Interrupt Hook Banner to maximize 3-second hold rate
+        - Mid-video Pozitron Mühendislik Rehberi badge
+        """
+        try:
+            from .voxcpm_tts import build_subtitle_chunks
+            post_id = post_data.get('id', 'reel_sub')
+            subs_dir = os.path.join(BASE_DIR, 'assets', 'instagram', 'reels')
+            os.makedirs(subs_dir, exist_ok=True)
+            ass_path = os.path.join(subs_dir, f"{post_id}_subs.ass")
+
+            vo_dur = float(post_data.get('voiceover_duration') or total_duration or 10.0)
+            chunks = post_data.get('voiceover_chunks')
+            if not chunks:
+                disp = post_data.get('voiceover_display_text') or post_data.get('voiceover_text') or post_data.get('title', '')
+                chunks = build_subtitle_chunks(disp, vo_dur)
+                post_data['voiceover_chunks'] = chunks
+
+            hook_raw = post_data.get('hook') or post_data.get('title') or "BU DETAYA DİKKAT!"
+            hook_clean = re.sub(r'\[[^\]]*\]', '', str(hook_raw)).strip()
+            hook_clean = re.sub(r'[{}\\]', '', hook_clean)[:58].upper()
+
+            rehber = post_data.get('rehber_info') or {}
+            visual = post_data.get('visual_summary') or {}
+            rehber_focus = (rehber.get('focus') or visual.get('rehber_badge') or "POZİTRON MÜHENDİSLİK REHBERİ").strip()
+            rehber_focus = re.sub(r'[{}\\]', '', rehber_focus)[:46].upper()
+
+            # ASS colors are &HAABBGGRR (BGR order):
+            # White: &H00FFFFFF, Electric Gold/Amber: &H0000D4FF, Neon Cyan: &H00F8BD38, Dark Navy BG: &H551A0F0A
+            header = """[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 1
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: ViralSub,DejaVu Sans,62,&H00FFFFFF,&H0000D4FF,&H00080808,&H80000000,-1,0,0,0,100,100,1,0,1,5,3,2,70,70,720,1
+Style: HookBanner,DejaVu Sans,42,&H0000D4FF,&H00FFFFFF,&H000A0F1D,&H960A0F1D,-1,0,0,0,100,100,1,0,3,14,0,8,65,65,215,1
+Style: RehberPill,DejaVu Sans,34,&H00F8BD38,&H00FFFFFF,&H000F172A,&H960F172A,-1,0,0,0,100,100,1,0,3,12,0,8,70,70,215,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+"""
+            events = []
+            # 1. 0.0s - 2.8s Viral Hook Banner at top safe zone
+            if hook_clean:
+                events.append(
+                    f"Dialogue: 2,0:00:00.05,0:00:02.85,HookBanner,,0,0,0,,"
+                    f"{{\\fscx112\\fscy112\\t(0,140,\\fscx100\\fscy100)}}⚡ {hook_clean}"
+                )
+
+            # 2. 2.9s - end: Rehber Engineering Topic Pill at top safe zone
+            if rehber_focus and total_duration > 3.5:
+                end_pill = self._format_ass_time(max(3.5, total_duration - 0.5))
+                events.append(
+                    f"Dialogue: 2,0:00:02.90,{end_pill},RehberPill,,0,0,0,,"
+                    f"{{\\fad(180,180)}}📘 REHBER: {rehber_focus}"
+                )
+
+            # 3. Synchronized Karaoke / Hormozi word chunks
+            for idx, ch in enumerate(chunks or []):
+                st = self._format_ass_time(ch.get('start', 0.0))
+                et = self._format_ass_time(ch.get('end', 1.0))
+                words = ch.get('words') or (ch.get('text', '')).split()
+                hi = (ch.get('highlight') or '').lower()
+                accent = "&H0000D4FF&" if idx % 2 == 0 else "&H00F8BD38&"
+                formatted_words = []
+                highlighted_once = False
+                for w in words:
+                    clean_w = re.sub(r'[{}\\]', '', w).upper()
+                    bare_w = clean_w.strip(".,!?:;").lower()
+                    if not highlighted_once and hi and bare_w == hi:
+                        formatted_words.append(f"{{\\c{accent}}}{clean_w}{{\\c&H00FFFFFF&}}")
+                        highlighted_once = True
+                    else:
+                        formatted_words.append(clean_w)
+                line_text = " ".join(formatted_words)
+                events.append(
+                    f"Dialogue: 3,{st},{et},ViralSub,,0,0,0,,"
+                    f"{{\\fscx115\\fscy115\\t(0,110,\\fscx100\\fscy100)}}{line_text}"
+                )
+
+            with open(ass_path, 'w', encoding='utf-8') as f:
+                f.write(header + "\n".join(events) + "\n")
+            return ass_path
+        except Exception as e:
+            print(f"[ASS Altyazı UYARI] {e}")
+            return ""
 
     def _get_reels_bg_music(self) -> str:
         """
@@ -2603,12 +2727,15 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 ['wipeleft', 'slideleft', 'smoothleft', 'circleopen', 'fade', 'wiperight']
             )
 
+            ass_path = self._generate_viral_ass_subtitles(post_data, total_dur)
+            ass_filter = f",ass='{ass_path}'" if (ass_path and os.path.exists(ass_path)) else ""
+
             filter_str = (
                 "[0:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v0];"
                 "[1:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v1];"
                 "[2:v]scale=1080:1920,setsar=1,fps=30,format=yuv420p,setpts=PTS-STARTPTS[v2];"
                 f"[v0][v1]xfade=transition={transition}:duration={xfade}:offset={offset1}[v01];"
-                f"[v01][v2]xfade=transition={transition}:duration={xfade}:offset={offset2}[v]"
+                f"[v01][v2]xfade=transition={transition}:duration={xfade}:offset={offset2}{ass_filter}[v]"
             )
 
             cmd = [
@@ -2646,7 +2773,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 else:
                     post_data['video_engine'] = 'FFmpeg Dinamik Çok Slaytlı Şablon (1. Yol)'
                     post_data['reel_mode'] = 'dynamic_template'
-                    post_data['reel_mode_info'] = '1. Yol: 3 Slaytlı Dinamik Şablon + Cyberpunk Beat Müzik'
+                    post_data['reel_mode_info'] = '1. Yol: 3 Slaytlı Dinamik Şablon + VoxCPM2 Türkçe Seslendirme'
                 return f"./assets/instagram/reels/{video_filename}"
         except Exception as e:
             print(f"[UYARI] Dinamik sablon olusturma hatasi: {e}")
@@ -2655,9 +2782,11 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
     def generate_reels_bottom_overlay(self, post_data: dict) -> str:
         """
-        Transparent 1080x1920 RGBA overlay for Reels: the brand logo lockup on top
-        and a calm, human lower-third headline. The frame stays mostly clear so the
-        AI footage is the hero, matching the unified post template.
+        Transparent 1080x1920 RGBA overlay for Reels:
+        - Top brand logo lockup
+        - Lower-third headline + Pozitron Mühendislik Rehberi technical tip box
+        - Actionable Save / Comment ("REHBER" / "KUPON") trigger bar
+        Leaves the upper-middle zone (y=980..1240) open for synchronized dynamic ASS subtitles.
         """
         post_id = post_data['id']
         W, H = 1080, 1920
@@ -2666,52 +2795,79 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
         # Bottom scrim (text) + soft top scrim (logo legibility on bright footage).
         scrim = Image.new('RGBA', (W, H), (0, 0, 0, 0))
         sd = ImageDraw.Draw(scrim)
-        top = int(H * 0.58)
+        top = int(H * 0.56)
         for yy in range(top, H):
             ratio = (yy - top) / (H - top)
-            sd.line([(0, yy), (W, yy)], fill=(5, 9, 18, int(30 + ratio * 200)))
+            sd.line([(0, yy), (W, yy)], fill=(5, 9, 18, int(35 + ratio * 210)))
         head = int(H * 0.16)
         for yy in range(head):
-            sd.line([(0, yy), (W, yy)], fill=(5, 9, 18, int(90 * (1 - yy / head))))
+            sd.line([(0, yy), (W, yy)], fill=(5, 9, 18, int(95 * (1 - yy / head))))
         img.paste(scrim, (0, 0), scrim)
 
         margin = 72
         self._draw_logo_lockup(img, margin, 64, chip=88)
 
         headline, subhead, points = self._template_text(post_data)
-        f_head = get_font(58, bold=True)
-        f_sub = get_font(28, bold=False)
+        f_head = get_font(50, bold=True)
+        f_sub = get_font(26, bold=False)
         draw = ImageDraw.Draw(img)
-        y = int(H * 0.70)
+        y = int(H * 0.67)
         reels_type = post_data.get('reels_type')
         reels_badges = {
-            'freestyle_acro': '⚡ AKRO FREESTYLE',
-            'hardware_vs': '⚔️ DONANIM DÜELLOSU',
-            'quick_tip_fix': '💡 15S PİLOT İPUCU',
-            'mistake_warning': '⚠️ DİKKAT: HATA ANALİZİ',
-            'secret_spot': '📍 GİZLİ UÇUŞ SPOTU',
-            'product_cinematic': '💎 SİNEMATİK VİTRİN',
-            'flash_deal': '🔥 FLAŞ FIRSAT',
-            'real_fpv_broll': '🎥 GERÇEK FPV UÇUŞU',
-            '3d_print_showcase': '🖨️ 3D BASKI STUDIO'
+            'freestyle_acro': '⚡ AKRO FREESTYLE & REHBER',
+            'hardware_vs': '⚔️ DONANIM DÜELLOSU & REHBER',
+            'quick_tip_fix': '💡 MÜHENDİSLİK REHBERİ İPUCU',
+            'mistake_warning': '⚠️ DİKKAT: ARIZA ÖNLEME REHBERİ',
+            'secret_spot': '📍 GİZLİ UÇUŞ SPOTU & REHBER',
+            'product_cinematic': '💎 SİNEMATİK DONANIM VİTRİNİ',
+            'flash_deal': '🔥 FLAŞ FIRSAT & REHBER',
+            'real_fpv_broll': '🎥 GERÇEK FPV UÇUŞU & REHBER',
+            '3d_print_showcase': '🖨️ 3D BASKI STUDIO & TPU 95A'
         }
-        badge_text = reels_badges.get(reels_type)
-        if badge_text:
-            f_badge = get_font(24, bold=True)
-            draw.text((margin, y - 62), badge_text, fill=(56, 189, 248), font=f_badge)
+        badge_text = reels_badges.get(reels_type) or '📘 POZİTRON MÜHENDİSLİK REHBERİ'
+        f_badge = get_font(23, bold=True)
+        draw.text((margin, y - 56), badge_text, fill=(56, 189, 248), font=f_badge)
 
-        draw.rounded_rectangle([(margin, y - 26), (margin + 96, y - 18)], radius=4, fill=(56, 189, 248))
-        y += 8
-        for line in self._wrap_text(headline, 20)[:2]:
+        draw.rounded_rectangle([(margin, y - 22), (margin + 110, y - 14)], radius=4, fill=(56, 189, 248))
+        y += 4
+        for line in self._wrap_text(headline, 22)[:2]:
             draw.text((margin, y), line, fill=(255, 255, 255), font=f_head)
-            y += f_head.size + 16
-        if subhead:
-            for line in self._wrap_text(subhead, 38)[:2]:
-                draw.text((margin, y), line, fill=(226, 232, 240), font=f_sub)
-                y += f_sub.size + 8
+            y += f_head.size + 12
 
-        f_foot = get_font(26, bold=False)
-        draw.text((margin, H - 200), "pozitronmarket.com", fill=(148, 163, 184), font=f_foot)
+        # Render Pozitron Rehber technical card in the lower third
+        rehber = post_data.get('rehber_info') or {}
+        visual = post_data.get('visual_summary') or {}
+        rehber_tip = clean_canvas_text(
+            rehber.get('tip') or visual.get('rehber_tip') or subhead or "Ucus oncesi Smoke Stopper ve multimetre kontrolunu unutmayin."
+        )
+        box_top = max(y + 8, 1465)
+        box_bot = min(box_top + 165, 1655)
+        draw.rounded_rectangle(
+            [(margin, box_top), (W - margin, box_bot)],
+            radius=18,
+            fill=(15, 23, 42, 225),
+            outline=(56, 189, 248, 220),
+            width=2
+        )
+        f_rhead = get_font(21, bold=True)
+        f_rtip = get_font(23, bold=False)
+        draw.text((margin + 24, box_top + 16), "POZITRON REHBER BILGISI (pozitronmarket.com/rehber)", fill=(56, 189, 248), font=f_rhead)
+        ty = box_top + 52
+        for rline in self._wrap_text(rehber_tip, 44)[:2]:
+            draw.text((margin + 24, ty), rline, fill=(241, 245, 249), font=f_rtip)
+            ty += 32
+
+        # Bottom CTA pill for comment/save engagement
+        cta_y = box_bot + 18
+        draw.rounded_rectangle(
+            [(margin, cta_y), (W - margin, cta_y + 62)],
+            radius=14,
+            fill=(2, 132, 199, 235),
+            outline=(125, 211, 252, 255),
+            width=2
+        )
+        f_cta = get_font(23, bold=True)
+        draw.text((margin + 26, cta_y + 17), "KAYDET & YORUMA 'REHBER' YAZ -> KILAVUZ + %10 KUPON DM'DE!", fill=(255, 255, 255), font=f_cta)
 
         filename = f"{post_id}_reels_overlay.png"
         abs_overlay_path = os.path.join(OUTPUT_DIR, filename)
@@ -2720,31 +2876,41 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
     def _generate_broll_hook_video(self, post_data: dict, abs_video_path: str, video_filename: str, broll_path: str) -> str:
         """
-        Mode 2: The entire FPV drone video plays continuously from start to finish.
-        At t=1.0s, the bottom product showcase card smoothly fades in over the lower half of the screen.
-        Uses the native audio track from the drone video itself (no synthetic rhythm).
+        Mode 2: Authentic FPV drone flight video + Rehber engineering card + VoxCPM2 Turkish voiceover
+        + burned-in synchronized dynamic subtitles.
+        Loops B-roll if voiceover is longer than the raw clip so voiceover is never cut off.
         """
         try:
+            # Pre-resolve VoxCPM2 voiceover first so we know exact target duration and subtitle chunks
+            vo_path = self._get_reels_voiceover(post_data)
+            vo_dur = float(post_data.get('voiceover_duration', 0.0))
+            broll_dur = self._get_video_duration(broll_path)
+            target_dur = max(10.0, round(vo_dur + 0.8, 2)) if vo_dur > 0 else max(10.0, broll_dur or 10.0)
+
             overlay_path = self.generate_reels_bottom_overlay(post_data)
             has_audio = self._check_video_has_audio(broll_path)
+            ass_path = self._generate_viral_ass_subtitles(post_data, target_dur)
+            ass_filter = f",ass='{ass_path}'" if (ass_path and os.path.exists(ass_path)) else ""
 
             filter_str = (
-                "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30[bg];"
-                "[1:v]format=rgba,fade=t=in:st=1.0:d=0.5:alpha=1[ovl];"
-                "[bg][ovl]overlay=0:0:enable='gte(t,1.0)':shortest=1[v]"
+                f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,trim=duration={target_dur},setpts=PTS-STARTPTS[bg];"
+                f"[1:v]format=rgba,fade=t=in:st=0.6:d=0.4:alpha=1,trim=duration={target_dur},setpts=PTS-STARTPTS[ovl];"
+                f"[bg][ovl]overlay=0:0:enable='gte(t,0.6)'{ass_filter}[v]"
             )
 
             cmd = [
                 'ffmpeg',
-                '-i', broll_path,
-                '-loop', '1', '-i', overlay_path,
+                '-stream_loop', '-1', '-i', broll_path,
+                '-loop', '1', '-t', str(target_dur), '-i', overlay_path,
             ]
 
             audio_inputs, final_filter, audio_maps = self._attach_reels_audio(
                 post_data,
                 base_filter=filter_str,
                 start_input_idx=2,
-                native_audio_idx=0 if has_audio else None
+                native_audio_idx=0 if has_audio else None,
+                target_duration=target_dur,
+                pre_resolved_vo=vo_path
             )
             cmd.extend(audio_inputs)
             cmd.extend([
@@ -2752,20 +2918,20 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 '-map', '[v]',
                 *audio_maps,
                 '-c:v', 'libx264',
+                '-t', str(target_dur),
                 '-pix_fmt', 'yuv420p',
                 '-movflags', '+faststart',
-                '-shortest',
                 abs_video_path,
                 '-y'
             ])
 
-            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=60)
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=75)
             if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 1000:
-                print(f"[FFmpeg FPV B-Roll Overlay] Reels basariyla olusturuldu: {video_filename}")
-                post_data['video_engine'] = 'FFmpeg FPV Drone + Alt Ürün Kartı (2. Yol)'
+                print(f"[FFmpeg FPV B-Roll Overlay] Reels basariyla olusturuldu: {video_filename} ({target_dur:.2f}s)")
+                post_data['video_engine'] = 'FFmpeg FPV Drone + Rehber Katmanı + VoxCPM2 Seslendirme'
                 post_data['reel_mode'] = 'broll_hook'
                 broll_name = os.path.basename(broll_path)
-                post_data['reel_mode_info'] = f"2. Yol: Tam FPV Uçuşu ({broll_name}) + Alt Ürün Kartı + Orijinal Ses"
+                post_data['reel_mode_info'] = f"Tam FPV Uçuşu ({broll_name}) + Rehber Kartı + Türkçe Seslendirme + Dinamik Altyazı"
                 post_data.pop('fallback_reason', None)
                 return f"./assets/instagram/reels/{video_filename}"
             else:
@@ -2781,18 +2947,22 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
     def _fallback_single_slide_video(self, post_data: dict, abs_video_path: str, video_filename: str) -> str:
         """
-        Ultimate fallback: smooth Ken-Burns brand video with realistic female voiceover.
+        Ultimate fallback: smooth Ken-Burns brand video with realistic female voiceover
+        and burned-in synchronized ASS subtitles.
         """
         story_img_rel = self.generate_story_image(post_data)
         abs_story_img = os.path.join(BASE_DIR, story_img_rel.lstrip('./').lstrip('/'))
 
         vo_path = self._get_reels_voiceover(post_data)
         vo_dur = float(post_data.get('voiceover_duration', 0.0))
-        target_dur = max(5.5, round(vo_dur + 0.6, 2)) if vo_dur > 0 else 5.0
+        target_dur = max(9.5, round(vo_dur + 0.8, 2)) if vo_dur > 0 else 9.5
+
+        ass_path = self._generate_viral_ass_subtitles(post_data, target_dur)
+        ass_filter = f",ass='{ass_path}'" if (ass_path and os.path.exists(ass_path)) else ""
 
         fps = 30
         total_frames = int(target_dur * fps)
-        vf_str = f"zoompan=z='min(zoom+0.0012,1.08)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={total_frames}:s=1080x1920:fps={fps}[v]"
+        vf_str = f"[0:v]zoompan=z='min(zoom+0.0012,1.08)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={total_frames}:s=1080x1920:fps={fps}{ass_filter}[v]"
 
         try:
             cmd = [
@@ -2819,7 +2989,7 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
                 abs_video_path,
                 '-y'
             ])
-            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=45)
+            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
             if res.returncode == 0 and os.path.exists(abs_video_path) and os.path.getsize(abs_video_path) > 1000:
                 return f"./assets/instagram/reels/{video_filename}"
             else:
@@ -2832,12 +3002,11 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
 
     def _generate_ffmpeg_reels_video(self, post_data: dict, abs_video_path: str, video_filename: str) -> str:
         """
-        Offline fallback when the AI video engine is unavailable. No slide shows:
-        either real FPV b-roll footage (if enabled by user) or a gentle Ken-Burns motion over
-        the unified brand template still — both get the brand overlay.
+        Offline fallback when the AI video engine is unavailable.
+        Uses real FPV b-roll footage (when enabled) with Rehber overlay, dynamic subtitles,
+        and VoxCPM2 voiceover, or falls back to Ken-Burns brand motion.
         """
         broll_allowed = True
-        reels_type = post_data.get('reels_type')
         allowed_types = post_data.get('allowed_reels_types')
         if allowed_types is not None:
             broll_allowed = 'real_fpv_broll' in allowed_types
@@ -2853,15 +3022,12 @@ SADECE aşağıdaki JSON formatında geçerli bir JSON objesi döndür:
             except Exception:
                 pass
 
-        if reels_type and reels_type != 'real_fpv_broll':
-            broll_allowed = False
-
         broll_clip = self._get_broll_clip() if broll_allowed else ""
 
         if broll_clip:
             post_data['reel_mode'] = 'broll_hook'
-            post_data['video_engine'] = 'FPV drone footage + marka katmanı'
-            post_data['reel_mode_info'] = f"Gerçek FPV uçuş klibi + marka katmanı ({os.path.basename(broll_clip)})"
+            post_data['video_engine'] = 'FPV drone footage + Rehber katmanı + VoxCPM2 Seslendirme'
+            post_data['reel_mode_info'] = f"Gerçek FPV uçuş klibi + Rehber katmanı + Türkçe Seslendirme ({os.path.basename(broll_clip)})"
             return self._generate_broll_hook_video(post_data, abs_video_path, video_filename, broll_clip)
 
         post_data['reel_mode'] = 'kenburns_template'

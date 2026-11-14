@@ -30,7 +30,7 @@ DEFAULT_FEMALE_PROMPT = (
     "energetic, friendly, fluent Turkish pronunciation with studio clarity."
 )
 
-# Technical FPV and e-commerce phonetic expansions for fluent Turkish speech
+# Technical FPV, Rehber engineering, and e-commerce phonetic expansions for fluent Turkish speech
 PHONETIC_REPLACEMENTS = [
     (r"\bFPV\b", "fe pe ve"),
     (r"\bVTX\b", "ve te iks"),
@@ -39,21 +39,86 @@ PHONETIC_REPLACEMENTS = [
     (r"\bFC\b", "fe ce"),
     (r"\bAIO\b", "a iyi o"),
     (r"\bELRS\b", "e le re se"),
+    (r"\bExpressLRS\b", "Ekspres e le re se"),
     (r"\bGPS\b", "ce pe se"),
+    (r"\bUART\b", "yu art"),
+    (r"\bDMA\b", "de me a"),
+    (r"\bCRSF\b", "ce re se fe"),
+    (r"\bPWM\b", "pe ve me"),
+    (r"\bPID\b", "pi ay di"),
+    (r"\bBEC\b", "bek"),
+    (r"\bOSD\b", "o se de"),
+    (r"\bRTH\b", "eve dönüş"),
+    (r"\bLQ\b", "bağlantı kalitesi"),
+    (r"\bRSSI\b", "sinyal gücü"),
+    (r"\bESR\b", "e se re"),
+    (r"\bRPM\b", "ar pi em"),
+    (r"\bTPU\b", "te pe u"),
+    (r"\bPETG\b", "pet ge"),
+    (r"\bPLA\b", "pe le a"),
+    (r"\bSTL\b", "se te le"),
+    (r"\bSTEP\b", "step"),
+    (r"\bRHCP\b", "sağ polarize"),
+    (r"\bLHCP\b", "sol polarize"),
+    (r"\bMMCX\b", "em em ce iks"),
+    (r"\bU\.FL\b", "u fe le"),
+    (r"\bSMA\b", "se me a"),
+    (r"\bXT60\b", "iks te altmış"),
+    (r"\bXT30\b", "iks te otuz"),
+    (r"\bSTM32F405\b", "es ti em otuz iki ef dört yüz beş"),
+    (r"\bSTM32F722\b", "es ti em otuz iki ef yedi yüz yirmi iki"),
+    (r"\bSTM32H743\b", "es ti em otuz iki eyç yedi yüz kırk üç"),
+    (r"\bSTM32H7\b", "es ti em otuz iki eyç yedi"),
+    (r"\bF405\b", "ef dört yüz beş"),
+    (r"\bF722\b", "ef yedi yüz yirmi iki"),
+    (r"\bH743\b", "eyç yedi yüz kırk üç"),
+    (r"\b95A\b", "doksan beş A"),
+    (r"\b55A\b", "elli beş amper"),
+    (r"\b60A\b", "altmış amper"),
+    (r"\b45A\b", "kırk beş amper"),
+    (r"\bDShot600\b", "di şat altı yüz"),
+    (r"\bDSHOT600\b", "di şat altı yüz"),
+    (r"\bDShot300\b", "di şat üç yüz"),
+    (r"\bDSHOT300\b", "di şat üç yüz"),
+    (r"\bDShot\b", "di şat"),
+    (r"\bBLHeli_32\b", "bi el heli otuz iki"),
+    (r"\bBLHeli\b", "bi el heli"),
+    (r"\bBluejay\b", "Blu cey"),
+    (r"\bEdgeTX\b", "Ec ti iks"),
+    (r"\bCrossfire\b", "Kros fayır"),
+    (r"\bSmoke Stopper\b", "duman önleyici"),
+    (r"\bLoRa\b", "lora"),
     (r"\bLiPo\b", "lipo"),
     (r"\bLIPO\b", "lipo"),
     (r"\bLi-ion\b", "lityum iyon"),
+    (r"\bLi-Ion\b", "lityum iyon"),
     (r"\bLI-ION\b", "lityum iyon"),
     (r"\bBetaflight\b", "Betaflayt"),
     (r"\bBetaFlight\b", "Betaflayt"),
     (r"\bHDZero\b", "Eyc Di Zero"),
     (r"\bWalksnail\b", "Vok sneyl"),
     (r"\bDJI\b", "Di Cey Ay"),
+    (r"\bO3\b", "O üç"),
+    (r"\bGoPro\b", "Go Pro"),
     (r"\bUSB-C\b", "yusbi si"),
     (r"\bType-C\b", "tayp si"),
+    (r"\b3D\b", "üç de"),
+    (r"\b63/37\b", "altmış üçe otuz yedi"),
+    (r"\bpozitronmarket\.com/rehber\b", "pozitron market nokta com bölü rehber"),
     (r"\bpozitronmarket\.com\b", "pozitron market nokta com"),
     (r"\bpozitronmarket\b", "pozitron market"),
     (r"@pozitronmarket\b", "Pozitron Market"),
+    (r"%(\d+)", r"yüzde \1"),
+    (r"(\d+)\s*°C\b", r"\1 derece"),
+    (r"(\d+(?:[.,]\d+)?)\s*GHz\b", r"\1 gigahertz"),
+    (r"(\d+(?:[.,]\d+)?)\s*MHz\b", r"\1 megahertz"),
+    (r"(\d+(?:[.,]\d+)?)\s*kHz\b", r"\1 kilohertz"),
+    (r"(\d+(?:[.,]\d+)?)\s*dBi\b", r"\1 desibel"),
+    (r"(\d+(?:[.,]\d+)?)\s*dB\b", r"\1 desibel"),
+    (r"(\d+(?:[.,]\d+)?)\s*mW\b", r"\1 milivat"),
+    (r"(\d+(?:[.,]\d+)?)\s*uF\b", r"\1 mikrofarad"),
+    (r"(\d+(?:[.,]\d+)?)\s*V\b", r"\1 volt"),
+    (r"(\d+)\s*C\b", r"\1 ce"),
     (r"(\d+)\s*TL\b", r"\1 Türk Lirası"),
     (r"(\d+)\s*tl\b", r"\1 Türk Lirası"),
     (r"(\d+)\s*\"\b", r"\1 inç"),
@@ -65,6 +130,75 @@ PHONETIC_REPLACEMENTS = [
     (r"(\d+)\s*MAH\b", r"\1 miliamper saat"),
     (r"(\d+)\s*S\b", r"\1 S"),
 ]
+
+
+def build_subtitle_chunks(display_text: str, duration: float, words_per_chunk: int = 3) -> list:
+    """
+    Splits spoken text into high-retention 2-to-4 word dynamic subtitle chunks
+    with exact start/end timestamps across `duration` (weighted by character length
+    and punctuation cadence). Used to burn Hormozi/TikTok-style synchronized captions
+    into every Pozitron Reel.
+    """
+    if not display_text or duration <= 0:
+        return []
+
+    # Clean bracket tags, URLs, hashtags while keeping readable technical display tokens
+    clean_disp = re.sub(r"https?://\S+", "", display_text)
+    clean_disp = re.sub(r"#\w+", "", clean_disp)
+    clean_disp = re.sub(r"\[[^\]]*\]", "", clean_disp)
+    clean_disp = re.sub(r"[*_`~]", "", clean_disp)
+    clean_disp = re.sub(r"\s+", " ", clean_disp).strip()
+    if not clean_disp:
+        return []
+
+    words = clean_disp.split()
+    if not words:
+        return []
+
+    raw_chunks = []
+    current = []
+    for w in words:
+        current.append(w)
+        ends_sentence = w.endswith((".", "!", "?", ":", ";", ","))
+        if len(current) >= words_per_chunk or (ends_sentence and len(current) >= 2):
+            raw_chunks.append(current)
+            current = []
+    if current:
+        if raw_chunks and len(current) == 1 and len(raw_chunks[-1]) < 4:
+            raw_chunks[-1].extend(current)
+        else:
+            raw_chunks.append(current)
+
+    # Compute weights proportional to spoken length + pause bonus for punctuation
+    weights = []
+    for ch in raw_chunks:
+        joined = " ".join(ch)
+        char_weight = max(4, sum(len(w) for w in ch))
+        if joined.endswith((".", "!", "?")):
+            char_weight += 4
+        elif joined.endswith((",", ":", ";")):
+            char_weight += 2
+        weights.append(float(char_weight))
+
+    total_w = sum(weights) or 1.0
+    usable_dur = max(1.0, float(duration) - 0.15)
+    cursor_t = 0.08
+    timed_chunks = []
+    for ch, w in zip(raw_chunks, weights):
+        seg_dur = usable_dur * (w / total_w)
+        start_t = round(cursor_t, 2)
+        end_t = round(min(duration, cursor_t + seg_dur), 2)
+        cursor_t += seg_dur
+        # Pick the longest / most impactful word in the chunk to highlight in neon cyan/amber
+        best_word = max(ch, key=lambda tok: len(re.sub(r"\W+", "", tok)))
+        timed_chunks.append({
+            "text": " ".join(ch),
+            "words": ch,
+            "highlight": best_word.strip(".,!?:;"),
+            "start": start_t,
+            "end": end_t,
+        })
+    return timed_chunks
 
 
 def clean_text_for_speech(text: str) -> str:
@@ -283,6 +417,7 @@ class VoxCPMTTS:
 
         script_code = f"""
 import sys
+import torch
 import soundfile as sf
 from voxcpm import VoxCPM
 
@@ -294,18 +429,51 @@ cfg = {cfg_float}
 steps = {steps_int}
 
 prompt = f"({{control}}) {{text}}" if control else text
-model = VoxCPM.from_pretrained("openbmb/VoxCPM2", load_denoiser=False, local_files_only=True, optimize=False)
 
-kwargs = {{
-    "text": prompt,
-    "inference_timesteps": steps,
-    "cfg_value": cfg
-}}
-if ref_path is not None:
-    kwargs["reference_wav_path"] = ref_path
+use_device = "cpu"
+if torch.cuda.is_available():
+    try:
+        free_b, total_b = torch.cuda.mem_get_info()
+        if free_b >= int(5.5 * (1024 ** 3)):
+            use_device = "cuda"
+    except Exception:
+        use_device = "cuda"
 
-wav = model.generate(**kwargs)
-sf.write(out_path, wav, model.tts_model.sample_rate)
+wav = None
+sample_rate = 48000
+for dev in ([use_device, "cpu"] if use_device == "cuda" else ["cpu"]):
+    try:
+        cur_steps = steps if dev == "cuda" else min(steps, 6)
+        model = VoxCPM.from_pretrained(
+            "openbmb/VoxCPM2",
+            load_denoiser=False,
+            local_files_only=True,
+            optimize=False,
+            device=dev,
+        )
+        kwargs = {{
+            "text": prompt,
+            "inference_timesteps": cur_steps,
+            "cfg_value": cfg,
+        }}
+        if ref_path is not None:
+            kwargs["reference_wav_path"] = ref_path
+        wav = model.generate(**kwargs)
+        sample_rate = model.tts_model.sample_rate
+        break
+    except Exception as err:
+        if dev == "cuda":
+            try:
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+            continue
+        raise err
+
+if wav is None:
+    sys.exit(1)
+
+sf.write(out_path, wav, sample_rate)
 print("SUCCESS")
 """
         try:
@@ -316,7 +484,7 @@ print("SUCCESS")
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                timeout=120,
+                timeout=180,
                 env=custom_env,
             )
             if res.returncode == 0 and "SUCCESS" in res.stdout:
@@ -347,9 +515,15 @@ print("SUCCESS")
             speech_text = cg.generate_reels_voiceover_script(post_data)
             post_data["voiceover_text"] = speech_text
 
+        display_script = post_data.get("voiceover_display_text") or speech_text
+
         # Use natural, energetic female voice instruction
         hook_tone = post_data.get("hook_tone", "energetic")
-        tone_descriptor = "cheerful, energetic and friendly" if hook_tone in ("urgency", "hype", "energetic") else "warm, friendly, calm and professional"
+        tone_descriptor = (
+            "cheerful, energetic, fast-paced and engaging"
+            if hook_tone in ("urgency", "hype", "energetic", "bold", "challenge", "warning", "question")
+            else "warm, friendly, confident and professional"
+        )
         voice_prompt = (
             f"A natural, {tone_descriptor} Turkish young female voice, "
             "clear articulation, fluent Turkish pronunciation with studio clarity."
@@ -360,6 +534,15 @@ print("SUCCESS")
             output_wav_path=abs_output,
             prompt_instruction=voice_prompt,
         )
+        if not ok or not os.path.exists(abs_output) or os.path.getsize(abs_output) <= 1000:
+            # Automatic 2nd attempt after freeing GPU memory to guarantee every Reel is voiced
+            free_comfyui_vram()
+            ok = self.synthesize(
+                text=speech_text,
+                output_wav_path=abs_output,
+                prompt_instruction=voice_prompt,
+                inference_timesteps=8,
+            )
 
         if ok and os.path.exists(abs_output) and os.path.getsize(abs_output) > 1000:
             rel_path = f"./assets/instagram/voiceovers/{filename}"
@@ -368,7 +551,8 @@ print("SUCCESS")
             post_data["voiceover_engine"] = "VoxCPM2 (Doğal Türkçe Kadın Sesi)"
             post_data["voiceover_prompt"] = voice_prompt
 
-            # Probe duration
+            # Probe duration and compute synchronized subtitle chunks
+            dur = 0.0
             try:
                 probe_cmd = [
                     "ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -381,6 +565,11 @@ print("SUCCESS")
             except Exception:
                 pass
 
+            if dur <= 0:
+                dur = 10.0
+                post_data["voiceover_duration"] = dur
+
+            post_data["voiceover_chunks"] = build_subtitle_chunks(display_script, dur)
             return rel_path
 
         return ""

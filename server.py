@@ -3723,11 +3723,21 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
             post_id = data.get('id')
             use_flux = data.get('use_flux')
             allowed_types = data.get('allowed_types')
+            reels_type = data.get('reels_type')
+            allowed_reels_types = data.get('allowed_reels_types')
             try:
                 if post_id:
                     result = instagram_pr_agent.publish_post(post_id=post_id)
+                elif path == '/api/instagram/direct-publish' or data.get('reels_only') or reels_type:
+                    # Reels-Only Direct Publish with Rehber & VoxCPM2 TTS
+                    result = instagram_pr_agent.generate_and_publish_reel(
+                        content_type=content_type,
+                        product_id=product_id,
+                        reels_type=reels_type,
+                        allowed_reels_types=allowed_reels_types
+                    )
                 else:
-                    # Direct generation and instant publish without leftover draft
+                    # Legacy /api/instagram/generate compatibility
                     result = instagram_pr_agent.generate_and_publish_now(
                         content_type=content_type,
                         product_id=product_id,
@@ -3786,6 +3796,9 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     content = instagram_pr_agent.content_gen.generate_content(
                         content_type=content_type, product_id=product_id
                     )
+                    if content:
+                        instagram_pr_agent.content_gen._attach_rehber_to_reel(content)
+                        content['voiceover_text'] = instagram_pr_agent.content_gen.generate_reels_voiceover_script(content)
                 else:
                     # Respect reels_type and allowed_reels_types
                     content = instagram_pr_agent.content_gen.generate_reels_content(
@@ -3819,6 +3832,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'caption': content['caption'],
                     'hashtags': content['hashtags'],
                     'product_data': content.get('product_data'),
+                    'rehber_info': content.get('rehber_info'),
                     'visual_summary': content.get('visual_summary'),
                     'visual_style': content.get('visual_style'),
                     'video_mode': content.get('video_mode'),
@@ -3828,6 +3842,7 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'engine': engine,
                     'reels_method': reels_method,
                     'voiceover_text': content.get('voiceover_text'),
+                    'voiceover_display_text': content.get('voiceover_display_text'),
                     'created_at': __import__('datetime').datetime.now().isoformat()
                 }
                 post_data['metadata'] = {
@@ -3837,7 +3852,8 @@ class PozitronRequestHandler(http.server.SimpleHTTPRequestHandler):
                     'video_mode': content.get('video_mode'),
                     'hook_tone': content.get('hook_tone'),
                     'reels_method': reels_method,
-                    'voiceover_text': content.get('voiceover_text')
+                    'voiceover_text': content.get('voiceover_text'),
+                    'rehber_info': content.get('rehber_info')
                 }
 
                 video_prompt = instagram_pr_agent.content_gen.generate_reels_video_prompt(post_data)

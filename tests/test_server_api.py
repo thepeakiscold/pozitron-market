@@ -70,10 +70,10 @@ class TestServerInstagramAPI(unittest.TestCase):
 
     def test_generate_and_publish_flow(self):
         # Set dry run mode for testing
-        self._post('/api/instagram/config', {'dry_run_mode': 1})
+        self._post('/api/instagram/config', {'dry_run_mode': 1, 'flux_enabled': 0})
 
         # Generate and publish directly (no drafts)
-        code, gen_data = self._post('/api/instagram/generate', {'content_type': 'tool_showcase'})
+        code, gen_data = self._post('/api/instagram/generate', {'content_type': 'tool_showcase', 'use_flux': False})
         self.assertEqual(code, 200)
         self.assertTrue(gen_data.get('success'))
         post = gen_data.get('post')
